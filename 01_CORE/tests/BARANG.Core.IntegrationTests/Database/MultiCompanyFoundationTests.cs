@@ -101,25 +101,13 @@ public sealed class MultiCompanyFoundationTests(PostgreSqlDatabaseFixture databa
     }
 
     [Fact]
-    public async Task DevelopmentApiResolvesValidatedCompanyAndHidesGuessedIds()
+    public async Task OrganizationApiRequiresAuthentication()
     {
         await database.ResetAsync(TestContext.Current.CancellationToken);
         await using PostgreSqlCoreApiFactory factory = new(database.ConnectionString);
         using HttpClient client = factory.CreateClient();
-        CompanyView companyA = await CreateCompanyViaApiAsync(client, "API_A");
-        CompanyView companyB = await CreateCompanyViaApiAsync(client, "API_B");
-        BranchView branchB = await CreateBranchViaApiAsync(client, companyB.Id, "B_MAIN");
-        BranchView branchA = await CreateBranchViaApiAsync(client, companyA.Id, "A_MAIN");
-
-        using HttpRequestMessage guessed = new(HttpMethod.Get, $"/api/v1/organization/branches/{branchB.Id}");
-        guessed.Headers.Add("X-Company-ID", companyA.Id.ToString());
-        using HttpResponseMessage hidden = await client.SendAsync(guessed, TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.NotFound, hidden.StatusCode);
-
-        using HttpRequestMessage visible = new(HttpMethod.Get, $"/api/v1/organization/branches/{branchA.Id}");
-        visible.Headers.Add("X-Company-ID", companyA.Id.ToString());
-        using HttpResponseMessage found = await client.SendAsync(visible, TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.OK, found.StatusCode);
+        using HttpResponseMessage response = await client.GetAsync("/api/v1/organization/companies", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     private async Task<SeededOrganization> SeedAsync()
@@ -152,8 +140,6 @@ public sealed class MultiCompanyFoundationTests(PostgreSqlDatabaseFixture databa
     private static async Task SetCompanyAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid companyId) { await using NpgsqlCommand command = new("SELECT set_config('barang.company_id', @company_id, true);", connection, transaction); command.Parameters.AddWithValue("company_id", companyId.ToString()); await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken); }
     private static async Task<long> CountBranchAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid branchId) { await using NpgsqlCommand command = new("SELECT count(*) FROM barang.branches WHERE id = @id;", connection, transaction); command.Parameters.AddWithValue("id", branchId); return Convert.ToInt64(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken), System.Globalization.CultureInfo.InvariantCulture); }
     private static async Task<long> CountAllBranchesAsync(NpgsqlConnection connection, NpgsqlTransaction transaction) { await using NpgsqlCommand command = new("SELECT count(*) FROM barang.branches;", connection, transaction); return Convert.ToInt64(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken), System.Globalization.CultureInfo.InvariantCulture); }
-    private static async Task<CompanyView> CreateCompanyViaApiAsync(HttpClient client, string code) { using HttpResponseMessage response = await client.PostAsJsonAsync("/api/v1/organization/companies", new { code, displayName = code }, TestContext.Current.CancellationToken); response.EnsureSuccessStatusCode(); return (await response.Content.ReadFromJsonAsync<CompanyView>(TestContext.Current.CancellationToken))!; }
-    private static async Task<BranchView> CreateBranchViaApiAsync(HttpClient client, Guid companyId, string code) { using HttpRequestMessage request = new(HttpMethod.Post, "/api/v1/organization/branches") { Content = JsonContent.Create(new { code, displayName = code }) }; request.Headers.Add("X-Company-ID", companyId.ToString()); using HttpResponseMessage response = await client.SendAsync(request, TestContext.Current.CancellationToken); response.EnsureSuccessStatusCode(); return (await response.Content.ReadFromJsonAsync<BranchView>(TestContext.Current.CancellationToken))!; }
     private sealed record ScopedIds(Guid Branch, Guid Setting, Guid Unit, Guid Warehouse);
     private sealed record SeededOrganization(Guid CompanyA, Guid CompanyB, Guid BranchA, Guid BranchB, Guid SettingB, Guid UnitB, Guid WarehouseB);
 }

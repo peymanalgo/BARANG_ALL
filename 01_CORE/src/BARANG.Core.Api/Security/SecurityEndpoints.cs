@@ -1,0 +1,109 @@
+using System.Security.Cryptography;
+using System.Text;
+using BARANG.Core.Api.Errors;
+using BARANG.Core.Application.Abstractions.Correlation;
+using BARANG.Core.Application.Security;
+using BARANG.Core.Domain.Common;
+using BARANG.Core.Domain.Security;
+using BARANG.Core.Infrastructure.Context;
+using BARANG.Core.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace BARANG.Core.Api.Security;
+
+public static class SecurityEndpoints
+{
+    public static IEndpointRouteBuilder MapSecurityEndpoints(this IEndpointRouteBuilder endpoints)
+    {
+        RouteGroupBuilder auth = endpoints.MapGroup("/api/v1/auth");
+        auth.MapPost("/login", async (LoginRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.LoginAsync(r.Username, r.Password, ct))).AllowAnonymous();
+        auth.MapPost("/logout", async (HttpContext h, ISecurityAdministration s, ISessionTokenService tokens, CancellationToken ct) => { string raw = h.Request.Headers.Authorization.ToString()[7..].Trim(); return Map(await s.LogoutAsync(tokens.Hash(raw), ct)); }).RequireAuthorization();
+        endpoints.MapPost("/api/v1/security/bootstrap", BootstrapAsync).AllowAnonymous();
+
+        RouteGroupBuilder users = endpoints.MapGroup("/api/v1/security/users").RequireAuthorization(SecurityPermissions.SecurityUserManage);
+        users.MapPost("/", async (CreateUserRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.CreateUserAsync(new(r.Username, r.DisplayName, r.Email, r.Password), ct)));
+        users.MapGet("/", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.ListUsersAsync(ct)));
+        users.MapGet("/{id:guid}", async (Guid id, ISecurityAdministration s, CancellationToken ct) => Map(await s.GetUserAsync(id, ct)));
+        users.MapPut("/{id:guid}", async (Guid id, UpdateUserRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.UpdateUserAsync(id, r.DisplayName, r.Email, r.Version, ct)));
+        users.MapPut("/{id:guid}/activation", async (Guid id, SecurityActivationRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.SetUserActiveAsync(id, r.IsActive, r.Version, ct)));
+        users.MapPut("/{id:guid}/password", async (Guid id, PasswordRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.SetPasswordAsync(id, r.Password, ct)));
+        users.MapGet("/{id:guid}/companies", async (Guid id, ISecurityAdministration s, CancellationToken ct) => Map(await s.ListCompaniesAsync(id, ct)));
+        users.MapPost("/{id:guid}/companies", async (Guid id, CompanyAccessRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.GrantCompanyAsync(id, r.CompanyId, r.ValidToUtc, ct)));
+        users.MapDelete("/{id:guid}/companies/{companyId:guid}", async (Guid id, Guid companyId, ISecurityAdministration s, CancellationToken ct) => Map(await s.RevokeCompanyAsync(id, companyId, ct)));
+        users.MapGet("/{id:guid}/roles", async (Guid id, ISecurityAdministration s, CancellationToken ct) => Map(await s.ListUserRolesAsync(id, ct)));
+        users.MapPost("/{id:guid}/roles", async (Guid id, RoleAssignmentRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.AssignRoleAsync(id, r.RoleId, r.CompanyId, r.ValidToUtc, ct)));
+        users.MapDelete("/{id:guid}/roles/{roleId:guid}/companies/{companyId:guid}", async (Guid id, Guid roleId, Guid companyId, ISecurityAdministration s, CancellationToken ct) => Map(await s.RevokeRoleAsync(id, roleId, companyId, ct)));
+
+        RouteGroupBuilder roles = endpoints.MapGroup("/api/v1/security/roles").RequireAuthorization(SecurityPermissions.SecurityRoleManage);
+        roles.MapPost("/", async (CreateRoleRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.CreateRoleAsync(r.Code, r.DisplayTitle, ct)));
+        roles.MapGet("/", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.ListRolesAsync(ct)));
+        roles.MapGet("/{id:guid}", async (Guid id, ISecurityAdministration s, CancellationToken ct) => Map(await s.GetRoleAsync(id, ct)));
+        roles.MapPut("/{id:guid}", async (Guid id, UpdateRoleRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.UpdateRoleAsync(id, r.DisplayTitle, r.Version, ct)));
+        roles.MapPut("/{id:guid}/activation", async (Guid id, SecurityActivationRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.SetRoleActiveAsync(id, r.IsActive, r.Version, ct)));
+        roles.MapGet("/{id:guid}/permissions", async (Guid id, ISecurityAdministration s, CancellationToken ct) => Map(await s.ListRolePermissionsAsync(id, ct)));
+        roles.MapPost("/{id:guid}/permissions/{permissionId:guid}", async (Guid id, Guid permissionId, ISecurityAdministration s, CancellationToken ct) => Map(await s.GrantPermissionAsync(id, permissionId, ct)));
+        roles.MapDelete("/{id:guid}/permissions/{permissionId:guid}", async (Guid id, Guid permissionId, ISecurityAdministration s, CancellationToken ct) => Map(await s.RevokePermissionAsync(id, permissionId, ct)));
+        endpoints.MapGet("/api/v1/security/permissions", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.ListPermissionsAsync(ct))).RequireAuthorization(SecurityPermissions.SecurityRoleManage);
+        return endpoints;
+    }
+
+    private static async Task<IResult> BootstrapAsync(BootstrapRequest request, HttpContext http, IConfiguration config, CompanyContext companies, CoreDbContext db, ISecurityAdministration security, CancellationToken ct)
+    {
+        string configured = config["SecurityBootstrap:Secret"] ?? string.Empty;
+        string supplied = http.Request.Headers["X-Bootstrap-Secret"].ToString();
+        if (configured.Length < 24 || supplied.Length != configured.Length || !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(supplied), Encoding.UTF8.GetBytes(configured))) return Results.Unauthorized();
+        bool companyIsActive = await db.Companies.AsNoTracking().AnyAsync(company => company.Id == request.CompanyId && company.IsActive, ct);
+        if (!companyIsActive) return Map(Result.Failure(BARANG.Core.Domain.Organization.OrganizationErrors.NotFound));
+        using IDisposable scope = companies.BeginScope(request.CompanyId);
+        return Map(await security.BootstrapAsync(request.CompanyId, new(request.Username, request.DisplayName, request.Email, request.Password), ct));
+    }
+    private static SecurityResult Map(Result result) => new(result);
+    private static SecurityResult<T> Map<T>(Result<T> result) => new(result);
+
+    private sealed class SecurityResult(Result result) : IResult
+    {
+        public Task ExecuteAsync(HttpContext httpContext)
+        {
+            if (result.IsSuccess)
+            {
+                httpContext.Response.StatusCode = StatusCodes.Status204NoContent;
+                return Task.CompletedTask;
+            }
+
+            return WriteFailureAsync(httpContext, result.Error);
+        }
+    }
+
+    private sealed class SecurityResult<T>(Result<T> result) : IResult
+    {
+        public Task ExecuteAsync(HttpContext httpContext)
+        {
+            if (result.IsSuccess)
+            {
+                httpContext.Response.StatusCode = StatusCodes.Status200OK;
+                return httpContext.Response.WriteAsJsonAsync(result.Value, httpContext.RequestAborted);
+            }
+
+            return WriteFailureAsync(httpContext, result.Error);
+        }
+    }
+
+    private static Task WriteFailureAsync(HttpContext httpContext, Error error)
+    {
+        ICorrelationContext correlation = httpContext.RequestServices.GetRequiredService<ICorrelationContext>();
+        ProblemDetails details = ApiProblemDetailsMapper.Create(error, correlation.CorrelationId ?? httpContext.TraceIdentifier, httpContext.Request.Path);
+        httpContext.Response.StatusCode = details.Status!.Value;
+        return httpContext.Response.WriteAsJsonAsync(details, httpContext.RequestAborted);
+    }
+}
+public sealed record LoginRequest(string Username, string Password);
+public sealed record BootstrapRequest(Guid CompanyId, string Username, string DisplayName, string? Email, string Password);
+public sealed record CreateUserRequest(string Username, string DisplayName, string? Email, string Password);
+public sealed record UpdateUserRequest(string DisplayName, string? Email, long Version);
+public sealed record SecurityActivationRequest(bool IsActive, long Version);
+public sealed record PasswordRequest(string Password);
+public sealed record CompanyAccessRequest(Guid CompanyId, DateTimeOffset? ValidToUtc);
+public sealed record RoleAssignmentRequest(Guid RoleId, Guid CompanyId, DateTimeOffset? ValidToUtc);
+public sealed record CreateRoleRequest(string Code, string DisplayTitle);
+public sealed record UpdateRoleRequest(string DisplayTitle, long Version);

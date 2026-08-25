@@ -13,8 +13,8 @@ The `Organization` module owns companies, settings, branches, organizational uni
 ## Context and isolation
 
 - Normal company-owned EF queries require `ICompanyContext` and have global company filters. Missing context returns no scoped rows; application operations explicitly require context.
-- `X-Company-ID` is an interim development/test mechanism only. It is accepted only in Development/Testing when `CompanyResolution:AllowDevelopmentHeader` is true, and only after the API verifies that the company exists and is active. Production rejects the header.
-- Administration routes are likewise disabled outside Development/Testing and require `CompanyResolution:AllowDevelopmentAdministration`. Phase 05 will replace this gate with authenticated RBAC without changing application contracts.
+- For authenticated requests, `X-Company-ID` is only a company-selection request. The API validates active `UserCompany` access before establishing context. Anonymous selection remains Development/Testing-only behind `CompanyResolution:AllowDevelopmentHeader`; Production rejects it.
+- Administration routes use the Phase 05 permission policies described in `IDENTITY_AND_ACCESS.md`.
 - There is no unrestricted scoped-data bypass in Phase 04. Company root administration remains unscoped; access policy will be attached in Phase 05.
 
 ## PostgreSQL defense

@@ -38,3 +38,4 @@ These rules are fixed unless an architectural change is explicitly approved.
 - `/health/live` reports process liveness, `/health/ready` checks PostgreSQL readiness, and `/health` remains the aggregate compatibility endpoint.
 - Application orchestration owns transactions through the focused transaction executor; Domain code never commits or rolls back.
 - The `Organization` module and its layered EF filters, same-company constraints, and transaction-local PostgreSQL RLS establish the multi-company foundation described in `MULTI_COMPANY_FOUNDATION.md`.
+- Internal identity, opaque bearer sessions, permission-based RBAC, security audit events, and authenticated company resolution follow `IDENTITY_AND_ACCESS.md`.

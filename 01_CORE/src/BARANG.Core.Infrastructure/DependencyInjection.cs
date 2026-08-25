@@ -5,6 +5,8 @@ using BARANG.Core.Application.Abstractions.Correlation;
 using BARANG.Core.Application.Abstractions.Transactions;
 using BARANG.Core.Infrastructure.Context;
 using BARANG.Core.Application.Organization;
+using BARANG.Core.Application.Security;
+using BARANG.Core.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,6 +54,13 @@ public static class DependencyInjection
         services.AddScoped<ITransactionExecutor, EfTransactionExecutor>();
         services.AddScoped<IOrganizationStore, OrganizationStore>();
         services.AddScoped<IOrganizationAdministration, OrganizationAdministration>();
+        services.AddSingleton<IPasswordCredentialService, PasswordCredentialService>();
+        services.AddSingleton<ISessionTokenService, SessionTokenService>();
+        services.AddScoped<ISecurityStore, SecurityStore>();
+        services.AddScoped<IRequestIdentityResolver, RequestIdentityResolver>();
+        services.AddScoped<SecurityAdministration>();
+        services.AddScoped<ISecurityAdministration>(static provider => provider.GetRequiredService<SecurityAdministration>());
+        services.AddScoped<IPermissionAuthorizationService>(static provider => provider.GetRequiredService<SecurityAdministration>());
 
         return services;
     }

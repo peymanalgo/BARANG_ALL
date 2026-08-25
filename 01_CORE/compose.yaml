@@ -34,6 +34,7 @@ services:
       DatabaseAvailability__DelaySeconds: "2"
       CompanyResolution__AllowDevelopmentHeader: "true"
       CompanyResolution__AllowDevelopmentAdministration: "true"
+      SecurityBootstrap__Secret: ${SECURITY_BOOTSTRAP_SECRET:-}
     ports:
       - "127.0.0.1:${API_PORT:-8080}:8080"
     depends_on:

@@ -60,11 +60,21 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
                 INTO application_tables
                 FROM pg_tables
                 WHERE schemaname NOT IN ('pg_catalog', 'information_schema', 'public', 'barang_test')
-                  AND tablename <> '__ef_migrations_history';
+                  AND tablename NOT IN ('__ef_migrations_history', 'permissions');
 
                 IF application_tables IS NOT NULL THEN
                     EXECUTE 'TRUNCATE TABLE ' || application_tables || ' RESTART IDENTITY CASCADE';
                 END IF;
+
+                INSERT INTO barang.permissions (id, code, technical_description, module) VALUES
+                    ('00000000-0000-0000-0000-000000000001', 'organization.company.manage', 'organization.company.manage', 'organization'),
+                    ('00000000-0000-0000-0000-000000000002', 'organization.branch.manage', 'organization.branch.manage', 'organization'),
+                    ('00000000-0000-0000-0000-000000000003', 'organization.settings.manage', 'organization.settings.manage', 'organization'),
+                    ('00000000-0000-0000-0000-000000000004', 'organization.unit.manage', 'organization.unit.manage', 'organization'),
+                    ('00000000-0000-0000-0000-000000000005', 'organization.warehouse.manage', 'organization.warehouse.manage', 'organization'),
+                    ('00000000-0000-0000-0000-000000000006', 'security.user.manage', 'security.user.manage', 'security'),
+                    ('00000000-0000-0000-0000-000000000007', 'security.role.manage', 'security.role.manage', 'security')
+                ON CONFLICT (id) DO NOTHING;
 
                 DROP SCHEMA IF EXISTS barang_test CASCADE;
                 CREATE SCHEMA barang_test;

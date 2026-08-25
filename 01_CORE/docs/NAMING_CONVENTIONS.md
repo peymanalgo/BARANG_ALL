@@ -68,6 +68,7 @@ This standard applies to future BARANG source code, APIs, data, infrastructure, 
 - C# permission constants use PascalCase groups and members, for example `SalesPermissions.OrdersRead`.
 - Authorization policy names use the permission code when the policy represents one permission. Composite policies use a clear PascalCase business rule, such as `CanApproveOrder`.
 - Company scope is contextual authorization, not part of a permission code. Do not create per-company permission names.
+- Authentication uses the `Authorization: Bearer` protocol header; opaque token values, hashes, passwords, and password hashes are never identifiers, route values, log properties, or response fields.
 
 ## PostgreSQL
 
