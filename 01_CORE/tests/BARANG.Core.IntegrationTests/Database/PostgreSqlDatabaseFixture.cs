@@ -2,6 +2,7 @@ using BARANG.Core.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Xunit;
+using BARANG.Core.Infrastructure.Context;
 
 namespace BARANG.Core.IntegrationTests.Database;
 
@@ -11,8 +12,10 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
     public const string ConnectionEnvironmentVariable = "BARANG_TEST_DB_CONNECTION";
 
     private string _connectionString = string.Empty;
+    private string _administrationConnectionString = string.Empty;
 
     public string ConnectionString => _connectionString;
+    public CompanyContext CompanyContext { get; } = new();
 
     public async ValueTask InitializeAsync()
     {
@@ -20,19 +23,23 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
             ?? throw new InvalidOperationException(
                 $"Set {ConnectionEnvironmentVariable} to an isolated PostgreSQL test database.");
 
-        _connectionString = ValidateAndNormalize(connectionString);
-        await using CoreDbContext context = CreateCoreDbContext();
+        _administrationConnectionString = ValidateAndNormalize(connectionString);
+        await using CoreDbContext context = CreateCoreDbContext(_administrationConnectionString);
         await context.Database.MigrateAsync();
+        _connectionString = await ConfigureApplicationRoleAsync(_administrationConnectionString);
         await ResetAsync();
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     public CoreDbContext CreateCoreDbContext()
+        => CreateCoreDbContext(ConnectionString);
+
+    private CoreDbContext CreateCoreDbContext(string connectionString)
     {
         DbContextOptionsBuilder<CoreDbContext> builder = new();
-        builder.UseCorePostgreSql(ConnectionString);
-        return new CoreDbContext(builder.Options);
+        builder.UseCorePostgreSql(connectionString);
+        return new CoreDbContext(builder.Options, CompanyContext);
     }
 
     public ConcurrencyProbeDbContext CreateConcurrencyDbContext()
@@ -77,11 +84,14 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
                     CONSTRAINT pk_concurrency_probes PRIMARY KEY (id),
                     CONSTRAINT ck_concurrency_probes_version_non_negative CHECK (version >= 0)
                 );
+
+                GRANT USAGE ON SCHEMA barang_test TO barang_test_app;
+                GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA barang_test TO barang_test_app;
             END
             $reset$;
             """;
 
-        await using NpgsqlConnection connection = new(ConnectionString);
+        await using NpgsqlConnection connection = new(_administrationConnectionString);
         await connection.OpenAsync(cancellationToken);
         await using NpgsqlCommand command = new(resetSql, connection);
         await command.ExecuteNonQueryAsync(cancellationToken);
@@ -112,6 +122,31 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
         builder.ApplicationName = "BARANG database integration tests";
         builder.IncludeErrorDetail = false;
         return builder.ConnectionString;
+    }
+
+    private static async Task<string> ConfigureApplicationRoleAsync(string administrationConnectionString)
+    {
+        const string roleName = "barang_test_app";
+        string password = $"test-{Guid.NewGuid():N}";
+        await using NpgsqlConnection connection = new(administrationConnectionString);
+        await connection.OpenAsync();
+        await using (NpgsqlCommand create = new("DO $role$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'barang_test_app') THEN CREATE ROLE barang_test_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT; END IF; END $role$;", connection))
+        {
+            await create.ExecuteNonQueryAsync();
+        }
+        string configureSql = $"ALTER ROLE barang_test_app PASSWORD '{password}'; GRANT USAGE ON SCHEMA barang TO barang_test_app; GRANT SELECT ON TABLE barang.__ef_migrations_history TO barang_test_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA barang TO barang_test_app;";
+        await using (NpgsqlCommand configure = new(configureSql, connection))
+        {
+            await configure.ExecuteNonQueryAsync();
+        }
+
+        NpgsqlConnectionStringBuilder application = new(administrationConnectionString)
+        {
+            Username = roleName,
+            Password = password,
+            ApplicationName = "BARANG database integration tests application role"
+        };
+        return application.ConnectionString;
     }
 }
 

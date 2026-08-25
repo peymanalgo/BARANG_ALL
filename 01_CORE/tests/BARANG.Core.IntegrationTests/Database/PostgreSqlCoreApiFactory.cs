@@ -10,5 +10,7 @@ public sealed class PostgreSqlCoreApiFactory(string connectionString) : WebAppli
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:CoreDatabase", connectionString);
         builder.UseSetting("DatabaseAvailability:WaitForAvailability", "false");
+        builder.UseSetting("CompanyResolution:AllowDevelopmentHeader", "true");
+        builder.UseSetting("CompanyResolution:AllowDevelopmentAdministration", "true");
     }
 }

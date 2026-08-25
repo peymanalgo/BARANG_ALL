@@ -37,3 +37,4 @@ These rules are fixed unless an architectural change is explicitly approved.
 - Database objects follow `DATABASE_CONVENTIONS.md`; migrations are Infrastructure-owned and applied as an explicit deployment step under `MIGRATION_STRATEGY.md`, never blindly by every API instance.
 - `/health/live` reports process liveness, `/health/ready` checks PostgreSQL readiness, and `/health` remains the aggregate compatibility endpoint.
 - Application orchestration owns transactions through the focused transaction executor; Domain code never commits or rolls back.
+- The `Organization` module and its layered EF filters, same-company constraints, and transaction-local PostgreSQL RLS establish the multi-company foundation described in `MULTI_COMPANY_FOUNDATION.md`.

@@ -24,6 +24,7 @@ The last command is development rollback only. Production rollback normally rest
 - CI: provision an isolated PostgreSQL database, apply migrations, run database tests, and discard the database after the job.
 - Staging: run a single controlled migration step before starting the new API version; block deployment on failure.
 - Production/VPS: back up before risky changes, stop or gate incompatible writers, run one reviewed migration job/command, verify it, then roll out API instances. API replicas must never race to migrate.
+- Use a privileged migration owner only for the controlled migration step. Provision the API runtime as a separate least-privilege, non-superuser role without `BYPASSRLS`, grant required schema/table privileges, and verify RLS before starting API instances.
 
 Destructive or long-running migrations require explicit review, a tested backup/restore plan, compatibility analysis, and a rollback/forward-fix decision. Migration failure blocks deployment.
 

@@ -32,7 +32,7 @@ public sealed class DatabaseFoundationTests(PostgreSqlDatabaseFixture database)
         string[] pending = (await context.Database.GetPendingMigrationsAsync(
             TestContext.Current.CancellationToken)).ToArray();
 
-        Assert.Single(migrations);
+        Assert.Equal(2, migrations.Length);
         Assert.Equal(migrations, applied);
         Assert.Empty(pending);
         Assert.EndsWith("_CreateBarangSchema", migrations[0], StringComparison.Ordinal);
@@ -87,7 +87,7 @@ public sealed class DatabaseFoundationTests(PostgreSqlDatabaseFixture database)
     {
         await database.ResetAsync(TestContext.Current.CancellationToken);
         await using CoreDbContext context = database.CreateCoreDbContext();
-        EfTransactionExecutor executor = new(context);
+        EfTransactionExecutor executor = new(context, database.CompanyContext);
         Guid id = Guid.NewGuid();
 
         Result result = await executor.ExecuteAsync(
@@ -109,7 +109,7 @@ public sealed class DatabaseFoundationTests(PostgreSqlDatabaseFixture database)
     {
         await database.ResetAsync(TestContext.Current.CancellationToken);
         await using CoreDbContext context = database.CreateCoreDbContext();
-        EfTransactionExecutor executor = new(context);
+        EfTransactionExecutor executor = new(context, database.CompanyContext);
         Guid id = Guid.NewGuid();
 
         Result result = await executor.ExecuteAsync(
@@ -131,7 +131,7 @@ public sealed class DatabaseFoundationTests(PostgreSqlDatabaseFixture database)
     {
         await database.ResetAsync(TestContext.Current.CancellationToken);
         await using CoreDbContext context = database.CreateCoreDbContext();
-        EfTransactionExecutor executor = new(context);
+        EfTransactionExecutor executor = new(context, database.CompanyContext);
         Guid id = Guid.NewGuid();
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -153,7 +153,7 @@ public sealed class DatabaseFoundationTests(PostgreSqlDatabaseFixture database)
     {
         await database.ResetAsync(TestContext.Current.CancellationToken);
         await using CoreDbContext context = database.CreateCoreDbContext();
-        EfTransactionExecutor executor = new(context);
+        EfTransactionExecutor executor = new(context, database.CompanyContext);
         using CancellationTokenSource cancellation = new();
         cancellation.Cancel();
 
@@ -184,8 +184,8 @@ public sealed class DatabaseFoundationTests(PostgreSqlDatabaseFixture database)
         await using CoreDbContext context = database.CreateCoreDbContext();
 
         Assert.Equal(0, await database.CountTransactionProbesAsync(TestContext.Current.CancellationToken));
-        Assert.Single(await context.Database.GetAppliedMigrationsAsync(
-            TestContext.Current.CancellationToken));
+        Assert.Equal(2, (await context.Database.GetAppliedMigrationsAsync(
+            TestContext.Current.CancellationToken)).Count());
     }
 
     [Fact]

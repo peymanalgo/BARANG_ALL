@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using BARANG.Core.Application.Abstractions.Companies;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -13,6 +14,13 @@ public sealed class CoreDbContextFactory : IDesignTimeDbContextFactory<CoreDbCon
 
         DbContextOptionsBuilder<CoreDbContext> builder = new();
         builder.UseCorePostgreSql(connectionString);
-        return new CoreDbContext(builder.Options);
+        return new CoreDbContext(builder.Options, UnavailableCompanyContext.Instance);
+    }
+
+    private sealed class UnavailableCompanyContext : ICompanyContext
+    {
+        public static UnavailableCompanyContext Instance { get; } = new();
+        public Guid? CompanyId => null;
+        public bool IsAvailable => false;
     }
 }

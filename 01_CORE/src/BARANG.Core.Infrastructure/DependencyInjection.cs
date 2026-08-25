@@ -4,6 +4,7 @@ using BARANG.Core.Application.Abstractions.Companies;
 using BARANG.Core.Application.Abstractions.Correlation;
 using BARANG.Core.Application.Abstractions.Transactions;
 using BARANG.Core.Infrastructure.Context;
+using BARANG.Core.Application.Organization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,6 +50,8 @@ public static class DependencyInjection
         services.AddSingleton<ICompanyContext>(static provider =>
             provider.GetRequiredService<CompanyContext>());
         services.AddScoped<ITransactionExecutor, EfTransactionExecutor>();
+        services.AddScoped<IOrganizationStore, OrganizationStore>();
+        services.AddScoped<IOrganizationAdministration, OrganizationAdministration>();
 
         return services;
     }

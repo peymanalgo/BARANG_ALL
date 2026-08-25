@@ -18,6 +18,7 @@ This document specializes the PostgreSQL and EF Core rules in `NAMING_CONVENTION
 - Technical metadata uses explicit names such as `created_at`, `created_by_actor_id`, `updated_at`, `updated_by_actor_id`, and `correlation_id` only when the owning model requires them.
 - Future lifecycle fields use `archived_at`/`archived_by_actor_id` or approved `deleted_at`/`deleted_by_actor_id`; physical deletion of operational/history data requires explicit approval.
 - Optimistic concurrency uses C# `long Version` mapped to non-null PostgreSQL `bigint version`, configured with `IsConcurrencyToken()`, and incremented once per successful mutation.
+- Company-owned tables use non-null `company_id`, company-aware keys, EF query filters, and forced PostgreSQL RLS. The API role is a non-superuser; Infrastructure sets `barang.company_id` transaction-locally from validated context.
 
 ## Migrations
 
