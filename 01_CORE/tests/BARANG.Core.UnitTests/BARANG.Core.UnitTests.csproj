@@ -13,5 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/BARANG.Core.Application/BARANG.Core.Application.csproj" />
+    <ProjectReference Include="../../src/BARANG.Core.Infrastructure/BARANG.Core.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

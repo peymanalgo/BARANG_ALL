@@ -1,4 +1,8 @@
 using BARANG.Core.Infrastructure.Persistence;
+using BARANG.Core.Application.Abstractions.Actors;
+using BARANG.Core.Application.Abstractions.Companies;
+using BARANG.Core.Application.Abstractions.Correlation;
+using BARANG.Core.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +30,17 @@ public static class DependencyInjection
                     : context.Database.CanConnectAsync(cancellationToken));
         services.Configure<DatabaseAvailabilityOptions>(configuration.GetSection("DatabaseAvailability"));
         services.AddHostedService<DatabaseAvailabilityService>();
+        services.AddSingleton(TimeProvider.System);
+
+        services.AddSingleton<CorrelationContext>();
+        services.AddSingleton<ICorrelationContext>(static provider =>
+            provider.GetRequiredService<CorrelationContext>());
+        services.AddSingleton<CurrentActorContext>();
+        services.AddSingleton<ICurrentActor>(static provider =>
+            provider.GetRequiredService<CurrentActorContext>());
+        services.AddSingleton<CompanyContext>();
+        services.AddSingleton<ICompanyContext>(static provider =>
+            provider.GetRequiredService<CompanyContext>());
 
         return services;
     }

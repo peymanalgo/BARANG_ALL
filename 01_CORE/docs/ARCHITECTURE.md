@@ -25,3 +25,12 @@ These rules are fixed unless an architectural change is explicitly approved.
 - Future multi-company data is isolated by an explicit company context and enforced consistently at application and persistence boundaries.
 - Prefer configuration over hard coding where behavior legitimately varies by environment or company; stable invariants remain code.
 - Heavy files will use object storage when introduced. PostgreSQL retains authoritative file metadata, ownership, and relationships.
+
+## Cross-cutting foundation
+
+- Expected validation and business failures use the shared provider-neutral `Result`/`Error` model; exceptions are reserved for exceptional domain conditions and technical failures.
+- API requests carry a validated correlation identifier through request-safe context, structured logs, responses, and Problem Details.
+- Canonical business time comes from `TimeProvider` in UTC. Calendar conversion remains a UI/API-boundary concern and never changes persisted meaning.
+- Current actor and company context are provider-neutral Application abstractions. Company-scoped operations must require a validated context rather than trust raw client input.
+- Future sensitive create operations use scoped, expiring idempotency records. Mutable aggregates use explicit optimistic concurrency tokens and never silently overwrite concurrent updates.
+- `CROSS_CUTTING_CONVENTIONS.md` defines the required usage and API mapping conventions.

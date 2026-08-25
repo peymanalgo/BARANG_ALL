@@ -125,6 +125,7 @@ This standard applies to future BARANG source code, APIs, data, infrastructure, 
 - Workflow stage, task, and outcome codes are lowercase kebab-case business terms: `manager-review`, `verify-credit`, `approved`, `rejected`. C# types remain PascalCase. Do not encode localized labels, ordering numbers, or engine/vendor names in stable codes.
 - Audit/business event codes describe completed facts as `<module>.<resource>.<past-tense-event>`, for example `sales.order.created` and `sales.order.archived`. They are stable, English, and independent of UI wording.
 - Error codes use lowercase dot-separated `<module>.<resource>.<condition>`, for example `sales.order.not_found` and `sales.order.invalid_state`. Infrastructure errors use their BARANG capability, not a vendor name. Messages are localized separately and must not be used as identifiers.
+- Optimistic concurrency properties use `Version` in C# and `version` in PostgreSQL. The token is a non-negative `long`/`bigint`, exposed at API boundaries as an opaque concurrency value rather than a localized or provider-specific name.
 
 ## Tests
 

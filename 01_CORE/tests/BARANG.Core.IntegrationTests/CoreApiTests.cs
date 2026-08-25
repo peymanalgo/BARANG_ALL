@@ -8,6 +8,36 @@ namespace BARANG.Core.IntegrationTests;
 public sealed class CoreApiTests(CoreApiFactory factory) : IClassFixture<CoreApiFactory>
 {
     [Fact]
+    public async Task RequestAcceptsSafeCorrelationIdentifier()
+    {
+        using HttpClient client = factory.CreateClient();
+        using HttpRequestMessage request = new(HttpMethod.Get, "/");
+        request.Headers.Add("X-Correlation-ID", "web-request_123");
+
+        using HttpResponseMessage response = await client.SendAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal("web-request_123", response.Headers.GetValues("X-Correlation-ID").Single());
+    }
+
+    [Fact]
+    public async Task RequestReplacesUnsafeCorrelationIdentifier()
+    {
+        using HttpClient client = factory.CreateClient();
+        using HttpRequestMessage request = new(HttpMethod.Get, "/");
+        request.Headers.Add("X-Correlation-ID", "unsafe value with spaces");
+
+        using HttpResponseMessage response = await client.SendAsync(
+            request,
+            TestContext.Current.CancellationToken);
+        string correlationId = response.Headers.GetValues("X-Correlation-ID").Single();
+
+        Assert.Equal(32, correlationId.Length);
+        Assert.DoesNotContain(' ', correlationId);
+    }
+
+    [Fact]
     public async Task HealthReturnsSuccess()
     {
         using HttpClient client = factory.CreateClient();

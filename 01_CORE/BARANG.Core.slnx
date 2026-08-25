@@ -6,6 +6,7 @@
     <Project Path="src/BARANG.Core.Infrastructure/BARANG.Core.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/BARANG.Core.ArchitectureTests/BARANG.Core.ArchitectureTests.csproj" />
     <Project Path="tests/BARANG.Core.IntegrationTests/BARANG.Core.IntegrationTests.csproj" />
     <Project Path="tests/BARANG.Core.UnitTests/BARANG.Core.UnitTests.csproj" />
   </Folder>
