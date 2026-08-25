@@ -1,0 +1,67 @@
+# Build outputs
+**/[Bb]in/
+**/[Oo]bj/
+artifacts/
+publish/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code (keep shared recommendations/settings)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# JetBrains IDEs
+.idea/
+*.sln.iml
+*.DotSettings.user
+
+# Test and coverage results
+TestResults/
+**/TestResults/
+coverage/
+coverage.*
+*.trx
+*.coverage
+*.coveragexml
+
+# Logs and diagnostics
+logs/
+*.log
+*.dmp
+*.stackdump
+
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+secrets.json
+
+# Docker local artifacts
+docker-data/
+.docker/
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# Package artifacts
+*.nupkg
+*.snupkg
+packages/
+
+# OS and temporary files
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
