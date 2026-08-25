@@ -12,4 +12,5 @@
 - Never commit build outputs, test results, logs, or generated artifacts.
 - Keep changes scoped to the requested phase or task.
 - Follow `CROSS_CUTTING_CONVENTIONS.md`: use the shared result/error, correlation, `TimeProvider`, current-actor, and company-context conventions rather than local substitutes.
+- Follow `DATABASE_CONVENTIONS.md` and `MIGRATION_STRATEGY.md`; never auto-migrate from every production API instance or run database tests against a database not explicitly named as a test database.
 - Follow `GIT_WORKFLOW.md`; do not push, tag, rewrite history, or run destructive Git commands unless explicitly instructed.

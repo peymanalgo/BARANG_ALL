@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/BARANG.Core.Api/BARANG.Core.Api.csproj" />
+    <ProjectReference Include="../../src/BARANG.Core.Infrastructure/BARANG.Core.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

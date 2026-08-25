@@ -34,3 +34,6 @@ These rules are fixed unless an architectural change is explicitly approved.
 - Current actor and company context are provider-neutral Application abstractions. Company-scoped operations must require a validated context rather than trust raw client input.
 - Future sensitive create operations use scoped, expiring idempotency records. Mutable aggregates use explicit optimistic concurrency tokens and never silently overwrite concurrent updates.
 - `CROSS_CUTTING_CONVENTIONS.md` defines the required usage and API mapping conventions.
+- Database objects follow `DATABASE_CONVENTIONS.md`; migrations are Infrastructure-owned and applied as an explicit deployment step under `MIGRATION_STRATEGY.md`, never blindly by every API instance.
+- `/health/live` reports process liveness, `/health/ready` checks PostgreSQL readiness, and `/health` remains the aggregate compatibility endpoint.
+- Application orchestration owns transactions through the focused transaction executor; Domain code never commits or rolls back.

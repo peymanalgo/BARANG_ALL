@@ -2,6 +2,7 @@ using BARANG.Core.Application;
 using BARANG.Core.Api.Errors;
 using BARANG.Core.Api.Middleware;
 using BARANG.Core.Infrastructure;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,14 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/", () => Results.Ok(CoreIdentity.Current))
     .WithName("GetCoreIdentity");
 app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = static registration => registration.Tags.Contains("live")
+});
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = static registration => registration.Tags.Contains("ready")
+});
 
 app.Run();
 
