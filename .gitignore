@@ -60,6 +60,12 @@ packages/
 .DS_Store
 Thumbs.db
 Desktop.ini
+$*.docx
+$*.xlsx
+$*.pptx
+~$*.docx
+~$*.xlsx
+~$*.pptx
 *.tmp
 *.temp
 *.bak
