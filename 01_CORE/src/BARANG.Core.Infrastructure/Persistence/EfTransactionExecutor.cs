@@ -4,10 +4,11 @@ using Microsoft.EntityFrameworkCore.Storage;
 using BARANG.Core.Application.Abstractions.Companies;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using BARANG.Core.Application.Abstractions.Actors;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
-public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyContext companyContext) : ITransactionExecutor
+public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyContext companyContext, ICurrentActor currentActor) : ITransactionExecutor
 {
     public async Task<Result> ExecuteAsync(
         Func<CancellationToken, Task<Result>> operation,
@@ -19,7 +20,7 @@ public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyConte
             await dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            await SetCompanyContextAsync(cancellationToken);
+            await SetSecurityContextAsync(cancellationToken);
             Result result = await operation(cancellationToken);
             if (result.IsFailure)
             {
@@ -58,7 +59,7 @@ public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyConte
             await dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            await SetCompanyContextAsync(cancellationToken);
+            await SetSecurityContextAsync(cancellationToken);
             Result<T> result = await operation(cancellationToken);
             if (result.IsFailure)
             {
@@ -87,15 +88,21 @@ public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyConte
         }
     }
 
-    private Task SetCompanyContextAsync(CancellationToken cancellationToken)
+    private async Task SetSecurityContextAsync(CancellationToken cancellationToken)
     {
-        if (!companyContext.IsAvailable || dbContext.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
+        if (dbContext.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        return dbContext.Database.ExecuteSqlInterpolatedAsync(
-            $"SELECT set_config('barang.company_id', {companyContext.RequireCompanyId().ToString()}, true);",
-            cancellationToken);
+        if (Guid.TryParse(currentActor.Actor.UserId, out Guid userId))
+        {
+            await dbContext.Database.ExecuteSqlInterpolatedAsync($"SELECT set_config('barang.user_id', {userId.ToString()}, true);", cancellationToken);
+        }
+
+        if (companyContext.IsAvailable)
+        {
+            await dbContext.Database.ExecuteSqlInterpolatedAsync($"SELECT set_config('barang.company_id', {companyContext.RequireCompanyId().ToString()}, true);", cancellationToken);
+        }
     }
 }

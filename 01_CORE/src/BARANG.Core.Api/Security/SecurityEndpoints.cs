@@ -19,6 +19,9 @@ public static class SecurityEndpoints
         RouteGroupBuilder auth = endpoints.MapGroup("/api/v1/auth");
         auth.MapPost("/login", async (LoginRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.LoginAsync(r.Username, r.Password, ct))).AllowAnonymous();
         auth.MapPost("/logout", async (HttpContext h, ISecurityAdministration s, ISessionTokenService tokens, CancellationToken ct) => { string raw = h.Request.Headers.Authorization.ToString()[7..].Trim(); return Map(await s.LogoutAsync(tokens.Hash(raw), ct)); }).RequireAuthorization();
+        auth.MapGet("/me", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.GetCurrentUserAsync(ct))).RequireAuthorization();
+        auth.MapGet("/me/companies", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.ListMyCompaniesAsync(ct))).RequireAuthorization();
+        auth.MapPost("/me/company", async (CompanySelectionRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.SelectMyCompanyAsync(r.CompanyId, ct))).RequireAuthorization();
         endpoints.MapPost("/api/v1/security/bootstrap", BootstrapAsync).AllowAnonymous();
 
         RouteGroupBuilder users = endpoints.MapGroup("/api/v1/security/users").RequireAuthorization(SecurityPermissions.SecurityUserManage);
@@ -98,6 +101,7 @@ public static class SecurityEndpoints
     }
 }
 public sealed record LoginRequest(string Username, string Password);
+public sealed record CompanySelectionRequest(Guid CompanyId);
 public sealed record BootstrapRequest(Guid CompanyId, string Username, string DisplayName, string? Email, string Password);
 public sealed record CreateUserRequest(string Username, string DisplayName, string? Email, string Password);
 public sealed record UpdateUserRequest(string DisplayName, string? Email, long Version);

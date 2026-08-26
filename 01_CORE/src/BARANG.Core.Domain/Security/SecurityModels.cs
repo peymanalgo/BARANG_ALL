@@ -10,6 +10,9 @@ public static class SecurityErrors
     public static Error InvalidPassword => Error.Validation("security.password.invalid");
     public static Error InvalidCredentials => Error.Authentication("security.login.invalid_credentials");
     public static Error AccessDenied => Error.Authorization("security.access.denied");
+    public static Error UserContextUnavailable => Error.Authentication("security.user_context.unavailable");
+    public static Error CompanyNotAuthorized => Error.Authorization("security.company_access.denied");
+    public static Error CompanyInactive => Error.BusinessRule("security.company.inactive");
     public static Error NotFound => Error.NotFound("security.resource.not_found");
     public static Error Conflict => Error.Conflict("security.resource.conflict");
 }

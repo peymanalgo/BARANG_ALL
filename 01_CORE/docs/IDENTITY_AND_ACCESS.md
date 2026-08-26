@@ -14,6 +14,20 @@ Permissions are a code-defined catalog persisted by migration. Codes are stable 
 
 The selected `X-Company-ID` is a selection request, not proof. Authenticated requests validate active `UserCompany` access before establishing `CompanyContext`; Infrastructure then sets transaction-local PostgreSQL RLS context. Anonymous header selection remains Development/Testing-only for bootstrap/test compatibility and is rejected in Production.
 
+## Authenticated self-service context
+
+Ordinary authenticated internal users use these endpoints without administrative permissions:
+
+- `GET /api/v1/auth/me` returns the caller's safe profile, the request's validated current company (when `X-Company-ID` was supplied), and effective role codes for that company. It never returns credential or token material.
+- `GET /api/v1/auth/me/companies` returns only the caller's currently effective memberships whose companies are active, with `companyId`, `code`, and `displayName`.
+- `POST /api/v1/auth/me/company` accepts `{ "companyId": "..." }`, validates current effective membership and company activity, and returns the selected company plus effective role codes.
+
+Company selection is deliberately stateless. The opaque session remains user-bound, and the client sends the selected value as `X-Company-ID` on later company-scoped requests. Every such request repeats server-side active-company and effective-membership validation before `CompanyContext` is established. The selection response is confirmation, not a credential, and a raw company identifier never grants access.
+
+After login, one returned company can be selected immediately; multiple companies require an explicit client choice. An empty company list is the safe zero-company state: login remains valid, but company-scoped work is unavailable. The model has no default-company concept, so none is inferred.
+
+To support self-service enumeration while retaining forced RLS, Infrastructure sets `barang.user_id` transaction-locally from the authenticated actor. Narrow SELECT-only policies allow a user to read only their own `user_companies` and `user_roles` rows across company scopes. Existing company policies remain responsible for writes and company-scoped access. `barang.company_id` is still set only from validated `CompanyContext`; both settings are transaction-local and therefore clear before a pooled connection is reused. The Backoffice should obtain `/auth/me/companies`, validate a choice through `/auth/me/company`, and then send that selected ID in `X-Company-ID`.
+
 ## Bootstrap and administration
 
 `POST /api/v1/security/bootstrap` works once, only while no users exist, and requires `X-Bootstrap-Secret` matching `SecurityBootstrap:Secret` of at least 24 characters. The secret comes from environment/secret configuration, has no source default, and is compared in fixed time. Bootstrap creates one internal administrator, company access, the system administrator role, all catalog permissions, and an audit event. Remove/disable the secret immediately afterward.

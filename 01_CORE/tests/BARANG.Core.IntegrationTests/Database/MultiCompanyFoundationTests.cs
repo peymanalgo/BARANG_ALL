@@ -4,6 +4,7 @@ using BARANG.Core.Application.Organization;
 using BARANG.Core.Domain.Common;
 using BARANG.Core.Domain.Organization;
 using BARANG.Core.Infrastructure.Persistence;
+using BARANG.Core.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Xunit;
@@ -136,7 +137,7 @@ public sealed class MultiCompanyFoundationTests(PostgreSqlDatabaseFixture databa
         return new(branch, setting, unit, warehouse);
     }
 
-    private OrganizationAdministration CreateService(CoreDbContext context) => new(new OrganizationStore(context), new EfTransactionExecutor(context, database.CompanyContext), database.CompanyContext, TimeProvider.System);
+    private OrganizationAdministration CreateService(CoreDbContext context) => new(new OrganizationStore(context), new EfTransactionExecutor(context, database.CompanyContext, new CurrentActorContext()), database.CompanyContext, TimeProvider.System);
     private static async Task SetCompanyAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid companyId) { await using NpgsqlCommand command = new("SELECT set_config('barang.company_id', @company_id, true);", connection, transaction); command.Parameters.AddWithValue("company_id", companyId.ToString()); await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken); }
     private static async Task<long> CountBranchAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid branchId) { await using NpgsqlCommand command = new("SELECT count(*) FROM barang.branches WHERE id = @id;", connection, transaction); command.Parameters.AddWithValue("id", branchId); return Convert.ToInt64(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken), System.Globalization.CultureInfo.InvariantCulture); }
     private static async Task<long> CountAllBranchesAsync(NpgsqlConnection connection, NpgsqlTransaction transaction) { await using NpgsqlCommand command = new("SELECT count(*) FROM barang.branches;", connection, transaction); return Convert.ToInt64(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken), System.Globalization.CultureInfo.InvariantCulture); }

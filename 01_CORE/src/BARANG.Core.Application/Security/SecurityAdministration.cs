@@ -42,10 +42,40 @@ public sealed class SecurityAdministration(ISecurityStore store, IPasswordCreden
         return await transactions.ExecuteAsync(_ => { (string raw, string hash) = tokens.Create(); DateTimeOffset expires = time.GetUtcNow().AddMinutes(30); store.Add(AuthenticationSession.Create(user.Id, hash, time.GetUtcNow(), expires)); Audit("security.login.succeeded", "user", user.Id); return Task.FromResult(Result.Success(new LoginResult(raw, expires, View(user)))); }, ct);
     }
     public Task<Result> LogoutAsync(string tokenHash, CancellationToken ct) => transactions.ExecuteAsync(async token => { AuthenticationSession? session = await store.FindSessionAsync(tokenHash, time.GetUtcNow(), token); if (session is null) return Result.Failure(SecurityErrors.NotFound); session.Revoke(time.GetUtcNow()); return Result.Success(); }, ct);
+    public Task<Result<CurrentUserView>> GetCurrentUserAsync(CancellationToken ct) => transactions.ExecuteAsync(async token =>
+    {
+        if (!TryGetCurrentUserId(out Guid userId)) return Result.Failure<CurrentUserView>(SecurityErrors.UserContextUnavailable);
+        ApplicationUser? user = await store.FindUserAsync(userId, token);
+        if (user is not { IsActive: true }) return Result.Failure<CurrentUserView>(SecurityErrors.UserContextUnavailable);
+        Guid? companyId = company.CompanyId;
+        IReadOnlyList<string> roles = companyId is { } selected ? await store.ListEffectiveRoleCodesAsync(userId, selected, time.GetUtcNow(), token) : [];
+        return Result.Success(new CurrentUserView(user.Id, user.Username, user.DisplayName, user.AccountState, companyId, roles));
+    }, ct);
+    public Task<Result<IReadOnlyList<MyCompanyView>>> ListMyCompaniesAsync(CancellationToken ct) => transactions.ExecuteAsync(async token =>
+    {
+        if (!TryGetCurrentUserId(out Guid userId)) return Result.Failure<IReadOnlyList<MyCompanyView>>(SecurityErrors.UserContextUnavailable);
+        IReadOnlyList<MyCompanyView> companies = await store.ListEffectiveCompaniesAsync(userId, time.GetUtcNow(), token);
+        return Result.Success(companies);
+    }, ct);
+    public Task<Result<CompanySelectionView>> SelectMyCompanyAsync(Guid companyId, CancellationToken ct) => transactions.ExecuteAsync(async token =>
+    {
+        if (!TryGetCurrentUserId(out Guid userId)) return Result.Failure<CompanySelectionView>(SecurityErrors.UserContextUnavailable);
+        DateTimeOffset now = time.GetUtcNow();
+        if (!await store.HasEffectiveCompanyAccessAsync(userId, companyId, now, token)) return Result.Failure<CompanySelectionView>(SecurityErrors.CompanyNotAuthorized);
+        if (!await store.CompanyIsActiveAsync(companyId, token)) return Result.Failure<CompanySelectionView>(SecurityErrors.CompanyInactive);
+        MyCompanyView selected = (await store.FindEffectiveCompanyAsync(userId, companyId, now, token))!;
+        IReadOnlyList<string> roles = await store.ListEffectiveRoleCodesAsync(userId, companyId, now, token);
+        return Result.Success(new CompanySelectionView(selected.CompanyId, selected.Code, selected.DisplayName, roles));
+    }, ct);
     public Task<Result<UserView>> BootstrapAsync(Guid companyId, CreateUserCommand command, CancellationToken ct) => transactions.ExecuteAsync(async token => { if (await store.AnyUsersAsync(token)) return Result.Failure<UserView>(SecurityErrors.Conflict); Result<string> hash = passwords.HashPassword(command.Password); if (hash.IsFailure) return Result.Failure<UserView>(hash.Error); ApplicationUser user = ApplicationUser.Create(Guid.NewGuid(), command.Username, command.DisplayName, command.Email, hash.Value, time.GetUtcNow()).Value; Role role = Role.Create(Guid.NewGuid(), "system.administrator", "System administrator", true, time.GetUtcNow()).Value; store.Add(user); store.Add(role); foreach (Permission permission in await store.ListPermissionsAsync(token)) store.Add(RolePermission.Create(role.Id, permission.Id, user.Id, time.GetUtcNow())); store.Add(UserCompany.Create(user.Id, companyId, time.GetUtcNow(), null, user.Id, time.GetUtcNow()).Value); store.Add(UserRole.Create(user.Id, role.Id, companyId, time.GetUtcNow(), null, user.Id, time.GetUtcNow()).Value); Audit("security.bootstrap.completed", "user", user.Id, companyId); return Result.Success(View(user)); }, ct);
     public Task<Result> AuthorizeAsync(string permissionCode, CancellationToken ct) { if (!actor.Actor.IsAuthenticated || !Guid.TryParse(actor.Actor.UserId, out Guid userId)) return Task.FromResult(Result.Failure(Error.Authentication("security.authentication.required"))); if (!company.IsAvailable) return Task.FromResult(Result.Failure(SecurityErrors.AccessDenied)); return transactions.ExecuteAsync(async token => await store.UserHasPermissionAsync(userId, company.RequireCompanyId(), permissionCode, time.GetUtcNow(), token) ? Result.Success() : Result.Failure(SecurityErrors.AccessDenied), ct); }
     private void Audit(string code, string targetType, Guid? target, Guid? companyId = null) => store.Add(SecurityAuditEvent.Create(code, ActorId(), targetType, target, companyId ?? company.CompanyId, time.GetUtcNow(), correlation.CorrelationId, actor.Actor.SourceChannel.ToString()));
     private Guid? ActorId() => Guid.TryParse(actor.Actor.UserId, out Guid id) ? id : null;
+    private bool TryGetCurrentUserId(out Guid userId)
+    {
+        userId = Guid.Empty;
+        return actor.Actor.IsAuthenticated && Guid.TryParse(actor.Actor.UserId, out userId);
+    }
     private Task<Result<UserView>> ChangeUser(Guid id, long version, Func<ApplicationUser, Result> change, string code, CancellationToken ct) => transactions.ExecuteAsync(async token => { ApplicationUser? user = await store.FindUserAsync(id, token); if (user is null) return Result.Failure<UserView>(SecurityErrors.NotFound); if (user.Version != version) return Result.Failure<UserView>(Error.Concurrency("security.user.concurrency")); Result result = change(user); if (result.IsFailure) return Result.Failure<UserView>(result.Error); Audit(code, "user", id); return Result.Success(View(user)); }, ct);
     private Task<Result<RoleView>> ChangeRole(Guid id, long version, Func<Role, Result> change, string code, CancellationToken ct) => transactions.ExecuteAsync(async token => { Role? role = await store.FindRoleAsync(id, token); if (role is null) return Result.Failure<RoleView>(SecurityErrors.NotFound); if (role.Version != version) return Result.Failure<RoleView>(Error.Concurrency("security.role.concurrency")); Result result = change(role); if (result.IsFailure) return Result.Failure<RoleView>(result.Error); Audit(code, "role", id); return Result.Success(View(role)); }, ct);
     private static Result<TView> Found<T, TView>(T? value, Func<T, TView> map) where T : class => value is null ? Result.Failure<TView>(SecurityErrors.NotFound) : Result.Success(map(value));
