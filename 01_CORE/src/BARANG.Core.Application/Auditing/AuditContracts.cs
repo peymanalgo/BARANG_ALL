@@ -50,6 +50,27 @@ public static class AuditActions
     public const string CustomerAddressUpdated = "customer.address.updated";
     public const string CustomerAddressActivated = "customer.address.activated";
     public const string CustomerAddressDeactivated = "customer.address.deactivated";
+    public const string ProductCreated = "product.created";
+    public const string ProductUpdated = "product.updated";
+    public const string ProductActivated = "product.activated";
+    public const string ProductDeactivated = "product.deactivated";
+    public const string ProductVariantCreated = "product.variant.created";
+    public const string ProductVariantUpdated = "product.variant.updated";
+    public const string ProductVariantActivated = "product.variant.activated";
+    public const string ProductVariantDeactivated = "product.variant.deactivated";
+    public const string SupplierCreated = "supplier.created";
+    public const string SupplierUpdated = "supplier.updated";
+    public const string SupplierActivated = "supplier.activated";
+    public const string SupplierDeactivated = "supplier.deactivated";
+    public const string SupplierProductCreated = "supplier.product.created";
+    public const string SupplierProductUpdated = "supplier.product.updated";
+    public const string SupplierProductActivated = "supplier.product.activated";
+    public const string SupplierProductDeactivated = "supplier.product.deactivated";
+    public const string EquipmentCreated = "equipment.created";
+    public const string EquipmentUpdated = "equipment.updated";
+    public const string EquipmentActivated = "equipment.activated";
+    public const string EquipmentDeactivated = "equipment.deactivated";
+    public const string EquipmentStatusChanged = "equipment.status.changed";
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<AuditOutcome>))]

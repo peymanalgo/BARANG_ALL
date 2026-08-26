@@ -14,6 +14,7 @@ using BARANG.Core.Application.Auditing;
 using BARANG.Core.Infrastructure.Auditing;
 using BARANG.Core.Application.Lookups;
 using BARANG.Core.Application.Customers;
+using BARANG.Core.Application.Catalog;
 
 namespace BARANG.Core.Infrastructure;
 
@@ -67,6 +68,8 @@ public static class DependencyInjection
         services.AddScoped<ILookupOptionReader>(p => p.GetRequiredService<LookupAdministration>());
         services.AddScoped<ICustomerStore, CustomerStore>();
         services.AddScoped<ICustomerAdministration, CustomerAdministration>();
+        services.AddScoped<ICatalogStore, CatalogStore>();
+        services.AddScoped<ICatalogAdministration, CatalogAdministration>();
         services.AddSingleton<IPasswordCredentialService, PasswordCredentialService>();
         services.AddSingleton<ISessionTokenService, SessionTokenService>();
         services.AddScoped<ISecurityStore, SecurityStore>();
