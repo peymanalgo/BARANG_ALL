@@ -2,6 +2,7 @@ using System.Diagnostics;
 using BARANG.Core.Application.Abstractions.Actors;
 using BARANG.Core.Application.Abstractions.Companies;
 using BARANG.Core.Application.Abstractions.Correlation;
+using BARANG.Core.Api.Observability;
 
 namespace BARANG.Core.Api.Middleware;
 
@@ -34,18 +35,24 @@ public sealed class RequestLoggingMiddleware(RequestDelegate next, ILogger<Reque
         using IDisposable? scope = logger.BeginScope(properties);
         long startedAt = Stopwatch.GetTimestamp();
 
-        await next(httpContext);
-
-        if (!httpContext.Request.Path.StartsWithSegments("/health"))
+        try
         {
-            double elapsedMilliseconds = Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
-            RequestCompleted(
-                logger,
-                httpContext.Request.Method,
-                httpContext.Request.Path.Value ?? string.Empty,
-                httpContext.Response.StatusCode,
-                elapsedMilliseconds,
-                null);
+            await next(httpContext);
+        }
+        finally
+        {
+            if (!httpContext.Request.Path.StartsWithSegments("/health"))
+            {
+                double elapsedMilliseconds = Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
+                CoreRequestMetrics.Record(httpContext.Request.Method, httpContext.Response.StatusCode, elapsedMilliseconds);
+                RequestCompleted(
+                    logger,
+                    httpContext.Request.Method,
+                    httpContext.Request.Path.Value ?? string.Empty,
+                    httpContext.Response.StatusCode,
+                    elapsedMilliseconds,
+                    null);
+            }
         }
     }
 }

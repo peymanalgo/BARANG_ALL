@@ -2,6 +2,8 @@
 
 These rules are fixed unless an architectural change is explicitly approved.
 
+The reusable durable audit, history, RLS, query, logging, metrics, and retention conventions are defined in [AUDIT_AND_OBSERVABILITY.md](AUDIT_AND_OBSERVABILITY.md). Future modules emit explicit technical events through `IAuditWriter`; they must not add broad entity serialization or bypass company isolation.
+
 ## System shape
 
 - BARANG Core is a modular monolith: one deployable backend with strongly owned internal modules.

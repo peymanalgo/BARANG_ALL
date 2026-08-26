@@ -1,5 +1,7 @@
 # Permanent Codex Instructions
 
+- Audit/history changes must follow `AUDIT_AND_OBSERVABILITY.md`: use centralized event names, explicit sanitized metadata/change sets, the existing transaction boundary, `audit.read`, and PostgreSQL RLS. Never persist credentials, tokens, authorization headers, or secret-bearing request bodies.
+
 - Inspect the existing architecture and local instructions before editing.
 - Preserve module boundaries and the documented dependency direction.
 - Do not change architecture without explicit approval.

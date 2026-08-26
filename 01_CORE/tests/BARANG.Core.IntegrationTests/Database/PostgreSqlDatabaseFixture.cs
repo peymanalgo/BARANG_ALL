@@ -35,6 +35,9 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
     public CoreDbContext CreateCoreDbContext()
         => CreateCoreDbContext(ConnectionString);
 
+    public CoreDbContext CreateAdministrationCoreDbContext()
+        => CreateCoreDbContext(_administrationConnectionString);
+
     private CoreDbContext CreateCoreDbContext(string connectionString)
     {
         DbContextOptionsBuilder<CoreDbContext> builder = new();
@@ -73,7 +76,8 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
                     ('00000000-0000-0000-0000-000000000004', 'organization.unit.manage', 'organization.unit.manage', 'organization'),
                     ('00000000-0000-0000-0000-000000000005', 'organization.warehouse.manage', 'organization.warehouse.manage', 'organization'),
                     ('00000000-0000-0000-0000-000000000006', 'security.user.manage', 'security.user.manage', 'security'),
-                    ('00000000-0000-0000-0000-000000000007', 'security.role.manage', 'security.role.manage', 'security')
+                    ('00000000-0000-0000-0000-000000000007', 'security.role.manage', 'security.role.manage', 'security'),
+                    ('00000000-0000-0000-0000-000000000008', 'audit.read', 'audit.read', 'audit')
                 ON CONFLICT (id) DO NOTHING;
 
                 DROP SCHEMA IF EXISTS barang_test CASCADE;

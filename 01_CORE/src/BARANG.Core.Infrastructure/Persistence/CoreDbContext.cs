@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using BARANG.Core.Application.Abstractions.Companies;
 using BARANG.Core.Domain.Organization;
 using BARANG.Core.Domain.Security;
+using BARANG.Core.Domain.Auditing;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -22,7 +23,7 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<UserCompany> UserCompanies => Set<UserCompany>();
     public DbSet<AuthenticationSession> AuthenticationSessions => Set<AuthenticationSession>();
-    public DbSet<SecurityAuditEvent> SecurityAuditEvents => Set<SecurityAuditEvent>();
+    public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
     public DbSet<ApiClient> ApiClients => Set<ApiClient>();
     public DbSet<ApiClientCompany> ApiClientCompanies => Set<ApiClientCompany>();
     public DbSet<ApiClientPermission> ApiClientPermissions => Set<ApiClientPermission>();
@@ -43,6 +44,7 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<UserCompany>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<UserRole>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<ApiClientCompany>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<AuditEvent>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }

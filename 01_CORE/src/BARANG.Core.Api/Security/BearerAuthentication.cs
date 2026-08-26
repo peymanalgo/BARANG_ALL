@@ -16,7 +16,7 @@ public sealed class BearerAuthenticationHandler(IOptionsMonitor<AuthenticationSc
         if (!header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(header[7..])) return AuthenticateResult.NoResult();
         ActorContext? actor = await resolver.ResolveAsync(header[7..].Trim(), Context.RequestAborted);
         if (actor is null) return AuthenticateResult.Fail("Invalid credential.");
-        ClaimsIdentity identity = new([new Claim(ClaimTypes.NameIdentifier, actor.UserId!), new Claim(ClaimTypes.Name, actor.ActorId!)], SchemeName);
+        ClaimsIdentity identity = new([new Claim(ClaimTypes.NameIdentifier, actor.UserId!), new Claim(ClaimTypes.Name, actor.ActorUsername ?? actor.ActorId!)], SchemeName);
         return AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName));
     }
 }

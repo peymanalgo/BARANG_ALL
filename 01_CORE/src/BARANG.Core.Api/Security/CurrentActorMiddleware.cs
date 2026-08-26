@@ -11,7 +11,7 @@ public sealed class CurrentActorMiddleware(RequestDelegate next)
         string? userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (context.User.Identity?.IsAuthenticated == true && Guid.TryParse(userId, out Guid id))
         {
-            using IDisposable scope = currentActor.BeginScope(new ActorContext(id.ToString(), ActorType.InternalUser, true, SourceChannel.Backoffice, id.ToString()));
+            using IDisposable scope = currentActor.BeginScope(new ActorContext(id.ToString(), ActorType.InternalUser, true, SourceChannel.Backoffice, id.ToString(), actorUsername: context.User.Identity?.Name));
             await next(context);
             return;
         }

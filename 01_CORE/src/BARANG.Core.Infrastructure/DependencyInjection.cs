@@ -10,6 +10,8 @@ using BARANG.Core.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using BARANG.Core.Application.Auditing;
+using BARANG.Core.Infrastructure.Auditing;
 
 namespace BARANG.Core.Infrastructure;
 
@@ -52,6 +54,9 @@ public static class DependencyInjection
         services.AddSingleton<ICompanyContext>(static provider =>
             provider.GetRequiredService<CompanyContext>());
         services.AddScoped<ITransactionExecutor, EfTransactionExecutor>();
+        services.AddSingleton<IAuditRequestContext, NullAuditRequestContext>();
+        services.AddScoped<IAuditWriter, AuditWriter>();
+        services.AddScoped<IAuditReader, AuditReader>();
         services.AddScoped<IOrganizationStore, OrganizationStore>();
         services.AddScoped<IOrganizationAdministration, OrganizationAdministration>();
         services.AddSingleton<IPasswordCredentialService, PasswordCredentialService>();

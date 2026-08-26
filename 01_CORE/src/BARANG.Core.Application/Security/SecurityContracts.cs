@@ -19,7 +19,7 @@ public interface IPasswordCredentialService { Result<string> HashPassword(string
 public interface ISessionTokenService { (string Token, string Hash) Create(); string Hash(string token); }
 public interface ISecurityStore
 {
-    void Add(ApplicationUser value); void Add(Role value); void Add(RolePermission value); void Add(UserCompany value); void Add(UserRole value); void Add(AuthenticationSession value); void Add(SecurityAuditEvent value);
+    void Add(ApplicationUser value); void Add(Role value); void Add(RolePermission value); void Add(UserCompany value); void Add(UserRole value); void Add(AuthenticationSession value);
     Task<ApplicationUser?> FindUserAsync(Guid id, CancellationToken ct); Task<ApplicationUser?> FindUserByUsernameAsync(string username, CancellationToken ct); Task<IReadOnlyList<ApplicationUser>> ListUsersAsync(CancellationToken ct); Task<bool> UsernameExistsAsync(string username, CancellationToken ct);
     Task<Role?> FindRoleAsync(Guid id, CancellationToken ct); Task<IReadOnlyList<Role>> ListRolesAsync(CancellationToken ct); Task<bool> RoleCodeExistsAsync(string code, CancellationToken ct);
     Task<Permission?> FindPermissionAsync(Guid id, CancellationToken ct); Task<IReadOnlyList<Permission>> ListPermissionsAsync(CancellationToken ct); Task<IReadOnlyList<Permission>> ListRolePermissionsAsync(Guid roleId, CancellationToken ct);

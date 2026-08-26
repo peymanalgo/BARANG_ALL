@@ -8,6 +8,8 @@ using BARANG.Core.Api.Security;
 using BARANG.Core.Domain.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using BARANG.Core.Api.Auditing;
+using BARANG.Core.Application.Auditing;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +30,8 @@ builder.Services.AddAuthorization(options =>
     foreach (string permission in SecurityPermissions.All) options.AddPolicy(permission, policy => policy.RequireAuthenticatedUser().AddRequirements(new PermissionRequirement(permission)));
 });
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAuditRequestContext, HttpAuditRequestContext>();
 
 WebApplication app = builder.Build();
 
@@ -57,6 +61,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 });
 app.MapOrganizationEndpoints();
 app.MapSecurityEndpoints();
+app.MapAuditEndpoints();
 
 app.Run();
 

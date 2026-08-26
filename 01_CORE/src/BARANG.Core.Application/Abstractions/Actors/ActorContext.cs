@@ -11,7 +11,8 @@ public sealed class ActorContext
         SourceChannel sourceChannel,
         string? userId = null,
         string? apiClientId = null,
-        IEnumerable<string>? roleCodes = null)
+        IEnumerable<string>? roleCodes = null,
+        string? actorUsername = null)
     {
         if (isAuthenticated && string.IsNullOrWhiteSpace(actorId))
         {
@@ -36,6 +37,7 @@ public sealed class ActorContext
         UserId = userId;
         ApiClientId = apiClientId;
         RoleCodes = new ReadOnlyCollection<string>(roles);
+        ActorUsername = actorUsername;
     }
 
     public static ActorContext Anonymous { get; } =
@@ -54,6 +56,8 @@ public sealed class ActorContext
     public IReadOnlyCollection<string> RoleCodes { get; }
 
     public bool IsAuthenticated { get; }
+
+    public string? ActorUsername { get; }
 
     private static bool IsTechnicalCode(string value) => value.All(static character =>
         character is >= 'a' and <= 'z'
