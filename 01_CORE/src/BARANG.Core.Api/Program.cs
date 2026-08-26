@@ -9,6 +9,7 @@ using BARANG.Core.Domain.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using BARANG.Core.Api.Auditing;
+using BARANG.Core.Api.Lookups;
 using BARANG.Core.Application.Auditing;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -62,6 +63,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 app.MapOrganizationEndpoints();
 app.MapSecurityEndpoints();
 app.MapAuditEndpoints();
+app.MapLookupEndpoints();
 
 app.Run();
 

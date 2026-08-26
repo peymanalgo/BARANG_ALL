@@ -1,6 +1,7 @@
 # Permanent Codex Instructions
 
 - Audit/history changes must follow `AUDIT_AND_OBSERVABILITY.md`: use centralized event names, explicit sanitized metadata/change sets, the existing transaction boundary, `audit.read`, and PostgreSQL RLS. Never persist credentials, tokens, authorization headers, or secret-bearing request bodies.
+- Lookup/master-data changes must follow `LOOKUPS_AND_MASTER_DATA.md`: immutable technical codes, normalized translations, deterministic scope, active/inactive lifecycle, transactionally required audit, and company RLS. Do not add business catalogs or hard-delete lookup rows casually.
 
 - Inspect the existing architecture and local instructions before editing.
 - Preserve module boundaries and the documented dependency direction.

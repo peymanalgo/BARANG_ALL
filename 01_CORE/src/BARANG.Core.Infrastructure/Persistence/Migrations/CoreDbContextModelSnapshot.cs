@@ -138,6 +138,198 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("audit_events", "barang");
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Lookups.LookupType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AllowCustomValues")
+                        .HasColumnType("boolean")
+                        .HasColumnName("allow_custom_values");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("display_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_system");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("scope");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lookup_types");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("uq_lookup_types_code");
+
+                    b.HasIndex("CompanyId", "IsActive")
+                        .HasDatabaseName("ix_lookup_types_company_id_is_active");
+
+                    b.ToTable("lookup_types", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_lookup_types_scope_company", "(scope = 'Global' AND company_id IS NULL) OR (scope = 'Company' AND company_id IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_lookup_types_version_positive", "version > 0");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Lookups.LookupValue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_system");
+
+                    b.Property<Guid>("LookupTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lookup_type_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lookup_values");
+
+                    b.HasIndex("LookupTypeId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("uq_lookup_values_lookup_type_id_code");
+
+                    b.HasIndex("CompanyId", "LookupTypeId", "IsActive", "DisplayOrder")
+                        .HasDatabaseName("ix_lookup_values_options");
+
+                    b.ToTable("lookup_values", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_lookup_values_version_positive", "version > 0");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Lookups.LookupValueTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Culture")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("culture");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("display_name");
+
+                    b.Property<Guid>("LookupValueId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lookup_value_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lookup_value_translations");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_lookup_value_translations_company_id");
+
+                    b.HasIndex("LookupValueId", "Culture")
+                        .IsUnique()
+                        .HasDatabaseName("uq_lookup_value_translations_value_culture");
+
+                    b.ToTable("lookup_value_translations", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_lookup_value_translations_version_positive", "version > 0");
+                        });
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Organization.Branch", b =>
                 {
                     b.Property<Guid>("Id")
@@ -748,6 +940,20 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                             Code = "audit.read",
                             Module = "audit",
                             TechnicalDescription = "audit.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000009"),
+                            Code = "lookup.read",
+                            Module = "lookup",
+                            TechnicalDescription = "lookup.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000010"),
+                            Code = "lookup.manage",
+                            Module = "lookup",
+                            TechnicalDescription = "lookup.manage"
                         });
                 });
 
@@ -943,6 +1149,47 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Lookups.LookupType", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lookup_types_companies_company_id");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Lookups.LookupValue", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lookup_values_companies_company_id");
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupType", null)
+                        .WithMany()
+                        .HasForeignKey("LookupTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_lookup_values_lookup_types_lookup_type_id");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Lookups.LookupValueTranslation", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lookup_value_translations_companies_company_id");
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany("Translations")
+                        .HasForeignKey("LookupValueId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_lookup_value_translations_lookup_values_lookup_value_id");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Organization.Branch", b =>
                 {
                     b.HasOne("BARANG.Core.Domain.Organization.Company", null)
@@ -1104,6 +1351,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_user_roles_application_users_user_id");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Lookups.LookupValue", b =>
+                {
+                    b.Navigation("Translations");
                 });
 #pragma warning restore 612, 618
         }

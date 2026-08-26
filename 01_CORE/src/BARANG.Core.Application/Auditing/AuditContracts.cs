@@ -29,6 +29,15 @@ public static class AuditActions
     public const string BootstrapCompleted = "security.bootstrap.completed";
     public const string ConfigurationChanged = "system.configuration.changed";
     public const string OperationFailed = "system.operation.failed";
+    public const string LookupTypeCreated = "lookup.type.created";
+    public const string LookupTypeUpdated = "lookup.type.updated";
+    public const string LookupTypeActivated = "lookup.type.activated";
+    public const string LookupTypeDeactivated = "lookup.type.deactivated";
+    public const string LookupValueCreated = "lookup.value.created";
+    public const string LookupValueUpdated = "lookup.value.updated";
+    public const string LookupValueActivated = "lookup.value.activated";
+    public const string LookupValueDeactivated = "lookup.value.deactivated";
+    public const string LookupTranslationUpdated = "lookup.translation.updated";
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<AuditOutcome>))]

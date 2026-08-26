@@ -3,6 +3,7 @@ using BARANG.Core.Application.Abstractions.Companies;
 using BARANG.Core.Domain.Organization;
 using BARANG.Core.Domain.Security;
 using BARANG.Core.Domain.Auditing;
+using BARANG.Core.Domain.Lookups;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -27,6 +28,9 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<ApiClient> ApiClients => Set<ApiClient>();
     public DbSet<ApiClientCompany> ApiClientCompanies => Set<ApiClientCompany>();
     public DbSet<ApiClientPermission> ApiClientPermissions => Set<ApiClientPermission>();
+    public DbSet<LookupType> LookupTypes => Set<LookupType>();
+    public DbSet<LookupValue> LookupValues => Set<LookupValue>();
+    public DbSet<LookupValueTranslation> LookupValueTranslations => Set<LookupValueTranslation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,6 +49,9 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<UserRole>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<ApiClientCompany>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<AuditEvent>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<LookupType>().HasQueryFilter(entity => entity.CompanyId == null || companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<LookupValue>().HasQueryFilter(entity => entity.CompanyId == null || companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<LookupValueTranslation>().HasQueryFilter(entity => entity.CompanyId == null || companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }

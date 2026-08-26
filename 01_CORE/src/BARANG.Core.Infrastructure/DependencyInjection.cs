@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using BARANG.Core.Application.Auditing;
 using BARANG.Core.Infrastructure.Auditing;
+using BARANG.Core.Application.Lookups;
 
 namespace BARANG.Core.Infrastructure;
 
@@ -59,6 +60,10 @@ public static class DependencyInjection
         services.AddScoped<IAuditReader, AuditReader>();
         services.AddScoped<IOrganizationStore, OrganizationStore>();
         services.AddScoped<IOrganizationAdministration, OrganizationAdministration>();
+        services.AddScoped<ILookupStore, LookupStore>();
+        services.AddScoped<LookupAdministration>();
+        services.AddScoped<ILookupAdministration>(p => p.GetRequiredService<LookupAdministration>());
+        services.AddScoped<ILookupOptionReader>(p => p.GetRequiredService<LookupAdministration>());
         services.AddSingleton<IPasswordCredentialService, PasswordCredentialService>();
         services.AddSingleton<ISessionTokenService, SessionTokenService>();
         services.AddScoped<ISecurityStore, SecurityStore>();
