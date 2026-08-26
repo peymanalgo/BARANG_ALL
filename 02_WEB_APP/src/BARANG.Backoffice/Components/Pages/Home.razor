@@ -1,0 +1,9 @@
+@page "/"
+@attribute [Authorize(Policy = AuthPolicies.CompanySelected)]
+@inject IStringLocalizer<AppStrings> L
+<PageTitle>@L["Home"] · BARANG</PageTitle>
+<section class="welcome-card">
+    <span class="eyebrow">BARANG · @L["Backoffice"]</span>
+    <h1>@L["Welcome"]</h1>
+    <p>@L["WelcomeMessage"]</p>
+</section>

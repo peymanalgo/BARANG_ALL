@@ -1,0 +1,29 @@
+@page "/login"
+@layout EmptyLayout
+@attribute [AllowAnonymous]
+@inject IStringLocalizer<AppStrings> L
+@inject AuthenticationStateProvider AuthState
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.WebUtilities
+<PageTitle>@L["Login"] · BARANG</PageTitle>
+<main class="login-page">
+    <div class="login-overlay"></div>
+    <section class="login-panel" aria-labelledby="login-title">
+        <div class="login-top"><a class="brand login-brand" href="/login"><span class="brand-mark">B</span><span><strong>BARANG</strong><small>@L["Backoffice"]</small></span></a><LanguageSwitcher /></div>
+        <div class="login-copy"><span class="eyebrow">@L["SecureWorkspace"]</span><h1 id="login-title">@L["Login"]</h1><p>@L["LoginDescription"]</p></div>
+        @if (!string.IsNullOrEmpty(ErrorText)) { <div class="alert" role="alert">@ErrorText</div> }
+        <form class="login-form submitting-form" method="post" action="/auth/login">
+            <AntiforgeryToken /><input type="hidden" name="returnUrl" value="@ReturnUrl" />
+            <div class="field"><label for="username">@L["Username"]</label><input id="username" name="username" autocomplete="username" required autofocus /></div>
+            <div class="field"><label for="password">@L["Password"]</label><div class="password-wrap"><input id="password" name="password" type="password" autocomplete="current-password" required /><button type="button" class="icon-button password-toggle" aria-label="@L["ShowPassword"]" data-show="@L["ShowPassword"]" data-hide="@L["HidePassword"]">◉</button></div></div>
+            <button class="primary-button" type="submit"><span class="normal-label">@L["SignIn"]</span><span class="loading-label">@L["SigningIn"]</span></button>
+        </form>
+        <p class="security-note">@L["SessionSecurityNote"]</p>
+    </section>
+</main>
+@code {
+    [SupplyParameterFromQuery] public string? Message { get; set; }
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+    private string? ErrorText => Message switch { "invalid" => L["InvalidCredentials"].Value, "unavailable" => L["ApiUnavailable"].Value, "validation" => L["ValidationError"].Value, "unauthorized" => L["Unauthorized"].Value, "expired" => L["SessionExpired"].Value, "error" => L["GenericError"].Value, _ => null };
+    protected override async Task OnInitializedAsync() { if ((await AuthState.GetAuthenticationStateAsync()).User.Identity?.IsAuthenticated == true) Navigation.NavigateTo("/", true); }
+}

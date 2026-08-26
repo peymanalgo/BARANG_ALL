@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BARANG.Backoffice/BARANG.Backoffice.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BARANG.Backoffice.Tests/BARANG.Backoffice.Tests.csproj" />
+  </Folder>
+</Solution>

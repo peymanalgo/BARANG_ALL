@@ -1,0 +1,15 @@
+@using System.Globalization
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> L
+<div class="language-switch" aria-label="@L["Language"]">
+    <span class="sr-only">@L["Language"]</span>
+    @foreach (var language in Languages)
+    {
+        <a class="@(Current == language.Code ? "selected" : null)" href="@CultureUrl(language.Code)" hreflang="@language.Code">@language.Label</a>
+    }
+</div>
+@code {
+    private static readonly (string Code, string Label)[] Languages = [("fa", "فا"), ("en", "EN"), ("ar", "عر")];
+    private string Current => LocalePolicy.Resolve(CultureInfo.CurrentUICulture.Name).Code;
+    private string CultureUrl(string code) => $"/culture?culture={code}&returnUrl={Uri.EscapeDataString('/' + Navigation.ToBaseRelativePath(Navigation.Uri))}";
+}
