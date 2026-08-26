@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using BARANG.Core.Api.Auditing;
 using BARANG.Core.Api.Lookups;
+using BARANG.Core.Api.Customers;
 using BARANG.Core.Application.Auditing;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -64,6 +65,7 @@ app.MapOrganizationEndpoints();
 app.MapSecurityEndpoints();
 app.MapAuditEndpoints();
 app.MapLookupEndpoints();
+app.MapCustomerEndpoints();
 
 app.Run();
 

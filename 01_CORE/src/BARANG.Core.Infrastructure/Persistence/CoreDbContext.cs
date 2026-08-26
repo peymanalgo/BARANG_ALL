@@ -4,6 +4,7 @@ using BARANG.Core.Domain.Organization;
 using BARANG.Core.Domain.Security;
 using BARANG.Core.Domain.Auditing;
 using BARANG.Core.Domain.Lookups;
+using BARANG.Core.Domain.Customers;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -31,6 +32,9 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<LookupType> LookupTypes => Set<LookupType>();
     public DbSet<LookupValue> LookupValues => Set<LookupValue>();
     public DbSet<LookupValueTranslation> LookupValueTranslations => Set<LookupValueTranslation>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<CustomerContact> CustomerContacts => Set<CustomerContact>();
+    public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,6 +56,9 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<LookupType>().HasQueryFilter(entity => entity.CompanyId == null || companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<LookupValue>().HasQueryFilter(entity => entity.CompanyId == null || companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<LookupValueTranslation>().HasQueryFilter(entity => entity.CompanyId == null || companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<Customer>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<CustomerContact>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<CustomerAddress>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }

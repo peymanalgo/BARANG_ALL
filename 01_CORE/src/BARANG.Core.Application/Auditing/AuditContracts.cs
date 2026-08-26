@@ -38,6 +38,18 @@ public static class AuditActions
     public const string LookupValueActivated = "lookup.value.activated";
     public const string LookupValueDeactivated = "lookup.value.deactivated";
     public const string LookupTranslationUpdated = "lookup.translation.updated";
+    public const string CustomerCreated = "customer.created";
+    public const string CustomerUpdated = "customer.updated";
+    public const string CustomerActivated = "customer.activated";
+    public const string CustomerDeactivated = "customer.deactivated";
+    public const string CustomerContactCreated = "customer.contact.created";
+    public const string CustomerContactUpdated = "customer.contact.updated";
+    public const string CustomerContactActivated = "customer.contact.activated";
+    public const string CustomerContactDeactivated = "customer.contact.deactivated";
+    public const string CustomerAddressCreated = "customer.address.created";
+    public const string CustomerAddressUpdated = "customer.address.updated";
+    public const string CustomerAddressActivated = "customer.address.activated";
+    public const string CustomerAddressDeactivated = "customer.address.deactivated";
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<AuditOutcome>))]

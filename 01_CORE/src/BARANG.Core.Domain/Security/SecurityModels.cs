@@ -88,7 +88,9 @@ public static class SecurityPermissions
     public const string AuditRead = "audit.read";
     public const string LookupRead = "lookup.read";
     public const string LookupManage = "lookup.manage";
-    public static IReadOnlyList<string> All { get; } = [OrganizationCompanyManage, OrganizationBranchManage, OrganizationSettingsManage, OrganizationUnitManage, OrganizationWarehouseManage, SecurityUserManage, SecurityRoleManage, AuditRead, LookupRead, LookupManage];
+    public const string CustomerRead = "customer.read";
+    public const string CustomerManage = "customer.manage";
+    public static IReadOnlyList<string> All { get; } = [OrganizationCompanyManage, OrganizationBranchManage, OrganizationSettingsManage, OrganizationUnitManage, OrganizationWarehouseManage, SecurityUserManage, SecurityRoleManage, AuditRead, LookupRead, LookupManage, CustomerRead, CustomerManage];
 }
 
 public sealed class RolePermission { private RolePermission() { } public Guid Id { get; private set; } public Guid RoleId { get; private set; } public Guid PermissionId { get; private set; } public DateTimeOffset AssignedAtUtc { get; private set; } public Guid? AssignedByUserId { get; private set; } public static RolePermission Create(Guid roleId, Guid permissionId, Guid? actor, DateTimeOffset now) => new() { Id = Guid.NewGuid(), RoleId = roleId, PermissionId = permissionId, AssignedByUserId = actor, AssignedAtUtc = now }; }

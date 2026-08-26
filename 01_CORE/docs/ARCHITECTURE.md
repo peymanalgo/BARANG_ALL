@@ -42,3 +42,4 @@ The reusable durable audit, history, RLS, query, logging, metrics, and retention
 - The `Organization` module and its layered EF filters, same-company constraints, and transaction-local PostgreSQL RLS establish the multi-company foundation described in `MULTI_COMPANY_FOUNDATION.md`.
 - Internal identity, opaque bearer sessions, permission-based RBAC, security audit events, and authenticated company resolution follow `IDENTITY_AND_ACCESS.md`.
 - Reusable global/company lookup types, localized values, lifecycle, RLS, and option-query conventions follow `LOOKUPS_AND_MASTER_DATA.md`.
+- Company-owned customer aggregates, contacts, addresses, search, lifecycle, privacy, and future order-reference rules follow `CUSTOMER_MANAGEMENT.md`.

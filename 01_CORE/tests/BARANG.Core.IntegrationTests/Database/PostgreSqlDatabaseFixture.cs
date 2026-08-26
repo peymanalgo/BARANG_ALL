@@ -79,7 +79,9 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
                     ('00000000-0000-0000-0000-000000000007', 'security.role.manage', 'security.role.manage', 'security'),
                     ('00000000-0000-0000-0000-000000000008', 'audit.read', 'audit.read', 'audit'),
                     ('00000000-0000-0000-0000-000000000009', 'lookup.read', 'lookup.read', 'lookup'),
-                    ('00000000-0000-0000-0000-000000000010', 'lookup.manage', 'lookup.manage', 'lookup')
+                    ('00000000-0000-0000-0000-000000000010', 'lookup.manage', 'lookup.manage', 'lookup'),
+                    ('00000000-0000-0000-0000-000000000011', 'customer.read', 'customer.read', 'customer'),
+                    ('00000000-0000-0000-0000-000000000012', 'customer.manage', 'customer.manage', 'customer')
                 ON CONFLICT (id) DO NOTHING;
 
                 DROP SCHEMA IF EXISTS barang_test CASCADE;
