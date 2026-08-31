@@ -9,6 +9,8 @@ using BARANG.Core.Infrastructure.Context;
 using BARANG.Core.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using BARANG.Core.Application.Abstractions.Transactions;
+using BARANG.Core.Application.Auditing;
 
 namespace BARANG.Core.Api.Security;
 
@@ -23,6 +25,7 @@ public static class SecurityEndpoints
         auth.MapGet("/me/companies", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.ListMyCompaniesAsync(ct))).RequireAuthorization();
         auth.MapPost("/me/company", async (CompanySelectionRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.SelectMyCompanyAsync(r.CompanyId, ct))).RequireAuthorization();
         endpoints.MapPost("/api/v1/security/bootstrap", BootstrapAsync).AllowAnonymous();
+        endpoints.MapPost("/api/v1/security/development-admin/recover", RecoverDevelopmentAdminAsync).AllowAnonymous();
 
         RouteGroupBuilder users = endpoints.MapGroup("/api/v1/security/users").RequireAuthorization(SecurityPermissions.SecurityUserManage);
         users.MapPost("/", async (CreateUserRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.CreateUserAsync(new(r.Username, r.DisplayName, r.Email, r.Password), ct)));
@@ -60,6 +63,16 @@ public static class SecurityEndpoints
         if (!companyIsActive) return Map(Result.Failure(BARANG.Core.Domain.Organization.OrganizationErrors.NotFound));
         using IDisposable scope = companies.BeginScope(request.CompanyId);
         return Map(await security.BootstrapAsync(request.CompanyId, new(request.Username, request.DisplayName, request.Email, request.Password), ct));
+    }
+    private static async Task<IResult> RecoverDevelopmentAdminAsync(BootstrapRequest request, HttpContext http, IWebHostEnvironment environment, IConfiguration config, CompanyContext companies, CoreDbContext db, IPasswordCredentialService passwords, ITransactionExecutor transactions, IAuditWriter audit, TimeProvider time, CancellationToken ct)
+    {
+        if (!environment.IsDevelopment()) return Results.NotFound(); string configured = config["SecurityBootstrap:Secret"] ?? string.Empty; string supplied = http.Request.Headers["X-Bootstrap-Secret"].ToString(); if (configured.Length < 24 || supplied.Length != configured.Length || !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(supplied), Encoding.UTF8.GetBytes(configured))) return Results.Unauthorized();
+        if (!await db.Companies.AsNoTracking().AnyAsync(x => x.Id == request.CompanyId && x.IsActive, ct)) return Map(Result.Failure(BARANG.Core.Domain.Organization.OrganizationErrors.NotFound)); using IDisposable scope = companies.BeginScope(request.CompanyId);
+        return Map(await transactions.ExecuteAsync(async token =>
+        {
+            Result<string> hash = passwords.HashPassword(request.Password); if (hash.IsFailure) return Result.Failure(hash.Error); string username = request.Username.Trim().ToUpperInvariant(); ApplicationUser? user = await db.ApplicationUsers.SingleOrDefaultAsync(x => x.Username == username, token); if (user is null) { Result<ApplicationUser> created = ApplicationUser.Create(Guid.NewGuid(), username, request.DisplayName, request.Email, hash.Value, time.GetUtcNow()); if (created.IsFailure) return Result.Failure(created.Error); user = created.Value; db.Add(user); } else { user.SetActive(true, time.GetUtcNow()); user.SetPasswordHash(hash.Value, time.GetUtcNow()); foreach (AuthenticationSession session in await db.AuthenticationSessions.Where(x => x.UserId == user.Id && x.RevokedAtUtc == null && x.ExpiresAtUtc > time.GetUtcNow()).ToListAsync(token)) session.Revoke(time.GetUtcNow()); }
+            Role? role = await db.Roles.SingleOrDefaultAsync(x => x.Code == "system.administrator", token); if (role is null) { role = Role.Create(Guid.NewGuid(), "system.administrator", "System administrator", true, time.GetUtcNow()).Value; db.Add(role); } else role.SetActive(true, time.GetUtcNow()); foreach (Permission permission in await db.Permissions.ToListAsync(token)) if (!await db.RolePermissions.AnyAsync(x => x.RoleId == role.Id && x.PermissionId == permission.Id, token)) db.Add(RolePermission.Create(role.Id, permission.Id, user.Id, time.GetUtcNow())); if (!await db.UserCompanies.IgnoreQueryFilters().AnyAsync(x => x.UserId == user.Id && x.CompanyId == request.CompanyId && x.ValidToUtc == null, token)) db.Add(UserCompany.Create(user.Id, request.CompanyId, time.GetUtcNow(), null, user.Id, time.GetUtcNow()).Value); if (!await db.UserRoles.IgnoreQueryFilters().AnyAsync(x => x.UserId == user.Id && x.RoleId == role.Id && x.CompanyId == request.CompanyId && x.ValidToUtc == null, token)) db.Add(UserRole.Create(user.Id, role.Id, request.CompanyId, time.GetUtcNow(), null, user.Id, time.GetUtcNow()).Value); audit.Write(new(AuditActions.BootstrapCompleted, "user", user.Id.ToString(), CompanyId: request.CompanyId, ActorUsername: user.Username, ChangeKind: AuditChangeKind.Modified)); return Result.Success();
+        }, ct));
     }
     private static SecurityResult Map(Result result) => new(result);
     private static SecurityResult<T> Map<T>(Result<T> result) => new(result);

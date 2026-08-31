@@ -74,4 +74,10 @@ public sealed class CoreApiTests(CoreApiFactory factory) : IClassFixture<CoreApi
         using HttpResponseMessage response=await client.SendAsync(request,TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Unauthorized,response.StatusCode);
     }
+
+    [Fact]
+    public async Task DevelopmentAdministratorRecoveryIsHiddenOutsideDevelopment()
+    {
+        using HttpClient client=factory.CreateClient();using HttpRequestMessage request=new(HttpMethod.Post,"/api/v1/security/development-admin/recover"){Content=JsonContent.Create(new{companyId=Guid.NewGuid(),username="recovery-probe",displayName="Probe",password="NotUsedPassword123"})};request.Headers.Add("X-Bootstrap-Secret","not-a-configured-bootstrap-secret");using HttpResponseMessage response=await client.SendAsync(request,TestContext.Current.CancellationToken);Assert.Equal(HttpStatusCode.NotFound,response.StatusCode);
+    }
 }

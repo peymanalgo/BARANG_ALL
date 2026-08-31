@@ -12,7 +12,7 @@ Draft headers, shipping snapshots, items, and print operations are editable with
 
 Each active `OrderItem` has a deterministic line number, positive quantity, and same-company Product/ProductVariant references. The variant must belong to the selected product and both masters must be active for draft selection and submission. Submit copies a controlled typed snapshot: product code/name, variant SKU/display name, size, color, and UOM. Those snapshot columns, not later master values, are submitted historical truth.
 
-`OrderPrintOperation` supports multiple ordered operations per item with technical position/method codes, optional dimensions, and exact same-company `ArtworkVersion` and `FileVersion` references. Logical/current-file pointers are not consumed. The central Phase 10 entity-type vocabulary includes Order, OrderItem, and OrderPrintOperation for future controlled file links; arbitrary entity type strings remain impossible.
+`OrderPrintOperation` supports multiple ordered operations per item with controlled technical position/method codes, optional dimensions, and exact same-company `ArtworkVersion` and `FileVersion` references. The initial closed vocabulary is FRONT/BACK/SLEEVE/OTHER and SCREEN/DTG/HEAT_TRANSFER/EMBROIDERY; it can later migrate to Phase 07 Lookups without changing persisted technical codes. Logical/current-file pointers are not consumed. The central Phase 10 entity-type vocabulary and dual-authorized Order routes support Order, OrderItem, and OrderPrintOperation links; arbitrary entity types and mutable logical-file-only consumption are rejected.
 
 ## Address, sources, and validation
 

@@ -1,6 +1,6 @@
 using BARANG.Core.Domain.Orders;
 using Xunit;
-#pragma warning disable CA1707,CA1305
+#pragma warning disable CA1707,CA1305,CA1861
 
 namespace BARANG.Core.UnitTests;
 public sealed class OrderFoundationTests
@@ -14,8 +14,10 @@ public sealed class OrderFoundationTests
  [Fact]public void Item_requires_positive_quantity_and_removal_is_state_based(){Assert.True(OrderItem.Create(Guid.NewGuid(),Company,Guid.NewGuid(),1,Guid.NewGuid(),Guid.NewGuid(),0,null,Now).IsFailure);var i=OrderItem.Create(Guid.NewGuid(),Company,Guid.NewGuid(),1,Guid.NewGuid(),Guid.NewGuid(),2,null,Now).Value;i.Remove(Now);Assert.False(i.IsActive);Assert.Equal(2,i.Version);}
  [Fact]public void Product_snapshot_freezes_controlled_fields(){var i=OrderItem.Create(Guid.NewGuid(),Company,Guid.NewGuid(),1,Guid.NewGuid(),Guid.NewGuid(),2,null,Now).Value;i.Freeze("P1","Shirt","SKU1","Large blue","L","BLUE","PCS",Now);Assert.Equal("P1",i.SnapshotProductCode);Assert.Equal("SKU1",i.SnapshotVariantSku);Assert.Equal("PCS",i.SnapshotUomCode);}
  [Fact]public void Print_operation_validates_dimensions_and_can_be_state_removed(){Assert.True(OrderPrintOperation.Create(Guid.NewGuid(),Company,Guid.NewGuid(),Guid.NewGuid(),1,"FRONT",null,0,10,null,null,null,Now).IsFailure);var p=OrderPrintOperation.Create(Guid.NewGuid(),Company,Guid.NewGuid(),Guid.NewGuid(),1,"FRONT","SCREEN",10,20,null,null,null,Now).Value;p.Remove(Now);Assert.False(p.IsActive);}
+ [Fact]public void Print_classification_and_status_transitions_are_closed(){Assert.True(OrderPrintOperation.Create(Guid.NewGuid(),Company,Guid.NewGuid(),Guid.NewGuid(),1,"ARBITRARY","UNKNOWN",10,20,null,null,null,Now).IsFailure);Assert.True(OrderStatusTransitionService.CanTransition(OrderStatus.Draft,OrderStatus.Submitted));Assert.False(OrderStatusTransitionService.CanTransition(OrderStatus.Submitted,OrderStatus.Draft));}
  [Fact]public void Shipping_snapshot_uses_date_independent_value_data(){var r=OrderAddressSnapshot.Create(Guid.NewGuid(),Company,Guid.NewGuid(),null,"Receiver","+98912","IR","Tehran","Tehran",null,"Street",null,"123",Now);Assert.True(r.IsSuccess);Assert.Equal("IR",r.Value.CountryCode);Assert.True(r.Value.Update("Changed",null,"IR",null,"Qom",null,"New street",null,null,Now).IsSuccess);Assert.Equal(2,r.Value.Version);}
- [Fact]public void Change_request_is_bounded_and_never_executes_patch(){Assert.True(OrderChangeRequest.Create(Company,Guid.NewGuid(),Actor,"SHIPPING_ADDRESS","fix","{}",Now).IsSuccess);Assert.True(OrderChangeRequest.Create(Company,Guid.NewGuid(),Actor,"SHIPPING_ADDRESS","fix",new string('x',8001),Now).IsFailure);}
+ [Fact]public void Change_request_is_whitelisted_bounded_and_never_executes_patch(){Assert.True(OrderChangeRequest.Create(Company,Guid.NewGuid(),Actor,"SHIPPING_ADDRESS","fix","{}",Now).IsSuccess);Assert.True(OrderChangeRequest.Create(Company,Guid.NewGuid(),Actor,"ARBITRARY_PATCH","fix","{}",Now).IsFailure);Assert.True(OrderChangeRequest.Create(Company,Guid.NewGuid(),Actor,"SHIPPING_ADDRESS","fix",new string('x',8001),Now).IsFailure);}
+ [Fact]public void File_link_entity_vocabulary_is_controlled(){Assert.Equal(new[]{"Artwork","Order","OrderItem","OrderPrintOperation"},Enum.GetNames<BARANG.Core.Domain.Files.FileLinkEntityType>());}
  private static Order Draft()=>Order.CreateDraft(Guid.NewGuid(),Company,Branch,Customer,OrderSource.Internal,null,new(2026,8,31),null,Actor,Now).Value;
 }
 #pragma warning restore CA1707,CA1305
