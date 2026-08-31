@@ -6,7 +6,7 @@ Phase 09 adds company-owned master data only. It deliberately contains no stock,
 
 - `Product` has an immutable normalized company-unique product code, business-entered name, optional description, product-type code, unit-of-measure code, lifecycle state, UTC timestamps, and optimistic version.
 - `ProductVariant` is the future inventory/order SKU. Its immutable normalized SKU is company-unique; barcode is optional and company-unique. Size and color are controlled language-neutral codes. No quantity or price is stored.
-- Product type, size, color, and unit codes are Lookup-compatible technical values. Phase 09 does not seed a business catalog or add an EAV subsystem. Existing Lookup translations provide fa/en/ar labels when catalogs are configured.
+- Product type, size, color, unit of measure, equipment type, and equipment status remain controlled technical codes resolved through the existing Lookup module. Deployments define the catalogs `product.type`, `product.size`, `product.color`, `unit.of.measure`, `equipment.type`, and `equipment.status`; Phase 09 does not seed business-specific values or add an EAV subsystem. Stored codes are language-neutral and immutable on their owning records, while active Lookup values and their fa/en/ar translations provide selectable options and labels. Historical records retain their stored code if a Lookup value is later deactivated.
 - Product inactivity makes variants unavailable from new-use option APIs without changing variant lifecycle flags. Both remain retrievable for history.
 
 ## Suppliers and equipment
