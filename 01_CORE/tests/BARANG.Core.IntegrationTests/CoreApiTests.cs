@@ -62,4 +62,16 @@ public sealed class CoreApiTests(CoreApiFactory factory) : IClassFixture<CoreApi
         Assert.Equal("BARANG Core", identity.Name);
         Assert.Equal("operational", identity.Status);
     }
+
+    [Theory]
+    [InlineData("GET", "/api/v1/orders")]
+    [InlineData("GET", "/api/v1/orders/00000000-0000-0000-0000-000000000001")]
+    [InlineData("POST", "/api/v1/orders")]
+    [InlineData("POST", "/api/v1/orders/00000000-0000-0000-0000-000000000001/submit")]
+    public async Task OrderContractsRejectAnonymousAccess(string method,string uri)
+    {
+        using HttpClient client=factory.CreateClient();using HttpRequestMessage request=new(new HttpMethod(method),uri);if(method=="POST")request.Content=JsonContent.Create(new{});
+        using HttpResponseMessage response=await client.SendAsync(request,TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Unauthorized,response.StatusCode);
+    }
 }

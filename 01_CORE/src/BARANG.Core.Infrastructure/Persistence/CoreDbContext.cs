@@ -7,6 +7,7 @@ using BARANG.Core.Domain.Lookups;
 using BARANG.Core.Domain.Customers;
 using BARANG.Core.Domain.Catalog;
 using BARANG.Core.Domain.Files;
+using BARANG.Core.Domain.Orders;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -51,6 +52,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<FileLink> FileLinks => Set<FileLink>();
     public DbSet<FileProcessingJob> FileProcessingJobs => Set<FileProcessingJob>();
     public DbSet<FileDerivative> FileDerivatives => Set<FileDerivative>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<OrderPrintOperation> OrderPrintOperations => Set<OrderPrintOperation>();
+    public DbSet<OrderAddressSnapshot> OrderAddressSnapshots => Set<OrderAddressSnapshot>();
+    public DbSet<OrderChangeRequest> OrderChangeRequests => Set<OrderChangeRequest>();
+    public DbSet<OrderTimelineEvent> OrderTimelineEvents => Set<OrderTimelineEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -89,6 +96,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<FileLink>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<FileProcessingJob>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<FileDerivative>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<Order>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<OrderItem>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<OrderPrintOperation>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<OrderAddressSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<OrderChangeRequest>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<OrderTimelineEvent>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }

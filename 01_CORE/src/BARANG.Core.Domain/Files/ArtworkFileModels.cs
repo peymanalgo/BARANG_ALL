@@ -26,7 +26,7 @@ public static class FileText
 public enum ArtworkLifecycle { Draft, Active, Archived }
 public enum FileProcessingStatus { Pending, Processing, Succeeded, Failed, NotApplicable }
 public enum FileProcessingJobType { ThumbnailGeneration }
-public enum FileLinkEntityType { Artwork }
+public enum FileLinkEntityType { Artwork, Order, OrderItem, OrderPrintOperation }
 public enum FileLinkPurpose { Source, Attachment, Reference }
 public enum FileDerivativeType { Thumbnail }
 
