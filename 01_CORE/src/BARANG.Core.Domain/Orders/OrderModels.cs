@@ -57,6 +57,7 @@ public sealed class Order
     public Result AttachShipping(Guid id, DateTimeOffset now) { if (Status != OrderStatus.Draft) return Result.Failure(OrderErrors.NotDraft); ShippingAddressSnapshotId = id; Touch(now); return Result.Success(); }
     public Result Submit(string number, DateTimeOffset now) { if (!OrderStatusTransitionService.CanTransition(Status, OrderStatus.Submitted)) return Result.Failure(OrderErrors.InvalidTransition); if (OrderText.Code(number, 40) is null) return Result.Failure(OrderErrors.InvalidData); OrderNumber = number; Status = OrderStatus.Submitted; SubmittedAtUtc = now; Touch(now); return Result.Success(); }
     public Result Cancel(string reasonCode, string? reasonText, Guid actor, DateTimeOffset now) { if (!OrderStatusTransitionService.CanTransition(Status, OrderStatus.Cancelled)) return Result.Failure(OrderErrors.InvalidTransition); string? code = OrderText.Code(reasonCode, 50), text = OrderText.Text(reasonText, 500); if (code is null) return Result.Failure(OrderErrors.CancellationReasonRequired); Status = OrderStatus.Cancelled; CancellationReasonCode = code; CancellationReasonText = text; CancelledByUserId = actor; CancelledAtUtc = now; Touch(now); return Result.Success(); }
+    public Result MarkPricingRecalculated(DateTimeOffset now) { if (Status != OrderStatus.Draft) return Result.Failure(OrderErrors.NotDraft); Touch(now); return Result.Success(); }
     private void Touch(DateTimeOffset now) { UpdatedAtUtc = now; Version++; }
 }
 

@@ -152,7 +152,7 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
         {
             await create.ExecuteNonQueryAsync();
         }
-        string configureSql = $"ALTER ROLE barang_test_app PASSWORD '{password}'; GRANT USAGE ON SCHEMA barang TO barang_test_app; GRANT SELECT ON TABLE barang.__ef_migrations_history TO barang_test_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA barang TO barang_test_app;";
+        string configureSql = $"ALTER ROLE barang_test_app PASSWORD '{password}'; GRANT USAGE ON SCHEMA barang TO barang_test_app; GRANT SELECT ON TABLE barang.__ef_migrations_history TO barang_test_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA barang TO barang_test_app; REVOKE DELETE ON barang.tariffs, barang.discount_rules, barang.tax_rules, barang.order_price_snapshots, barang.order_item_price_snapshots, barang.price_component_snapshots FROM barang_test_app;";
         await using (NpgsqlCommand configure = new(configureSql, connection))
         {
             await configure.ExecuteNonQueryAsync();

@@ -8,6 +8,7 @@ using BARANG.Core.Domain.Customers;
 using BARANG.Core.Domain.Catalog;
 using BARANG.Core.Domain.Files;
 using BARANG.Core.Domain.Orders;
+using BARANG.Core.Domain.Pricing;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -58,6 +59,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<OrderAddressSnapshot> OrderAddressSnapshots => Set<OrderAddressSnapshot>();
     public DbSet<OrderChangeRequest> OrderChangeRequests => Set<OrderChangeRequest>();
     public DbSet<OrderTimelineEvent> OrderTimelineEvents => Set<OrderTimelineEvent>();
+    public DbSet<Tariff> Tariffs => Set<Tariff>();
+    public DbSet<DiscountRule> DiscountRules => Set<DiscountRule>();
+    public DbSet<TaxRule> TaxRules => Set<TaxRule>();
+    public DbSet<OrderPriceSnapshot> OrderPriceSnapshots => Set<OrderPriceSnapshot>();
+    public DbSet<OrderItemPriceSnapshot> OrderItemPriceSnapshots => Set<OrderItemPriceSnapshot>();
+    public DbSet<PriceComponentSnapshot> PriceComponentSnapshots => Set<PriceComponentSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -102,6 +109,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<OrderAddressSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<OrderChangeRequest>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<OrderTimelineEvent>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<Tariff>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<DiscountRule>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<TaxRule>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<OrderPriceSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<OrderItemPriceSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<PriceComponentSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }

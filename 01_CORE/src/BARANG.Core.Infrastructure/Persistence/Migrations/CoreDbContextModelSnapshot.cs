@@ -2532,6 +2532,497 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Pricing.DiscountRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("discount_type");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("source");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<DateOnly>("ValidFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("valid_from");
+
+                    b.Property<DateOnly?>("ValidTo")
+                        .HasColumnType("date")
+                        .HasColumnName("valid_to");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("value");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Code", "ValidFrom")
+                        .HasDatabaseName("ix_discount_rules_resolution");
+
+                    b.ToTable("discount_rules", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_discount_rules_period", "valid_to IS NULL OR valid_to >= valid_from");
+
+                            t.HasCheckConstraint("ck_discount_rules_value", "value >= 0 AND (discount_type <> 'Percentage' OR value <= 100)");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Pricing.OrderItemPriceSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("AdditionalServiceTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("additional_service_total");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<decimal>("DiscountAllocated")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("discount_allocated");
+
+                    b.Property<decimal>("FinalTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("final_total");
+
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_item_id");
+
+                    b.Property<Guid>("OrderPriceSnapshotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_price_snapshot_id");
+
+                    b.Property<decimal>("PrintTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("print_total");
+
+                    b.Property<decimal>("RawProductTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("raw_product_total");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("subtotal");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("tax_amount");
+
+                    b.Property<decimal>("TaxableAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("taxable_amount");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "OrderPriceSnapshotId");
+
+                    b.HasIndex("OrderPriceSnapshotId", "OrderItemId")
+                        .IsUnique();
+
+                    b.ToTable("order_item_price_snapshots", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Pricing.OrderPriceSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("AdditionalServiceTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("additional_service_total");
+
+                    b.Property<DateTimeOffset>("CalculatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("calculated_at_utc");
+
+                    b.Property<int>("CalculationVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("calculation_version");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<decimal>("DiscountTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("discount_total");
+
+                    b.Property<decimal>("FinalTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("final_total");
+
+                    b.Property<DateTimeOffset?>("FinalizedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finalized_at_utc");
+
+                    b.Property<bool>("IsCurrent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_current");
+
+                    b.Property<bool>("IsFinalized")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_finalized");
+
+                    b.Property<bool>("IsTaxExempt")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_tax_exempt");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<decimal>("PackagingTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("packaging_total");
+
+                    b.Property<decimal>("PrintTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("print_total");
+
+                    b.Property<decimal>("RawProductTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("raw_product_total");
+
+                    b.Property<decimal>("ShippingTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("shipping_total");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("subtotal");
+
+                    b.Property<decimal>("TaxRatePercent")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("tax_rate_percent");
+
+                    b.Property<decimal>("TaxTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("tax_total");
+
+                    b.Property<decimal>("TaxableTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("taxable_total");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_order_price_snapshots_current")
+                        .HasFilter("is_current");
+
+                    b.HasIndex("CompanyId", "OrderId");
+
+                    b.ToTable("order_price_snapshots", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Pricing.PriceComponentSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("ComponentType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("component_type");
+
+                    b.Property<Guid?>("OrderItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_item_id");
+
+                    b.Property<Guid>("OrderPriceSnapshotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_price_snapshot_id");
+
+                    b.Property<Guid?>("OrderPrintOperationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_print_operation_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("TariffCode")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("tariff_code");
+
+                    b.Property<Guid?>("TariffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tariff_id");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_amount");
+
+                    b.Property<decimal>("UnitAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_amount");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderPriceSnapshotId");
+
+                    b.HasIndex("CompanyId", "OrderPriceSnapshotId");
+
+                    b.ToTable("price_component_snapshots", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Pricing.Tariff", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("PrintMethodCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("print_method_code");
+
+                    b.Property<string>("PrintPositionCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("print_position_code");
+
+                    b.Property<Guid?>("ProductVariantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_variant_id");
+
+                    b.Property<string>("TariffType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("tariff_type");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<DateOnly>("ValidFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("valid_from");
+
+                    b.Property<DateOnly?>("ValidTo")
+                        .HasColumnType("date")
+                        .HasColumnName("valid_to");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "ProductVariantId");
+
+                    b.HasIndex("CompanyId", "TariffType", "Code", "ValidFrom")
+                        .HasDatabaseName("ix_tariffs_resolution");
+
+                    b.ToTable("tariffs", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_tariffs_amount", "amount >= 0");
+
+                            t.HasCheckConstraint("ck_tariffs_period", "valid_to IS NULL OR valid_to >= valid_from");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Pricing.TaxRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsExempt")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_exempt");
+
+                    b.Property<decimal>("RatePercent")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("rate_percent");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<DateOnly>("ValidFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("valid_from");
+
+                    b.Property<DateOnly?>("ValidTo")
+                        .HasColumnType("date")
+                        .HasColumnName("valid_to");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Code", "ValidFrom")
+                        .HasDatabaseName("ix_tax_rules_resolution");
+
+                    b.ToTable("tax_rules", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_tax_rules_period", "valid_to IS NULL OR valid_to >= valid_from");
+
+                            t.HasCheckConstraint("ck_tax_rules_rate", "rate_percent >= 0 AND rate_percent <= 100");
+                        });
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Security.ApiClient", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2987,6 +3478,27 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                             Code = "order.change.manage",
                             Module = "order",
                             TechnicalDescription = "order.change.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000030"),
+                            Code = "pricing.read",
+                            Module = "pricing",
+                            TechnicalDescription = "pricing.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000031"),
+                            Code = "pricing.manage",
+                            Module = "pricing",
+                            TechnicalDescription = "pricing.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000032"),
+                            Code = "pricing.discount.apply",
+                            Module = "pricing",
+                            TechnicalDescription = "pricing.discount.apply"
                         });
                 });
 
@@ -3706,6 +4218,45 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasPrincipalKey("CompanyId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_warehouses_branches_company_id_branch_id");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Pricing.OrderItemPriceSnapshot", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Pricing.OrderPriceSnapshot", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "OrderPriceSnapshotId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Pricing.OrderPriceSnapshot", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Orders.Order", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "OrderId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Pricing.PriceComponentSnapshot", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Pricing.OrderPriceSnapshot", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "OrderPriceSnapshotId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Pricing.Tariff", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Catalog.ProductVariant", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ProductVariantId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Security.ApiClientCompany", b =>
