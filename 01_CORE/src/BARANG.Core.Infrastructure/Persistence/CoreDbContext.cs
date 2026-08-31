@@ -6,6 +6,7 @@ using BARANG.Core.Domain.Auditing;
 using BARANG.Core.Domain.Lookups;
 using BARANG.Core.Domain.Customers;
 using BARANG.Core.Domain.Catalog;
+using BARANG.Core.Domain.Files;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -41,6 +42,15 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<SupplierProduct> SupplierProducts => Set<SupplierProduct>();
     public DbSet<Equipment> Equipment => Set<Equipment>();
+    public DbSet<Artwork> Artworks => Set<Artwork>();
+    public DbSet<ArtworkVersion> ArtworkVersions => Set<ArtworkVersion>();
+    public DbSet<ArtworkTag> ArtworkTags => Set<ArtworkTag>();
+    public DbSet<ArtworkTagAssignment> ArtworkTagAssignments => Set<ArtworkTagAssignment>();
+    public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
+    public DbSet<FileVersion> FileVersions => Set<FileVersion>();
+    public DbSet<FileLink> FileLinks => Set<FileLink>();
+    public DbSet<FileProcessingJob> FileProcessingJobs => Set<FileProcessingJob>();
+    public DbSet<FileDerivative> FileDerivatives => Set<FileDerivative>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -70,6 +80,15 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<Supplier>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<SupplierProduct>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<Equipment>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<Artwork>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<ArtworkVersion>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<ArtworkTag>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<ArtworkTagAssignment>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<StoredFile>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<FileVersion>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<FileLink>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<FileProcessingJob>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<FileDerivative>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }

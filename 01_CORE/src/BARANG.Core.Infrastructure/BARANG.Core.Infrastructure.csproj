@@ -7,6 +7,8 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Minio" />
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
   <ItemGroup>

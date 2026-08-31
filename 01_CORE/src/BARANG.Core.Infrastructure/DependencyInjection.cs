@@ -15,6 +15,9 @@ using BARANG.Core.Infrastructure.Auditing;
 using BARANG.Core.Application.Lookups;
 using BARANG.Core.Application.Customers;
 using BARANG.Core.Application.Catalog;
+using BARANG.Core.Application.Files;
+using BARANG.Core.Infrastructure.Files;
+using Minio;
 
 namespace BARANG.Core.Infrastructure;
 
@@ -31,7 +34,7 @@ public static class DependencyInjection
         services.AddDbContext<CoreDbContext>(options =>
             options.UseCorePostgreSql(connectionString));
 
-        services.AddHealthChecks()
+        IHealthChecksBuilder healthChecks = services.AddHealthChecks()
             .AddCheck(
                 "self",
                 static () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(),
@@ -43,6 +46,19 @@ public static class DependencyInjection
                     ? Task.FromResult(true)
                     : context.Database.CanConnectAsync(cancellationToken),
             tags: ["ready"]);
+        services.Configure<FileStorageOptions>(configuration.GetSection(FileStorageOptions.SectionName));
+        services.AddSingleton<IMinioClient>(provider =>
+        {
+            FileStorageOptions values = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<FileStorageOptions>>().Value;
+            IMinioClient client = new MinioClient().WithEndpoint(values.Endpoint).WithCredentials(values.AccessKey, values.SecretKey).Build();
+            return values.Secure ? client.WithSSL() : client;
+        });
+        services.AddSingleton<IObjectStorage, MinioObjectStorage>();
+        if (configuration.GetValue<bool>($"{FileStorageOptions.SectionName}:Enabled"))
+        {
+            healthChecks.AddCheck<MinioHealthCheck>("object-storage", tags: ["ready"]);
+            services.AddHostedService<MinioBucketInitializer>();
+        }
         services.Configure<DatabaseAvailabilityOptions>(configuration.GetSection("DatabaseAvailability"));
         services.AddHostedService<DatabaseAvailabilityService>();
         services.AddSingleton(TimeProvider.System);
@@ -70,6 +86,9 @@ public static class DependencyInjection
         services.AddScoped<ICustomerAdministration, CustomerAdministration>();
         services.AddScoped<ICatalogStore, CatalogStore>();
         services.AddScoped<ICatalogAdministration, CatalogAdministration>();
+        services.AddScoped<IArtworkFileAdministration, ArtworkFileAdministration>();
+        services.AddSingleton<IFileProcessingQueue, FileProcessingQueue>();
+        services.AddHostedService<FileProcessingWorker>();
         services.AddSingleton<IPasswordCredentialService, PasswordCredentialService>();
         services.AddSingleton<ISessionTokenService, SessionTokenService>();
         services.AddScoped<ISecurityStore, SecurityStore>();

@@ -96,7 +96,12 @@ public static class SecurityPermissions
     public const string SupplierManage = "supplier.manage";
     public const string EquipmentRead = "equipment.read";
     public const string EquipmentManage = "equipment.manage";
-    public static IReadOnlyList<string> All { get; } = [OrganizationCompanyManage, OrganizationBranchManage, OrganizationSettingsManage, OrganizationUnitManage, OrganizationWarehouseManage, SecurityUserManage, SecurityRoleManage, AuditRead, LookupRead, LookupManage, CustomerRead, CustomerManage, ProductRead, ProductManage, SupplierRead, SupplierManage, EquipmentRead, EquipmentManage];
+    public const string ArtworkRead = "artwork.read";
+    public const string ArtworkManage = "artwork.manage";
+    public const string FileRead = "file.read";
+    public const string FileManage = "file.manage";
+    public const string FileUpload = "file.upload";
+    public static IReadOnlyList<string> All { get; } = [OrganizationCompanyManage, OrganizationBranchManage, OrganizationSettingsManage, OrganizationUnitManage, OrganizationWarehouseManage, SecurityUserManage, SecurityRoleManage, AuditRead, LookupRead, LookupManage, CustomerRead, CustomerManage, ProductRead, ProductManage, SupplierRead, SupplierManage, EquipmentRead, EquipmentManage, ArtworkRead, ArtworkManage, FileRead, FileManage, FileUpload];
 }
 
 public sealed class RolePermission { private RolePermission() { } public Guid Id { get; private set; } public Guid RoleId { get; private set; } public Guid PermissionId { get; private set; } public DateTimeOffset AssignedAtUtc { get; private set; } public Guid? AssignedByUserId { get; private set; } public static RolePermission Create(Guid roleId, Guid permissionId, Guid? actor, DateTimeOffset now) => new() { Id = Guid.NewGuid(), RoleId = roleId, PermissionId = permissionId, AssignedByUserId = actor, AssignedAtUtc = now }; }

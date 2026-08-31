@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace BARANG.Core.IntegrationTests.Database;
 
-public sealed class PostgreSqlCoreApiFactory(string connectionString, string environment = "Testing") : WebApplicationFactory<Program>
+public sealed class PostgreSqlCoreApiFactory(string connectionString, string environment = "Testing", bool useObjectStorage = false) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -13,5 +13,14 @@ public sealed class PostgreSqlCoreApiFactory(string connectionString, string env
         builder.UseSetting("CompanyResolution:AllowDevelopmentHeader", "true");
         builder.UseSetting("CompanyResolution:AllowDevelopmentAdministration", "true");
         builder.UseSetting("SecurityBootstrap:Secret", "test-bootstrap-secret-123456789");
+        if (useObjectStorage)
+        {
+            builder.UseSetting("FileStorage:Enabled", "true");
+            builder.UseSetting("FileStorage:Endpoint", "127.0.0.1:9000");
+            builder.UseSetting("FileStorage:AccessKey", "barang_minio_dev");
+            builder.UseSetting("FileStorage:SecretKey", "barang_minio_dev_only_12345");
+            builder.UseSetting("FileStorage:Bucket", "barang-phase10-tests");
+            builder.UseSetting("FileStorage:MaximumUploadBytes", "1048576");
+        }
     }
 }

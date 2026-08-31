@@ -13,6 +13,9 @@ using BARANG.Core.Api.Lookups;
 using BARANG.Core.Api.Customers;
 using BARANG.Core.Api.Catalog;
 using BARANG.Core.Application.Auditing;
+using BARANG.Core.Api.Files;
+using BARANG.Core.Application.Files;
+using Microsoft.AspNetCore.Http.Features;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +38,8 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditRequestContext, HttpAuditRequestContext>();
+long maximumUploadBytes = builder.Configuration.GetValue<long?>($"{FileStorageOptions.SectionName}:MaximumUploadBytes") ?? 25 * 1024 * 1024;
+builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = maximumUploadBytes + 64 * 1024);
 
 WebApplication app = builder.Build();
 
@@ -68,6 +73,7 @@ app.MapAuditEndpoints();
 app.MapLookupEndpoints();
 app.MapCustomerEndpoints();
 app.MapCatalogEndpoints();
+app.MapArtworkFileEndpoints();
 
 app.Run();
 

@@ -931,6 +931,579 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Files.Artwork", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CategoryCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("category_code");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid?>("CurrentVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("current_version_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<Guid?>("DesignerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("designer_user_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_archived");
+
+                    b.Property<string>("LifecycleStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("lifecycle_status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_artworks");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_artworks_company_id_id");
+
+                    b.HasIndex("DesignerUserId");
+
+                    b.HasIndex("CompanyId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("uq_artworks_company_code");
+
+                    b.HasIndex("CompanyId", "IsActive", "IsArchived", "Code")
+                        .HasDatabaseName("ix_artworks_options");
+
+                    b.ToTable("artworks", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.ArtworkTag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("display_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_artwork_tags");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_artwork_tags_company_id_id");
+
+                    b.HasIndex("CompanyId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("uq_artwork_tags_company_code");
+
+                    b.ToTable("artwork_tags", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.ArtworkTagAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ArtworkId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("artwork_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tag_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_artwork_tag_assignments");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_artwork_tag_assignments_company_id_id");
+
+                    b.HasIndex("CompanyId", "TagId");
+
+                    b.HasIndex("CompanyId", "ArtworkId", "TagId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_artwork_tag_assignments");
+
+                    b.ToTable("artwork_tag_assignments", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.ArtworkVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ArtworkId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("artwork_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("FileVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_version_id");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_number");
+
+                    b.HasKey("Id")
+                        .HasName("pk_artwork_versions");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_artwork_versions_company_id_id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("CompanyId", "FileVersionId");
+
+                    b.HasIndex("CompanyId", "ArtworkId", "VersionNumber")
+                        .IsUnique()
+                        .HasDatabaseName("uq_artwork_versions_number");
+
+                    b.ToTable("artwork_versions", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.FileDerivative", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("DerivativeType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("derivative_type");
+
+                    b.Property<string>("MediaType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("media_type");
+
+                    b.Property<string>("Sha256Hash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("sha256_hash");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<Guid>("SourceFileVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_file_version_id");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("storage_key");
+
+                    b.HasKey("Id")
+                        .HasName("pk_file_derivatives");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_file_derivatives_company_id_id");
+
+                    b.HasIndex("CompanyId", "SourceFileVersionId", "DerivativeType")
+                        .IsUnique()
+                        .HasDatabaseName("uq_file_derivatives_type");
+
+                    b.ToTable("file_derivatives", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.FileLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entity_id");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("entity_type");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.Property<Guid?>("FileVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_version_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("purpose");
+
+                    b.HasKey("Id")
+                        .HasName("pk_file_links");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_file_links_company_id_id");
+
+                    b.HasIndex("CompanyId", "FileId");
+
+                    b.HasIndex("CompanyId", "FileVersionId");
+
+                    b.HasIndex("CompanyId", "EntityType", "EntityId")
+                        .HasDatabaseName("ix_file_links_entity");
+
+                    b.HasIndex("CompanyId", "EntityType", "EntityId", "FileId", "Purpose")
+                        .IsUnique()
+                        .HasDatabaseName("uq_file_links_target");
+
+                    b.ToTable("file_links", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.FileProcessingJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at_utc");
+
+                    b.Property<Guid>("FileVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_version_id");
+
+                    b.Property<string>("JobType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("job_type");
+
+                    b.Property<string>("LastErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_error_code");
+
+                    b.Property<DateTimeOffset>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at_utc");
+
+                    b.Property<DateTimeOffset?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_file_processing_jobs");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_file_processing_jobs_company_id_id");
+
+                    b.HasIndex("CompanyId", "FileVersionId");
+
+                    b.HasIndex("Status", "RequestedAtUtc")
+                        .HasDatabaseName("ix_file_processing_jobs_pending");
+
+                    b.ToTable("file_processing_jobs", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.FileVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Extension")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("extension");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_archived");
+
+                    b.Property<string>("MediaType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("media_type");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("original_file_name");
+
+                    b.Property<string>("ProcessingStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("processing_status");
+
+                    b.Property<string>("Sha256Hash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("sha256_hash");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("StorageBucket")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("storage_bucket");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("storage_key");
+
+                    b.Property<string>("StorageProvider")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("storage_provider");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_number");
+
+                    b.HasKey("Id")
+                        .HasName("pk_file_versions");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_file_versions_company_id_id");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique()
+                        .HasDatabaseName("uq_file_versions_storage_key");
+
+                    b.HasIndex("CompanyId", "Sha256Hash")
+                        .HasDatabaseName("ix_file_versions_company_hash");
+
+                    b.HasIndex("CompanyId", "FileId", "VersionNumber")
+                        .IsUnique()
+                        .HasDatabaseName("uq_file_versions_number");
+
+                    b.ToTable("file_versions", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.StoredFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid?>("CurrentVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("current_version_id");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_archived");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("uploaded_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_stored_files");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_stored_files_company_id_id");
+
+                    b.HasIndex("UploadedByUserId");
+
+                    b.ToTable("stored_files", "barang");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Lookups.LookupType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1803,6 +2376,41 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                             Code = "equipment.manage",
                             Module = "equipment",
                             TechnicalDescription = "equipment.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000019"),
+                            Code = "artwork.read",
+                            Module = "artwork",
+                            TechnicalDescription = "artwork.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000020"),
+                            Code = "artwork.manage",
+                            Module = "artwork",
+                            TechnicalDescription = "artwork.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000021"),
+                            Code = "file.read",
+                            Module = "file",
+                            TechnicalDescription = "file.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000022"),
+                            Code = "file.manage",
+                            Module = "file",
+                            TechnicalDescription = "file.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000023"),
+                            Code = "file.upload",
+                            Module = "file",
+                            TechnicalDescription = "file.upload"
                         });
                 });
 
@@ -2112,6 +2720,166 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_customer_contacts_customers_customer_company");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.Artwork", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("DesignerUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.ArtworkTag", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.ArtworkTagAssignment", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Files.Artwork", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ArtworkId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Files.ArtworkTag", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "TagId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.ArtworkVersion", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Files.Artwork", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ArtworkId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Files.FileVersion", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "FileVersionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.FileDerivative", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Files.FileVersion", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SourceFileVersionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.FileLink", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "FileId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Files.FileVersion", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "FileVersionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.FileProcessingJob", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Files.FileVersion", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "FileVersionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.FileVersion", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "FileId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Files.StoredFile", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UploadedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Lookups.LookupType", b =>
