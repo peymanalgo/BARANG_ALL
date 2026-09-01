@@ -21,6 +21,8 @@ using BARANG.Core.Infrastructure.Orders;
 using BARANG.Core.Infrastructure.Files;
 using BARANG.Core.Application.Pricing;
 using BARANG.Core.Infrastructure.Pricing;
+using BARANG.Core.Application.Finance;
+using BARANG.Core.Infrastructure.Finance;
 using Minio;
 
 namespace BARANG.Core.Infrastructure;
@@ -94,6 +96,7 @@ public static class DependencyInjection
         services.AddScoped<PricingAdministration>();
         services.AddScoped<IPricingAdministration>(p => p.GetRequiredService<PricingAdministration>());
         services.AddScoped<IOrderPricingEngine>(p => p.GetRequiredService<PricingAdministration>());
+        services.AddScoped<IFinanceAdministration, FinanceAdministration>();
         services.AddScoped<IOrderAdministration, OrderAdministration>();
         services.AddSingleton<IFileProcessingQueue, FileProcessingQueue>();
         services.AddHostedService<FileProcessingWorker>();

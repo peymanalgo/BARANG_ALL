@@ -32,7 +32,7 @@ public sealed class LookupFoundationTests(PostgreSqlDatabaseFixture database)
             await admin.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using NpgsqlConnection connection=new(database.ConnectionString); await connection.OpenAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(2,await VisibleCount(connection,a)); Assert.Equal(2,await VisibleCount(connection,b)); Assert.Equal(1,await VisibleCountWithoutCompany(connection)); Assert.Equal(0,await TryRenameOtherCompany(connection,a,b));
+        Assert.Equal(3,await VisibleCount(connection,a)); Assert.Equal(3,await VisibleCount(connection,b)); Assert.Equal(2,await VisibleCountWithoutCompany(connection)); Assert.Equal(0,await TryRenameOtherCompany(connection,a,b));
     }
 
     [Fact]

@@ -9,6 +9,7 @@ using BARANG.Core.Domain.Catalog;
 using BARANG.Core.Domain.Files;
 using BARANG.Core.Domain.Orders;
 using BARANG.Core.Domain.Pricing;
+using BARANG.Core.Domain.Finance;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -65,6 +66,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<OrderPriceSnapshot> OrderPriceSnapshots => Set<OrderPriceSnapshot>();
     public DbSet<OrderItemPriceSnapshot> OrderItemPriceSnapshots => Set<OrderItemPriceSnapshot>();
     public DbSet<PriceComponentSnapshot> PriceComponentSnapshots => Set<PriceComponentSnapshot>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<OrderFinancialState> OrderFinancialStates => Set<OrderFinancialState>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceSnapshot> InvoiceSnapshots => Set<InvoiceSnapshot>();
+    public DbSet<InvoiceItemSnapshot> InvoiceItemSnapshots => Set<InvoiceItemSnapshot>();
+    public DbSet<FinanceHistory> FinanceHistory => Set<FinanceHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -115,6 +122,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<OrderPriceSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<OrderItemPriceSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<PriceComponentSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<Payment>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<OrderFinancialState>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<Invoice>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<InvoiceSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<InvoiceItemSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<FinanceHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }
