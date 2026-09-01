@@ -1,0 +1,26 @@
+using BARANG.Core.Domain.Common;
+using BARANG.Core.Domain.Production;
+using BARANG.Core.Domain.Quality;
+namespace BARANG.Core.Application.Quality;
+public sealed record CreateCriterionCommand(string Code,string Name,QCCriterionType CriterionType,bool IsRequired,int SortOrder,decimal?MinimumValue,decimal?MaximumValue,string?AllowedChoiceCodes);
+public sealed record CreateQCTemplateCommand(string Code,string Name,ProductionJobType?ApplicableJobType,string?ProductTypeCode,IReadOnlyList<CreateCriterionCommand>Criteria);
+public sealed record SetQualityActiveCommand(bool IsActive,long Version);
+public sealed record CreateDefectTypeCommand(string Code,string Name,string CategoryCode,DefectSeverity Severity,bool IsBlocking);
+public sealed record CreateInspectionCommand(Guid ProductionJobId,Guid TemplateId,Guid?ParentInspectionId);
+public sealed record RecordCriteriaResultCommand(Guid CriterionId,bool?PassFailValue,decimal?NumericValue,string?TextValue,string?ChoiceCode);
+public sealed record RecordDefectCommand(Guid?CriteriaResultId,Guid DefectTypeId,decimal Quantity,DefectSeverity Severity,string?Notes,Guid?EvidenceFileVersionId);
+public sealed record QualityVersionCommand(long Version);
+public sealed record QualityReasonCommand(string Reason,long Version);
+public sealed record CreateReproductionCommand(ReproductionStage RequestedStage,decimal Quantity,string Reason);
+public sealed record QualityTemplateView(Guid Id,string Code,string Name,ProductionJobType?ApplicableJobType,string?ProductTypeCode,bool IsActive,long Version,IReadOnlyList<QualityCriterionView>Criteria);
+public sealed record QualityCriterionView(Guid Id,string Code,string Name,QCCriterionType CriterionType,bool IsRequired,int SortOrder,decimal?MinimumValue,decimal?MaximumValue,string?AllowedChoiceCodes);
+public sealed record DefectTypeView(Guid Id,string Code,string Name,string CategoryCode,DefectSeverity Severity,bool IsBlocking,bool IsActive,long Version);
+public sealed record InspectionView(Guid Id,Guid OrderId,Guid OrderItemId,Guid ProductionJobId,Guid TemplateId,long TemplateVersion,Guid InspectorUserId,QCInspectionStatus Status,QCOutcome Outcome,Guid?ParentInspectionId,Guid?ReproductionRequestId,DateTimeOffset?StartedAtUtc,DateTimeOffset?CompletedAtUtc,string?DecisionReason,long Version);
+public sealed record ReproductionView(Guid Id,Guid SourceInspectionId,Guid OrderId,Guid OrderItemId,Guid SourceProductionJobId,Guid RootProductionJobId,ReproductionStage RequestedStage,decimal Quantity,string Reason,ReproductionStatus Status,int Depth,long Version);
+public sealed record QualityHistoryView(Guid Id,string EntityType,Guid EntityId,string EventType,Guid ActorUserId,DateTimeOffset OccurredAtUtc,string?Summary);
+public sealed record QualityAnalyticsView(long Inspections,long Approved,long Rejected,long Suspended,long Reproductions,IReadOnlyList<DefectFrequencyView>TopDefects);
+public sealed record DefectFrequencyView(string Code,string Name,long Count,decimal Quantity);
+public interface IQualityAdministration
+{
+ Task<Result<QualityTemplateView>>CreateTemplateAsync(CreateQCTemplateCommand command,CancellationToken cancellationToken);Task<Result<QualityTemplateView>>SetTemplateActiveAsync(Guid id,SetQualityActiveCommand command,CancellationToken cancellationToken);Task<Result<DefectTypeView>>CreateDefectTypeAsync(CreateDefectTypeCommand command,CancellationToken cancellationToken);Task<Result<DefectTypeView>>SetDefectTypeActiveAsync(Guid id,SetQualityActiveCommand command,CancellationToken cancellationToken);Task<Result<InspectionView>>StartInspectionAsync(CreateInspectionCommand command,CancellationToken cancellationToken);Task<Result<InspectionView>>GetInspectionAsync(Guid id,CancellationToken cancellationToken);Task<Result>RecordResultAsync(Guid inspectionId,RecordCriteriaResultCommand command,CancellationToken cancellationToken);Task<Result>RecordDefectAsync(Guid inspectionId,RecordDefectCommand command,CancellationToken cancellationToken);Task<Result<InspectionView>>ApproveAsync(Guid id,long version,CancellationToken cancellationToken);Task<Result<InspectionView>>SuspendAsync(Guid id,QualityReasonCommand command,CancellationToken cancellationToken);Task<Result<InspectionView>>ReviewAsync(Guid id,QualityReasonCommand command,CancellationToken cancellationToken);Task<Result<InspectionView>>RejectAsync(Guid id,QualityReasonCommand command,CancellationToken cancellationToken);Task<Result<ReproductionView>>RequestReproductionAsync(Guid inspectionId,CreateReproductionCommand command,CancellationToken cancellationToken);Task<Result<IReadOnlyList<Guid>>>CreateReproductionJobsAsync(Guid requestId,long version,CancellationToken cancellationToken);Task<Result<IReadOnlyList<QualityHistoryView>>>HistoryAsync(Guid entityId,CancellationToken cancellationToken);Task<Result<QualityAnalyticsView>>AnalyticsAsync(DateTimeOffset from,DateTimeOffset to,int top,CancellationToken cancellationToken);
+}

@@ -33,7 +33,7 @@ public sealed class DatabaseFoundationTests(PostgreSqlDatabaseFixture database)
         string[] pending = (await context.Database.GetPendingMigrationsAsync(
             TestContext.Current.CancellationToken)).ToArray();
 
-        Assert.Equal(14, migrations.Length);
+        Assert.Equal(16, migrations.Length);
         Assert.Equal(migrations, applied);
         Assert.Empty(pending);
         Assert.EndsWith("_CreateBarangSchema", migrations[0], StringComparison.Ordinal);
@@ -185,7 +185,7 @@ public sealed class DatabaseFoundationTests(PostgreSqlDatabaseFixture database)
         await using CoreDbContext context = database.CreateCoreDbContext();
 
         Assert.Equal(0, await database.CountTransactionProbesAsync(TestContext.Current.CancellationToken));
-        Assert.Equal(14, (await context.Database.GetAppliedMigrationsAsync(
+        Assert.Equal(16, (await context.Database.GetAppliedMigrationsAsync(
             TestContext.Current.CancellationToken)).Count());
     }
 

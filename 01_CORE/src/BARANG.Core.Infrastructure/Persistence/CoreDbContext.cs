@@ -12,6 +12,7 @@ using BARANG.Core.Domain.Pricing;
 using BARANG.Core.Domain.Finance;
 using BARANG.Core.Domain.Inventory;
 using BARANG.Core.Domain.Production;
+using BARANG.Core.Domain.Quality;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -87,6 +88,14 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<PurchasingHistory> PurchasingHistory => Set<PurchasingHistory>();
     public DbSet<ProductionJob> ProductionJobs => Set<ProductionJob>();
     public DbSet<ProductionJobHistory> ProductionJobHistory => Set<ProductionJobHistory>();
+    public DbSet<QCChecklistTemplate> QCTemplates => Set<QCChecklistTemplate>();
+    public DbSet<QCChecklistCriterion> QCTemplateCriteria => Set<QCChecklistCriterion>();
+    public DbSet<QCInspection> QCInspections => Set<QCInspection>();
+    public DbSet<QCCriteriaResult> QCCriteriaResults => Set<QCCriteriaResult>();
+    public DbSet<DefectType> DefectTypes => Set<DefectType>();
+    public DbSet<QCDefect> QCDefects => Set<QCDefect>();
+    public DbSet<ReproductionRequest> ReproductionRequests => Set<ReproductionRequest>();
+    public DbSet<QCHistory> QCHistory => Set<QCHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -156,6 +165,14 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<PurchasingHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<ProductionJob>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<ProductionJobHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<QCChecklistTemplate>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<QCChecklistCriterion>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<QCInspection>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<QCCriteriaResult>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<DefectType>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<QCDefect>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<ReproductionRequest>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<QCHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }

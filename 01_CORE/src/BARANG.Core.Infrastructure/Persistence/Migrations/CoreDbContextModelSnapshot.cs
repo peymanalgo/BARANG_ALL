@@ -4205,6 +4205,22 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("queue_position");
 
+                    b.Property<int>("ReproductionDepth")
+                        .HasColumnType("integer")
+                        .HasColumnName("reproduction_depth");
+
+                    b.Property<Guid?>("ReproductionRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reproduction_request_id");
+
+                    b.Property<Guid?>("RootProductionJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("root_production_job_id");
+
+                    b.Property<Guid?>("SourceProductionJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_production_job_id");
+
                     b.Property<DateTimeOffset?>("StartedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("started_at_utc");
@@ -4245,6 +4261,12 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.HasIndex("CompanyId", "OrderItemId");
 
                     b.HasIndex("CompanyId", "PrintOperationId");
+
+                    b.HasIndex("CompanyId", "ReproductionRequestId");
+
+                    b.HasIndex("CompanyId", "RootProductionJobId");
+
+                    b.HasIndex("CompanyId", "SourceProductionJobId");
 
                     b.HasIndex("CompanyId", "AssignedEquipmentId", "Status");
 
@@ -4303,6 +4325,570 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.HasIndex("CompanyId", "ProductionJobId", "OccurredAtUtc", "Id");
 
                     b.ToTable("production_job_history", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.DefectType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CategoryCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("category_code");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsBlocking")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_blocking");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("severity");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("defect_types", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCChecklistCriterion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AllowedChoiceCodes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("allowed_choice_codes");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("CriterionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("criterion_type");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_required");
+
+                    b.Property<decimal?>("MaximumValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("maximum_value");
+
+                    b.Property<decimal?>("MinimumValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("minimum_value");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("template_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "TemplateId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("qc_template_criteria", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCChecklistTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ApplicableJobType")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("applicable_job_type");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("ProductTypeCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("product_type_code");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("qc_templates", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCCriteriaResult", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ChoiceCode")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("choice_code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("CriterionCode")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("criterion_code");
+
+                    b.Property<string>("CriterionName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("criterion_name");
+
+                    b.Property<string>("CriterionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("criterion_type");
+
+                    b.Property<Guid>("InspectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("inspection_id");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_required");
+
+                    b.Property<decimal?>("NumericValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("numeric_value");
+
+                    b.Property<bool?>("PassFailValue")
+                        .HasColumnType("boolean")
+                        .HasColumnName("pass_fail_value");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<Guid>("TemplateCriterionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("template_criterion_id");
+
+                    b.Property<string>("TextValue")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("text_value");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "TemplateCriterionId");
+
+                    b.HasIndex("CompanyId", "InspectionId", "TemplateCriterionId")
+                        .IsUnique();
+
+                    b.ToTable("qc_criteria_results", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCDefect", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid?>("CriteriaResultId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("criteria_result_id");
+
+                    b.Property<Guid>("DefectTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("defect_type_id");
+
+                    b.Property<Guid?>("EvidenceFileVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("evidence_file_version_id");
+
+                    b.Property<Guid>("InspectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("inspection_id");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("severity");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "CriteriaResultId");
+
+                    b.HasIndex("CompanyId", "DefectTypeId");
+
+                    b.HasIndex("CompanyId", "EvidenceFileVersionId");
+
+                    b.HasIndex("CompanyId", "InspectionId");
+
+                    b.ToTable("qc_defects", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entity_id");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("entity_type");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("event_type");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("summary");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "EntityId", "OccurredAtUtc", "Id");
+
+                    b.ToTable("qc_history", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCInspection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at_utc");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("DecisionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("decision_reason");
+
+                    b.Property<Guid>("InspectorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("inspector_user_id");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_item_id");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("outcome");
+
+                    b.Property<Guid?>("ParentInspectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_inspection_id");
+
+                    b.Property<Guid>("ProductionJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("production_job_id");
+
+                    b.Property<Guid?>("ReproductionRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reproduction_request_id");
+
+                    b.Property<DateTimeOffset?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("character varying(25)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("template_id");
+
+                    b.Property<long>("TemplateVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("template_version");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "OrderId");
+
+                    b.HasIndex("CompanyId", "OrderItemId");
+
+                    b.HasIndex("CompanyId", "ParentInspectionId");
+
+                    b.HasIndex("CompanyId", "ProductionJobId")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "TemplateId");
+
+                    b.HasIndex("CompanyId", "Status", "CreatedAtUtc");
+
+                    b.ToTable("qc_inspections", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.ReproductionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<int>("Depth")
+                        .HasColumnType("integer")
+                        .HasColumnName("depth");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_item_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTimeOffset>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at_utc");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("RequestedStage")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("requested_stage");
+
+                    b.Property<Guid>("RootProductionJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("root_production_job_id");
+
+                    b.Property<Guid>("SourceInspectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_inspection_id");
+
+                    b.Property<Guid>("SourceProductionJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_production_job_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "SourceInspectionId")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "SourceProductionJobId");
+
+                    b.ToTable("reproduction_requests", "barang");
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Security.ApiClient", b =>
@@ -4879,6 +5465,41 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                             Code = "production.execute",
                             Module = "production",
                             TechnicalDescription = "production.execute"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000047"),
+                            Code = "qc.read",
+                            Module = "qc",
+                            TechnicalDescription = "qc.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000048"),
+                            Code = "qc.inspect",
+                            Module = "qc",
+                            TechnicalDescription = "qc.inspect"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000049"),
+                            Code = "qc.review",
+                            Module = "qc",
+                            TechnicalDescription = "qc.review"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000050"),
+                            Code = "qc.manage",
+                            Module = "qc",
+                            TechnicalDescription = "qc.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000051"),
+                            Code = "reproduction.manage",
+                            Module = "reproduction",
+                            TechnicalDescription = "reproduction.manage"
                         });
                 });
 
@@ -5895,6 +6516,24 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CompanyId", "PrintOperationId")
                         .HasPrincipalKey("CompanyId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Quality.ReproductionRequest", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ReproductionRequestId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Production.ProductionJob", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "RootProductionJobId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Production.ProductionJob", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SourceProductionJobId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Production.ProductionJobHistory", b =>
@@ -5908,6 +6547,116 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.HasOne("BARANG.Core.Domain.Production.ProductionJob", null)
                         .WithMany()
                         .HasForeignKey("CompanyId", "ProductionJobId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCChecklistCriterion", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Quality.QCChecklistTemplate", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "TemplateId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCCriteriaResult", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Quality.QCInspection", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "InspectionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Quality.QCChecklistCriterion", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "TemplateCriterionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCDefect", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Quality.QCCriteriaResult", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "CriteriaResultId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Quality.DefectType", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "DefectTypeId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Files.FileVersion", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "EvidenceFileVersionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Quality.QCInspection", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "InspectionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCInspection", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Orders.Order", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "OrderId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Orders.OrderItem", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "OrderItemId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Quality.QCInspection", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ParentInspectionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Production.ProductionJob", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ProductionJobId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Quality.QCChecklistTemplate", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "TemplateId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.ReproductionRequest", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Quality.QCInspection", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SourceInspectionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Production.ProductionJob", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SourceProductionJobId")
                         .HasPrincipalKey("CompanyId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
