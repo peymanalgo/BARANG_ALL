@@ -19,7 +19,7 @@ public static class SecurityEndpoints
     public static IEndpointRouteBuilder MapSecurityEndpoints(this IEndpointRouteBuilder endpoints)
     {
         RouteGroupBuilder auth = endpoints.MapGroup("/api/v1/auth");
-        auth.MapPost("/login", async (LoginRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.LoginAsync(r.Username, r.Password, ct))).AllowAnonymous();
+        auth.MapPost("/login", async (LoginRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.LoginAsync(r.Username, r.Password, ct))).AllowAnonymous().RequireRateLimiting("login");
         auth.MapPost("/logout", async (HttpContext h, ISecurityAdministration s, ISessionTokenService tokens, CancellationToken ct) => { string raw = h.Request.Headers.Authorization.ToString()[7..].Trim(); return Map(await s.LogoutAsync(tokens.Hash(raw), ct)); }).RequireAuthorization();
         auth.MapGet("/me", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.GetCurrentUserAsync(ct))).RequireAuthorization();
         auth.MapGet("/me/companies", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.ListMyCompaniesAsync(ct))).RequireAuthorization();
@@ -51,6 +51,7 @@ public static class SecurityEndpoints
         roles.MapPost("/{id:guid}/permissions/{permissionId:guid}", async (Guid id, Guid permissionId, ISecurityAdministration s, CancellationToken ct) => Map(await s.GrantPermissionAsync(id, permissionId, ct)));
         roles.MapDelete("/{id:guid}/permissions/{permissionId:guid}", async (Guid id, Guid permissionId, ISecurityAdministration s, CancellationToken ct) => Map(await s.RevokePermissionAsync(id, permissionId, ct)));
         endpoints.MapGet("/api/v1/security/permissions", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.ListPermissionsAsync(ct))).RequireAuthorization(SecurityPermissions.SecurityRoleManage);
+        RouteGroupBuilder clients=endpoints.MapGroup("/api/v1/security/api-clients").RequireAuthorization(SecurityPermissions.SecurityUserManage);clients.MapPost("/",async(CreateApiClientCommand c,IApiClientAdministration s,CancellationToken ct)=>Map(await s.CreateAsync(c,ct)));clients.MapPost("/{id:guid}/rotate",async(Guid id,RotateApiClientRequest r,IApiClientAdministration s,CancellationToken ct)=>Map(await s.RotateAsync(id,r.Version,r.ExpiresAtUtc,ct)));clients.MapPut("/{id:guid}/activation",async(Guid id,SecurityActivationRequest r,IApiClientAdministration s,CancellationToken ct)=>Map(await s.SetActiveAsync(id,r.IsActive,r.Version,ct)));
         return endpoints;
     }
 
@@ -124,3 +125,4 @@ public sealed record CompanyAccessRequest(Guid CompanyId, DateTimeOffset? ValidT
 public sealed record RoleAssignmentRequest(Guid RoleId, Guid CompanyId, DateTimeOffset? ValidToUtc);
 public sealed record CreateRoleRequest(string Code, string DisplayTitle);
 public sealed record UpdateRoleRequest(string DisplayTitle, long Version);
+public sealed record RotateApiClientRequest(long Version,DateTimeOffset?ExpiresAtUtc);

@@ -29,6 +29,7 @@ public interface ISecurityStore
     Task<AuthenticationSession?> FindSessionAsync(string tokenHash, DateTimeOffset now, CancellationToken ct); Task<IReadOnlyList<AuthenticationSession>> ListActiveSessionsAsync(Guid userId, DateTimeOffset now, CancellationToken ct);
     Task<IReadOnlyList<MyCompanyView>> ListEffectiveCompaniesAsync(Guid userId, DateTimeOffset now, CancellationToken ct); Task<MyCompanyView?> FindEffectiveCompanyAsync(Guid userId, Guid companyId, DateTimeOffset now, CancellationToken ct); Task<bool> HasEffectiveCompanyAccessAsync(Guid userId, Guid companyId, DateTimeOffset now, CancellationToken ct); Task<bool> CompanyIsActiveAsync(Guid companyId, CancellationToken ct); Task<IReadOnlyList<string>> ListEffectiveRoleCodesAsync(Guid userId, Guid companyId, DateTimeOffset now, CancellationToken ct);
     Task<bool> AnyUsersAsync(CancellationToken ct);
+    Task<bool> ApiClientHasCompanyAsync(Guid clientId,Guid companyId,CancellationToken ct);Task<bool> ApiClientHasPermissionAsync(Guid clientId,string permission,CancellationToken ct);
 }
 
 public interface IPermissionAuthorizationService { Task<Result> AuthorizeAsync(string permissionCode, CancellationToken ct); }

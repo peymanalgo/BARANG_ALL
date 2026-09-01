@@ -25,7 +25,9 @@ public sealed class CompanyContextMiddleware(RequestDelegate next)
         if (!exists) { await WriteFailureAsync(httpContext, correlationContext, Error.NotFound("core.company_context.not_found")); return; }
         using (companyContext.BeginScope(companyId))
         {
-            if (actor.Actor.IsAuthenticated && Guid.TryParse(actor.Actor.UserId, out Guid userId))
+            if(actor.Actor.ActorType==ActorType.ApiClient&&Guid.TryParse(actor.Actor.ApiClientId,out Guid clientId))
+            {Result access=await transactions.ExecuteAsync(async ct=>await security.ApiClientHasCompanyAsync(clientId,companyId,ct)?Result.Success():Result.Failure(Error.Authorization("security.company_access.denied")),httpContext.RequestAborted);if(access.IsFailure){await WriteFailureAsync(httpContext,correlationContext,access.Error);return;}}
+            else if (actor.Actor.IsAuthenticated && Guid.TryParse(actor.Actor.UserId, out Guid userId))
             {
                 Result access = await transactions.ExecuteAsync(async ct => await security.FindEffectiveCompanyAccessAsync(userId, companyId, time.GetUtcNow(), ct) is null ? Result.Failure(Error.Authorization("security.company_access.denied")) : Result.Success(), httpContext.RequestAborted);
                 if (access.IsFailure) { await WriteFailureAsync(httpContext, correlationContext, access.Error); return; }

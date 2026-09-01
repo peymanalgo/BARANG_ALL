@@ -6171,6 +6171,62 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                             Code = "backgroundjob.review",
                             Module = "backgroundjob",
                             TechnicalDescription = "backgroundjob.review"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000063"),
+                            Code = "catalog.read",
+                            Module = "catalog",
+                            TechnicalDescription = "catalog.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000064"),
+                            Code = "customer.profile.read",
+                            Module = "customer",
+                            TechnicalDescription = "customer.profile.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000065"),
+                            Code = "customer.profile.write",
+                            Module = "customer",
+                            TechnicalDescription = "customer.profile.write"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000066"),
+                            Code = "client.order.read",
+                            Module = "client",
+                            TechnicalDescription = "client.order.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000067"),
+                            Code = "client.order.write",
+                            Module = "client",
+                            TechnicalDescription = "client.order.write"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000068"),
+                            Code = "client.file.upload",
+                            Module = "client",
+                            TechnicalDescription = "client.file.upload"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000069"),
+                            Code = "pricing.preview",
+                            Module = "pricing",
+                            TechnicalDescription = "pricing.preview"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000070"),
+                            Code = "tracking.read",
+                            Module = "tracking",
+                            TechnicalDescription = "tracking.read"
                         });
                 });
 

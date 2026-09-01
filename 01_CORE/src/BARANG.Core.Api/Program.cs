@@ -24,7 +24,10 @@ using BARANG.Core.Api.Quality;
 using BARANG.Core.Api.Logistics;
 using BARANG.Core.Api.Workflow;
 using BARANG.Core.Api.Background;
+using BARANG.Core.Api.Client;
 using Microsoft.AspNetCore.Http.Features;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +40,7 @@ builder.Logging.AddJsonConsole(options =>
 });
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
+builder.Services.AddRateLimiter(options=>{options.RejectionStatusCode=429;options.AddFixedWindowLimiter("client-read",x=>{x.PermitLimit=builder.Configuration.GetValue("RateLimits:ClientReadPerMinute",300);x.Window=TimeSpan.FromMinutes(1);x.QueueLimit=0;});options.AddFixedWindowLimiter("client-mutation",x=>{x.PermitLimit=builder.Configuration.GetValue("RateLimits:ClientMutationPerMinute",120);x.Window=TimeSpan.FromMinutes(1);x.QueueLimit=0;});options.AddFixedWindowLimiter("login",x=>{x.PermitLimit=builder.Configuration.GetValue("RateLimits:LoginPerMinute",30);x.Window=TimeSpan.FromMinutes(1);x.QueueLimit=0;});options.AddFixedWindowLimiter("upload",x=>{x.PermitLimit=builder.Configuration.GetValue("RateLimits:UploadPerMinute",30);x.Window=TimeSpan.FromMinutes(1);x.QueueLimit=0;});options.AddFixedWindowLimiter("submit",x=>{x.PermitLimit=builder.Configuration.GetValue("RateLimits:SubmitPerMinute",30);x.Window=TimeSpan.FromMinutes(1);x.QueueLimit=0;});});
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddCoreInfrastructure(builder.Configuration);
 builder.Services.AddAuthentication(BearerAuthenticationHandler.SchemeName).AddScheme<AuthenticationSchemeOptions, BearerAuthenticationHandler>(BearerAuthenticationHandler.SchemeName, null);
@@ -57,6 +61,7 @@ app.UseAuthentication();
 app.UseMiddleware<CurrentActorMiddleware>();
 app.UseMiddleware<CompanyContextMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.UseExceptionHandler();
 
@@ -92,6 +97,7 @@ app.MapQualityEndpoints();
 app.MapLogisticsEndpoints();
 app.MapWorkflowEndpoints();
 app.MapBackgroundEndpoints();
+app.MapClientApiEndpoints();
 
 app.Run();
 

@@ -138,6 +138,7 @@ public static class DependencyInjection
         services.AddSingleton<ISessionTokenService, SessionTokenService>();
         services.AddScoped<ISecurityStore, SecurityStore>();
         services.AddScoped<IRequestIdentityResolver, RequestIdentityResolver>();
+        services.AddScoped<ApiClientAdministration>();services.AddScoped<IApiClientAdministration>(x=>x.GetRequiredService<ApiClientAdministration>());services.AddScoped<IApiClientIdentityResolver>(x=>x.GetRequiredService<ApiClientAdministration>());
         services.AddScoped<SecurityAdministration>();
         services.AddScoped<ISecurityAdministration>(static provider => provider.GetRequiredService<SecurityAdministration>());
         services.AddScoped<IPermissionAuthorizationService>(static provider => provider.GetRequiredService<SecurityAdministration>());
