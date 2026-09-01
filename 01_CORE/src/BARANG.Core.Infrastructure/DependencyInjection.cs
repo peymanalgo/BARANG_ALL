@@ -31,7 +31,10 @@ using BARANG.Core.Application.Quality;
 using BARANG.Core.Infrastructure.Quality;
 using BARANG.Core.Application.Logistics;
 using BARANG.Core.Infrastructure.Logistics;
+using BARANG.Core.Application.Workflow;
+using BARANG.Core.Infrastructure.Workflow;
 using Minio;
+using Elsa.Extensions;
 
 namespace BARANG.Core.Infrastructure;
 
@@ -47,6 +50,7 @@ public static class DependencyInjection
 
         services.AddDbContext<CoreDbContext>(options =>
             options.UseCorePostgreSql(connectionString));
+        services.AddElsa();
 
         IHealthChecksBuilder healthChecks = services.AddHealthChecks()
             .AddCheck(
@@ -112,6 +116,9 @@ public static class DependencyInjection
         services.AddScoped<IQualityAdministration, QualityAdministration>();
         services.AddSingleton<ICarrierService, LocalCarrierService>();
         services.AddScoped<ILogisticsAdministration, LogisticsAdministration>();
+        services.AddScoped<IWorkflowEngineAdapter, ElsaWorkflowEngineAdapter>();
+        services.AddScoped<IWorkflowBusinessCompletionAdapter, WorkflowBusinessCompletionAdapter>();
+        services.AddScoped<IWorkflowAdministration, WorkflowAdministration>();
         services.AddScoped<IOrderAdministration, OrderAdministration>();
         services.AddSingleton<IFileProcessingQueue, FileProcessingQueue>();
         services.AddHostedService<FileProcessingWorker>();

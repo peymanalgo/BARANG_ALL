@@ -10,6 +10,8 @@
     <PackageReference Include="Minio" />
     <PackageReference Include="Magick.NET-Q8-AnyCPU" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Elsa.Workflows.Core" />
+    <PackageReference Include="Elsa" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../BARANG.Core.Application/BARANG.Core.Application.csproj" />

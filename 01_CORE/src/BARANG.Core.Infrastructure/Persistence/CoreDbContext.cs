@@ -14,6 +14,7 @@ using BARANG.Core.Domain.Inventory;
 using BARANG.Core.Domain.Production;
 using BARANG.Core.Domain.Quality;
 using BARANG.Core.Domain.Logistics;
+using BARANG.Core.Domain.Workflow;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -103,6 +104,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<ShipmentPackage> ShipmentPackages => Set<ShipmentPackage>();
     public DbSet<ShipmentStatusHistory> ShipmentStatusHistory => Set<ShipmentStatusHistory>();
+    public DbSet<WorkflowInstance> WorkflowInstances => Set<WorkflowInstance>();
+    public DbSet<HumanTask> HumanTasks => Set<HumanTask>();
+    public DbSet<WorkflowSlaPolicy> WorkflowSlaPolicies => Set<WorkflowSlaPolicy>();
+    public DbSet<WorkflowEscalation> WorkflowEscalations => Set<WorkflowEscalation>();
+    public DbSet<WorkflowHistory> WorkflowHistory => Set<WorkflowHistory>();
+    public DbSet<WorkflowReconciliationIssue> WorkflowReconciliationIssues => Set<WorkflowReconciliationIssue>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -186,6 +193,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<Shipment>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<ShipmentPackage>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<ShipmentStatusHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<WorkflowInstance>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<HumanTask>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<WorkflowSlaPolicy>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<WorkflowEscalation>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<WorkflowHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<WorkflowReconciliationIssue>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }
