@@ -138,6 +138,216 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("audit_events", "barang");
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Background.DeadLetterItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("ErrorCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("error_code");
+
+                    b.Property<Guid>("OutboxMessageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("outbox_message_id");
+
+                    b.Property<DateTimeOffset?>("ReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at_utc");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("CompanyId", "Id");
+
+                    b.HasIndex("OutboxMessageId");
+
+                    b.HasIndex("CompanyId", "OutboxMessageId")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "Status", "CreatedAtUtc");
+
+                    b.ToTable("dead_letter_items", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Background.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("channel");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<DateTimeOffset?>("FailedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("failed_at_utc");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("failure_code");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload");
+
+                    b.Property<DateTimeOffset?>("ReadAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("read_at_utc");
+
+                    b.Property<Guid>("RecipientUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recipient_user_id");
+
+                    b.Property<DateTimeOffset>("ScheduledAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("scheduled_at_utc");
+
+                    b.Property<DateTimeOffset?>("SentAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TemplateCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("template_code");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("CompanyId", "Id");
+
+                    b.HasIndex("CompanyId", "Status", "ScheduledAtUtc");
+
+                    b.HasIndex("CompanyId", "RecipientUserId", "ReadAtUtc", "CreatedAtUtc");
+
+                    b.ToTable("notifications", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Background.OutboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("CorrelationId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("correlation_id");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("event_type");
+
+                    b.Property<string>("LastErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_error_code");
+
+                    b.Property<DateTimeOffset>("NextAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at_utc");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload");
+
+                    b.Property<DateTimeOffset?>("ProcessedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processed_at_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "CorrelationId", "EventType");
+
+                    b.HasIndex("Status", "NextAttemptAtUtc", "OccurredAtUtc");
+
+                    b.ToTable("outbox_messages", "barang");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Catalog.Equipment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5940,6 +6150,27 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                             Code = "workflow.manage",
                             Module = "workflow",
                             TechnicalDescription = "workflow.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000060"),
+                            Code = "notification.read",
+                            Module = "notification",
+                            TechnicalDescription = "notification.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000061"),
+                            Code = "notification.manage",
+                            Module = "notification",
+                            TechnicalDescription = "notification.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000062"),
+                            Code = "backgroundjob.review",
+                            Module = "backgroundjob",
+                            TechnicalDescription = "backgroundjob.review"
                         });
                 });
 
@@ -6481,6 +6712,15 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("workflow_sla_policies", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Background.DeadLetterItem", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Background.OutboxMessage", null)
+                        .WithMany()
+                        .HasForeignKey("OutboxMessageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Catalog.Equipment", b =>

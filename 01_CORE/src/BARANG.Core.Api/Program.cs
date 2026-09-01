@@ -23,6 +23,7 @@ using BARANG.Core.Api.Production;
 using BARANG.Core.Api.Quality;
 using BARANG.Core.Api.Logistics;
 using BARANG.Core.Api.Workflow;
+using BARANG.Core.Api.Background;
 using Microsoft.AspNetCore.Http.Features;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -90,6 +91,7 @@ app.MapProductionEndpoints();
 app.MapQualityEndpoints();
 app.MapLogisticsEndpoints();
 app.MapWorkflowEndpoints();
+app.MapBackgroundEndpoints();
 
 app.Run();
 

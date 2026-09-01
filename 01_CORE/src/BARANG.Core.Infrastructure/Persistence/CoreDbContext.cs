@@ -15,6 +15,7 @@ using BARANG.Core.Domain.Production;
 using BARANG.Core.Domain.Quality;
 using BARANG.Core.Domain.Logistics;
 using BARANG.Core.Domain.Workflow;
+using BARANG.Core.Domain.Background;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -110,6 +111,7 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<WorkflowEscalation> WorkflowEscalations => Set<WorkflowEscalation>();
     public DbSet<WorkflowHistory> WorkflowHistory => Set<WorkflowHistory>();
     public DbSet<WorkflowReconciliationIssue> WorkflowReconciliationIssues => Set<WorkflowReconciliationIssue>();
+    public DbSet<OutboxMessage> OutboxMessages=>Set<OutboxMessage>();public DbSet<Notification> Notifications=>Set<Notification>();public DbSet<DeadLetterItem> DeadLetterItems=>Set<DeadLetterItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -199,6 +201,9 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<WorkflowEscalation>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<WorkflowHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<WorkflowReconciliationIssue>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<Notification>().HasQueryFilter(entity=>companyContext.CompanyId!=null&&entity.CompanyId==companyContext.CompanyId);
+        modelBuilder.Entity<DeadLetterItem>().HasQueryFilter(entity=>companyContext.CompanyId!=null&&entity.CompanyId==companyContext.CompanyId);
+        modelBuilder.Entity<OutboxMessage>().HasQueryFilter(entity=>companyContext.CompanyId!=null&&entity.CompanyId==companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }

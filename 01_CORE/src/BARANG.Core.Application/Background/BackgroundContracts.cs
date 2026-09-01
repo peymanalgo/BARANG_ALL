@@ -1,0 +1,13 @@
+using BARANG.Core.Domain.Background;using BARANG.Core.Domain.Common;
+namespace BARANG.Core.Application.Background;
+public sealed record CacheKey(Guid CompanyId,string Culture,string Identity){public override string ToString()=>$"barang:{CompanyId:N}:{Culture.Trim().ToLowerInvariant()}:{Identity.Trim().ToLowerInvariant()}";}
+public interface IApplicationCache{Task<T?>GetAsync<T>(CacheKey key,CancellationToken ct);Task SetAsync<T>(CacheKey key,T value,TimeSpan ttl,CancellationToken ct);Task RemoveAsync(CacheKey key,CancellationToken ct);}
+public sealed record NotificationRequest(Guid RecipientUserId,NotificationChannel Channel,string TemplateCode,string Payload);
+public sealed record NotificationView(Guid Id,NotificationChannel Channel,string TemplateCode,string Payload,NotificationStatus Status,DateTimeOffset CreatedAtUtc,DateTimeOffset?ReadAtUtc,long Version);
+public sealed record NotificationPage(IReadOnlyList<NotificationView>Items,int Page,int PageSize,long Total);
+public sealed record DeadLetterView(Guid Id,Guid OutboxMessageId,string ErrorCode,DeadLetterStatus Status,DateTimeOffset CreatedAtUtc,long Version);
+public interface INotificationAdministration{Task<Result<Guid>>QueueAsync(NotificationRequest request,CancellationToken ct);Task<Result<NotificationPage>>MyAsync(bool?unread,int page,int pageSize,CancellationToken ct);Task<Result>MarkReadAsync(Guid id,long version,CancellationToken ct);Task<Result<int>>MarkAllReadAsync(CancellationToken ct);Task<Result<IReadOnlyList<DeadLetterView>>>DeadLettersAsync(CancellationToken ct);Task<Result>RetryAsync(Guid id,long version,CancellationToken ct);}
+public sealed record NotificationDelivery(Guid NotificationId,Guid CompanyId,Guid RecipientUserId,string TemplateCode,string Payload);
+public interface ISmsSender{Task<Result>SendAsync(NotificationDelivery delivery,CancellationToken ct);}public interface IEmailSender{Task<Result>SendAsync(NotificationDelivery delivery,CancellationToken ct);}public interface IPushSender{Task<Result>SendAsync(NotificationDelivery delivery,CancellationToken ct);}
+public interface IOutboxDispatcher{Task<int>DispatchAllAsync(CancellationToken ct);}public interface ISlaScheduler{Task RunAsync(CancellationToken ct);}public interface IFileProcessingScheduler{Task RunAsync(CancellationToken ct);}
+public static class BackgroundRetryPolicy{public const int MaximumAttempts=5;public static TimeSpan Backoff(int attempt)=>TimeSpan.FromMinutes(Math.Min(30,Math.Pow(2,Math.Clamp(attempt,1,6)-1)));}

@@ -12,6 +12,9 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Elsa.Workflows.Core" />
     <PackageReference Include="Elsa" />
+    <PackageReference Include="Hangfire.AspNetCore" />
+    <PackageReference Include="Hangfire.PostgreSql" />
+    <PackageReference Include="StackExchange.Redis" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../BARANG.Core.Application/BARANG.Core.Application.csproj" />

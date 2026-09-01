@@ -13,6 +13,7 @@ public sealed class CoreApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.UseSetting("BackgroundJobs:ServerEnabled", "false");
         builder.UseSetting(
             "ConnectionStrings:CoreDatabase",
             "Host=unused;Database=unused;Username=unused;Password=unused");

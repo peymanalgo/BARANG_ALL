@@ -1,6 +1,20 @@
 name: barang-core
 
 services:
+  redis:
+    image: redis:8.2.1-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - barang_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   minio:
     image: minio/minio:RELEASE.2025-07-23T15-54-02Z
     command: server /data --console-address ":9001"
@@ -48,6 +62,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__CoreDatabase: Host=postgres;Port=5432;Database=${POSTGRES_DB:-barang_core};Username=${POSTGRES_APP_USER:-barang_app};Password=${POSTGRES_APP_PASSWORD:-barang_app_dev_only}
+      ConnectionStrings__Redis: redis:6379,abortConnect=false
       DatabaseAvailability__WaitForAvailability: "true"
       DatabaseAvailability__MaximumAttempts: "15"
       DatabaseAvailability__DelaySeconds: "2"
@@ -67,6 +82,8 @@ services:
       postgres:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health/ready"]
@@ -99,3 +116,4 @@ services:
 volumes:
   barang_postgres_data:
   barang_minio_data:
+  barang_redis_data:

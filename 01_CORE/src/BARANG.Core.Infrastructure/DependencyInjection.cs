@@ -35,6 +35,11 @@ using BARANG.Core.Application.Workflow;
 using BARANG.Core.Infrastructure.Workflow;
 using Minio;
 using Elsa.Extensions;
+using BARANG.Core.Application.Background;
+using BARANG.Core.Infrastructure.Background;
+using Hangfire;
+using Hangfire.PostgreSql;
+using StackExchange.Redis;
 
 namespace BARANG.Core.Infrastructure;
 
@@ -51,6 +56,11 @@ public static class DependencyInjection
         services.AddDbContext<CoreDbContext>(options =>
             options.UseCorePostgreSql(connectionString));
         services.AddElsa();
+        services.AddHangfire(c=>c.SetDataCompatibilityLevel(CompatibilityLevel.Version_180).UseSimpleAssemblyNameTypeSerializer().UseRecommendedSerializerSettings().UsePostgreSqlStorage(o=>o.UseNpgsqlConnection(connectionString),new PostgreSqlStorageOptions{SchemaName="hangfire",PrepareSchemaIfNecessary=true}));
+        bool backgroundServerEnabled=configuration.GetValue("BackgroundJobs:ServerEnabled",true);
+        if(backgroundServerEnabled)services.AddHangfireServer(o=>o.WorkerCount=2);
+        string redisConnection=configuration.GetConnectionString("Redis")??"localhost:6379,abortConnect=false";
+        services.AddSingleton<IConnectionMultiplexer>(_=>ConnectionMultiplexer.Connect(redisConnection));
 
         IHealthChecksBuilder healthChecks = services.AddHealthChecks()
             .AddCheck(
@@ -64,6 +74,7 @@ public static class DependencyInjection
                     ? Task.FromResult(true)
                     : context.Database.CanConnectAsync(cancellationToken),
             tags: ["ready"]);
+        healthChecks.AddCheck<RedisHealthCheck>("redis",tags:["ready"]);
         services.Configure<FileStorageOptions>(configuration.GetSection(FileStorageOptions.SectionName));
         services.AddSingleton<IMinioClient>(provider =>
         {
@@ -119,6 +130,7 @@ public static class DependencyInjection
         services.AddScoped<IWorkflowEngineAdapter, ElsaWorkflowEngineAdapter>();
         services.AddScoped<IWorkflowBusinessCompletionAdapter, WorkflowBusinessCompletionAdapter>();
         services.AddScoped<IWorkflowAdministration, WorkflowAdministration>();
+        services.AddSingleton<IApplicationCache,RedisApplicationCache>();services.AddSingleton<LocalNotificationSender>();services.AddSingleton<ISmsSender>(x=>x.GetRequiredService<LocalNotificationSender>());services.AddSingleton<IEmailSender>(x=>x.GetRequiredService<LocalNotificationSender>());services.AddSingleton<IPushSender>(x=>x.GetRequiredService<LocalNotificationSender>());services.AddScoped<INotificationAdministration,NotificationAdministration>();services.AddScoped<IOutboxDispatcher,OutboxDispatcher>();services.AddScoped<OutboxDispatchJob>();services.AddScoped<SlaScheduler>();services.AddScoped<ISlaScheduler>(x=>x.GetRequiredService<SlaScheduler>());services.AddScoped<FileProcessingScheduler>();services.AddScoped<IFileProcessingScheduler>(x=>x.GetRequiredService<FileProcessingScheduler>());if(backgroundServerEnabled)services.AddHostedService<BackgroundRecurringRegistrar>();
         services.AddScoped<IOrderAdministration, OrderAdministration>();
         services.AddSingleton<IFileProcessingQueue, FileProcessingQueue>();
         services.AddHostedService<FileProcessingWorker>();

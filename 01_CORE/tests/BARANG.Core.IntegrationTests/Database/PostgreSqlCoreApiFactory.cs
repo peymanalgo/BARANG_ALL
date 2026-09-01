@@ -13,6 +13,7 @@ public sealed class PostgreSqlCoreApiFactory(string connectionString, string env
         builder.UseSetting("CompanyResolution:AllowDevelopmentHeader", "true");
         builder.UseSetting("CompanyResolution:AllowDevelopmentAdministration", "true");
         builder.UseSetting("SecurityBootstrap:Secret", "test-bootstrap-secret-123456789");
+        builder.UseSetting("BackgroundJobs:ServerEnabled", "false");
         if (useObjectStorage)
         {
             builder.UseSetting("FileStorage:Enabled", "true");
