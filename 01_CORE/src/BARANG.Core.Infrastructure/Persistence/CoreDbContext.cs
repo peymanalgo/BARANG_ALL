@@ -11,6 +11,7 @@ using BARANG.Core.Domain.Orders;
 using BARANG.Core.Domain.Pricing;
 using BARANG.Core.Domain.Finance;
 using BARANG.Core.Domain.Inventory;
+using BARANG.Core.Domain.Production;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -84,6 +85,8 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<PurchaseOrderItem> PurchaseOrderItems => Set<PurchaseOrderItem>();
     public DbSet<PurchaseReceipt> PurchaseReceipts => Set<PurchaseReceipt>();
     public DbSet<PurchasingHistory> PurchasingHistory => Set<PurchasingHistory>();
+    public DbSet<ProductionJob> ProductionJobs => Set<ProductionJob>();
+    public DbSet<ProductionJobHistory> ProductionJobHistory => Set<ProductionJobHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -151,6 +154,8 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<PurchaseOrderItem>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<PurchaseReceipt>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<PurchasingHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<ProductionJob>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<ProductionJobHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }

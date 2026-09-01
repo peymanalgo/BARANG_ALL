@@ -4113,6 +4113,198 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Production.ProductionJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ArtworkVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("artwork_version_id");
+
+                    b.Property<Guid?>("AssignedEquipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assigned_equipment_id");
+
+                    b.Property<Guid?>("AssignedOperatorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assigned_operator_user_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at_utc");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("ExecutionNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("execution_notes");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("failure_reason");
+
+                    b.Property<Guid?>("FileVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_version_id");
+
+                    b.Property<string>("GenerationKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("generation_key");
+
+                    b.Property<string>("JobType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("job_type");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_item_id");
+
+                    b.Property<DateTimeOffset?>("PlannedEndUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("planned_end_utc");
+
+                    b.Property<DateTimeOffset?>("PlannedStartUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("planned_start_utc");
+
+                    b.Property<Guid?>("PrintOperationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("print_operation_id");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("priority");
+
+                    b.Property<decimal?>("QuantityCompleted")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity_completed");
+
+                    b.Property<int>("QueuePosition")
+                        .HasColumnType("integer")
+                        .HasColumnName("queue_position");
+
+                    b.Property<DateTimeOffset?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SuspensionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("suspension_reason");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedOperatorUserId");
+
+                    b.HasIndex("CompanyId", "ArtworkVersionId");
+
+                    b.HasIndex("CompanyId", "FileVersionId");
+
+                    b.HasIndex("CompanyId", "GenerationKey")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "OrderId");
+
+                    b.HasIndex("CompanyId", "OrderItemId");
+
+                    b.HasIndex("CompanyId", "PrintOperationId");
+
+                    b.HasIndex("CompanyId", "AssignedEquipmentId", "Status");
+
+                    b.HasIndex("CompanyId", "AssignedOperatorUserId", "Status");
+
+                    b.HasIndex("CompanyId", "Status", "Priority", "QueuePosition", "PlannedStartUtc");
+
+                    b.ToTable("production_jobs", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_production_jobs_plan", "planned_end_utc IS NULL OR planned_start_utc IS NOT NULL AND planned_end_utc > planned_start_utc");
+
+                            t.HasCheckConstraint("ck_production_jobs_quantity", "quantity_completed IS NULL OR quantity_completed >= 0");
+
+                            t.HasCheckConstraint("ck_production_jobs_queue", "queue_position >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Production.ProductionJobHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("event_type");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<Guid>("ProductionJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("production_job_id");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("summary");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("CompanyId", "ProductionJobId", "OccurredAtUtc", "Id");
+
+                    b.ToTable("production_job_history", "barang");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Security.ApiClient", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4659,6 +4851,34 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                             Code = "purchasing.manage",
                             Module = "purchasing",
                             TechnicalDescription = "purchasing.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000043"),
+                            Code = "production.read",
+                            Module = "production",
+                            TechnicalDescription = "production.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000044"),
+                            Code = "production.plan",
+                            Module = "production",
+                            TechnicalDescription = "production.plan"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000045"),
+                            Code = "production.assign",
+                            Module = "production",
+                            TechnicalDescription = "production.assign"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000046"),
+                            Code = "production.execute",
+                            Module = "production",
+                            TechnicalDescription = "production.execute"
                         });
                 });
 
@@ -5629,6 +5849,68 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CompanyId", "ProductVariantId")
                         .HasPrincipalKey("CompanyId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Production.ProductionJob", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("AssignedOperatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Files.ArtworkVersion", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ArtworkVersionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Equipment", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "AssignedEquipmentId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Files.FileVersion", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "FileVersionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Orders.Order", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "OrderId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Orders.OrderItem", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "OrderItemId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Orders.OrderPrintOperation", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "PrintOperationId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Production.ProductionJobHistory", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Production.ProductionJob", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ProductionJobId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Security.ApiClientCompany", b =>
