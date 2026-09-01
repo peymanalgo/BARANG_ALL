@@ -98,6 +98,7 @@ public static class BackofficeAuthEndpoints
             claims.Add(new(AuthClaimTypes.CompanyName, company.DisplayName));
             claims.Add(new(AuthClaimTypes.CompanyCode, company.Code));
             claims.AddRange(company.EffectiveRoleCodes.Select(role => new Claim(ClaimTypes.Role, role)));
+            claims.AddRange(company.EffectivePermissionCodes.Select(permission=>new Claim(AuthClaimTypes.Permission,permission)));
         }
         ClaimsPrincipal principal = new(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
         await http.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,

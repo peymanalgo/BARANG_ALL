@@ -75,6 +75,15 @@ public sealed class CoreApiTests(CoreApiFactory factory) : IClassFixture<CoreApi
         Assert.Equal(HttpStatusCode.Unauthorized,response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("/api/v1/inventory/shortages")]
+    [InlineData("/api/v1/quality/templates")]
+    [InlineData("/api/v1/quality/defect-types")]
+    public async Task BackofficeReferenceQueriesRejectAnonymousAccess(string uri)
+    {
+        using HttpClient client=factory.CreateClient();using HttpResponseMessage response=await client.GetAsync(uri,TestContext.Current.CancellationToken);Assert.Equal(HttpStatusCode.Unauthorized,response.StatusCode);
+    }
+
     [Fact]
     public async Task DevelopmentAdministratorRecoveryIsHiddenOutsideDevelopment()
     {

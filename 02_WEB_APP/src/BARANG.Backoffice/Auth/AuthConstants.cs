@@ -7,6 +7,7 @@ public static class AuthClaimTypes
     public const string CompanyId = "barang:company_id";
     public const string CompanyName = "barang:company_name";
     public const string CompanyCode = "barang:company_code";
+    public const string Permission = "barang:permission";
 }
 
 public static class AuthPolicies

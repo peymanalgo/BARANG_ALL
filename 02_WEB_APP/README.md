@@ -26,14 +26,22 @@ Login calls `/api/v1/auth/login`, then `/auth/me` and `/auth/me/companies`. No c
 
 The opaque Core token is placed inside ASP.NET Core's encrypted authentication ticket and sent only in an HttpOnly, SameSite=Strict session cookie. Its expiry matches Core's 30-minute expiry; it is never written to `localStorage`, `sessionStorage`, or browser logs. The token is decrypted and used only server-side. Limitations: the default Data Protection key ring must be persisted/shared for multi-instance deployments, and the encrypted ticket still contains bearer material. A future hardened deployment should use an ASP.NET Core server-side ticket store backed by a protected distributed cache so the browser cookie contains only an opaque Backoffice session key. HTTPS should set an always-secure cookie in production.
 
+## Modules and user interface
+
+The responsive ERP shell contains permission-aware workspaces for foundation administration, master data, customers, artwork/files, orders, finance, inventory, purchasing, production, quality/reproduction, logistics, workflow tasks, and reporting. Each workspace calls a versioned Core REST endpoint using the server-held session and selected `X-Company-ID`; it never reads PostgreSQL or object storage directly. Tables provide live loading, empty, permission, failure, search, and responsive overflow states. Lifecycle action surfaces deliberately remain subject to the corresponding Core permission, state, validation, audit, and concurrency rules.
+
+The order entry route `/orders/new` is a real Core-backed wizard entry point. It resolves active company branches and customer options and persists a Draft through `POST /api/v1/orders`; subsequent item, print, shipping, pricing, and review stages remain represented by the wizard and authoritative order workspace.
+
 ## Localization and dates
 
 Persian (`fa`) is the default. The language cookie persists runtime selection. Persian and Arabic use RTL; English uses LTR, including layout and directional icons. All component text comes from `.resx` resources.
 
-Future Persian date inputs/display/pickers use Jalali/Shamsi. English and Arabic use Gregorian. Core requests and storage remain canonical and locale-independent; Jalali values must never be persisted. Date conversion belongs in one future shared UI service, not individual pages.
+`ILocaleDateService` is the single date boundary. Persian input/display uses `PersianCalendar` Jalali/Shamsi values; English and Arabic use Gregorian. The service converts to canonical `DateOnly`/UTC values before Core requests. Pages must not implement calendar conversion independently, and Jalali values are never persisted by Core.
 
 ## Docker
 
 The existing `01_CORE/compose.yaml` runs PostgreSQL, Core, and Backoffice together. From `01_CORE`, run `docker compose up -d --build`. Backoffice uses the internal `http://api:8080` address and publishes only `127.0.0.1:5100`. Do not remove the existing PostgreSQL volume.
 
-Known scope limitation: this phase intentionally contains only login, company resolution, protected home shell, localization, and logout; no business modules or full date components are included.
+## Tests
+
+Run `dotnet test .\02_WEB_APP\BARANG.Backoffice.slnx --configuration Release`. Tests cover the centralized Core transport and status mapping, company header, authentication/logout, locale direction, Jalali/Gregorian conversion, company flow, permission navigation, and module-to-Core route invariants. Full system validation additionally runs the Core regression suite and browser E2E against the Docker stack.

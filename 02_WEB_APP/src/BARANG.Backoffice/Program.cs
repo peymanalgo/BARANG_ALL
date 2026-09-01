@@ -16,6 +16,7 @@ builder.Services.AddDataProtection().SetApplicationName("BARANG.Backoffice").Per
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddLocalization();
+builder.Services.AddSingleton<ILocaleDateService,LocaleDateService>();
 builder.Services.Configure<CoreApiOptions>(builder.Configuration.GetSection(CoreApiOptions.Section));
 builder.Services.AddHttpClient<ICoreApiClient, CoreApiClient>((services, client) =>
 {

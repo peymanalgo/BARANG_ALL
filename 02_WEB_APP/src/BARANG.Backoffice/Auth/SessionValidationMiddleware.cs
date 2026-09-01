@@ -8,7 +8,7 @@ public sealed class SessionValidationMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, ICoreApiClient core)
     {
-        bool guardedPage = HttpMethods.IsGet(context.Request.Method) && (context.Request.Path == "/" || context.Request.Path == "/company");
+        bool guardedPage = HttpMethods.IsGet(context.Request.Method) && (context.Request.Path == "/" || context.Request.Path == "/company" || context.Request.Path.StartsWithSegments("/workspace") || context.Request.Path.StartsWithSegments("/orders"));
         if (!guardedPage || context.User.Identity?.IsAuthenticated != true) { await next(context); return; }
 
         string? token = context.User.FindFirstValue(AuthClaimTypes.AccessToken);

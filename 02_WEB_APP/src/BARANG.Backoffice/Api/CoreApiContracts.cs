@@ -10,12 +10,12 @@ public sealed class CoreApiOptions
 public sealed record LoginRequest(string Username, string Password);
 public sealed record LoginResult(string AccessToken, DateTimeOffset ExpiresAtUtc, UserView User);
 public sealed record UserView(Guid Id, string Username, string? Email, string DisplayName);
-public sealed record CurrentUserView(Guid UserId, string Username, string DisplayName, int AccountState, Guid? CurrentCompanyId, IReadOnlyList<string> EffectiveRoleCodes);
+public sealed record CurrentUserView(Guid UserId, string Username, string DisplayName, int AccountState, Guid? CurrentCompanyId, IReadOnlyList<string> EffectiveRoleCodes, IReadOnlyList<string> EffectivePermissionCodes);
 public sealed record MyCompanyView(Guid CompanyId, string Code, string DisplayName);
-public sealed record CompanySelectionView(Guid CompanyId, string Code, string DisplayName, IReadOnlyList<string> EffectiveRoleCodes);
+public sealed record CompanySelectionView(Guid CompanyId, string Code, string DisplayName, IReadOnlyList<string> EffectiveRoleCodes, IReadOnlyList<string> EffectivePermissionCodes);
 public sealed record CoreProblem(string? Type, string? Title, int? Status, string? Detail, string? Code);
 
-public enum ApiFailure { None, InvalidCredentials, Unauthorized, Forbidden, Validation, Unavailable, Unexpected }
+public enum ApiFailure { None, InvalidCredentials, Unauthorized, Forbidden, Validation, Conflict, NotFound, Unavailable, Unexpected }
 public sealed record ApiResult<T>(T? Value, ApiFailure Failure, string? ProblemCode = null)
 {
     public bool IsSuccess => Failure == ApiFailure.None;

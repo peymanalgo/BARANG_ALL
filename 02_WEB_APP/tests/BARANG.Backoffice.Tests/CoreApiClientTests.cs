@@ -56,6 +56,25 @@ public sealed class CoreApiClientTests
         Assert.True(result.IsSuccess); Assert.Equal("/api/v1/auth/logout", captured!.RequestUri!.AbsolutePath); Assert.Equal(HttpMethod.Post, captured.Method);
     }
 
+    [Theory]
+    [InlineData(HttpStatusCode.Conflict,ApiFailure.Conflict)]
+    [InlineData(HttpStatusCode.UnprocessableEntity,ApiFailure.Validation)]
+    [InlineData(HttpStatusCode.BadRequest,ApiFailure.Validation)]
+    public async Task MutationFailuresMapConcurrencyAndValidation(HttpStatusCode status,ApiFailure expected)
+    {
+        var result=await Client(new StubHandler(_=>Json(status,"{\"code\":\"test.failure\"}"))).SendAsync(HttpMethod.Put,"api/v1/test",new{version=1},"token",Guid.NewGuid(),TestContext.Current.CancellationToken);
+        Assert.Equal(expected,result.Failure);Assert.Equal("test.failure",result.ProblemCode);
+    }
+
+    [Fact]
+    public async Task SecureUploadCarriesCompanyBearerAndMultipartWithoutStorageKey()
+    {
+        HttpRequestMessage? captured=null;string? content=null;Guid company=Guid.NewGuid();
+        var client=Client(new StubHandler(request=>{captured=Clone(request);content=request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();return Json(HttpStatusCode.Created,"{}");}));
+        await using MemoryStream stream=new([1,2,3]);await client.UploadAsync("api/v1/files/upload","safe.png","image/png",stream,3,"opaque",company,TestContext.Current.CancellationToken);
+        Assert.Equal("Bearer",captured!.Headers.Authorization!.Scheme);Assert.Equal(company.ToString(),captured.Headers.GetValues("X-Company-ID").Single());Assert.Contains("safe.png",content);Assert.DoesNotContain("storageKey",content,StringComparison.OrdinalIgnoreCase);
+    }
+
     private static CoreApiClient Client(HttpMessageHandler handler) => new(new HttpClient(handler) { BaseAddress = new Uri("http://core/") }, NullLogger<CoreApiClient>.Instance);
     private static HttpResponseMessage Json(HttpStatusCode status, string body) => new(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
     private static HttpRequestMessage Clone(HttpRequestMessage source) { var clone = new HttpRequestMessage(source.Method, source.RequestUri); foreach (var header in source.Headers) clone.Headers.TryAddWithoutValidation(header.Key, header.Value); return clone; }

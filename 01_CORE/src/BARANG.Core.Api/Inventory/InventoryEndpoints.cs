@@ -12,6 +12,7 @@ public static class InventoryEndpoints
   RouteGroupBuilder inventory=e.MapGroup("/api/v1/inventory");
   inventory.MapGet("/balances",async(Guid?warehouseId,Guid?variantId,IInventoryAdministration s,CancellationToken ct)=>Map(await s.BalancesAsync(warehouseId,variantId,ct))).RequireAuthorization(SecurityPermissions.InventoryRead);
   inventory.MapGet("/transactions",async(Guid?warehouseId,Guid?variantId,IInventoryAdministration s,CancellationToken ct)=>Map(await s.TransactionsAsync(warehouseId,variantId,ct))).RequireAuthorization(SecurityPermissions.InventoryRead);
+  inventory.MapGet("/shortages",async(bool?includeClosed,int?limit,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ShortagesAsync(includeClosed??false,Math.Clamp(limit??100,1,200),ct))).RequireAuthorization(SecurityPermissions.InventoryRead);
   inventory.MapPost("/receipts",async(StockMovementCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ReceiveAsync(c,ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/issues/{type}",async(StockTransactionType type,StockMovementCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.IssueAsync(c,type,ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/adjustments/{increase:bool}",async(bool increase,StockMovementCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.AdjustAsync(c,increase,ct),true)).RequireAuthorization(SecurityPermissions.InventoryAdjust);

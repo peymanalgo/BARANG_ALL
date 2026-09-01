@@ -10,9 +10,9 @@ public sealed record PermissionView(Guid Id, string Code, string TechnicalDescri
 public sealed record UserCompanyView(Guid Id, Guid UserId, Guid CompanyId, DateTimeOffset ValidFromUtc, DateTimeOffset? ValidToUtc);
 public sealed record UserRoleView(Guid Id, Guid UserId, Guid RoleId, Guid CompanyId, DateTimeOffset ValidFromUtc, DateTimeOffset? ValidToUtc);
 public sealed record LoginResult(string AccessToken, DateTimeOffset ExpiresAtUtc, UserView User);
-public sealed record CurrentUserView(Guid UserId, string Username, string DisplayName, UserAccountState AccountState, Guid? CurrentCompanyId, IReadOnlyList<string> EffectiveRoleCodes);
+public sealed record CurrentUserView(Guid UserId, string Username, string DisplayName, UserAccountState AccountState, Guid? CurrentCompanyId, IReadOnlyList<string> EffectiveRoleCodes, IReadOnlyList<string> EffectivePermissionCodes);
 public sealed record MyCompanyView(Guid CompanyId, string Code, string DisplayName);
-public sealed record CompanySelectionView(Guid CompanyId, string Code, string DisplayName, IReadOnlyList<string> EffectiveRoleCodes);
+public sealed record CompanySelectionView(Guid CompanyId, string Code, string DisplayName, IReadOnlyList<string> EffectiveRoleCodes, IReadOnlyList<string> EffectivePermissionCodes);
 public sealed record CreateUserCommand(string Username, string DisplayName, string? Email, string Password);
 
 public interface IPasswordCredentialService { Result<string> HashPassword(string password); bool Verify(string password, string? hash); }
@@ -27,7 +27,7 @@ public interface ISecurityStore
     Task<UserRole?> FindOpenUserRoleAsync(Guid userId, Guid roleId, Guid companyId, CancellationToken ct); Task<IReadOnlyList<UserRole>> ListUserRolesAsync(Guid userId, CancellationToken ct);
     Task<RolePermission?> FindRolePermissionAsync(Guid roleId, Guid permissionId, CancellationToken ct); Task<bool> UserHasPermissionAsync(Guid userId, Guid companyId, string permission, DateTimeOffset now, CancellationToken ct);
     Task<AuthenticationSession?> FindSessionAsync(string tokenHash, DateTimeOffset now, CancellationToken ct); Task<IReadOnlyList<AuthenticationSession>> ListActiveSessionsAsync(Guid userId, DateTimeOffset now, CancellationToken ct);
-    Task<IReadOnlyList<MyCompanyView>> ListEffectiveCompaniesAsync(Guid userId, DateTimeOffset now, CancellationToken ct); Task<MyCompanyView?> FindEffectiveCompanyAsync(Guid userId, Guid companyId, DateTimeOffset now, CancellationToken ct); Task<bool> HasEffectiveCompanyAccessAsync(Guid userId, Guid companyId, DateTimeOffset now, CancellationToken ct); Task<bool> CompanyIsActiveAsync(Guid companyId, CancellationToken ct); Task<IReadOnlyList<string>> ListEffectiveRoleCodesAsync(Guid userId, Guid companyId, DateTimeOffset now, CancellationToken ct);
+    Task<IReadOnlyList<MyCompanyView>> ListEffectiveCompaniesAsync(Guid userId, DateTimeOffset now, CancellationToken ct); Task<MyCompanyView?> FindEffectiveCompanyAsync(Guid userId, Guid companyId, DateTimeOffset now, CancellationToken ct); Task<bool> HasEffectiveCompanyAccessAsync(Guid userId, Guid companyId, DateTimeOffset now, CancellationToken ct); Task<bool> CompanyIsActiveAsync(Guid companyId, CancellationToken ct); Task<IReadOnlyList<string>> ListEffectiveRoleCodesAsync(Guid userId, Guid companyId, DateTimeOffset now, CancellationToken ct); Task<IReadOnlyList<string>> ListEffectivePermissionCodesAsync(Guid userId,Guid companyId,DateTimeOffset now,CancellationToken ct);
     Task<bool> AnyUsersAsync(CancellationToken ct);
     Task<bool> ApiClientHasCompanyAsync(Guid clientId,Guid companyId,CancellationToken ct);Task<bool> ApiClientHasPermissionAsync(Guid clientId,string permission,CancellationToken ct);
 }

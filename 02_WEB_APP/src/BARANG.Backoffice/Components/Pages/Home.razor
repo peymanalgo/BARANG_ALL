@@ -1,9 +1,7 @@
 @page "/"
-@attribute [Authorize(Policy = AuthPolicies.CompanySelected)]
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
 @inject IStringLocalizer<AppStrings> L
-<PageTitle>@L["Home"] · BARANG</PageTitle>
-<section class="welcome-card">
-    <span class="eyebrow">BARANG · @L["Backoffice"]</span>
-    <h1>@L["Welcome"]</h1>
-    <p>@L["WelcomeMessage"]</p>
-</section>
+@inject AuthenticationStateProvider AuthState
+<PageTitle>@L["Dashboard"] · BARANG</PageTitle><div class="page-heading"><div><span class="eyebrow">BARANG ERP</span><h1>@L["Dashboard"]</h1><p>@L["DashboardDescription"]</p></div><a class="primary-link" href="/orders/new">@L["NewOrder"]</a></div><section class="kpi-grid">@foreach(var module in Modules.Take(6)){<a class="kpi-card" href="/workspace/@module.Code"><span class="kpi-icon">@module.Icon</span><strong>@L[$"Module_{module.Code}"]</strong><small>@L["OpenWorkspace"]</small></a>}</section><section class="panel"><div class="panel-heading"><div><h2>@L["OperationalOverview"]</h2><p>@L["LiveDataDescription"]</p></div><span class="status-dot">@L["Live"]</span></div><div class="module-grid">@foreach(var module in Modules){<a class="module-tile" href="/workspace/@module.Code"><span>@module.Icon</span><div><strong>@L[$"Module_{module.Code}"]</strong><small>@L["OpenWorkspace"]</small></div></a>}</div></section>
+@code{private IReadOnlyList<BackofficeModule>Modules=[];protected override async Task OnInitializedAsync(){var u=(await AuthState.GetAuthenticationStateAsync()).User;Modules=ModuleCatalog.All.Where(x=>ModuleCatalog.IsVisible(x,u)).ToArray();}}

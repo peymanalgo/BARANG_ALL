@@ -7,4 +7,10 @@ public interface ICoreApiClient
     Task<ApiResult<IReadOnlyList<MyCompanyView>>> GetMyCompaniesAsync(string token, CancellationToken cancellationToken);
     Task<ApiResult<CompanySelectionView>> SelectCompanyAsync(string token, Guid companyId, CancellationToken cancellationToken);
     Task<ApiResult<bool>> LogoutAsync(string token, CancellationToken cancellationToken);
+    Task<ApiResult<System.Text.Json.JsonElement>> GetAsync(string path, string token, Guid companyId, CancellationToken cancellationToken);
+    Task<ApiResult<System.Text.Json.JsonElement>> SendAsync(HttpMethod method, string path, object? body, string token, Guid companyId, CancellationToken cancellationToken);
+    Task<ApiResult<System.Text.Json.JsonElement>> UploadAsync(string path, string fileName, string contentType, Stream content, long length, string token, Guid companyId, CancellationToken cancellationToken);
+    Task<ApiResult<FileDownload>> DownloadAsync(string path, string token, Guid companyId, CancellationToken cancellationToken);
 }
+
+public readonly record struct FileDownload(byte[] Content,string ContentType,string FileName);
