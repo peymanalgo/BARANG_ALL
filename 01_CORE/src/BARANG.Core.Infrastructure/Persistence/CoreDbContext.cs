@@ -10,6 +10,7 @@ using BARANG.Core.Domain.Files;
 using BARANG.Core.Domain.Orders;
 using BARANG.Core.Domain.Pricing;
 using BARANG.Core.Domain.Finance;
+using BARANG.Core.Domain.Inventory;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -72,6 +73,17 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<InvoiceSnapshot> InvoiceSnapshots => Set<InvoiceSnapshot>();
     public DbSet<InvoiceItemSnapshot> InvoiceItemSnapshots => Set<InvoiceItemSnapshot>();
     public DbSet<FinanceHistory> FinanceHistory => Set<FinanceHistory>();
+    public DbSet<StockTransaction> StockTransactions => Set<StockTransaction>();
+    public DbSet<StockBalance> StockBalances => Set<StockBalance>();
+    public DbSet<StockReservation> StockReservations => Set<StockReservation>();
+    public DbSet<StockTransfer> StockTransfers => Set<StockTransfer>();
+    public DbSet<StockShortage> StockShortages => Set<StockShortage>();
+    public DbSet<PurchaseRequest> PurchaseRequests => Set<PurchaseRequest>();
+    public DbSet<PurchaseRequestItem> PurchaseRequestItems => Set<PurchaseRequestItem>();
+    public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
+    public DbSet<PurchaseOrderItem> PurchaseOrderItems => Set<PurchaseOrderItem>();
+    public DbSet<PurchaseReceipt> PurchaseReceipts => Set<PurchaseReceipt>();
+    public DbSet<PurchasingHistory> PurchasingHistory => Set<PurchasingHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -128,6 +140,17 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<InvoiceSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<InvoiceItemSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<FinanceHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<StockTransaction>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<StockBalance>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<StockReservation>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<StockTransfer>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<StockShortage>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<PurchaseRequest>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<PurchaseRequestItem>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<PurchaseOrder>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<PurchaseOrderItem>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<PurchaseReceipt>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<PurchasingHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }
