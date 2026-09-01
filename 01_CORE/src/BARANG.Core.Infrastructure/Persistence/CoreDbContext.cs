@@ -13,6 +13,7 @@ using BARANG.Core.Domain.Finance;
 using BARANG.Core.Domain.Inventory;
 using BARANG.Core.Domain.Production;
 using BARANG.Core.Domain.Quality;
+using BARANG.Core.Domain.Logistics;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -96,6 +97,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<QCDefect> QCDefects => Set<QCDefect>();
     public DbSet<ReproductionRequest> ReproductionRequests => Set<ReproductionRequest>();
     public DbSet<QCHistory> QCHistory => Set<QCHistory>();
+    public DbSet<Package> Packages => Set<Package>();
+    public DbSet<PackageItem> PackageItems => Set<PackageItem>();
+    public DbSet<ShippingHandoff> ShippingHandoffs => Set<ShippingHandoff>();
+    public DbSet<Shipment> Shipments => Set<Shipment>();
+    public DbSet<ShipmentPackage> ShipmentPackages => Set<ShipmentPackage>();
+    public DbSet<ShipmentStatusHistory> ShipmentStatusHistory => Set<ShipmentStatusHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -173,6 +180,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<QCDefect>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<ReproductionRequest>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<QCHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<Package>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<PackageItem>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<ShippingHandoff>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<Shipment>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<ShipmentPackage>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<ShipmentStatusHistory>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         base.OnModelCreating(modelBuilder);
     }
 }

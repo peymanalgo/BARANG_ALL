@@ -21,6 +21,7 @@ using BARANG.Core.Api.Finance;
 using BARANG.Core.Api.Inventory;
 using BARANG.Core.Api.Production;
 using BARANG.Core.Api.Quality;
+using BARANG.Core.Api.Logistics;
 using Microsoft.AspNetCore.Http.Features;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -86,6 +87,7 @@ app.MapFinanceEndpoints();
 app.MapInventoryEndpoints();
 app.MapProductionEndpoints();
 app.MapQualityEndpoints();
+app.MapLogisticsEndpoints();
 
 app.Run();
 

@@ -29,6 +29,8 @@ using BARANG.Core.Application.Production;
 using BARANG.Core.Infrastructure.Production;
 using BARANG.Core.Application.Quality;
 using BARANG.Core.Infrastructure.Quality;
+using BARANG.Core.Application.Logistics;
+using BARANG.Core.Infrastructure.Logistics;
 using Minio;
 
 namespace BARANG.Core.Infrastructure;
@@ -108,6 +110,8 @@ public static class DependencyInjection
         services.AddScoped<IPurchasingAdministration>(p => p.GetRequiredService<InventoryAdministration>());
         services.AddScoped<IProductionAdministration, ProductionAdministration>();
         services.AddScoped<IQualityAdministration, QualityAdministration>();
+        services.AddSingleton<ICarrierService, LocalCarrierService>();
+        services.AddScoped<ILogisticsAdministration, LogisticsAdministration>();
         services.AddScoped<IOrderAdministration, OrderAdministration>();
         services.AddSingleton<IFileProcessingQueue, FileProcessingQueue>();
         services.AddHostedService<FileProcessingWorker>();
