@@ -348,6 +348,325 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("outbox_messages", "barang");
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.BusinessAnalysis.CustomerBusinessProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BusinessDetails")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("business_details");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<decimal>("CreditLimit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("credit_limit");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<DateOnly?>("DateOfBirth")
+                        .HasColumnType("date")
+                        .HasColumnName("date_of_birth");
+
+                    b.Property<string>("EconomicCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("economic_code");
+
+                    b.Property<int>("PaymentTermsDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("payment_terms_days");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("CompanyId", "Id");
+
+                    b.HasIndex("CompanyId", "CustomerId")
+                        .IsUnique();
+
+                    b.HasIndex("CustomerId", "CompanyId");
+
+                    b.ToTable("customer_business_profiles", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.BusinessAnalysis.OrderBusinessProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<bool>("IncludeInvoiceInPackage")
+                        .HasColumnType("boolean")
+                        .HasColumnName("include_invoice_in_package");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("OrderTypeCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("order_type_code");
+
+                    b.Property<string>("PackagingTypeCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("packaging_type_code");
+
+                    b.Property<string>("ShippingMethodCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("shipping_method_code");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("CompanyId", "Id");
+
+                    b.HasIndex("CompanyId", "OrderId")
+                        .IsUnique();
+
+                    b.HasIndex("OrderId", "CompanyId");
+
+                    b.ToTable("order_business_profiles", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.BusinessAnalysis.OrderItemTechnicalSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BrandCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("brand_code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("FitCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("fit_code");
+
+                    b.Property<string>("GenderCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("gender_code");
+
+                    b.Property<string>("MaterialCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("material_code");
+
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_item_id");
+
+                    b.Property<string>("StyleCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("style_code");
+
+                    b.Property<string>("TechnicalAttributes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("technical_attributes");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "OrderItemId")
+                        .IsUnique();
+
+                    b.HasIndex("OrderItemId", "CompanyId");
+
+                    b.ToTable("order_item_technical_snapshots", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.BusinessAnalysis.PrintTechnicalProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("DirectionCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("direction_code");
+
+                    b.Property<Guid?>("HeatPressEquipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("heat_press_equipment_id");
+
+                    b.Property<Guid>("OrderPrintOperationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_print_operation_id");
+
+                    b.Property<int>("PrintCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("print_count");
+
+                    b.Property<string>("PrintSizeCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("print_size_code");
+
+                    b.Property<Guid?>("PrinterEquipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("printer_equipment_id");
+
+                    b.Property<string>("Specifications")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("specifications");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("CompanyId", "Id");
+
+                    b.HasIndex("CompanyId", "OrderPrintOperationId")
+                        .IsUnique();
+
+                    b.HasIndex("HeatPressEquipmentId", "CompanyId");
+
+                    b.HasIndex("OrderPrintOperationId", "CompanyId");
+
+                    b.HasIndex("PrinterEquipmentId", "CompanyId");
+
+                    b.ToTable("print_technical_profiles", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.BusinessAnalysis.ProductTechnicalProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BrandCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("brand_code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("FitCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("fit_code");
+
+                    b.Property<string>("GenderCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("gender_code");
+
+                    b.Property<string>("MaterialCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("material_code");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<Guid?>("ProductVariantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_variant_id");
+
+                    b.Property<string>("StyleCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("style_code");
+
+                    b.Property<string>("TechnicalAttributes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("technical_attributes");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("CompanyId", "Id");
+
+                    b.HasIndex("ProductId", "CompanyId");
+
+                    b.HasIndex("ProductVariantId", "CompanyId");
+
+                    b.HasIndex("CompanyId", "ProductId", "ProductVariantId")
+                        .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("CompanyId", "ProductId", "ProductVariantId"), false);
+
+                    b.ToTable("product_technical_profiles", "barang");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Catalog.Equipment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -6777,6 +7096,74 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasForeignKey("OutboxMessageId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.BusinessAnalysis.CustomerBusinessProfile", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId", "CompanyId")
+                        .HasPrincipalKey("Id", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.BusinessAnalysis.OrderBusinessProfile", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Orders.Order", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId", "CompanyId")
+                        .HasPrincipalKey("Id", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.BusinessAnalysis.OrderItemTechnicalSnapshot", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Orders.OrderItem", null)
+                        .WithMany()
+                        .HasForeignKey("OrderItemId", "CompanyId")
+                        .HasPrincipalKey("Id", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.BusinessAnalysis.PrintTechnicalProfile", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Catalog.Equipment", null)
+                        .WithMany()
+                        .HasForeignKey("HeatPressEquipmentId", "CompanyId")
+                        .HasPrincipalKey("Id", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Orders.OrderPrintOperation", null)
+                        .WithMany()
+                        .HasForeignKey("OrderPrintOperationId", "CompanyId")
+                        .HasPrincipalKey("Id", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Equipment", null)
+                        .WithMany()
+                        .HasForeignKey("PrinterEquipmentId", "CompanyId")
+                        .HasPrincipalKey("Id", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.BusinessAnalysis.ProductTechnicalProfile", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Catalog.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId", "CompanyId")
+                        .HasPrincipalKey("Id", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.ProductVariant", null)
+                        .WithMany()
+                        .HasForeignKey("ProductVariantId", "CompanyId")
+                        .HasPrincipalKey("Id", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Catalog.Equipment", b =>

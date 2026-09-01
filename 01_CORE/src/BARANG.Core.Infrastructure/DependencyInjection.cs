@@ -40,6 +40,8 @@ using BARANG.Core.Infrastructure.Background;
 using Hangfire;
 using Hangfire.PostgreSql;
 using StackExchange.Redis;
+using BARANG.Core.Application.BusinessAnalysis;
+using BARANG.Core.Infrastructure.BusinessAnalysis;
 
 namespace BARANG.Core.Infrastructure;
 
@@ -132,6 +134,7 @@ public static class DependencyInjection
         services.AddScoped<IWorkflowAdministration, WorkflowAdministration>();
         services.AddSingleton<IApplicationCache,RedisApplicationCache>();services.AddSingleton<LocalNotificationSender>();services.AddSingleton<ISmsSender>(x=>x.GetRequiredService<LocalNotificationSender>());services.AddSingleton<IEmailSender>(x=>x.GetRequiredService<LocalNotificationSender>());services.AddSingleton<IPushSender>(x=>x.GetRequiredService<LocalNotificationSender>());services.AddScoped<INotificationAdministration,NotificationAdministration>();services.AddScoped<IOutboxDispatcher,OutboxDispatcher>();services.AddScoped<OutboxDispatchJob>();services.AddScoped<SlaScheduler>();services.AddScoped<ISlaScheduler>(x=>x.GetRequiredService<SlaScheduler>());services.AddScoped<FileProcessingScheduler>();services.AddScoped<IFileProcessingScheduler>(x=>x.GetRequiredService<FileProcessingScheduler>());if(backgroundServerEnabled)services.AddHostedService<BackgroundRecurringRegistrar>();
         services.AddScoped<IOrderAdministration, OrderAdministration>();
+        services.AddScoped<IBusinessProfileAdministration, BusinessProfileAdministration>();
         services.AddSingleton<IFileProcessingQueue, FileProcessingQueue>();
         services.AddHostedService<FileProcessingWorker>();
         services.AddSingleton<IPasswordCredentialService, PasswordCredentialService>();

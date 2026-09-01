@@ -16,6 +16,7 @@ using BARANG.Core.Domain.Quality;
 using BARANG.Core.Domain.Logistics;
 using BARANG.Core.Domain.Workflow;
 using BARANG.Core.Domain.Background;
+using BARANG.Core.Domain.BusinessAnalysis;
 
 namespace BARANG.Core.Infrastructure.Persistence;
 
@@ -46,11 +47,13 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<CustomerContact> CustomerContacts => Set<CustomerContact>();
     public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
+    public DbSet<CustomerBusinessProfile> CustomerBusinessProfiles => Set<CustomerBusinessProfile>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<SupplierProduct> SupplierProducts => Set<SupplierProduct>();
     public DbSet<Equipment> Equipment => Set<Equipment>();
+    public DbSet<ProductTechnicalProfile> ProductTechnicalProfiles => Set<ProductTechnicalProfile>();
     public DbSet<Artwork> Artworks => Set<Artwork>();
     public DbSet<ArtworkVersion> ArtworkVersions => Set<ArtworkVersion>();
     public DbSet<ArtworkTag> ArtworkTags => Set<ArtworkTag>();
@@ -66,6 +69,9 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<OrderAddressSnapshot> OrderAddressSnapshots => Set<OrderAddressSnapshot>();
     public DbSet<OrderChangeRequest> OrderChangeRequests => Set<OrderChangeRequest>();
     public DbSet<OrderTimelineEvent> OrderTimelineEvents => Set<OrderTimelineEvent>();
+    public DbSet<OrderBusinessProfile> OrderBusinessProfiles => Set<OrderBusinessProfile>();
+    public DbSet<PrintTechnicalProfile> PrintTechnicalProfiles => Set<PrintTechnicalProfile>();
+    public DbSet<OrderItemTechnicalSnapshot> OrderItemTechnicalSnapshots => Set<OrderItemTechnicalSnapshot>();
     public DbSet<Tariff> Tariffs => Set<Tariff>();
     public DbSet<DiscountRule> DiscountRules => Set<DiscountRule>();
     public DbSet<TaxRule> TaxRules => Set<TaxRule>();
@@ -136,11 +142,13 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<Customer>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<CustomerContact>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<CustomerAddress>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<CustomerBusinessProfile>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<Product>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<ProductVariant>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<Supplier>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<SupplierProduct>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<Equipment>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<ProductTechnicalProfile>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<Artwork>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<ArtworkVersion>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<ArtworkTag>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
@@ -156,6 +164,9 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<OrderAddressSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<OrderChangeRequest>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<OrderTimelineEvent>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<OrderBusinessProfile>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<PrintTechnicalProfile>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<OrderItemTechnicalSnapshot>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<Tariff>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<DiscountRule>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<TaxRule>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);

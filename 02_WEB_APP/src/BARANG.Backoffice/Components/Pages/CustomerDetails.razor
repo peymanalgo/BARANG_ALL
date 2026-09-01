@@ -6,6 +6,7 @@
 @inject ICoreApiClient Core
 <PageTitle>@L["CustomerDetails"]</PageTitle>
 <nav class="breadcrumbs"><a href="/manage/customers">@L["Module_customers"]</a><span>/</span><span>@L["CustomerDetails"]</span></nav>
+<a class="secondary-action" href="@($"/business-profile/customer/{CustomerId}")">@L["Action_Edit"] · @L["AuthoritativeCoreData"]</a>
 @if(Message is not null){<div class="@(Success?"inline-success":"inline-error")">@L[Message]</div>}
 <div class="management-grid">
  <section class="panel"><h2>@L["Action_Contact"]</h2><div class="record-list">@foreach(var x in Contacts){<button class="record-row" @onclick="()=>Pick(x)"><span><strong>@x.Name</strong><small>@x.Mobile · @x.Email</small></span><span>@(x.Active?L["Active"]:L["Inactive"])</span></button>}</div><div class="form-grid single"><label><span>@L["ContactType"]</span><input @bind="ContactType" /></label><label><span>@L["Name"]</span><input @bind="ContactName" /></label><label><span>@L["Mobile"]</span><input @bind="ContactMobile" /></label><label><span>@L["Email"]</span><input @bind="ContactEmail" /></label></div><div class="form-actions">@if(ContactId is not null){<button class="secondary-action" @onclick="ToggleContact">@(ContactActive?L["Deactivate"]:L["Activate"])</button>}<button class="secondary-action" @onclick="NewContact">@L["CreateNew"]</button><button class="primary-link" @onclick="SaveContact">@L["Save"]</button></div></section>

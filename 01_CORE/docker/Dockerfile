@@ -21,6 +21,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build --chown=app:app /app/publish .
+RUN mkdir -p /app/App_Data/locks && chown -R app:app /app/App_Data
 USER app
 EXPOSE 8080
 ENV ASPNETCORE_HTTP_PORTS=8080 \

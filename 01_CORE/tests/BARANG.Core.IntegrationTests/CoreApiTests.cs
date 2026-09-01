@@ -66,6 +66,7 @@ public sealed class CoreApiTests(CoreApiFactory factory) : IClassFixture<CoreApi
     [Theory]
     [InlineData("GET", "/api/v1/orders")]
     [InlineData("GET", "/api/v1/orders/00000000-0000-0000-0000-000000000001")]
+    [InlineData("GET", "/api/v1/orders/00000000-0000-0000-0000-000000000001/360")]
     [InlineData("POST", "/api/v1/orders")]
     [InlineData("POST", "/api/v1/orders/00000000-0000-0000-0000-000000000001/submit")]
     public async Task OrderContractsRejectAnonymousAccess(string method,string uri)

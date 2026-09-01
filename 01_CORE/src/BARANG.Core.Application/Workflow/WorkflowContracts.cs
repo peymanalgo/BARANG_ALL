@@ -33,6 +33,7 @@ public interface IWorkflowBusinessCompletionAdapter
 public interface IWorkflowAdministration
 {
     Task<Result<WorkflowInstanceView>> StartAsync(StartWorkflowCommand command, CancellationToken ct);
+    Task<Result<WorkflowInstanceView>> StartInsideTransactionAsync(Guid orderId, CancellationToken ct);
     Task<Result<WorkflowInstanceView>> GetAsync(Guid id, CancellationToken ct);
     Task<Result<HumanTaskView>> ClaimAsync(Guid taskId, long version, CancellationToken ct);
     Task<Result<HumanTaskView>> ReleaseAsync(Guid taskId, long version, CancellationToken ct);

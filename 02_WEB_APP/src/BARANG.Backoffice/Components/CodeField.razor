@@ -1,0 +1,2 @@
+<label><span>@Label</span><input @bind="Value" @bind:event="oninput" list="@ListId" /><datalist id="@ListId">@foreach(var x in Values){<option value="@x.Id">@x.Name</option>}</datalist></label>
+@code{[Parameter]public string Label{get;set;}="";[Parameter]public string Value{get;set;}="";[Parameter]public EventCallback<string>ValueChanged{get;set;}[Parameter]public IEnumerable<dynamic>Values{get;set;}=[];private string ListId=$"codes-{Guid.NewGuid():N}";}
