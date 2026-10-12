@@ -115,6 +115,7 @@ public static class DependencyInjection
         services.AddScoped<ILookupOptionReader>(p => p.GetRequiredService<LookupAdministration>());
         services.AddScoped<ICustomerStore, CustomerStore>();
         services.AddScoped<ICustomerAdministration, CustomerAdministration>();
+        services.AddScoped<ICustomerDefaultAddressResolver>(sp => (ICustomerDefaultAddressResolver)sp.GetRequiredService<ICustomerAdministration>());
         services.AddScoped<ICatalogStore, CatalogStore>();
         services.AddScoped<ICatalogAdministration, CatalogAdministration>();
         services.AddScoped<IArtworkFileAdministration, ArtworkFileAdministration>();

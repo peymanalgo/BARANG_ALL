@@ -29,6 +29,7 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<CompanySetting> CompanySettings => Set<CompanySetting>();
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<OrganizationalUnit> OrganizationalUnits => Set<OrganizationalUnit>();
+    public DbSet<Person> Persons => Set<Person>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
     public DbSet<Role> Roles => Set<Role>();
@@ -45,9 +46,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
     public DbSet<LookupValue> LookupValues => Set<LookupValue>();
     public DbSet<LookupValueTranslation> LookupValueTranslations => Set<LookupValueTranslation>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<IndividualCustomerProfile> IndividualCustomerProfiles => Set<IndividualCustomerProfile>();
+    public DbSet<LegalCustomerProfile> LegalCustomerProfiles => Set<LegalCustomerProfile>();
     public DbSet<CustomerContact> CustomerContacts => Set<CustomerContact>();
     public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
-    public DbSet<CustomerBusinessProfile> CustomerBusinessProfiles => Set<CustomerBusinessProfile>();
+    public DbSet<CustomerFinancialProfile> CustomerFinancialProfiles => Set<CustomerFinancialProfile>();
+    public DbSet<CustomerBankAccount> CustomerBankAccounts => Set<CustomerBankAccount>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
@@ -140,9 +144,12 @@ public sealed class CoreDbContext(DbContextOptions<CoreDbContext> options, IComp
         modelBuilder.Entity<LookupValue>().HasQueryFilter(entity => entity.CompanyId == null || companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<LookupValueTranslation>().HasQueryFilter(entity => entity.CompanyId == null || companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<Customer>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<IndividualCustomerProfile>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<LegalCustomerProfile>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<CustomerContact>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<CustomerAddress>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
-        modelBuilder.Entity<CustomerBusinessProfile>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<CustomerFinancialProfile>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
+        modelBuilder.Entity<CustomerBankAccount>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<Product>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<ProductVariant>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);
         modelBuilder.Entity<Supplier>().HasQueryFilter(entity => companyContext.CompanyId != null && entity.CompanyId == companyContext.CompanyId);

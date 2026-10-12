@@ -34,7 +34,7 @@ public static class Order360Endpoints
             .Select(x => x.Id).ToArrayAsync(ct);
 
         var customer = await db.Customers.AsNoTracking().Where(x => x.Id == order.CustomerId)
-            .Select(x => new { x.Id, x.CustomerCode, x.CustomerType, x.DisplayName, x.PrimaryMobile, x.PrimaryEmail, x.IsActive })
+            .Select(x => new { x.Id, x.CustomerCode, x.CustomerType, x.DisplayName, x.EconomicCode, x.PrimaryMobile, x.PrimaryEmail, x.IsActive })
             .SingleAsync(ct);
         var branch = await db.Branches.AsNoTracking().Where(x => x.Id == order.BranchId)
             .Select(x => new { x.Id, x.Code, x.DisplayName, x.IsActive }).SingleAsync(ct);
@@ -49,8 +49,8 @@ public static class Order360Endpoints
         {
             summary = new { order.Id, order.OrderNumber, order.Status, order.Source, order.ExternalReference, order.OrderDate, order.RequestedDeliveryDate, order.SubmittedAtUtc, order.CancelledAtUtc, order.CancellationReasonCode, order.CancellationReasonText, order.Version },
             customer,
-            customerBusinessProfile = await db.CustomerBusinessProfiles.AsNoTracking().Where(x => x.CustomerId == order.CustomerId)
-                .Select(x => new { x.DateOfBirth, x.EconomicCode, x.CreditLimit, x.PaymentTermsDays, x.BusinessDetails, x.Version }).FirstOrDefaultAsync(ct),
+            customerBusinessProfile = await db.CustomerFinancialProfiles.AsNoTracking().Where(x => x.CustomerId == order.CustomerId)
+                .Select(x => new { DateOfBirth = (DateOnly?)null, x.CustomerId, EconomicCode = customer.EconomicCode, x.CreditLimit, PaymentTermsDays = (int?)null, BusinessDetails = (string?)null, x.Version }).FirstOrDefaultAsync(ct),
             branch,
             businessProfile = await db.OrderBusinessProfiles.AsNoTracking().Where(x => x.OrderId == orderId)
                 .Select(x => new { x.ShippingMethodCode, x.PackagingTypeCode, x.IncludeInvoiceInPackage, x.OrderTypeCode, x.Notes, x.Version }).FirstOrDefaultAsync(ct),

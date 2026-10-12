@@ -6,6 +6,7 @@ public static class OrganizationErrors
 {
     public static Error InvalidCode => Error.Validation("organization.code.invalid");
     public static Error InvalidName => Error.Validation("organization.name.invalid");
+    public static Error InvalidPerson => Error.Validation("organization.person.invalid");
     public static Error InvalidSetting => Error.Validation("organization.setting.invalid");
     public static Error CrossCompanyReference => Error.NotFound("organization.resource.not_found");
     public static Error HierarchyCycle => Error.BusinessRule("organization.unit.hierarchy_cycle");
