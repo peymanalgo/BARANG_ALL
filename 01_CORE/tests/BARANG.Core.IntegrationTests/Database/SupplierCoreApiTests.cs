@@ -134,7 +134,9 @@ public sealed class SupplierCoreApiTests(PostgreSqlDatabaseFixture database)
     [Fact]public async Task ExistingSupplierProductDependencyBlocksDeletionButAllowsDeactivation(){
         await using var f=await Setup();var supplier=await f.Api.Send(HttpMethod.Post,"/api/v1/suppliers/core",Command(f.Category),201);
         var product=await f.Api.Send(HttpMethod.Post,"/api/v1/products",new{productCode="DEPENDENCY",name="Dependency",productTypeCode="RAW",unitOfMeasureCode="PCS"},201);
-        await f.Api.Send(HttpMethod.Post,$"/api/v1/suppliers/{RootId(supplier)}/products",new{productId=Id(product),isPreferred=false},201);
+        Guid purchaseUnit=Id(await f.Api.CreateValue("unit.of.measure","dependency.unit"));
+        await f.Api.Send(HttpMethod.Post,$"/api/v1/suppliers/{RootId(supplier)}/sourcing/products",
+            new { data = new SupplierSourcingData(Id(product), PurchaseUnitId: purchaseUnit, IsPreferred: false), version = 0, parentVersion = 0 },201);
         Assert.Equal("supplier.referenced",(await f.Api.Send(HttpMethod.Delete,$"/api/v1/suppliers/{RootId(supplier)}?version={RootVersion(supplier)}",expected:422)).GetProperty("code").GetString());
         var disabled=await f.Api.Send(HttpMethod.Post,$"/api/v1/suppliers/{RootId(supplier)}/status",new{status="Inactive",version=RootVersion(supplier)});
         Assert.Equal("Inactive",Root(disabled).GetProperty("status").GetString());
@@ -151,8 +153,13 @@ public sealed class SupplierCoreApiTests(PostgreSqlDatabaseFixture database)
         foreach(string kind in new[]{"addresses","contacts","bank-accounts"})await f.Api.InCompany(f.Other).Send(HttpMethod.Get,$"/api/v1/suppliers/{RootId(a)}/{kind}",expected:404);
         Assert.DoesNotContain((await f.Api.Send(HttpMethod.Get,"/api/v1/suppliers/core")).GetProperty("items").EnumerateArray(),x=>RootId(x)==RootId(b));
         Assert.DoesNotContain((await f.Api.InCompany(f.Other).Send(HttpMethod.Get,"/api/v1/suppliers/core")).GetProperty("items").EnumerateArray(),x=>RootId(x)==RootId(a));
-        var person=await f.Api.Send(HttpMethod.Post,"/api/v1/organization/persons",new{firstName="Supplier",lastName="Reader",phone="+989120000079"},201);
-        var user=await f.Api.Send(HttpMethod.Post,"/api/v1/security/users/linked",new{personId=Id(person),username="supplier-core-reader",password="SupplierCoreReader123!",enabled=true});
+        Guid personId=Guid.NewGuid();
+        await using (var db=database.CreateAdministrationCoreDbContext())
+        {
+            db.Persons.Add(Person.Create(personId,f.Company,"SUP-READER","Supplier","Reader",null,null,null,"+989120000079",null,"Supplier read-only fixture",DateTimeOffset.UtcNow).Value);
+            await db.SaveChangesAsync(Ct);
+        }
+        var user=await f.Api.Send(HttpMethod.Post,$"/api/v1/security/users/for-person/{personId}",new{username="supplier-core-reader",displayName="Supplier Reader",password="SupplierCoreReader123!",enabled=true});
         var role=await f.Api.Send(HttpMethod.Post,"/api/v1/security/roles",new{code="supplier.core.reader",displayTitle="Supplier core reader"});
         var permissions=await f.Api.Send(HttpMethod.Get,"/api/v1/security/permissions");Guid read=Id(permissions.EnumerateArray().Single(x=>x.GetProperty("code").GetString()=="supplier.read"));
         await f.Api.Send(HttpMethod.Post,$"/api/v1/security/roles/{Id(role)}/permissions/{read}",expected:204);

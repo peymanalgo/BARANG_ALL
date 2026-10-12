@@ -25,14 +25,22 @@ public sealed class LookupFoundationTests(PostgreSqlDatabaseFixture database)
     public async Task GlobalRowsAreVisibleWhileRlsIsolatesCompanyRowsAndPoolContextDoesNotLeak()
     {
         await database.ResetAsync(TestContext.Current.CancellationToken); Guid a=Guid.NewGuid(),b=Guid.NewGuid(); DateTimeOffset now=DateTimeOffset.UtcNow;
+        long baselineGlobal;
+        long baselineA;
+        long baselineB;
         await using (CoreDbContext admin=database.CreateAdministrationCoreDbContext())
         {
+            baselineGlobal=await admin.LookupTypes.IgnoreQueryFilters().CountAsync(x=>x.CompanyId==null,TestContext.Current.CancellationToken);
             admin.Companies.Add(Company.Create(a,"LOOKUP_A","Lookup A",now).Value); admin.Companies.Add(Company.Create(b,"LOOKUP_B","Lookup B",now).Value);
+            await admin.SaveChangesAsync(TestContext.Current.CancellationToken);
+            baselineGlobal=await admin.LookupTypes.IgnoreQueryFilters().CountAsync(x=>x.CompanyId==null,TestContext.Current.CancellationToken);
+            baselineA=await admin.LookupTypes.IgnoreQueryFilters().CountAsync(x=>x.CompanyId==null||x.CompanyId==a,TestContext.Current.CancellationToken);
+            baselineB=await admin.LookupTypes.IgnoreQueryFilters().CountAsync(x=>x.CompanyId==null||x.CompanyId==b,TestContext.Current.CancellationToken);
             admin.LookupTypes.AddRange(LookupType.Create(Guid.NewGuid(),null,"global.sample","Global",LookupScope.Global,true,false,now).Value,LookupType.Create(Guid.NewGuid(),a,"company.a.sample","A",LookupScope.Company,false,false,now).Value,LookupType.Create(Guid.NewGuid(),b,"company.b.sample","B",LookupScope.Company,false,false,now).Value);
             await admin.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using NpgsqlConnection connection=new(database.ConnectionString); await connection.OpenAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(3,await VisibleCount(connection,a)); Assert.Equal(3,await VisibleCount(connection,b)); Assert.Equal(2,await VisibleCountWithoutCompany(connection)); Assert.Equal(0,await TryRenameOtherCompany(connection,a,b));
+        Assert.Equal(baselineA+2,await VisibleCount(connection,a)); Assert.Equal(baselineB+2,await VisibleCount(connection,b)); Assert.Equal(baselineGlobal+1,await VisibleCountWithoutCompany(connection)); Assert.Equal(0,await TryRenameOtherCompany(connection,a,b));
     }
 
     [Fact]

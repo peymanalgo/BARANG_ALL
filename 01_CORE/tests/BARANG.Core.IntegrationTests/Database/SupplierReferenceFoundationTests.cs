@@ -102,8 +102,13 @@ public sealed class SupplierReferenceFoundationTests(PostgreSqlDatabaseFixture d
     public async Task OrdinaryPermissionsGlobalAdministrationAndCompanyIsolationRemainAuthoritative()
     {
         await using var f=await Setup();
-        JsonElement person=await f.Api.Send(HttpMethod.Post,"/api/v1/organization/persons",new{firstName="Supplier",lastName="Reference Reader",phone="+989120000079"},201);
-        JsonElement user=await f.Api.Send(HttpMethod.Post,"/api/v1/security/users/linked",new{personId=Id(person),username="supplier-reference-user",password="SupplierReferencePassword123!",enabled=true});
+        Guid personId=Guid.NewGuid();
+        await using (CoreDbContext db=database.CreateAdministrationCoreDbContext())
+        {
+            db.Persons.Add(Person.Create(personId,f.Company,"SUP-REF-READER","Supplier","Reference Reader",null,null,null,"+989120000079",null,"Supplier reference reader",DateTimeOffset.UtcNow).Value);
+            await db.SaveChangesAsync(Ct);
+        }
+        JsonElement user=await f.Api.Send(HttpMethod.Post,$"/api/v1/security/users/for-person/{personId}",new{username="supplier-reference-user",displayName="Supplier Reference Reader",password="SupplierReferencePassword123!",enabled=true});
         JsonElement role=await f.Api.Send(HttpMethod.Post,"/api/v1/security/roles",new{code="supplier.reference.test",displayTitle="Supplier reference test"});
         JsonElement permissions=await f.Api.Send(HttpMethod.Get,"/api/v1/security/permissions");
         Guid Permission(string code)=>Id(permissions.EnumerateArray().Single(x=>x.GetProperty("code").GetString()==code));

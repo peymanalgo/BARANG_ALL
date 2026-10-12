@@ -2272,10 +2272,16 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Availability")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Available")
+                        .HasColumnName("availability");
 
                     b.Property<string>("Brand")
-                        .HasColumnType("text");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("brand");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -2286,7 +2292,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("created_at_utc");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -2301,7 +2309,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("lead_time_days");
 
                     b.Property<decimal?>("MinimumOrderAmount")
-                        .HasColumnType("numeric");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("minimum_order_amount");
 
                     b.Property<decimal?>("MinimumOrderQuantity")
                         .HasPrecision(18, 4)
@@ -2309,10 +2319,13 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("minimum_order_quantity");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
 
                     b.Property<Guid?>("PackagingTypeId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("packaging_type_id");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid")
@@ -2323,7 +2336,8 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("product_variant_id");
 
                     b.Property<Guid?>("PurchaseUnitId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("purchase_unit_id");
 
                     b.Property<Guid>("SupplierId")
                         .HasColumnType("uuid")
@@ -2335,7 +2349,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("supplier_item_code");
 
                     b.Property<string>("SupplierItemName")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("supplier_item_name");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -2351,6 +2367,23 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
 
                     b.HasAlternateKey("CompanyId", "Id")
                         .HasName("ak_supplier_products_company_id_id");
+
+                    b.HasAlternateKey("CompanyId", "SupplierId", "Id")
+                        .HasName("ak_supplier_products_company_supplier_id");
+
+                    b.HasIndex("PackagingTypeId");
+
+                    b.HasIndex("PurchaseUnitId");
+
+                    b.HasIndex("CompanyId", "ProductId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_supplier_products_preferred_product")
+                        .HasFilter("product_variant_id IS NULL AND is_preferred AND is_active");
+
+                    b.HasIndex("CompanyId", "ProductVariantId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_supplier_products_preferred_variant")
+                        .HasFilter("product_variant_id IS NOT NULL AND is_preferred AND is_active");
 
                     b.HasIndex("CompanyId", "ProductId", "ProductVariantId");
 
@@ -2369,9 +2402,13 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
 
                     b.ToTable("supplier_products", "barang", t =>
                         {
+                            t.HasCheckConstraint("ck_supplier_products_availability", "availability IN ('Available','OnRequest','Unavailable')");
+
                             t.HasCheckConstraint("ck_supplier_products_lead_nonnegative", "lead_time_days IS NULL OR lead_time_days >= 0");
 
                             t.HasCheckConstraint("ck_supplier_products_moq_nonnegative", "minimum_order_quantity IS NULL OR minimum_order_quantity >= 0");
+
+                            t.HasCheckConstraint("ck_supplier_products_sourcing_amount", "minimum_order_amount IS NULL OR minimum_order_amount >= 0");
 
                             t.HasCheckConstraint("ck_supplier_products_version_positive", "version > 0");
                         });
@@ -5506,7 +5543,13 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Code")
                         .IsUnique()
-                        .HasDatabaseName("uq_lookup_types_code");
+                        .HasDatabaseName("uq_lookup_types_global_code")
+                        .HasFilter("company_id IS NULL");
+
+                    b.HasIndex("CompanyId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("uq_lookup_types_company_code")
+                        .HasFilter("company_id IS NOT NULL");
 
                     b.HasIndex("CompanyId", "IsActive")
                         .HasDatabaseName("ix_lookup_types_company_id_is_active");
@@ -5555,6 +5598,10 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("lookup_type_id");
 
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_id");
+
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at_utc");
@@ -5566,6 +5613,8 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_lookup_values");
+
+                    b.HasIndex("ParentId");
 
                     b.HasIndex("LookupTypeId", "Code")
                         .IsUnique()
@@ -10049,6 +10098,16 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("PackagingTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("PurchaseUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BARANG.Core.Domain.Catalog.Product", null)
                         .WithMany()
                         .HasForeignKey("CompanyId", "ProductId")
@@ -10692,6 +10751,12 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_lookup_values_lookup_types_lookup_type_id");
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lookup_values_parent_id");
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Lookups.LookupValueTranslation", b =>

@@ -236,3 +236,58 @@ backup توسعه در `D:\00_BARANG\recovery-snapshots\20261012170707\barang_co
 - Backoffice: `sha256:99726fad536f84a766395a1e17d60bf5df299b398f37977943831400aa5ec40f`
 
 هر دو image از همین checkout با Compose محلی deploy شدند؛ production deploy انجام نشد. Supplier/User به‌دلیل شکست‌های قراردادی/fixture فوق هنوز functional end-to-end verified اعلام نمی‌شوند و Workflow runtime/Designer همچنان blocker مستقل است.
+
+## بازیابی Base Data و lookupهای مشترک — ۱۴۰۵/۰۷/۲۰
+
+### علت‌های قطعی
+
+خطای واحدی برای همهٔ منوها وجود نداشت:
+
+1. `DomainReferenceWorkspace.razor` از `GET /api/v1/lookups/domains?culture=...` استفاده می‌کرد، اما endpoint و قرارداد فهرست دامنه‌ها در checkout مستقر وجود نداشت.
+2. `ReferenceSelect.razor` برای `artwork.tag` و `defect.type` به adapterهای `/api/v1/reference-entities/{type}/values` نیاز داشت؛ این routeها ثبت نشده بودند.
+3. مسیرهای ایجاد/ویرایش/حذف مقدار lookup و فیلدهای `scope`, `parentId`, `descriptions` در قرارداد API و administration ناقص بودند؛ در نتیجه فرم‌های Base Data پیش از save پیام خطای عمومی نشان می‌دادند.
+4. `CompanyContextMiddleware` دسترسی admin سیستم به شرکت انتخاب‌شده را فقط از membership مستقیم می‌سنجید. بررسی به `HasEffectiveCompanyAccessAsync` منتقل شد تا مجوز مؤثر و scope شرکت، بدون bypass مجوز، استفاده شود.
+5. خطای persistence در Supplier sourcing ناشی از mapping مؤثر `SupplierProduct` بود: EF برای فیلدهای sourcing نام CLR مانند `Availability` تولید می‌کرد، درحالی‌که schema رسمی ستون snake_case (`availability`) دارد. configuration نهایی و snapshot/migration هم‌تراز شد.
+
+### فایل‌ها و اصلاحات
+
+- `src/BARANG.Core.Api/Lookups/LookupEndpoints.cs`: دامنه‌ها، گزینه‌ها، CRUD مقدار، editor/delete و adapterهای artwork/defect.
+- `src/BARANG.Core.Application/Lookups/LookupContracts.cs` و `LookupAdministration.cs`: قراردادهای کامل، ترجمه، scope، parent/cycle، حفاظت رکوردهای سیستمی و بررسی ارجاع.
+- `src/BARANG.Core.Infrastructure/Persistence/LookupStore.cs` و `DependencyInjection.cs`: actor/time، global-admin و registration administration.
+- `src/BARANG.Core.Domain/Lookups/LookupModels.cs` و `Configurations/LookupConfigurations.cs`: نرمال‌سازی، parent و index/FKهای موجود.
+- `src/BARANG.Core.Api/Organization/CompanyContextMiddleware.cs`: انتخاب شرکت با access مؤثر و حفظ authorization.
+- `src/BARANG.Core.Infrastructure/Persistence/Configurations/SupplierSourcingConfigurations.cs`: mapping نهایی sourcing روی schema موجود.
+- `20261012143435_SupplierSourcingMappingAlignment` و snapshot: migration فقط برای ثبت هم‌ترازی metadata است؛ `Up/Down` شیء business را حذف یا بازسازی نمی‌کند.
+- fixtureهای `SupplierCoreApiTests`, `SupplierReferenceFoundationTests`, `SupplierSourcingApiTests`: اصلاح endpointهای obsolete ساخت شخص و sourcing و حفظ سناریوهای authorization/isolation.
+
+### ماتریس پذیرش منوهای Base Data
+
+فهرست دامنه‌ها از `DomainReferenceCatalog` با ۱۴ دامنه و ۴۳ نوع catalog تولید می‌شود؛ adapterهای artwork/defect جداگانه هستند. آزمون authenticated API با DTO واقعی API انجام شد:
+
+| منوی Base Data | مسیر/خانواده | نتیجهٔ بارگذاری API | محدودیت فعلی |
+|---|---|---:|---|
+| مشترک | `/master/reference-data/shared` | ۱۴ دامنه، HTTP 200 در fa/en/ar | visual browser در این اجرا انجام نشد |
+| مشتریان | `/master/reference-data/customers` | HTTP 200، دامنهٔ customer | visual browser pending |
+| تأمین‌کنندگان | `/master/reference-data/suppliers` | HTTP 200، دامنه‌های supplier و fixtureهای supplier موفق | visual browser pending |
+| محصولات | `/master/reference-data/products` | HTTP 200، دامنهٔ product | visual browser pending |
+| بانک طراحی | `/master/reference-data/artwork` | HTTP 200؛ `artwork.tag` نیز HTTP 200 | Workflow/Designer خارج از این scope است |
+| سفارش‌ها | `/master/reference-data/orders` | HTTP 200، دامنهٔ order | visual browser pending |
+| انبار | `/master/reference-data/inventory` | HTTP 200، دامنهٔ inventory و unit options | reservation/consumption اجرا نشد |
+| تجهیزات | `/master/reference-data/equipment` | HTTP 200، دامنهٔ equipment | visual browser pending |
+| تولید | `/master/reference-data/production` | HTTP 200، دامنهٔ production | Workflow runtime خارج از scope است |
+| کیفیت | `/master/reference-data/quality` | HTTP 200؛ `defect.type` نیز HTTP 200 | visual browser pending |
+| لجستیک | `/master/reference-data/logistics` | HTTP 200، دامنهٔ logistics | visual browser pending |
+| گردش‌کار | `/master/reference-data/workflow` | catalog endpoint عمومی HTTP 200 است | runtime/Designer کامل در پروژه موجود نیست |
+
+مقادیر واقعی فهرست‌شده از جمله `price.group`, `customer.group`, انواع artwork، `print.method`، `unit.of.measure`، `packaging.type` و `shipping.carrier` از ID/code پایدار و caption ترجمه‌شده استفاده می‌کنند؛ گزینهٔ ساختگی برای رفع خطا اضافه نشد.
+
+### شواهد آزمون و استقرار
+
+- fresh isolated PostgreSQL (`barang_base_lookup_20261012_test`): زنجیرهٔ migration و `LookupFoundationTests` **۳/۳ موفق**.
+- `SupplierCoreApiTests`: **۱۰/۱۰ موفق**؛ شش شکست قبلی به route/payload obsolete، company access و mapping `SupplierProduct` مربوط بودند.
+- `SupplierReferenceFoundationTests` و `SupplierSourcingApiTests`: مجموعاً **۲۳/۲۳ موفق**، شامل lookup، scope، company isolation، role permission و sourcing.
+- API و Backoffice Release build: هر دو با **۰ warning و ۰ error**.
+- authenticated runtime API پس از deploy: دامنه‌ها در fa/en/ar، unit options، `artwork.tag` و `defect.type` همگی HTTP 200 و قابل parse هستند. login admin و انتخاب company نیز موفق است.
+- imageهای جاری: API `sha256:2c09a75a487edd54ba84ec3cc9f5504221184eef51834d2f358dab1aa31c56fb` و Backoffice `sha256:71f3f1fed0d6f1715ef3b2ae4f5672a65b26db727559a939a5854c0c8361eab`؛ Compose از `step2-clean/01_CORE/compose.yaml` استفاده می‌کند.
+
+Visual browser verification فرم‌های هر منو در این محیط انجام نشد؛ شواهد فعلی شامل build، persistence/API integration و authenticated deserialization-level پاسخ‌هاست. WorkflowDefinitionRuntime/Designer و Cartable کامل عمداً پیاده‌سازی نشده و این recovery آن را حل نمی‌کند.

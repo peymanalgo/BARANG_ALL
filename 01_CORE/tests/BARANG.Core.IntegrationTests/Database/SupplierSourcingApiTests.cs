@@ -151,8 +151,13 @@ public sealed class SupplierSourcingApiTests(PostgreSqlDatabaseFixture database)
         Guid foreignSupplier=await Supplier(f.Api.InCompany(f.Other),"FOREIGN");
         await f.Api.Send(HttpMethod.Get,Root(foreignSupplier)+"/products",expected:404);
         await f.Api.InCompany(f.Other).Send(HttpMethod.Get,$"/api/v1/purchasing/sourcing-options?productId={f.Product}",expected:404);
-        var person=await f.Api.Send(HttpMethod.Post,"/api/v1/organization/persons",new{firstName="Sourcing",lastName="Reader",phone="+989120000079"},201);
-        var user=await f.Api.Send(HttpMethod.Post,"/api/v1/security/users/linked",new{personId=Id(person),username="sourcing-reader",password="SourcingReader123!",enabled=true});
+        Guid personId=Guid.NewGuid();
+        await using (var db=database.CreateAdministrationCoreDbContext())
+        {
+            db.Persons.Add(Person.Create(personId,f.Company,"SOURCE-READER","Sourcing","Reader",null,null,null,"+989120000079",null,"Sourcing reader",DateTimeOffset.UtcNow).Value);
+            await db.SaveChangesAsync(Ct);
+        }
+        var user=await f.Api.Send(HttpMethod.Post,$"/api/v1/security/users/for-person/{personId}",new{username="sourcing-reader",displayName="Sourcing Reader",password="SourcingReader123!",enabled=true});
         var role=await f.Api.Send(HttpMethod.Post,"/api/v1/security/roles",new{code="sourcing.reader",displayTitle="Sourcing reader"});
         var permission=Assert.Single((await f.Api.Send(HttpMethod.Get,"/api/v1/security/permissions")).EnumerateArray(),x=>x.GetProperty("code").GetString()=="supplier.read");
         await f.Api.Send(HttpMethod.Post,$"/api/v1/security/roles/{Id(role)}/permissions/{Id(permission)}",expected:204);

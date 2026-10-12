@@ -21,15 +21,22 @@ public sealed class CompanyContextMiddleware(RequestDelegate next)
         IHostEnvironment environment = httpContext.RequestServices.GetRequiredService<IHostEnvironment>();
         IConfiguration configuration = httpContext.RequestServices.GetRequiredService<IConfiguration>();
         if (raw.Count != 1 || !Guid.TryParse(raw[0], out Guid companyId) || companyId == Guid.Empty) { await WriteFailureAsync(httpContext, correlationContext, Error.Validation("core.company_context.invalid")); return; }
-        bool exists = await dbContext.Companies.AsNoTracking().AnyAsync(company => company.Id == companyId && company.IsActive, httpContext.RequestAborted);
-        if (!exists) { await WriteFailureAsync(httpContext, correlationContext, Error.NotFound("core.company_context.not_found")); return; }
+        bool exists = await dbContext.Companies.IgnoreQueryFilters().AsNoTracking().AnyAsync(company => company.Id == companyId && company.IsActive, httpContext.RequestAborted);
+        if (!exists)
+        {
+            Error error = actor.Actor.IsAuthenticated
+                ? Error.Authorization("security.company_access.denied")
+                : Error.NotFound("core.company_context.not_found");
+            await WriteFailureAsync(httpContext, correlationContext, error);
+            return;
+        }
         using (companyContext.BeginScope(companyId))
         {
             if(actor.Actor.ActorType==ActorType.ApiClient&&Guid.TryParse(actor.Actor.ApiClientId,out Guid clientId))
             {Result access=await transactions.ExecuteAsync(async ct=>await security.ApiClientHasCompanyAsync(clientId,companyId,ct)?Result.Success():Result.Failure(Error.Authorization("security.company_access.denied")),httpContext.RequestAborted);if(access.IsFailure){await WriteFailureAsync(httpContext,correlationContext,access.Error);return;}}
             else if (actor.Actor.IsAuthenticated && Guid.TryParse(actor.Actor.UserId, out Guid userId))
             {
-                Result access = await transactions.ExecuteAsync(async ct => await security.FindEffectiveCompanyAccessAsync(userId, companyId, time.GetUtcNow(), ct) is null ? Result.Failure(Error.Authorization("security.company_access.denied")) : Result.Success(), httpContext.RequestAborted);
+                Result access = await transactions.ExecuteAsync(async ct => !await security.HasEffectiveCompanyAccessAsync(userId, companyId, time.GetUtcNow(), ct) ? Result.Failure(Error.Authorization("security.company_access.denied")) : Result.Success(), httpContext.RequestAborted);
                 if (access.IsFailure) { await WriteFailureAsync(httpContext, correlationContext, access.Error); return; }
             }
             else

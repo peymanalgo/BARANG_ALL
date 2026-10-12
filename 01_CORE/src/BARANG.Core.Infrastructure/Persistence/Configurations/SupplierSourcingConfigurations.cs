@@ -30,6 +30,16 @@ internal static class SupplierSourcingConfiguration
     internal const string TermCheck="unit_price >= 0 AND minimum_quantity >= 0 AND discount_percent BETWEEN 0 AND 100 AND tax_rate_percent BETWEEN 0 AND 100 AND freight_per_unit >= 0";
     internal const string PeriodCheck="currency_code ~ '^[A-Z]{3}$' AND (effective_to IS NULL OR effective_to >= effective_from) AND (NOT is_active OR published_at_utc IS NOT NULL)";
 }
+
+// The recovered catalog configuration predates the sourcing extension and is
+// also discovered by EF. Re-apply the sourcing-owned mapping in a dedicated
+// configuration so the final model always targets the persisted snake_case
+// columns rather than CLR property names.
+internal sealed class SupplierProductSourcingFinalConfiguration : IEntityTypeConfiguration<SupplierProduct>
+{
+    public void Configure(EntityTypeBuilder<SupplierProduct> builder)
+        => SupplierSourcingConfiguration.Relationship(builder);
+}
 internal sealed class SupplierProductPriceConfiguration:IEntityTypeConfiguration<SupplierProductPrice>
 {
     public void Configure(EntityTypeBuilder<SupplierProductPrice> b)
