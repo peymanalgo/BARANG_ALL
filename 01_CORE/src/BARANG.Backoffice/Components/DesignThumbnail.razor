@@ -1,0 +1,31 @@
+@using System
+@using System.Text.Json
+@inject ICoreApiClient Core
+@inject IStringLocalizer<DesignBankStrings> D
+
+@if (Source is null)
+{
+    <span class="design-thumb-placeholder" role="img" aria-label="@D["Thumbnail"]">◈</span>
+}
+else
+{
+    <button type="button" class="design-thumb-button" @onclick="Open" aria-label="@D["OpenViewer"]"><img class="design-thumb" loading="lazy" src="@Source" alt="@D["Thumbnail"]" /></button>
+}
+
+@code {
+    [Parameter, EditorRequired] public Guid DesignId { get; set; }
+    [Parameter, EditorRequired] public string Token { get; set; } = "";
+    [Parameter, EditorRequired] public Guid CompanyId { get; set; }
+    [Parameter] public EventCallback Clicked { get; set; }
+    private string? Source;
+    private Task Open()=>Clicked.InvokeAsync();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DesignId == Guid.Empty || string.IsNullOrWhiteSpace(Token)) return;
+        Source = null;
+        ApiResult<FileDownload> result = await Core.DownloadAsync($"api/v1/artworks/{DesignId}/thumbnail", Token, CompanyId, default);
+        if (result.IsSuccess)
+            Source = $"data:{result.Value.ContentType};base64,{Convert.ToBase64String(result.Value.Content)}";
+    }
+}

@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Nav_Foundation">
+    <value>زیرساخت سازمانی</value>
+  </data>
+  <data name="Nav_Companies">
+    <value>شرکت‌ها</value>
+  </data>
+  <data name="Nav_CompanySettings">
+    <value>تنظیمات شرکت</value>
+  </data>
+  <data name="Nav_Branches">
+    <value>شعب</value>
+  </data>
+  <data name="Nav_Units">
+    <value>واحدهای سازمانی</value>
+  </data>
+  <data name="Nav_Warehouses">
+    <value>انبارها</value>
+  </data>
+  <data name="Nav_UserAccessManagement">
+    <value>مدیریت کاربران و دسترسیها</value>
+  </data>
+  <data name="Nav_Users">
+    <value>کاربران و دسترسی شرکت</value>
+  </data>
+  <data name="Nav_Roles">
+    <value>نقش‌ها و مجوزها</value>
+  </data>
+  <data name="Nav_Audit">
+    <value>ردپای ممیزی</value>
+  </data>
+  <data name="Nav_MasterData">
+    <value>داده‌های پایه</value>
+  </data>
+  <data name="Nav_Lookups">
+    <value>داده‌های مرجع و ترجمه</value>
+  </data>
+  <data name="Nav_Products">
+    <value>محصولات</value>
+  </data>
+  <data name="Nav_Variants">
+    <value>گونه‌ها و SKU</value>
+  </data>
+  <data name="Nav_Suppliers">
+    <value>تأمین‌کنندگان</value>
+  </data>
+  <data name="Nav_Equipment">
+    <value>تجهیزات شرکت</value>
+  </data>
+  <data name="Nav_Customers">
+    <value>مشتریان</value>
+  </data>
+  <data name="Nav_ArtworkFiles">
+    <value>بانک طرح</value>
+  </data>
+  <data name="Nav_ArtworkBank">
+    <value>بانک طرح</value>
+  </data>
+  <data name="Nav_ArtworkTags">
+    <value>دسته‌ها و برچسب‌ها</value>
+  </data>
+  <data name="Nav_FileHistory">
+    <value>نسخه‌ها، پردازش و تاریخچه</value>
+  </data>
+  <data name="Nav_Orders">
+    <value>سفارش‌ها</value>
+  </data>
+  <data name="Nav_NewOrder">
+    <value>سفارش جدید</value>
+  </data>
+  <data name="Nav_OrderSearch">
+    <value>جستجو و نمای ۳۶۰ سفارش</value>
+  </data>
+  <data name="Nav_InventoryPurchasing">
+    <value>موجودی و خرید</value>
+  </data>
+  <data name="Nav_Inventory">
+    <value>موجودی، گردش و رزرو</value>
+  </data>
+  <data name="Nav_Shortages">
+    <value>کسری‌ها</value>
+  </data>
+  <data name="Nav_Purchasing">
+    <value>درخواست و سفارش خرید</value>
+  </data>
+  <data name="Nav_Production">
+    <value>تولید، طراحی، چاپ و پرس</value>
+  </data>
+  <data name="Nav_Quality">
+    <value>کنترل کیفیت و بازتولید</value>
+  </data>
+  <data name="Nav_QualityCatalogs">
+    <value>الگوها و کاتالوگ عیوب</value>
+  </data>
+  <data name="Nav_Logistics">
+    <value>بسته‌بندی، ارسال و تحویل</value>
+  </data>
+  <data name="Nav_Workflow">
+    <value>گردش کار</value>
+  </data>
+  <data name="Nav_Notifications">
+    <value>اعلان‌ها</value>
+  </data>
+  <data name="Nav_ManagementDashboard">
+    <value>داشبورد مدیریتی</value>
+  </data>
+  <data name="Nav_OrganizationalChart">
+    <value>چارت سازمانی</value>
+  </data>
+  <data name="Nav_Persons">
+    <value>اشخاص</value>
+  </data>
+<data name="Nav_Reference_customers" xml:space="preserve"><value>داده‌های پایه مشتریان</value></data>
+<data name="Nav_Reference_shared" xml:space="preserve"><value>داده‌های پایه مشترک</value></data>
+<data name="Nav_Reference_products" xml:space="preserve"><value>داده‌های پایه محصولات</value></data>
+<data name="Nav_Reference_artwork" xml:space="preserve"><value>داده‌های پایه بانک طرح</value></data>
+<data name="Nav_DesignCategories" xml:space="preserve"><value>دسته‌بندی طرح‌ها</value></data>
+<data name="Nav_Reference_orders" xml:space="preserve"><value>داده‌های پایه سفارشات</value></data>
+<data name="Nav_Reference_pricing" xml:space="preserve"><value>داده‌های پایه قیمت‌گذاری</value></data>
+<data name="Nav_Reference_inventory" xml:space="preserve"><value>داده‌های پایه موجودی و خرید</value></data>
+<data name="Nav_Reference_production" xml:space="preserve"><value>داده‌های پایه طراحی و چاپ و پرس</value></data>
+<data name="Nav_Reference_quality" xml:space="preserve"><value>داده‌های پایه کنترل کیفی و بازتولید</value></data>
+<data name="Nav_Reference_logistics" xml:space="preserve"><value>داده‌های پایه بسته‌بندی و ارسال و تحویل</value></data>
+<data name="Nav_Reference_workflow" xml:space="preserve"><value>داده‌های پایه کارتابل و گردش کار</value></data>
+<data name="Nav_SystemManagement" xml:space="preserve"><value>مدیریت سیستم</value></data>
+<data name="Nav_Reference_suppliers" xml:space="preserve"><value>داده‌های پایه تأمین‌کنندگان</value></data>
+<data name="Nav_Reference_equipment" xml:space="preserve"><value>داده‌های پایه تجهیزات</value></data>
+<data name="Nav_Pricing" xml:space="preserve"><value>قیمت‌گذاری</value></data>
+<data name="Nav_Cartable" xml:space="preserve"><value>کارتابل</value></data>
+</root>

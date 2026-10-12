@@ -1,0 +1,6 @@
+@page "/workspace/management"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@inject IStringLocalizer<NavigationStrings> N
+
+<PageTitle>@N["Nav_ManagementDashboard"] · BARANG</PageTitle>

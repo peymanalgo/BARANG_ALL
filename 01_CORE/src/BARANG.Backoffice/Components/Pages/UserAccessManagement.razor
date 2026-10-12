@@ -1,0 +1,549 @@
+@page "/admin/user-access"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = AuthPolicies.UserAccessManagement)]
+@implements IDisposable
+@inject IStringLocalizer<UserAccessStrings> U
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+
+<PageTitle>@U["Title"] · BARANG</PageTitle>
+
+<header class="uam-heading">
+    <div><h1>@U["Title"]</h1><p>@U["Subtitle"]</p></div>
+</header>
+
+<nav class="uam-tabs" role="tablist" aria-label="@U["Title"]">
+    <button type="button" role="tab" aria-selected="@(ActiveTab == "users")" class="@(ActiveTab == "users" ? "active" : null)" @onclick='() => SelectTab("users")'><BarangIcon Name="users" />@U["Users"]</button>
+    <button type="button" role="tab" aria-selected="@(ActiveTab == "roles")" class="@(ActiveTab == "roles" ? "active" : null)" @onclick='() => SelectTab("roles")'><BarangIcon Name="shield" />@U["Roles"]</button>
+    <button type="button" role="tab" aria-selected="@(ActiveTab == "substitutions")" class="@(ActiveTab == "substitutions" ? "active" : null)" @onclick='() => SelectTab("substitutions")'><BarangIcon Name="calendar" />@U["Substitutions"]</button>
+    <button type="button" role="tab" aria-selected="@(ActiveTab == "access")" class="@(ActiveTab == "access" ? "active" : null)" @onclick='() => SelectTab("access")'><BarangIcon Name="key" />@U["Access"]</button>
+</nav>
+
+@if (Notice is not null)
+{
+    <div class="@(NoticeSuccess ? "inline-success" : "inline-error")" role="status">@U[Notice]</div>
+}
+
+@if (ActiveTab == "users")
+{
+    <section class="crud-card uam-panel" role="tabpanel">
+        <div class="uam-toolbar">
+            <label class="search-box uam-search"><BarangIcon Name="search" /><input value="@UserSearch" @onchange="ChangeUserSearch" placeholder="@U["SearchUsers"]" /></label>
+            <select class="uam-select" value="@UserState" @onchange="ChangeUserState" aria-label="@U["AccountStatus"]"><option value="">@U["AllStatuses"]</option><option value="Active">@U["Enabled"]</option><option value="Inactive">@U["Disabled"]</option><option value="Locked">@U["Locked"]</option></select>
+            <button type="button" class="btn btn-secondary" @onclick="LoadUsers"><BarangIcon Name="refresh" />@U["Refresh"]</button>
+            <button type="button" class="btn btn-primary uam-primary-action" @onclick="OpenAddUser"><BarangIcon Name="plus" />@U["AddUser"]</button>
+        </div>
+        @if (UsersLoading) { <div class="uam-state"><span class="uam-spinner"></span>@U["Loading"]</div> }
+        else if (UsersError) { <div class="uam-state error">@U["LoadError"] <button type="button" class="btn btn-secondary btn-small" @onclick="LoadUsers">@U["Refresh"]</button></div> }
+        else if (Users.Count == 0) { <div class="uam-state"><BarangIcon Name="users" />@U["NoUsers"]</div> }
+        else
+        {
+            <div class="data-grid-wrap uam-users-grid-wrap"><table class="data-grid uam-grid uam-users-grid"><thead><tr>
+                <th class="uam-col-person"><BarangSortHeader Label="@U["PersonFullName"]" Active="@(UserSort=="person")" Descending="@UserDescending" Clicked='() => SortUsers("person")' /></th>
+                <th class="uam-col-username"><BarangSortHeader Label="@U["Username"]" Active="@(UserSort=="username")" Descending="@UserDescending" Clicked='() => SortUsers("username")' /></th>
+                <th class="uam-col-code">@U["PersonnelCode"]</th><th class="uam-col-roles">@U["AssignedRoles"]</th><th class="uam-col-status">@U["AccountStatus"]</th><th class="uam-col-login">@U["LastLogin"]</th><th class="uam-col-actions">@U["Actions"]</th>
+            </tr></thead><tbody>
+            @foreach (UserRow row in Users)
+            {
+                <tr><td class="uam-col-person"><strong>@row.PersonName</strong><small class="uam-cell-note" title="@row.Organization">@row.Organization</small></td><td class="uam-col-username" dir="ltr"><span class="code-pill uam-username" title="@row.Username">@row.Username</span></td><td class="uam-col-code" dir="ltr">@row.PersonnelCode</td><td class="uam-col-roles"><span class="uam-role-summary" title="@string.Join("، ",row.Roles)">@(row.Roles.Count == 0 ? "—" : string.Join("، ", row.Roles))</span></td><td class="uam-col-status"><span class="status-badge @StateClass(row.State)">@StateLabel(row.State)</span></td><td class="uam-col-login">@FormatDate(row.LastLogin)</td><td class="uam-col-actions"><div class="row-actions"><BarangIconButton Icon="eye" Label="@U["View"]" Clicked="() => OpenUser(row.Id, false)" />@if(CanUserAccountEdit){<BarangIconButton Icon="edit" Label="@U["Edit"]" Clicked="() => OpenUser(row.Id, true)" />}</div></td></tr>
+            }
+            </tbody></table></div>
+        }
+        @Pager(UserPage, UserTotalPages)
+    </section>
+}
+else if (ActiveTab == "roles")
+{
+    <section class="crud-card uam-panel" role="tabpanel">
+        <div class="uam-toolbar">
+            <label class="search-box uam-search"><BarangIcon Name="search" /><input value="@RoleSearch" @onchange="ChangeRoleSearch" placeholder="@U["SearchRoles"]" /></label>
+            <button type="button" class="btn btn-secondary" @onclick="LoadRoles"><BarangIcon Name="refresh" />@U["Refresh"]</button>
+            <button type="button" class="btn btn-primary uam-primary-action" @onclick="OpenAddRole"><BarangIcon Name="plus" />@U["AddRole"]</button>
+        </div>
+        @if (RolesLoading) { <div class="uam-state"><span class="uam-spinner"></span>@U["Loading"]</div> }
+        else if (RolesError) { <div class="uam-state error">@U["LoadError"] <button type="button" class="btn btn-secondary btn-small" @onclick="LoadRoles">@U["Refresh"]</button></div> }
+        else if (Roles.Count == 0) { <div class="uam-state"><BarangIcon Name="shield" />@U["NoRoles"]</div> }
+        else
+        {
+            <div class="data-grid-wrap"><table class="data-grid uam-grid"><thead><tr><th><BarangSortHeader Label="@U["RoleName"]" Active="@(RoleSort=="title")" Descending="@RoleDescending" Clicked='() => SortRoles("title")' /></th><th><BarangSortHeader Label="@U["Code"]" Active="@(RoleSort=="code")" Descending="@RoleDescending" Clicked='() => SortRoles("code")' /></th><th>@U["Scope"]</th><th>@U["UserCount"]</th><th>@U["AccountStatus"]</th><th>@U["Actions"]</th></tr></thead><tbody>
+            @foreach (RoleRow role in Roles)
+            {
+                <tr><td><strong>@role.Title</strong><small class="uam-cell-note">@role.Description</small></td><td dir="ltr"><span class="code-pill">@role.Code</span></td><td><span class="uam-scope">@(role.Scope == "System" ? U["SystemScope"] : U["CompanyScope"])</span></td><td>@role.UserCount</td><td><span class="status-badge @(role.Active ? "active" : "inactive")">@(role.Active ? U["Active"] : U["Inactive"])</span></td><td><BarangIconButton Icon="edit" Label="@U["Edit"]" Clicked="() => OpenRole(role)" /></td></tr>
+            }
+            </tbody></table></div>
+        }
+        @Pager(RolePage, RoleTotalPages, true)
+    </section>
+}
+else if (ActiveTab == "substitutions")
+{
+    <section class="crud-card uam-panel" role="tabpanel">
+        <div class="uam-toolbar">
+            <label class="search-box uam-search"><BarangIcon Name="search" /><span class="sr-only">@U["SearchSubstitutions"]</span><input value="@SubstitutionSearch" @onchange="ChangeSubstitutionSearch" placeholder="@U["SearchSubstitutions"]" /></label>
+            <button type="button" class="btn btn-secondary" @onclick="LoadSubstitutions"><BarangIcon Name="refresh" />@U["Refresh"]</button>
+            @if (CanManageSubstitutions) { <button type="button" class="btn btn-primary uam-primary-action" @onclick="OpenAddSubstitution"><BarangIcon Name="plus" />@U["AddSubstitution"]</button> }
+        </div>
+        @if (SubstitutionsLoading) { <div class="uam-state"><span class="uam-spinner"></span>@U["Loading"]</div> }
+        else if (SubstitutionsError) { <div class="uam-state error">@U["LoadError"] <button type="button" class="btn btn-secondary btn-small" @onclick="LoadSubstitutions">@U["Refresh"]</button></div> }
+        else if (Substitutions.Count == 0) { <div class="uam-state"><BarangIcon Name="calendar" />@U["NoSubstitutions"]</div> }
+        else
+        {
+            <div class="data-grid-wrap"><table class="data-grid uam-grid"><thead><tr><th>@U["Principal"]</th><th>@U["Substitute"]</th><th>@U["EffectiveFrom"]</th><th>@U["EffectiveTo"]</th><th>@U["Status"]</th><th>@U["Reason"]</th><th>@U["CreatedBy"]</th><th>@U["Actions"]</th></tr></thead><tbody>
+            @foreach (SubstitutionRow row in Substitutions)
+            {
+                <tr><td><strong>@row.PrincipalName</strong></td><td><strong>@row.SubstituteName</strong></td><td>@FormatDate(row.EffectiveFromUtc)</td><td>@FormatDate(row.EffectiveToUtc)</td><td><span class="status-badge @SubstitutionStatusClass(row)">@SubstitutionStatus(row)</span></td><td><span class="uam-cell-note" title="@row.Reason">@(string.IsNullOrWhiteSpace(row.Reason) ? "—" : row.Reason)</span></td><td>@(string.IsNullOrWhiteSpace(row.CreatedByName) ? "—" : row.CreatedByName)</td><td><div class="row-actions"><BarangIconButton Icon="eye" Label="@U["View"]" Clicked="() => ViewSubstitution(row)" />@if (CanManageSubstitutions && row.IsActive) { <BarangIconButton Icon="close" Label="@U["RevokeSubstitution"]" Clicked="() => AskRevokeSubstitution(row)" /> }</div></td></tr>
+            }
+            </tbody></table></div>
+        }
+    </section>
+}
+else
+{
+    <section class="uam-access" role="tabpanel">
+        <div class="crud-card uam-target-panel">
+            <div class="uam-target-selectors">
+                <label><span>@U["RoleSelector"]</span><SearchableSelect Options="AccessRoleOptions" Value="@AccessRoleId" ValueChanged="SelectAccessRole" SearchChanged="SearchAccessRoles" Disabled="@(AccessUserId.Length > 0)" Placeholder="@U["SearchRoles"]" /></label>
+                <span class="uam-or">—</span>
+                <label><span>@U["UserSelector"]</span><SearchableSelect Options="AccessUserOptions" Value="@AccessUserId" ValueChanged="SelectAccessUser" SearchChanged="SearchAccessUsers" Disabled="@(AccessRoleId.Length > 0)" Placeholder="@U["SearchUsers"]" /></label>
+                @if (AccessRoleId.Length > 0 || AccessUserId.Length > 0) { <button type="button" class="btn btn-secondary" @onclick="ClearTarget">@U["ClearSelection"]</button> }
+            </div>
+            @if (Target is null) { <div class="uam-target-empty"><BarangIcon Name="key" />@U["SelectOneTarget"]</div> }
+            else { <div class="uam-target-summary"><span><small>@U["SelectedTarget"]</small><strong>@Target.Name</strong></span>@if (Target.Kind == "user") { <span class="uam-legend"><i class="direct"></i>@U["Direct"] <i class="inherited"></i>@U["ViaRole"] <i class="effective"></i>@U["Effective"]</span> }</div> }
+        </div>
+
+        @if (AccessLoading) { <div class="crud-card uam-state"><span class="uam-spinner"></span>@U["Loading"]</div> }
+        else if (AccessError) { <div class="crud-card uam-state error">@U["LoadError"]</div> }
+        else if (Target is not null)
+        {
+            <div class="uam-savebar @(PermissionDirty ? "dirty" : null)"><span>@(PermissionDirty ? U["UnsavedChanges"] : U["SelectedTarget"] + ": " + Target.Name)</span><div><button type="button" class="btn btn-secondary" disabled="@(!PermissionDirty)" @onclick="ResetPermissions">@U["Cancel"]</button><button type="button" class="btn btn-primary" disabled="@(!PermissionDirty || SavingPermissions)" @onclick="SavePermissions">@U["Save"]</button></div></div>
+            @if (Target.Kind == "user") { <div class="uam-inherited-note"><BarangIcon Name="info" />@U["InheritedNotice"]</div> }
+            <section class="crud-card uam-permission-card">
+                <div class="uam-toolbar permission-toolbar"><label class="search-box uam-search"><BarangIcon Name="search" /><input @bind="PermissionSearch" @bind:event="oninput" placeholder="@U["SearchPermissions"]" /></label><button type="button" class="btn btn-secondary btn-small" @onclick="ExpandAll">@U["ExpandAll"]</button><button type="button" class="btn btn-secondary btn-small" @onclick="CollapseAll">@U["CollapseAll"]</button></div>
+                @if (VisibleModules.Count == 0) { <div class="uam-state">@U["NoPermissions"]</div> }
+                else
+                {
+                    <div class="permission-matrix" role="treegrid">
+                        <div class="permission-head"><span>@U["Feature"]</span>@foreach (string capability in CrudCapabilities) { <span>@U[capability]</span> }</div>
+                        @foreach (PermissionModule module in VisibleModules)
+                        {
+                            <section class="permission-module" @key="module.Code">
+                                <header><button type="button" class="permission-expander" aria-expanded="@ExpandedModules.Contains(module.Code)" @onclick="() => ToggleModule(module.Code)"><BarangIcon Name="chevron-down" /> <strong>@Segment(module.Code)</strong><small>@module.Permissions.Count</small></button><span class="module-bulk"><BarangIconButton Icon="check" Label="@U["SelectSubtree"]" Semantic="success" Clicked="() => SetModule(module, true)" /><BarangIconButton Icon="close" Label="@U["ClearSubtree"]" Semantic="neutral" Clicked="() => SetModule(module, false)" /></span></header>
+                                @if (ExpandedModules.Contains(module.Code))
+                                {
+                                    @foreach (PermissionFeature feature in module.Features)
+                                    {
+                                        <div class="permission-row @(IsMatch(feature) ? "match" : null)" role="row">
+                                            <span class="permission-name"><strong>@FeatureLabel(feature.Path)</strong><small dir="ltr">@feature.Path</small></span>
+                                            @foreach (string capability in CrudCapabilities)
+                                            {
+                                                PermissionItem? permission = feature.Permissions.FirstOrDefault(x => x.Capability == capability);
+                                                <span class="permission-cell">
+                                                @if (permission is null) { <input type="checkbox" disabled title="@U["NotApplicable"]" aria-label="@U["NotApplicable"]" /> }
+                                                else { <input type="checkbox" checked="@permission.Direct" @onchange="e => SetPermission(permission, e.Value is true)" aria-label="@($"{FeatureLabel(feature.Path)} {U[capability]}")" /> @if (Target.Kind == "user") { <i class="permission-via @(permission.Inherited ? "on" : null)" title="@U["ViaRole"]"></i><i class="permission-effective @(permission.Effective ? "on" : null)" title="@U["Effective"]"></i> } }
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                    @if (module.Special.Count > 0)
+                                    {
+                                        <details class="special-permissions" open="@(PermissionSearch.Length > 0)"><summary>@U["SpecialPermissions"] (@module.Special.Count)</summary>
+                                        @foreach (PermissionItem permission in module.Special)
+                                        {
+                                            <label class="special-permission @(IsMatch(permission) ? "match" : null)"><input type="checkbox" checked="@permission.Direct" @onchange="e => SetPermission(permission, e.Value is true)" /><span><strong>@FeatureLabel(permission.FeaturePath) · @ActionLabel(permission.Action)</strong><small dir="ltr">@permission.Code</small></span>@if (Target.Kind == "user") { <em class="@(permission.Inherited ? "inherited" : null)">@U["ViaRole"]</em><em class="@(permission.Effective ? "effective" : null)">@U["Effective"]</em> }</label>
+                                        }
+                                        </details>
+                                    }
+                                }
+                            </section>
+                        }
+                    </div>
+                }
+            </section>
+        }
+    </section>
+}
+
+@if (ShowAddUser)
+{
+    <div class="dialog-backdrop" @onclick="CloseDialogs"><section class="crud-dialog uam-dialog wide" role="dialog" aria-modal="true" aria-label="@U["AddUser"]" @onclick:stopPropagation>
+        <header><h2>@U["AddUser"]</h2><BarangIconButton Icon="close" Label="@U["Close"]" Clicked="CloseDialogs" /></header>
+        <div class="uam-dialog-body"><label class="uam-field"><span>@U["Person"]</span>@if (SelectedPerson is null) { <SearchableSelect Options="PersonOptions" Value="@SelectedPersonId" ValueChanged="SelectPerson" SearchChanged="SearchPersons" Placeholder="@U["SearchPersons"]" /> } else { <div class="uam-selected-person"><span>@SelectedPerson.FullName · @SelectedPerson.PersonnelCode</span><button type="button" class="btn btn-secondary btn-small" @onclick="ChangePerson">@U["ClearSelection"]</button></div> }</label><p class="field-help">@U["SelectEligiblePerson"]</p>
+        @if (SelectedPerson is not null)
+        {
+            @PersonCard(SelectedPerson)
+            <section class="uam-account-panel"><h3>@U["UserAccountInformation"]</h3><div class="form-grid"><label><span>@U["Username"]</span><input dir="ltr" autocomplete="username" @bind="NewUsername" /></label><label><span>@U["NewPassword"]</span><input type="password" dir="ltr" autocomplete="new-password" @bind="NewPassword" /></label><label><span>@U["ConfirmPassword"]</span><input type="password" dir="ltr" autocomplete="new-password" @bind="ConfirmPassword" /></label><label class="uam-check"><input type="checkbox" @bind="NewEnabled" /><span>@U["AccountEnabled"]</span></label><label><span>@U["AssignedRoles"]</span><SearchableSelect Options="RoleAssignmentOptions" @bind-Value="NewRoleId" SearchChanged="SearchAssignmentRoles" Placeholder="@U["SearchRoles"]" /></label></div><p class="field-help">@U["PasswordPolicy"]</p></section>
+        }
+        </div><footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button><button type="button" class="btn btn-primary" disabled="@(SelectedPerson is null || SavingDialog)" @onclick="CreateUser">@U["AddUser"]</button></footer>
+    </section></div>
+}
+
+@if (ShowUserDetail && SelectedUser is not null)
+{
+    <div class="dialog-backdrop" @onclick="CloseDialogs"><section class="crud-dialog uam-dialog wide" role="dialog" aria-modal="true" aria-label="@U["Users"]" @onclick:stopPropagation>
+        <header><h2>@(EditingUser?U["EditUserAccount"]:SelectedUser.Person.FullName)</h2><BarangIconButton Icon="close" Label="@U["Close"]" Clicked="CloseDialogs" /></header><div class="uam-dialog-body">
+        @PersonCard(SelectedUser.Person)
+        <section class="uam-account-panel"><h3>@U["UserAccountInformation"]</h3><div class="form-grid"><label><span>@U["Username"]</span><input dir="ltr" @bind="EditUsername" disabled="@(!EditingUser||!CanEditUser)" /></label>@if(EditingUser&&CanManageUserStatus){<label class="uam-check"><input type="checkbox" @bind="EditEnabled" /><span>@U["AccountEnabled"]</span></label>}else{<label><span>@U["AccountStatus"]</span><input value="@StateLabel(SelectedUser.Account.State)" disabled /></label>}<label><span>@U["LastLogin"]</span><input value="@FormatDate(SelectedUser.Account.LastLogin)" disabled /></label></div>@if(EditingUser){<div class="uam-inline-actions"><button type="button" class="btn btn-secondary" disabled="@SavingDialog" @onclick="CancelUserEdit">@U["Cancel"]</button><button type="button" class="btn btn-primary" disabled="@SavingDialog" @onclick="SaveUserAccount">@U["Save"]</button></div>}else if(CanUserAccountEdit){<div class="uam-inline-actions"><button type="button" class="btn btn-primary" @onclick="BeginUserEdit"><BarangIcon Name="edit" />@U["Edit"]</button>@if(SelectedUser.Account.State=="Locked"&&CanManageUserStatus){<button type="button" class="btn btn-secondary" @onclick="UnlockSelectedUser">@U["Unlock"]</button>}</div>}</section>
+        @if(!EditingUser&&CanResetUserPassword){<section class="uam-account-panel"><h3>@U["ResetPassword"]</h3><div class="form-grid"><label><span>@U["NewPassword"]</span><input type="password" autocomplete="new-password" @bind="ResetPasswordValue" /></label><label><span>@U["ConfirmPassword"]</span><input type="password" autocomplete="new-password" @bind="ResetPasswordConfirm" /></label></div><button type="button" class="btn btn-secondary" @onclick="ResetSelectedPassword">@U["ResetPassword"]</button></section>}
+        @if(!EditingUser){<section class="uam-account-panel"><h3>@U["AssignedRoles"]</h3><div class="uam-role-assignment"><SearchableSelect Options="RoleAssignmentOptions" @bind-Value="DetailRoleId" SearchChanged="SearchAssignmentRoles" Placeholder="@U["SearchRoles"]" /><button type="button" class="btn btn-primary" @onclick="AssignDetailRole">@U["AssignRole"]</button></div><div class="uam-chip-list">@foreach (UserRole role in SelectedUser.Roles) { <span class="uam-chip">@role.Title @if (!role.System) { <BarangIconButton Icon="unlink" Label="@U["Revoke"]" Clicked="() => RevokeDetailRole(role)" /> }</span> }</div></section>}
+        </div>@if(!EditingUser){<footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button></footer>}
+    </section></div>
+}
+
+@if (ShowRoleDialog)
+{
+    <div class="dialog-backdrop" @onclick="CloseDialogs"><section class="crud-dialog uam-dialog" role="dialog" aria-modal="true" aria-label="@U["Roles"]" @onclick:stopPropagation><header><h2>@(EditingRole is null ? U["AddRole"] : U["RoleName"])</h2><BarangIconButton Icon="close" Label="@U["Close"]" Clicked="CloseDialogs" /></header><div class="uam-dialog-body"><div class="form-grid"><label><span>@U["Code"]</span><input dir="ltr" disabled="@(EditingRole is not null)" @bind="RoleCode" /></label><label><span>@U["RoleName"]</span><input disabled="@(EditingRole?.System == true)" @bind="RoleTitle" /></label><label class="form-span"><span>@U["Description"]</span><textarea disabled="@(EditingRole?.System == true)" @bind="RoleDescription"></textarea></label></div>@if (EditingRole?.System == true) { <div class="uam-inherited-note">@U["ProtectedRole"]</div> }</div><footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button>@if (EditingRole?.System != true) { <button type="button" class="btn btn-primary" @onclick="SaveRole">@U["Save"]</button>@if (EditingRole is not null) { <button type="button" class="btn btn-secondary" @onclick="ToggleRole">@(EditingRole.Active ? U["Disable"] : U["Enable"])</button><button type="button" class="btn btn-danger" @onclick="() => ConfirmRoleDelete = true">@U["DeleteRole"]</button> } }</footer></section></div>
+}
+
+<BarangConfirmDialog Open="ConfirmRoleDelete" Title="@U["DeleteRole"]" Description="@U["ConfirmDeleteRole"]" CancelText="@U["Close"]" ConfirmText="@U["Confirm"]" Cancel="() => ConfirmRoleDelete = false" Confirm="DeleteRole" />
+
+@if (ShowSubstitutionDialog)
+{
+    <div class="dialog-backdrop" @onclick="CloseDialogs"><section class="crud-dialog uam-dialog wide" role="dialog" aria-modal="true" aria-label="@U["AddSubstitution"]" @onclick:stopPropagation><header><h2>@U["AddSubstitution"]</h2><BarangIconButton Icon="close" Label="@U["Close"]" Clicked="CloseDialogs" /></header><div class="uam-dialog-body"><div class="form-grid">
+        <label><span>@U["Principal"]</span><SearchableSelect Options="PrincipalOptions" Value="@SubstitutionPrincipalId" ValueChanged="SelectSubstitutionPrincipal" SearchChanged="SearchSubstitutionPrincipals" Placeholder="@U["SearchUsers"]" /></label>
+        <label><span>@U["Substitute"]</span><SearchableSelect Options="SubstituteOptions" Value="@SubstitutionSubstituteId" ValueChanged="SelectSubstitutionSubstitute" SearchChanged="SearchSubstitutionSubstitutes" Placeholder="@U["SearchEligibleUsers"]" /></label>
+        <label><span>@U["EffectiveFrom"]</span><LocaleDateInput Name="substitution-from" Value="@SubstitutionFromDate" ValueChanged="@(x => SubstitutionFromDate = x)" /></label>
+        <label><span>@U["Time"]</span><input type="time" value="@SubstitutionFromTime" @oninput='e => SubstitutionFromTime = e.Value?.ToString() ?? "09:00"' /></label>
+        <label><span>@U["EffectiveTo"]</span><LocaleDateInput Name="substitution-to" Value="@SubstitutionToDate" ValueChanged="@(x => SubstitutionToDate = x)" /></label>
+        <label><span>@U["Time"]</span><input type="time" value="@SubstitutionToTime" @oninput='e => SubstitutionToTime = e.Value?.ToString() ?? "17:00"' /></label>
+        <label class="form-span"><span>@U["Reason"]</span><textarea maxlength="500" @bind="SubstitutionReason"></textarea></label>
+        </div>@if (SubstitutionError is not null) { <div class="field-validation" role="alert">@SubstitutionError</div> }</div><footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button><button type="button" class="btn btn-primary" disabled="@SavingSubstitution" @onclick="CreateSubstitution">@U["Save"]</button></footer></section></div>
+}
+
+@if (ShowSubstitutionView && ViewedSubstitution is not null)
+{
+    <div class="dialog-backdrop" @onclick="CloseDialogs"><section class="crud-dialog uam-dialog" role="dialog" aria-modal="true" aria-label="@U["View"]" @onclick:stopPropagation><header><h2>@U["View"]</h2><BarangIconButton Icon="close" Label="@U["Close"]" Clicked="CloseDialogs" /></header><div class="uam-dialog-body"><dl class="uam-detail-list"><dt>@U["Principal"]</dt><dd>@ViewedSubstitution.PrincipalName</dd><dt>@U["Substitute"]</dt><dd>@ViewedSubstitution.SubstituteName</dd><dt>@U["EffectiveFrom"]</dt><dd>@FormatDate(ViewedSubstitution.EffectiveFromUtc)</dd><dt>@U["EffectiveTo"]</dt><dd>@FormatDate(ViewedSubstitution.EffectiveToUtc)</dd><dt>@U["Status"]</dt><dd><span class="status-badge @SubstitutionStatusClass(ViewedSubstitution)">@SubstitutionStatus(ViewedSubstitution)</span></dd><dt>@U["Reason"]</dt><dd>@(string.IsNullOrWhiteSpace(ViewedSubstitution.Reason) ? "—" : ViewedSubstitution.Reason)</dd><dt>@U["CreatedBy"]</dt><dd>@(string.IsNullOrWhiteSpace(ViewedSubstitution.CreatedByName) ? "—" : ViewedSubstitution.CreatedByName)</dd></dl></div><footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button></footer></section></div>
+}
+
+<BarangConfirmDialog Open="ConfirmSubstitutionRevoke" Title="@U["RevokeSubstitution"]" Description="@U["ConfirmRevokeSubstitution"]" CancelText="@U["Close"]" ConfirmText="@U["Confirm"]" Cancel="() => ConfirmSubstitutionRevoke = false" Confirm="RevokeSubstitution" />
+
+@code {
+    private string ActiveTab = "users";
+    private string? Notice;
+    private bool NoticeSuccess;
+    private CancellationTokenSource Lifetime = new();
+    private const int PageSize = 20;
+
+    private List<UserRow> Users = [];
+    private bool UsersLoading, UsersError;
+    private string UserSearch = "", UserState = "", UserSort = "person";
+    private bool UserDescending;
+    private int UserPage = 1, UserTotalPages = 1;
+    private List<RoleRow> Roles = [];
+    private bool RolesLoading, RolesError;
+    private string RoleSearch = "", RoleSort = "title";
+    private bool RoleDescending;
+    private int RolePage = 1, RoleTotalPages = 1;
+
+    private bool ShowAddUser, ShowUserDetail, ShowRoleDialog, SavingDialog, ConfirmRoleDelete, EditingUser;
+    private bool CanEditUser, CanManageUserStatus, CanResetUserPassword;
+    private bool CanManageSubstitutions;
+    private List<SubstitutionRow> Substitutions = [];
+    private bool SubstitutionsLoading, SubstitutionsError, ShowSubstitutionDialog, ShowSubstitutionView, SavingSubstitution, ConfirmSubstitutionRevoke;
+    private string SubstitutionSearch = "", SubstitutionPrincipalId = "", SubstitutionSubstituteId = "", SubstitutionReason = "", SubstitutionFromTime = "09:00", SubstitutionToTime = "17:00";
+    private DateOnly? SubstitutionFromDate = DateOnly.FromDateTime(DateTime.Today), SubstitutionToDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7));
+    private string? SubstitutionError;
+    private IReadOnlyList<SearchableSelectOption> PrincipalOptions = [], SubstituteOptions = [];
+    private SubstitutionRow? ViewedSubstitution, RevokeTarget;
+    private List<PersonCandidate> PersonCandidates = [];
+    private string SelectedPersonId = "", NewUsername = "", NewPassword = "", ConfirmPassword = "", NewRoleId = "";
+    private bool NewEnabled = true;
+    private PersonInfo? SelectedPerson;
+    private UserDetail? SelectedUser;
+    private string EditUsername = "", ResetPasswordValue = "", ResetPasswordConfirm = "", DetailRoleId = "";
+    private bool EditEnabled;
+    private RoleRow? EditingRole;
+    private string RoleCode = "", RoleTitle = "", RoleDescription = "";
+
+    private List<SearchableSelectOption> AccessRoleOptions = [], AccessUserOptions = [], RoleAssignmentOptions = [];
+    private string AccessRoleId = "", AccessUserId = "";
+    private PermissionTarget? Target;
+    private List<PermissionItem> Catalog = [];
+    private HashSet<Guid> OriginalDirect = [];
+    private HashSet<string> ExpandedModules = [];
+    private string PermissionSearch = "";
+    private bool AccessLoading, AccessError, SavingPermissions;
+    private static readonly string[] CrudCapabilities = ["View", "Create", "Edit", "Delete"];
+    private bool PermissionDirty => Target is not null && !OriginalDirect.SetEquals(Target.Permissions.Where(x => x.Direct).Select(x => x.Id));
+
+    private bool CanUserAccountEdit => CanEditUser || CanManageUserStatus;
+    protected override async Task OnInitializedAsync()
+    {
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;
+        bool system=user.HasClaim(AuthClaimTypes.SystemAdministrator,"true");
+        CanEditUser=system||user.HasClaim(AuthClaimTypes.Permission,"security.user.edit");
+        CanManageUserStatus=system||user.HasClaim(AuthClaimTypes.Permission,"security.user.status.manage");
+        CanResetUserPassword=system||user.HasClaim(AuthClaimTypes.Permission,"security.user.password.reset");
+        CanManageSubstitutions=system||user.HasClaim(AuthClaimTypes.Permission,"security.user.manage");
+        await LoadUsers();
+    }
+    private async Task SelectTab(string tab) { ActiveTab = tab; Notice = null; if (tab == "users") await LoadUsers(); else if (tab == "roles") await LoadRoles(); else if (tab == "substitutions") await LoadSubstitutions(); else await PrepareAccess(); }
+
+    private async Task LoadSubstitutions()
+    {
+        SubstitutionsLoading = true; SubstitutionsError = false;
+        SessionInfo? session = await Session(); if (session is null) { SubstitutionsLoading = false; SubstitutionsError = true; return; }
+        ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync($"api/v1/workflows/definition/runtime/substitutions?search={Uri.EscapeDataString(SubstitutionSearch)}", session.Token, session.Company, Lifetime.Token);
+        SubstitutionsLoading = false; if (!result.IsSuccess) { SubstitutionsError = true; return; }
+        IEnumerable<System.Text.Json.JsonElement> items = result.Value.ValueKind == System.Text.Json.JsonValueKind.Array ? result.Value.EnumerateArray() : result.Value.TryGetProperty("items", out var wrapped) ? wrapped.EnumerateArray() : [];
+        Substitutions = items.Select(ParseSubstitution).ToList();
+    }
+    private async Task ChangeSubstitutionSearch(ChangeEventArgs e) { SubstitutionSearch = e.Value?.ToString() ?? ""; await LoadSubstitutions(); }
+    private void OpenAddSubstitution() { CloseDialogs(); SubstitutionError = null; SubstitutionPrincipalId = SubstitutionSubstituteId = ""; PrincipalOptions = SubstituteOptions = []; SubstitutionReason = ""; SubstitutionFromDate = DateOnly.FromDateTime(DateTime.Today); SubstitutionToDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7)); ShowSubstitutionDialog = true; }
+    private void ViewSubstitution(SubstitutionRow row) { CloseDialogs(); ViewedSubstitution = row; ShowSubstitutionView = true; }
+    private void AskRevokeSubstitution(SubstitutionRow row) { RevokeTarget = row; ConfirmSubstitutionRevoke = true; }
+    private async Task SearchSubstitutionPrincipals(string query) => PrincipalOptions = await SearchSubstitutionCandidates(query, false);
+    private async Task SearchSubstitutionSubstitutes(string query) => SubstituteOptions = await SearchSubstitutionCandidates(query, true);
+    private async Task<IReadOnlyList<SearchableSelectOption>> SearchSubstitutionCandidates(string query, bool excludePrincipal)
+    {
+        SessionInfo? session = await Session(); if (session is null) return [];
+        ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync($"api/v1/workflows/definition/runtime/substitutions/candidates?search={Uri.EscapeDataString(query)}", session.Token, session.Company, Lifetime.Token);
+        if (!result.IsSuccess) return [];
+        IEnumerable<System.Text.Json.JsonElement> items = result.Value.ValueKind == System.Text.Json.JsonValueKind.Array ? result.Value.EnumerateArray() : [];
+        return items.Where(x => !excludePrincipal || Text(x, "userId") != SubstitutionPrincipalId).Select(x => new SearchableSelectOption(Text(x, "userId"), $"{Text(x, "personName")} · {Text(x, "username")} · {Text(x, "positionTitle")}" + (string.IsNullOrWhiteSpace(Text(x, "branchName")) ? "" : $" · {Text(x, "branchName")}"))).ToArray();
+    }
+    private Task SelectSubstitutionPrincipal(string value) { SubstitutionPrincipalId = value; return Task.CompletedTask; }
+    private Task SelectSubstitutionSubstitute(string value) { SubstitutionSubstituteId = value; return Task.CompletedTask; }
+    private static DateTimeOffset? LocalUtc(DateOnly? date, string time)
+    {
+        if (date is null || !TimeOnly.TryParse(time, out TimeOnly parsed)) return null;
+        DateTime local = date.Value.ToDateTime(parsed, DateTimeKind.Unspecified); return new DateTimeOffset(local, TimeZoneInfo.Local.GetUtcOffset(local)).ToUniversalTime();
+    }
+    private async Task CreateSubstitution()
+    {
+        SubstitutionError = null; if (!Guid.TryParse(SubstitutionPrincipalId, out Guid principal) || !Guid.TryParse(SubstitutionSubstituteId, out Guid substitute) || LocalUtc(SubstitutionFromDate, SubstitutionFromTime) is not { } from || LocalUtc(SubstitutionToDate, SubstitutionToTime) is not { } to) { SubstitutionError = U["ValidationError"]; return; }
+        SessionInfo? session = await Session(); if (session is null) return; SavingSubstitution = true;
+        ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Post, "api/v1/workflows/definition/runtime/substitutions", new { principalUserId = principal, substituteUserId = substitute, effectiveFromUtc = from, effectiveToUtc = to, reason = string.IsNullOrWhiteSpace(SubstitutionReason) ? null : SubstitutionReason.Trim() }, session.Token, session.Company, Lifetime.Token);
+        SavingSubstitution = false; if (!result.IsSuccess) { SubstitutionError = U["ValidationError"]; return; } CloseDialogs(); ShowNotice("SubstitutionCreated", true); await LoadSubstitutions();
+    }
+    private async Task RevokeSubstitution()
+    {
+        ConfirmSubstitutionRevoke = false; if (RevokeTarget is null) return; SessionInfo? session = await Session(); if (session is null) return;
+        ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Post, $"api/v1/workflows/definition/runtime/substitutions/{RevokeTarget.Id}/revoke?version={RevokeTarget.Version}", null, session.Token, session.Company, Lifetime.Token);
+        ShowResult(result, "SubstitutionRevoked"); if (result.IsSuccess) { RevokeTarget = null; await LoadSubstitutions(); }
+    }
+    private string SubstitutionStatus(SubstitutionRow row) => row.RevokedAtUtc is not null || !row.IsActive ? U["Revoked"] : DateTimeOffset.UtcNow < row.EffectiveFromUtc ? U["Scheduled"] : DateTimeOffset.UtcNow >= row.EffectiveToUtc ? U["Expired"] : U["Active"];
+    private string SubstitutionStatusClass(SubstitutionRow row) => row.RevokedAtUtc is not null || !row.IsActive ? "inactive" : DateTimeOffset.UtcNow < row.EffectiveFromUtc ? "pending" : DateTimeOffset.UtcNow >= row.EffectiveToUtc ? "expired" : "active";
+    private SubstitutionRow ParseSubstitution(System.Text.Json.JsonElement x) => new(Guid.Parse(Text(x, "id")), Guid.Parse(Text(x, "principalUserId")), Text(x, "principalName"), Guid.Parse(Text(x, "substituteUserId")), Text(x, "substituteName"), x.GetProperty("effectiveFromUtc").GetDateTimeOffset(), x.GetProperty("effectiveToUtc").GetDateTimeOffset(), Bool(x, "isActive"), Text(x, "reason"), Long(x, "version"), Text(x, "createdByName"), x.TryGetProperty("revokedAtUtc", out var revoked) && revoked.ValueKind != System.Text.Json.JsonValueKind.Null ? revoked.GetDateTimeOffset() : null);
+
+    private async Task LoadUsers()
+    {
+        UsersLoading = true; UsersError = false; Notice = null;
+        SessionInfo? session = await Session(); if (session is null) { UsersLoading = false; UsersError = true; return; }
+        string state = UserState.Length == 0 ? "" : $"&accountState={Uri.EscapeDataString(UserState)}";
+        string path = $"api/v1/security/users/search?search={Uri.EscapeDataString(UserSearch)}{state}&sortBy={UserSort}&descending={UserDescending.ToString().ToLowerInvariant()}&pageNumber={UserPage}&pageSize={PageSize}";
+        ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync(path, session.Token, session.Company, Lifetime.Token);
+        UsersLoading = false; if (!result.IsSuccess) { UsersError = true; return; }
+        System.Text.Json.JsonElement root = result.Value; long total = Long(root, "totalCount"); UserTotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize));
+        Users = root.GetProperty("items").EnumerateArray().Select(ParseUserRow).ToList();
+    }
+    private async Task ChangeUserSearch(ChangeEventArgs e) { UserSearch = e.Value?.ToString() ?? ""; UserPage = 1; await LoadUsers(); }
+    private async Task ChangeUserState(ChangeEventArgs e) { UserState = e.Value?.ToString() ?? ""; UserPage = 1; await LoadUsers(); }
+    private async Task SortUsers(string sort) { if (UserSort == sort) UserDescending = !UserDescending; else { UserSort = sort; UserDescending = false; } await LoadUsers(); }
+
+    private async Task LoadRoles()
+    {
+        RolesLoading = true; RolesError = false; Notice = null; SessionInfo? session = await Session(); if (session is null) { RolesLoading = false; RolesError = true; return; }
+        string path = $"api/v1/security/roles/search?search={Uri.EscapeDataString(RoleSearch)}&sortBy={RoleSort}&descending={RoleDescending.ToString().ToLowerInvariant()}&pageNumber={RolePage}&pageSize={PageSize}";
+        ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync(path, session.Token, session.Company, Lifetime.Token); RolesLoading = false; if (!result.IsSuccess) { RolesError = true; return; }
+        System.Text.Json.JsonElement root = result.Value; long total = Long(root, "totalCount"); RoleTotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize)); Roles = root.GetProperty("items").EnumerateArray().Select(ParseRole).ToList();
+    }
+    private async Task ChangeRoleSearch(ChangeEventArgs e) { RoleSearch = e.Value?.ToString() ?? ""; RolePage = 1; await LoadRoles(); }
+    private async Task SortRoles(string sort) { if (RoleSort == sort) RoleDescending = !RoleDescending; else { RoleSort = sort; RoleDescending = false; } await LoadRoles(); }
+
+    private void OpenAddUser() { CloseDialogs(); ShowAddUser = true; }
+    private async Task SearchPersons(string query)
+    {
+        if (SelectedPerson is not null) return;
+        PersonCandidates = []; if (query.Trim().Length < 2) return; SessionInfo? session = await Session(); if (session is null) return;
+        ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync($"api/v1/security/users/person-candidates?search={Uri.EscapeDataString(query)}&take=30", session.Token, session.Company, Lifetime.Token);
+        if (result.IsSuccess) PersonCandidates = result.Value.EnumerateArray().Select(ParsePersonCandidate).ToList();
+    }
+    private IReadOnlyList<SearchableSelectOption> PersonOptions => PersonCandidates.Where(x => !x.HasAccount).Select(x => new SearchableSelectOption(x.Person.Id.ToString(), $"{x.Person.FullName} · {x.Person.PersonnelCode} · {x.Person.Mobile}")).ToArray();
+    private Task SelectPerson(string id) { SelectedPersonId = id; SelectedPerson = PersonCandidates.FirstOrDefault(x => x.Person.Id.ToString() == id)?.Person; NewUsername = ""; return Task.CompletedTask; }
+    private void ChangePerson() { SelectedPerson = null; SelectedPersonId = ""; PersonCandidates = []; NewUsername = NewPassword = ConfirmPassword = ""; }
+    private async Task CreateUser()
+    {
+        if (SelectedPerson is null || NewPassword != ConfirmPassword) { ShowNotice(NewPassword != ConfirmPassword ? "PasswordMismatch" : "ValidationError", false); return; }
+        SessionInfo? session = await Session(); if (session is null) return; SavingDialog = true;
+        Guid[] roleIds = Guid.TryParse(NewRoleId, out Guid role) ? [role] : [];
+        ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Post, "api/v1/security/users/linked", new { personId = SelectedPerson.Id, username = NewUsername, password = NewPassword, enabled = NewEnabled, roleIds }, session.Token, session.Company, Lifetime.Token);
+        SavingDialog = false; ShowResult(result, "Created"); if (result.IsSuccess) { CloseDialogs(); await LoadUsers(); }
+    }
+
+    private async Task OpenUser(Guid id, bool edit = false)
+    {
+        SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync($"api/v1/security/users/{id}", session.Token, session.Company, Lifetime.Token); if (!result.IsSuccess) { ShowResult(result); return; }
+        SelectedUser = ParseUserDetail(result.Value); EditUsername = SelectedUser.Account.Username; EditEnabled=SelectedUser.Account.State=="Active"; EditingUser=edit&&CanUserAccountEdit; ResetPasswordValue = ResetPasswordConfirm = DetailRoleId = ""; await SearchAssignmentRoles(""); ShowUserDetail = true;
+    }
+    private void BeginUserEdit(){if(SelectedUser is null||!CanUserAccountEdit)return;EditUsername=SelectedUser.Account.Username;EditEnabled=SelectedUser.Account.State=="Active";EditingUser=true;}
+    private void CancelUserEdit(){if(SelectedUser is null)return;EditUsername=SelectedUser.Account.Username;EditEnabled=SelectedUser.Account.State=="Active";EditingUser=false;}
+    private async Task SaveUserAccount()
+    {
+        if(SelectedUser is null||!CanUserAccountEdit||string.IsNullOrWhiteSpace(EditUsername))return;
+        SessionInfo? session=await Session();if(session is null)return;
+        SavingDialog=true;Guid id=SelectedUser.Account.Id;long version=SelectedUser.Account.Version;
+        if(CanEditUser&&!string.Equals(EditUsername.Trim(),SelectedUser.Account.Username,StringComparison.OrdinalIgnoreCase))
+        {
+            ApiResult<System.Text.Json.JsonElement> renamed=await Core.SendAsync(HttpMethod.Put,$"api/v1/security/users/{id}/account",new{username=EditUsername,version},session.Token,session.Company,Lifetime.Token);
+            if(!renamed.IsSuccess){SavingDialog=false;ShowResult(renamed);return;}
+            version=Long(renamed.Value,"version");
+        }
+        bool currentlyEnabled=SelectedUser.Account.State=="Active";
+        if(CanManageUserStatus&&EditEnabled!=currentlyEnabled)
+        {
+            ApiResult<System.Text.Json.JsonElement> status=await Core.SendAsync(HttpMethod.Put,$"api/v1/security/users/{id}/activation",new{isActive=EditEnabled,version},session.Token,session.Company,Lifetime.Token);
+            if(!status.IsSuccess){SavingDialog=false;ShowResult(status);return;}
+        }
+        SavingDialog=false;ShowNotice("Saved",true);await OpenUser(id,false);await LoadUsers();
+    }
+    private async Task UnlockSelectedUser() { if (SelectedUser is null) return; await UserAction(HttpMethod.Put, $"api/v1/security/users/{SelectedUser.Account.Id}/unlock", new { version = SelectedUser.Account.Version }); }
+    private async Task ResetSelectedPassword()
+    {
+        if (SelectedUser is null || ResetPasswordValue != ResetPasswordConfirm) { ShowNotice("PasswordMismatch", false); return; }
+        await UserAction(HttpMethod.Put, $"api/v1/security/users/{SelectedUser.Account.Id}/password", new { password = ResetPasswordValue }); ResetPasswordValue = ResetPasswordConfirm = "";
+    }
+    private async Task UserAction(HttpMethod method, string path, object body)
+    {
+        SessionInfo? session = await Session(); if (session is null || SelectedUser is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(method, path, body, session.Token, session.Company, Lifetime.Token); ShowResult(result); if (result.IsSuccess) { await OpenUser(SelectedUser.Account.Id, false); await LoadUsers(); }
+    }
+    private async Task SearchAssignmentRoles(string query)
+    {
+        SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync($"api/v1/security/roles/search?search={Uri.EscapeDataString(query)}&isActive=true&pageSize=50", session.Token, session.Company, Lifetime.Token);
+        if (result.IsSuccess) RoleAssignmentOptions = result.Value.GetProperty("items").EnumerateArray().Select(ParseRole).Where(x => !x.System).Select(x => new SearchableSelectOption(x.Id.ToString(), $"{x.Title} · {x.Code}")).ToList();
+    }
+    private async Task AssignDetailRole()
+    {
+        if (SelectedUser is null || !Guid.TryParse(DetailRoleId, out Guid role)) return; SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Post, $"api/v1/security/users/{SelectedUser.Account.Id}/roles", new { roleId = role, companyId = session.Company }, session.Token, session.Company, Lifetime.Token); ShowResult(result); if (result.IsSuccess) await OpenUser(SelectedUser.Account.Id);
+    }
+    private async Task RevokeDetailRole(UserRole role)
+    {
+        if (SelectedUser is null) return; SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Delete, $"api/v1/security/users/{SelectedUser.Account.Id}/roles/{role.RoleId}/companies/{session.Company}", null, session.Token, session.Company, Lifetime.Token); ShowResult(result); if (result.IsSuccess) await OpenUser(SelectedUser.Account.Id);
+    }
+
+    private void OpenAddRole() { CloseDialogs(); EditingRole = null; RoleCode = RoleTitle = RoleDescription = ""; ShowRoleDialog = true; }
+    private void OpenRole(RoleRow role) { CloseDialogs(); EditingRole = role; RoleCode = role.Code; RoleTitle = role.Title; RoleDescription = role.Description; ShowRoleDialog = true; }
+    private async Task SaveRole()
+    {
+        SessionInfo? session = await Session(); if (session is null) return; string path = EditingRole is null ? "api/v1/security/roles" : $"api/v1/security/roles/{EditingRole.Id}"; object body = EditingRole is null ? new { code = RoleCode, displayTitle = RoleTitle, description = RoleDescription } : new { displayTitle = RoleTitle, description = RoleDescription, version = EditingRole.Version }; ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(EditingRole is null ? HttpMethod.Post : HttpMethod.Put, path, body, session.Token, session.Company, Lifetime.Token); ShowResult(result, EditingRole is null ? "Created" : "Saved"); if (result.IsSuccess) { CloseDialogs(); await LoadRoles(); }
+    }
+    private async Task ToggleRole()
+    {
+        if (EditingRole is null) return; SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Put, $"api/v1/security/roles/{EditingRole.Id}/activation", new { isActive = !EditingRole.Active, version = EditingRole.Version }, session.Token, session.Company, Lifetime.Token); ShowResult(result); if (result.IsSuccess) { CloseDialogs(); await LoadRoles(); }
+    }
+    private async Task DeleteRole()
+    {
+        ConfirmRoleDelete = false; if (EditingRole is null) return; SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Delete, $"api/v1/security/roles/{EditingRole.Id}?version={EditingRole.Version}", null, session.Token, session.Company, Lifetime.Token); ShowResult(result); if (result.IsSuccess) { CloseDialogs(); await LoadRoles(); }
+    }
+
+    private async Task PrepareAccess()
+    {
+        if (Catalog.Count == 0)
+        {
+            SessionInfo? session = await Session(); if (session is null) return; AccessLoading = true; ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync("api/v1/security/permissions", session.Token, session.Company, Lifetime.Token); AccessLoading = false; if (!result.IsSuccess) { AccessError = true; return; } Catalog = result.Value.EnumerateArray().Select(ParsePermission).ToList(); ExpandedModules = Catalog.Select(x => x.Module).ToHashSet(StringComparer.Ordinal);
+        }
+        await Task.WhenAll(SearchAccessRoles(""), SearchAccessUsers(""));
+    }
+    private async Task SearchAccessRoles(string query) { SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync($"api/v1/security/roles/search?search={Uri.EscapeDataString(query)}&pageSize=50", session.Token, session.Company, Lifetime.Token); if (result.IsSuccess) AccessRoleOptions = result.Value.GetProperty("items").EnumerateArray().Select(ParseRole).Select(x => new SearchableSelectOption(x.Id.ToString(), $"{x.Title} · {x.Code}")).ToList(); }
+    private async Task SearchAccessUsers(string query) { SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync($"api/v1/security/users/search?search={Uri.EscapeDataString(query)}&pageSize=50", session.Token, session.Company, Lifetime.Token); if (result.IsSuccess) AccessUserOptions = result.Value.GetProperty("items").EnumerateArray().Select(ParseUserRow).Select(x => new SearchableSelectOption(x.Id.ToString(), $"{x.PersonName} · {x.Username}")).ToList(); }
+    private async Task SelectAccessRole(string id) { if (PermissionDirty) ResetPermissions(); AccessRoleId = id; AccessUserId = ""; if (Guid.TryParse(id, out Guid target)) await LoadPermissionTarget("role", target); }
+    private async Task SelectAccessUser(string id) { if (PermissionDirty) ResetPermissions(); AccessUserId = id; AccessRoleId = ""; if (Guid.TryParse(id, out Guid target)) await LoadPermissionTarget("user", target); }
+    private async Task LoadPermissionTarget(string kind, Guid id)
+    {
+        AccessLoading = true; AccessError = false; SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync($"api/v1/security/{(kind == "role" ? "roles" : "users")}/{id}/permission-target", session.Token, session.Company, Lifetime.Token); AccessLoading = false; if (!result.IsSuccess) { AccessError = true; return; }
+        System.Text.Json.JsonElement root = result.Value; Dictionary<Guid, PermissionAssignment> assignments = root.GetProperty("permissions").EnumerateArray().ToDictionary(x => x.GetProperty("permissionId").GetGuid(), x => new PermissionAssignment(Bool(x, "direct"), Bool(x, "inherited"), Bool(x, "effective")));
+        List<PermissionItem> values = Catalog.Select(x => x with { Direct = assignments.TryGetValue(x.Id, out PermissionAssignment? a) && a.Direct, Inherited = assignments.TryGetValue(x.Id, out a) && a.Inherited, Effective = assignments.TryGetValue(x.Id, out a) && a.Effective }).ToList();
+        Target = new(kind, id, Text(root, "targetName"), Long(root, "version"), values); OriginalDirect = values.Where(x => x.Direct).Select(x => x.Id).ToHashSet();
+    }
+    private void SetPermission(PermissionItem permission, bool value) { if (Target is null) return; permission.Direct = value; permission.Effective = value || permission.Inherited; }
+    private void SetModule(PermissionModule module, bool value) { foreach (PermissionItem permission in module.Permissions) SetPermission(permission, value); }
+    private void ResetPermissions() { if (Target is null) return; foreach (PermissionItem p in Target.Permissions) { p.Direct = OriginalDirect.Contains(p.Id); p.Effective = p.Direct || p.Inherited; } }
+    private async Task SavePermissions()
+    {
+        PermissionTarget? target = Target;
+        if (target is null) return;
+
+        SessionInfo? session = await Session();
+        if (session is null) return;
+
+        SavingPermissions = true;
+        Guid[] ids = target.Permissions.Where(x => x.Direct).Select(x => x.Id).ToArray();
+        ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(
+            HttpMethod.Put,
+            $"api/v1/security/{(target.Kind == "role" ? "roles" : "users")}/{target.Id}/permissions",
+            new { version = target.Version, permissionIds = ids },
+            session.Token,
+            session.Company,
+            Lifetime.Token);
+        SavingPermissions = false;
+        ShowResult(result);
+
+        // The administrator can change or clear the target while the request is in flight.
+        // Refresh only the target that was actually saved; otherwise leave the new selection alone.
+        if (result.IsSuccess && Target is { } current && current.Kind == target.Kind && current.Id == target.Id)
+            await LoadPermissionTarget(target.Kind, target.Id);
+    }
+    private void ClearTarget() { if (PermissionDirty) ResetPermissions(); Target = null; AccessRoleId = AccessUserId = ""; }
+    private void ExpandAll() => ExpandedModules = VisibleModules.Select(x => x.Code).ToHashSet(StringComparer.Ordinal);
+    private void CollapseAll() => ExpandedModules.Clear();
+    private void ToggleModule(string module) { if (!ExpandedModules.Add(module)) ExpandedModules.Remove(module); }
+    private IReadOnlyList<PermissionModule> VisibleModules => (Target?.Permissions ?? Catalog).GroupBy(x => x.Module).Select(g => new PermissionModule(g.Key, g.ToList())).Where(m => PermissionSearch.Length == 0 || Segment(m.Code).Contains(PermissionSearch, StringComparison.CurrentCultureIgnoreCase) || m.Permissions.Any(IsMatch)).OrderBy(x => Segment(x.Code)).ToArray();
+    private bool IsMatch(PermissionFeature feature) => PermissionSearch.Length > 0 && (FeatureLabel(feature.Path).Contains(PermissionSearch, StringComparison.CurrentCultureIgnoreCase) || feature.Permissions.Any(IsMatch));
+    private bool IsMatch(PermissionItem permission) => PermissionSearch.Length > 0 && (permission.Code.Contains(PermissionSearch, StringComparison.OrdinalIgnoreCase) || FeatureLabel(permission.FeaturePath).Contains(PermissionSearch, StringComparison.CurrentCultureIgnoreCase) || ActionLabel(permission.Action).Contains(PermissionSearch, StringComparison.CurrentCultureIgnoreCase));
+
+    private RenderFragment Pager(int Page, int TotalPages, bool IsRole = false) => builder =>
+    {
+        if (TotalPages <= 1) return; int sequence = 0; builder.OpenElement(sequence++, "div"); builder.AddAttribute(sequence++, "class", "uam-pager");
+        builder.OpenElement(sequence++, "button"); builder.AddAttribute(sequence++, "type", "button"); builder.AddAttribute(sequence++, "class", "btn btn-secondary btn-small"); builder.AddAttribute(sequence++, "disabled", Page <= 1); builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, async () => { if (IsRole) { RolePage--; await LoadRoles(); } else { UserPage--; await LoadUsers(); } })); builder.AddContent(sequence++, U["Previous"]); builder.CloseElement();
+        builder.OpenElement(sequence++, "span"); builder.AddContent(sequence++, U["PageOf", Page, TotalPages]); builder.CloseElement();
+        builder.OpenElement(sequence++, "button"); builder.AddAttribute(sequence++, "type", "button"); builder.AddAttribute(sequence++, "class", "btn btn-secondary btn-small"); builder.AddAttribute(sequence++, "disabled", Page >= TotalPages); builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, async () => { if (IsRole) { RolePage++; await LoadRoles(); } else { UserPage++; await LoadUsers(); } })); builder.AddContent(sequence++, U["Next"]); builder.CloseElement(); builder.CloseElement();
+    };
+    private RenderFragment PersonCard(PersonInfo Person) => builder =>
+    {
+        int s = 0; builder.OpenElement(s++, "section"); builder.AddAttribute(s++, "class", "uam-person-card"); builder.OpenElement(s++, "div"); builder.AddMarkupContent(s++, "<span class=\"person-avatar\" aria-hidden=\"true\">●</span>"); builder.OpenElement(s++, "span"); builder.OpenElement(s++, "strong"); builder.AddContent(s++, Person.FullName); builder.CloseElement(); builder.OpenElement(s++, "small"); builder.AddContent(s++, $"{U["PersonnelCode"]}: {Person.PersonnelCode}"); builder.CloseElement(); builder.CloseElement(); builder.CloseElement();
+        foreach ((string label, string value) in new[] { (U["Mobile"].Value, Person.Mobile), (U["Email"].Value, Person.Email), (U["Organization"].Value, Person.Organization), (U["AccountStatus"].Value, Person.Active ? U["Active"].Value : U["Inactive"].Value) }) { builder.OpenElement(s++, "dl"); builder.OpenElement(s++, "dt"); builder.AddContent(s++, label); builder.CloseElement(); builder.OpenElement(s++, "dd"); builder.AddContent(s++, string.IsNullOrWhiteSpace(value) ? "—" : value); builder.CloseElement(); builder.CloseElement(); }
+        builder.OpenElement(s++, "a"); builder.AddAttribute(s++, "class", "btn btn-secondary btn-small"); builder.AddAttribute(s++, "href", $"/master/persons?personId={Person.Id}"); builder.AddContent(s++, U["ViewPerson"]); builder.CloseElement(); builder.CloseElement();
+    };
+
+    private void CloseDialogs() { ShowAddUser = ShowUserDetail = ShowRoleDialog = ShowSubstitutionDialog = ShowSubstitutionView = EditingUser = false; SelectedPerson = null; SelectedUser = null; EditingRole = null; ViewedSubstitution = null; }
+    private void ShowNotice(string key, bool success) { Notice = key; NoticeSuccess = success; }
+    private void ShowResult(ApiResult<System.Text.Json.JsonElement> result, string success = "Saved") => ShowNotice(result.IsSuccess ? success : result.Failure switch { ApiFailure.Forbidden or ApiFailure.Unauthorized => "Forbidden", ApiFailure.Conflict => "Conflict", _ => "ValidationError" }, result.IsSuccess);
+    private async Task<SessionInfo?> Session() { var user = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid company) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? new(token, company) : null; }
+    private string Segment(string value) { var localized = U[$"Segment_{value}"]; return localized.ResourceNotFound ? value.Replace('.', ' ') : localized.Value; }
+    private string ActionLabel(string value) { var localized = U[$"Action_{value}"]; return localized.ResourceNotFound ? value.Replace('.', ' ') : localized.Value; }
+    private string FeatureLabel(string path) => string.Join(" / ", path.Split('.').Select(Segment));
+    private string StateLabel(string state) => state switch { "Active" => U["Enabled"], "Inactive" => U["Disabled"], "Locked" => U["Locked"], _ => state };
+    private static string StateClass(string state) => state.ToLowerInvariant();
+    private string FormatDate(DateTimeOffset? date) => date is null ? "—" : Dates.Format(date.Value, System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+    private static string Text(System.Text.Json.JsonElement x, string name) => x.TryGetProperty(name, out var p) && p.ValueKind != System.Text.Json.JsonValueKind.Null ? p.ToString() : "";
+    private static bool Bool(System.Text.Json.JsonElement x, string name) => x.TryGetProperty(name, out var p) && p.ValueKind is System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False && p.GetBoolean();
+    private static long Long(System.Text.Json.JsonElement x, string name) => x.TryGetProperty(name, out var p) && p.TryGetInt64(out long n) ? n : 0;
+    private static DateTimeOffset? Date(System.Text.Json.JsonElement x, string name) => x.TryGetProperty(name, out var p) && p.ValueKind != System.Text.Json.JsonValueKind.Null && p.TryGetDateTimeOffset(out DateTimeOffset value) ? value : null;
+    private static UserRow ParseUserRow(System.Text.Json.JsonElement x) { var a = x.GetProperty("account"); var p = x.GetProperty("person"); return new(a.GetProperty("id").GetGuid(), Text(a, "username"), Text(p, "fullName"), Text(p, "personnelCode"), Text(p, "mobile"), OrganizationOf(p), Text(a, "accountState"), Date(a, "lastLoginAtUtc"), x.GetProperty("assignedRoleTitles").EnumerateArray().Select(y => y.ToString()).ToList(), Long(a, "version")); }
+    private static RoleRow ParseRole(System.Text.Json.JsonElement x) => new(x.GetProperty("id").GetGuid(), Text(x, "code"), Text(x, "displayTitle"), Text(x, "description"), Text(x, "scope"), Bool(x, "isSystem"), Bool(x, "isActive"), Long(x, "userCount"), Long(x, "version"));
+    private static PersonCandidate ParsePersonCandidate(System.Text.Json.JsonElement x) => new(ParsePerson(x.GetProperty("person")), Bool(x, "hasUserAccount"));
+    private static PersonInfo ParsePerson(System.Text.Json.JsonElement p) => new(p.GetProperty("id").GetGuid(), Text(p, "personnelCode"), Text(p, "fullName"), Text(p, "mobile"), Text(p, "email"), Bool(p, "isActive"), OrganizationOf(p));
+    private static UserDetail ParseUserDetail(System.Text.Json.JsonElement x) { var a = x.GetProperty("account"); return new(new UserAccount(a.GetProperty("id").GetGuid(), Text(a, "username"), Text(a, "accountState"), Date(a, "lastLoginAtUtc"), Long(a, "version")), ParsePerson(x.GetProperty("person")), x.GetProperty("roles").EnumerateArray().Select(r => new UserRole(r.GetProperty("roleId").GetGuid(), Text(r, "roleTitle"), Text(r, "roleCode"), Text(r, "scope") == "System")).ToList()); }
+    private static PermissionItem ParsePermission(System.Text.Json.JsonElement x) => new(x.GetProperty("id").GetGuid(), Text(x, "code"), Text(x, "module"), Text(x, "featurePath"), Text(x, "action"), Text(x, "capability"));
+    private static string OrganizationOf(System.Text.Json.JsonElement p) => string.Join(" · ", new[] { Text(p, "positionTitle"), Text(p, "unitName"), Text(p, "branchName") }.Where(s => s.Length > 0));
+    public void Dispose() { Lifetime.Cancel(); Lifetime.Dispose(); }
+
+    private sealed record SessionInfo(string Token, Guid Company);
+    private sealed record UserRow(Guid Id, string Username, string PersonName, string PersonnelCode, string Mobile, string Organization, string State, DateTimeOffset? LastLogin, IReadOnlyList<string> Roles, long Version);
+    private sealed record RoleRow(Guid Id, string Code, string Title, string Description, string Scope, bool System, bool Active, long UserCount, long Version);
+    private sealed record SubstitutionRow(Guid Id, Guid PrincipalUserId, string PrincipalName, Guid SubstituteUserId, string SubstituteName, DateTimeOffset EffectiveFromUtc, DateTimeOffset EffectiveToUtc, bool IsActive, string? Reason, long Version, string? CreatedByName, DateTimeOffset? RevokedAtUtc);
+    private sealed record PersonInfo(Guid Id, string PersonnelCode, string FullName, string Mobile, string Email, bool Active, string Organization);
+    private sealed record PersonCandidate(PersonInfo Person, bool HasAccount);
+    private sealed record UserAccount(Guid Id, string Username, string State, DateTimeOffset? LastLogin, long Version);
+    private sealed record UserRole(Guid RoleId, string Title, string Code, bool System);
+    private sealed record UserDetail(UserAccount Account, PersonInfo Person, IReadOnlyList<UserRole> Roles);
+    private sealed record PermissionAssignment(bool Direct, bool Inherited, bool Effective);
+    private sealed record PermissionTarget(string Kind, Guid Id, string Name, long Version, List<PermissionItem> Permissions);
+    private sealed record PermissionItem(Guid Id, string Code, string Module, string FeaturePath, string Action, string Capability) { public bool Direct { get; set; } public bool Inherited { get; set; } public bool Effective { get; set; } }
+    private sealed record PermissionFeature(string Path, List<PermissionItem> Permissions);
+    private sealed record PermissionModule(string Code, List<PermissionItem> Permissions)
+    {
+        public IReadOnlyList<PermissionFeature> Features => Permissions.Where(x => x.Capability != "Special").GroupBy(x => x.FeaturePath).Select(g => new PermissionFeature(g.Key, g.ToList())).OrderBy(x => x.Path).ToArray();
+        public IReadOnlyList<PermissionItem> Special => Permissions.Where(x => x.Capability == "Special").OrderBy(x => x.Code).ToArray();
+    }
+}

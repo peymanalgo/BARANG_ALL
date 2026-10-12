@@ -4,9 +4,8 @@ BARANG is a Docker-first business platform built around one shared, API-first Co
 
 ## Repository structure
 
-- `01_CORE` — .NET 10 shared business backend and infrastructure.
-- `02_WEB_APP` — future B2C web client.
+- `01_CORE` — .NET 10 shared business backend, infrastructure, and Backoffice application.
 - `03_MOB_APP` — future mobile client.
 - `04_Document` — project documentation and reference material.
 
-Only `01_CORE` is currently under implementation. The web and mobile clients are outside the current phase.
+Only `01_CORE` is currently under implementation. The mobile client is outside the current phase.

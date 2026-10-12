@@ -1,0 +1,110 @@
+@page "/login"
+@layout EmptyLayout
+@attribute [AllowAnonymous]
+@inject IStringLocalizer<AppStrings> L
+@inject AuthenticationStateProvider AuthState
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.WebUtilities
+<PageTitle>@L["Login"] · BARANG</PageTitle>
+<HeadContent>
+    <link rel="stylesheet" href="/login.css" />
+</HeadContent>
+<main class="login-page">
+    <div class="login-overlay" aria-hidden="true"></div>
+    <article class="login-shell">
+        <section class="login-brand-side" aria-label="BARANG">
+            <span class="login-decoration login-decoration-one" aria-hidden="true"></span>
+            <span class="login-decoration login-decoration-two" aria-hidden="true"></span>
+            <span class="login-decoration login-decoration-three" aria-hidden="true"></span>
+            <div class="login-brand-content">
+                <div class="login-brand-lockup">
+                    <span class="login-brand-mark" aria-hidden="true">B</span>
+                    <span class="login-brand-words"><strong>@L["LoginCompanyName"]</strong><small>@L["LoginPlatformLabel"]</small></span>
+                </div>
+                <div class="login-illustration" aria-hidden="true">
+                    <svg viewBox="0 0 330 260" role="presentation">
+                        <defs>
+                            <linearGradient id="login-shirt-gradient" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" stop-color="#ffffff" stop-opacity=".98" />
+                                <stop offset="1" stop-color="#eee9ff" stop-opacity=".94" />
+                            </linearGradient>
+                            <filter id="login-shirt-shadow" x="-30%" y="-30%" width="160%" height="180%">
+                                <feDropShadow dx="0" dy="18" stdDeviation="14" flood-color="#2d146a" flood-opacity=".22" />
+                            </filter>
+                        </defs>
+                        <g filter="url(#login-shirt-shadow)">
+                            <path d="M101 52 139 34c8 18 43 18 51 0l39 18 55 43-29 43-31-17v105H106V121l-31 17-29-43 55-43Z" fill="url(#login-shirt-gradient)" />
+                            <path d="M139 34c3 23 47 23 51 0l-8-5c-9 11-27 11-36 0l-7 5Z" fill="#d8cffb" />
+                            <path d="M106 121 88 106l-13 32 31-17Zm118 0 18-15 13 32-31-17Z" fill="#ddd5fb" />
+                            <path d="M127 83h75v76h-75z" rx="15" fill="#6c4df6" opacity=".08" />
+                            <circle cx="145" cy="105" r="11" fill="#6c4df6" opacity=".9" />
+                            <path d="M161 96h26M161 107h30M139 128h53M139 141h40" stroke="#7a61ef" stroke-width="7" stroke-linecap="round" opacity=".68" />
+                        </g>
+                        <circle cx="42" cy="49" r="5" fill="#ffbe56" />
+                        <circle cx="294" cy="65" r="7" fill="#ff79ad" />
+                        <circle cx="284" cy="202" r="5" fill="#70e3bd" />
+                        <path d="m53 199 7 14 15 2-11 10 3 15-14-7-13 7 2-15-11-10 16-2 6-14Z" fill="#ffd570" opacity=".9" />
+                    </svg>
+                </div>
+                <div class="login-brand-message">
+                    <h2>@L["LoginBrandTagline"]</h2>
+                    <p>@L["LoginBrandDescription"]</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="login-form-side" aria-labelledby="login-title">
+            <div class="login-box">
+                <div class="login-mobile-brand" aria-label="BARANG">
+                    <span class="login-brand-mark" aria-hidden="true">B</span>
+                    <span class="login-brand-words"><strong>@L["LoginCompanyName"]</strong><small>@L["LoginBrandTagline"]</small></span>
+                </div>
+
+                <div class="login-language" data-enhance-nav="false"><LanguageSwitcher /></div>
+
+                <div class="login-copy">
+                    <span class="login-welcome"><span aria-hidden="true">👋</span> @L["LoginWelcome"]</span>
+                    <h1 id="login-title">@L["Login"]</h1>
+                    <p>@L["LoginDescription"]</p>
+                </div>
+
+                @if (!string.IsNullOrEmpty(ErrorText))
+                {
+                    <div class="alert login-alert" role="alert">@ErrorText</div>
+                }
+
+                <form class="login-form submitting-form" method="post" action="/auth/login">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+                    <div class="field login-field">
+                        <label for="username">@L["Username"]</label>
+                        <div class="login-input-wrap">
+                            <svg class="login-input-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0m8-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /></svg>
+                            <input id="username" name="username" autocomplete="username" placeholder="@L["UsernamePlaceholder"]" required autofocus />
+                        </div>
+                    </div>
+                    <div class="field login-field">
+                        <label for="password">@L["Password"]</label>
+                        <div class="password-wrap login-input-wrap">
+                            <svg class="login-input-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="3" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+                            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="@L["PasswordPlaceholder"]" required />
+                            <BarangIconButton Icon="eye" Label="@L["ShowPassword"]" Semantic="neutral" Class="icon-button password-toggle login-password-toggle" data-show="@L["ShowPassword"]" data-hide="@L["HidePassword"]" />
+                        </div>
+                    </div>
+                    <button class="primary-button login-submit" type="submit"><span class="normal-label">@L["SignIn"]</span><span class="loading-label">@L["SigningIn"]</span></button>
+                </form>
+
+                <footer class="login-footer">
+                    <strong>@L["LoginFooter"]</strong>
+                    <span>@L["SessionSecurityNote"]</span>
+                </footer>
+            </div>
+        </section>
+    </article>
+</main>
+@code {
+    [SupplyParameterFromQuery] public string? Message { get; set; }
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+    private string? ErrorText => Message switch { "invalid" => L["InvalidCredentials"].Value, "unavailable" => L["ApiUnavailable"].Value, "validation" => L["ValidationError"].Value, "unauthorized" => L["Unauthorized"].Value, "expired" => L["SessionExpired"].Value, "error" => L["GenericError"].Value, _ => null };
+    protected override async Task OnInitializedAsync() { if ((await AuthState.GetAuthenticationStateAsync()).User.Identity?.IsAuthenticated == true) Navigation.NavigateTo("/", true); }
+}

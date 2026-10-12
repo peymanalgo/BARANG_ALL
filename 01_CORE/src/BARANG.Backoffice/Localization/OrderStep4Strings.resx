@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0</value></resheader>
+  <data name="AdditionalServicesPackaging"><value>خدمات اضافه و بسته‌بندی</value></data>
+  <data name="OrderStep4Description"><value>خدمات اضافه و نیاز بسته‌بندی سفارش را انتخاب کنید.</value></data>
+  <data name="AdditionalServices"><value>خدمات اضافه</value></data>
+  <data name="SelectedServicesOnly"><value>فقط خدماتی که صراحتاً انتخاب شده‌اند در قیمت‌گذاری لحاظ می‌شوند.</value></data>
+  <data name="Scope"><value>دامنه</value></data>
+  <data name="ItemLevel"><value>سطح قلم</value></data>
+  <data name="Packaging"><value>بسته‌بندی</value></data>
+  <data name="IncludeInvoice"><value>قرار دادن فاکتور در بسته</value></data>
+  <data name="NoSelectedAdditionalServices"><value>هنوز خدمتی انتخاب نشده است.</value></data>
+  <data name="AdditionalServiceRequired"><value>یک خدمت معتبر انتخاب کنید.</value></data>
+  <data name="AdditionalServiceQuantityInvalid"><value>مقدار خدمت باید بیشتر از صفر باشد.</value></data>
+  <data name="AdditionalServiceItemRequired"><value>برای این خدمت، قلم سفارش را انتخاب کنید.</value></data>
+  <data name="ServiceSelectionFailed"><value>انتخاب خدمت انجام نشد.</value></data>
+  <data name="ServiceRemovalFailed"><value>حذف خدمت انجام نشد.</value></data>
+  <data name="PackagingSaveFailed"><value>ذخیره بسته‌بندی انجام نشد.</value></data>
+  <data name="PackagingInvalid"><value>بسته‌بندی انتخاب‌شده معتبر نیست.</value></data>
+  <data name="ProtectedOrder"><value>این سفارش دیگر قابل ویرایش نیست.</value></data>
+  <data name="AdditionalServiceDuplicate"><value>این خدمت قبلاً برای همین دامنه انتخاب شده است.</value></data>
+  <data name="AdditionalServiceInvalidScope"><value>دامنه انتخاب‌شده برای این خدمت معتبر نیست.</value></data>
+  <data name="AdditionalServiceInvalid"><value>خدمت انتخاب‌شده فعال یا برای این سفارش معتبر نیست.</value></data>
+</root>

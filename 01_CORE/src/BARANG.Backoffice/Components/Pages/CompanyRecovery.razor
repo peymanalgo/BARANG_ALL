@@ -1,0 +1,25 @@
+@page "/recovery/companies"
+@layout EmptyLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanyRecovery)]
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> L
+<PageTitle>@L["CompanyRecovery"] · BARANG</PageTitle>
+<main class="company-page"><section class="company-panel">
+ <div class="company-header"><span class="brand dark-brand"><span class="brand-mark">B</span><span><strong>BARANG</strong><small>@L["RestrictedRecovery"]</small></span></span><LanguageSwitcher /></div>
+ <div class="selection-copy"><span class="eyebrow">@L["RestrictedRecovery"]</span><h1>@L["CompanyRecovery"]</h1><p>@L["CompanyRecoveryDescription"]</p></div>
+ @if(Message is not null){<div class="@(Success?"inline-success":"inline-error")">@L[Message]</div>}
+ @if(Loading){<div class="state-block"><span class="spinner"></span><h1>@L["Loading"]</h1></div>}
+ else {<div class="company-list">@foreach(var company in Companies){<div class="company-option"><span><strong>@company.DisplayName</strong><small>@company.Code · @(company.IsActive?L["Active"]:L["Inactive"])</small></span>@if(!company.IsActive){<button type="button" class="btn btn-primary" @onclick="()=>Activate(company)">@L["ReactivateCompany"]</button>}</div>}</div>}
+ <form method="post" action="/auth/logout"><AntiforgeryToken/><button type="button" class="secondary-button">@L["Logout"]</button></form>
+</section></main>
+@code{
+ private bool Loading=true,Success;private string?Message;private IReadOnlyList<RecoveryCompanyView>Companies=[];
+ protected override async Task OnInitializedAsync()=>await Load();
+ private async Task Load(){Loading=true;var token=await Token();if(token is not null){var result=await Core.GetRecoveryCompaniesAsync(token,default);if(result.IsSuccess&&result.Value is not null)Companies=result.Value;else Show(result.Failure,result.ProblemCode);}Loading=false;}
+ private async Task Activate(RecoveryCompanyView company){var token=await Token();if(token is null)return;var result=await Core.ActivateRecoveryCompanyAsync(token,company.Id,company.Version,default);if(result.IsSuccess){Success=true;Message="CompanyReactivated";Navigation.NavigateTo("/company",true);}else Show(result.Failure,result.ProblemCode);}
+ private async Task<string?>Token()=>(await AuthState.GetAuthenticationStateAsync()).User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+ private void Show(ApiFailure failure,string?code){Success=false;Message=code=="organization.company.last_active_required"?"LastActiveCompanyRequired":failure==ApiFailure.Forbidden?"Unauthorized":"GenericError";}
+}

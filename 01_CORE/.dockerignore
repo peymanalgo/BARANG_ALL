@@ -1,6 +1,7 @@
 **/bin/
 **/obj/
 **/TestResults/
+**/.keys/
 .git/
 .gitignore
 .env

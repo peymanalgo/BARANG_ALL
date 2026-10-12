@@ -1,0 +1,2 @@
+<div class="barang-skeleton @Class" aria-hidden="true">@for (int i = 0; i < Lines; i++) { <span></span> }</div>
+@code { [Parameter] public int Lines { get; set; } = 3; [Parameter] public string? Class { get; set; } }

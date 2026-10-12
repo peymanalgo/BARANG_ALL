@@ -1,0 +1,1493 @@
+@page "/master/organization-chart"
+@using System.Text.Json
+@attribute [Authorize(Policy = AuthPolicies.CompanySelected)]
+@inject IStringLocalizer<OrganizationStrings> O
+@inject IStringLocalizer<CrudStrings> T
+@inject IStringLocalizer<NavigationStrings> N
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject NavigationManager Navigator
+
+<PageTitle>@O["Chart"] · BARANG</PageTitle>
+<div class="organizational-chart-page" data-chart-company-id="@CurrentCompanyId" data-company-directory="@ShowCompanyDirectory.ToString().ToLowerInvariant()">
+<nav class="breadcrumbs" aria-label="breadcrumb">
+    <span>@N["Nav_MasterData"]</span>
+    <span aria-hidden="true">/</span>
+    <strong>@N["Nav_OrganizationalChart"]</strong>
+</nav>
+<header class="crud-header">
+    <div>
+        <h1>@O["Chart"]</h1>
+        <p>@O["EmptyChart"]</p>
+    </div>
+    <div class="chart-toolbar">
+        @if (CanManageCompanies)
+        {
+            <button type="button" class="btn btn-primary" data-chart-action="company-create" @onclick="AddCompany">@O["AddCompany"]</button>
+            <button type="button" class="btn btn-secondary" data-chart-action="company-directory" aria-pressed="@ShowCompanyDirectory.ToString().ToLowerInvariant()" @onclick="ToggleCompanyDirectory">@(ShowCompanyDirectory?O["CurrentCompanyChart"]:O["ManageCompanies"])</button>
+        }
+        <button type="button" class="btn btn-secondary" @onclick="LoadChart">@T["Refresh"]</button>
+        <span data-chart-action="print"><BarangButton Icon="print" Text="@O["PrintChart"]" Clicked="OpenPrintDialog" Disabled="@Loading" /></span>
+    </div>
+</header>
+
+<BarangToolbar AriaLabel="@O["SearchChart"]">
+    <label class="search-box search-with-icon chart-search">
+        <BarangIcon Name="search" />
+        <input type="search" name="chart-search" aria-label="@O["SearchChart"]" placeholder="@O["SearchChart"]" value="@SearchText" @oninput="SearchChart" disabled="@Loading" />
+    </label>
+</BarangToolbar>
+
+@if (!string.IsNullOrWhiteSpace(PageMessage))
+{
+    <div class="@(PageActionSucceeded ? "inline-success" : "inline-error")" role="status">@PageMessage</div>
+}
+
+@if (Loading)
+{
+    <div class="crud-loading">@T["Loading"]</div>
+}
+else if (LoadError)
+{
+    <div class="inline-error">@O["OperationFailed"]</div>
+}
+else
+{
+    <OrganizationalChartTree
+        @key="_chartRevision"
+        Companies="_chart.Companies"
+        Branches="_chart.Branches"
+        Units="_chart.Units"
+        Assignments="_chart.Assignments"
+        Positions="_chart.Positions"
+        SearchQuery="@AppliedSearch"
+        Expanded="Expanded"
+        HighlightPersonId="null"
+        CurrentCompanyId="CurrentCompanyId"
+        ManageableCompanyIds="AccessibleCompanyIds"
+        Editable="true"
+        CanManageCompanies="CanManageCompanies"
+        CanManageBranches="CanManageBranches"
+        CanManageUnits="CanManageUnits"
+        ActionRequested="HandleChartAction" />
+}
+
+@if (ActiveDialog is not null && FocusedAssignmentAction is null)
+{
+    <div class="dialog-backdrop chart-dialog-backdrop" @onclick="CloseDialog" @onkeydown="HandleDialogKey">
+        <section class="crud-dialog org-dialog" role="dialog" aria-modal="true" aria-label="@DialogTitle" data-chart-dialog-kind="@DialogKindValue" data-chart-dialog-mode="@DialogMode.ToString()" @onclick:stopPropagation>
+            <header>
+                <h2>@DialogTitle</h2>
+                <button type="button" class="dialog-close" title="@T["Close"]" aria-label="@T["Close"]" @onclick="CloseDialog"><BarangIcon Name="close" /></button>
+            </header>
+
+            <div class="dialog-body org-dialog-body">
+                @if (ActiveDialog == OrganizationChartDialogKind.Company)
+                {
+                    <CompanyForm Mode="DialogMode" Model="CompanyModel" />
+                }
+                else if (ActiveDialog == OrganizationChartDialogKind.Branch)
+                {
+                    <BranchForm Mode="DialogMode" Model="BranchModel" CompanyName="@GetCompanyName(BranchModel.CompanyId)" />
+                }
+                else if (ActiveDialog == OrganizationChartDialogKind.Unit)
+                {
+                    <UnitForm Mode="DialogMode" Model="UnitModel" ParentOptions="UnitParentOptions" CompanyName="@GetUnitCompanyName(UnitModel.BranchId)" BranchName="@GetBranchName(UnitModel.BranchId)" />
+                }
+                else if (ActiveDialog == OrganizationChartDialogKind.Assignment)
+                {
+                    <OrganizationalAssignmentEditor
+                        Model="AssignmentModel"
+                        Mode="DialogMode"
+                        SelectedPerson="@SelectedPerson"
+                        PersonOptions="PersonOptions"
+                        UnitOptions="AssignmentUnitOptions"
+                        ManagerOptions="AssignmentManagerOptions"
+                        LockManager="LockAssignmentManager"
+                        PersonChanged="SelectPerson"
+                        SearchPeople="SearchPeople"
+                        UnitChanged="SelectUnit"
+                        ManagerChanged="SelectManager" />
+                }
+                else if (ActiveDialog == OrganizationChartDialogKind.Position)
+                {
+                    <PositionForm Model="PositionModel" Mode="DialogMode" UnitName="@GetUnitName(PositionModel.UnitId)" ReportsToOptions="PositionOptions" ReportsToChanged="SelectReportsTo" />
+                }
+
+                @if (!string.IsNullOrWhiteSpace(OperationMessage))
+                {
+                    <div class="@(LastSaveSucceeded ? "inline-success" : "inline-error")" role="status">@OperationMessage</div>
+                }
+            </div>
+
+            <footer>
+                <button type="button" class="btn btn-secondary" @onclick="CloseDialog" disabled="@Busy">@T["Cancel"]</button>
+                @if (DialogMode == FormMode.View && CanEditActiveDialog)
+                {
+                    <button type="button" class="btn btn-primary" @onclick="SwitchEditMode" disabled="@Busy">@O["Edit"]</button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-primary" @onclick="Save" disabled="@Busy">@(Busy ? T["Saving"] : T["Save"])</button>
+                }
+            </footer>
+        </section>
+    </div>
+}
+
+<BarangModal Open="@(FocusedAssignmentAction is not null)" Title="@FocusedAssignmentTitle" Size="large" ReserveSelectorSpace="true" Busy="Busy"
+             ShowCloseButton="false" CloseRequested="CloseDialog" BackdropClass="chart-dialog-backdrop"
+             aria-label="@FocusedAssignmentTitle" data-chart-dialog-kind="assignment" data-chart-dialog-mode="Edit"
+             data-chart-workflow="@FocusedWorkflow">
+    <ChildContent>
+        @if (FocusedAssignment is not null)
+        {
+            <div class="structure-form" data-chart-form="@FocusedWorkflow">
+                <div class="person-summary" data-selected-person-id="@FocusedAssignment.PersonId">
+                    <div><span>@O["Person"]</span><strong>@FocusedAssignment.PersonName</strong></div>
+                    <div><span>@O["Position"]</span><strong>@FocusedAssignment.PositionTitle</strong></div>
+                </div>
+                @if (FocusedAssignmentAction == OrganizationChartActionType.ChangeManager)
+                {
+                    <label><span>@O["Manager"]</span>
+                        <SearchableSelect Name="assignment-manager" Options="FocusedManagerOptions" Value="@FocusedValue" ValueChanged="SelectFocusedValue" Disabled="Busy" Placeholder="@T["SearchOptions"]" />
+                    </label>
+                }
+                else
+                {
+                    <label><span>@O["Unit"] *</span>
+                        <SearchableSelect Name="assignment-unit" Options="FocusedUnitOptions" Value="@FocusedValue" ValueChanged="SelectFocusedValue" Disabled="Busy" Placeholder="@T["SearchOptions"]" />
+                    </label>
+                }
+                @if (!string.IsNullOrWhiteSpace(OperationMessage))
+                {
+                    <div class="inline-error" role="alert">@OperationMessage</div>
+                }
+            </div>
+        }
+    </ChildContent>
+    <Footer>
+        <BarangButton Text="@T["Cancel"]" Clicked="CloseDialog" Disabled="Busy" />
+        <BarangButton Variant="primary" Text="@T["Save"]" BusyText="@T["Saving"]" Busy="Busy" Clicked="SaveFocusedAssignment" />
+    </Footer>
+</BarangModal>
+
+<BarangModal Open="PrintDialogOpen" Title="@O["PrintChart"]" Size="large" ReserveSelectorSpace="true" Busy="PrintLoading" ShowCloseButton="false"
+             CloseRequested="ClosePrintDialog" data-chart-workflow="print-company">
+    <ChildContent>
+        <label><span>@O["SelectPrintCompany"] *</span>
+            <SearchableSelect Name="chart-print-company" Options="PrintCompanyOptions" Value="@PrintCompanyValue" ValueChanged="SelectPrintCompany" Disabled="PrintLoading" Placeholder="@T["SearchOptions"]" />
+        </label>
+        @if (!string.IsNullOrWhiteSpace(PrintError))
+        {
+            <div class="inline-error" role="alert">@PrintError</div>
+        }
+    </ChildContent>
+    <Footer>
+        <BarangButton Text="@T["Cancel"]" Clicked="ClosePrintDialog" Disabled="PrintLoading" />
+        <BarangButton Icon="print" Variant="primary" Text="@O["Print"]" Clicked="OpenPrintPreview" Disabled="@(PrintLoading || string.IsNullOrEmpty(PrintCompanyValue))" />
+    </Footer>
+</BarangModal>
+
+@if (PendingDelete is not null)
+{
+    <div class="dialog-backdrop chart-dialog-backdrop" @onclick="CloseDeleteConfirmation" @onkeydown="HandleDeleteDialogKey">
+        <section class="crud-dialog chart-delete-dialog" role="alertdialog" aria-modal="true" aria-label="@O["DeleteConfirmTitle"]" data-chart-delete-confirm="@PendingDelete.NodeType.ToString().ToLowerInvariant()" @onclick:stopPropagation>
+            <header>
+                <h2>@O["DeleteConfirmTitle"]</h2>
+                <button type="button" class="dialog-close" title="@T["Close"]" aria-label="@T["Close"]" @onclick="CloseDeleteConfirmation"><BarangIcon Name="close" /></button>
+            </header>
+            <div class="dialog-body org-dialog-body">
+                <p>@O["DeleteConfirmMessage", DeleteEntityName(PendingDelete.NodeType), PendingDelete.Name]</p>
+                @if (!string.IsNullOrWhiteSpace(DeleteMessage))
+                {
+                    <div class="inline-error" role="alert">@DeleteMessage</div>
+                }
+            </div>
+            <footer>
+                <button type="button" class="btn btn-secondary" @onclick="CloseDeleteConfirmation" disabled="@DeleteBusy">@T["Cancel"]</button>
+                <button type="button" class="btn btn-danger" data-chart-confirm-delete @onclick="ConfirmDelete" disabled="@DeleteBusy">@(DeleteBusy ? T["Saving"] : O["Delete"])</button>
+            </footer>
+        </section>
+    </div>
+}
+</div>
+
+@code
+{
+    private OrganizationChartData _chart = OrganizationChartData.Empty;
+    private long _chartRevision;
+    private HashSet<Guid> Expanded = [];
+    private bool Loading;
+    private bool LoadError;
+    private bool Busy;
+    private bool LastSaveSucceeded;
+    private bool PageActionSucceeded;
+    private string? OperationMessage;
+    private string? PageMessage;
+    private Guid CurrentCompanyId;
+    private Guid? AdministrationCompanyId;
+    private CurrentUserView? AdministrationIdentity;
+    private bool ShowCompanyDirectory;
+    private HashSet<Guid> AccessibleCompanyIds = [];
+    private bool CanManageCompanies;
+    private bool CanManageBranches;
+    private bool CanManageUnits;
+
+    private OrganizationChartDialogKind? ActiveDialog;
+    private FormMode DialogMode = FormMode.View;
+    private string SelectedPerson = "";
+    private CompanyFormModel CompanyModel = new();
+    private BranchFormModel BranchModel = new();
+    private UnitFormModel UnitModel = new();
+    private AssignmentFormModel AssignmentModel = new();
+    private PositionFormModel PositionModel = new();
+    private List<PersonSearchRow> PersonRows = [];
+    private OrganizationChartAction? LastAction;
+    private bool LockAssignmentManager;
+    private ChartDeleteTarget? PendingDelete;
+    private bool DeleteBusy;
+    private string? DeleteMessage;
+
+    private IReadOnlyList<SearchableSelectOption> PersonOptions =>
+        PersonRows.Select(person => new SearchableSelectOption(person.Id.ToString(), $"{person.Name} · {person.PersonnelCode} · {person.Phone}"))
+            .ToArray();
+
+    private IReadOnlyList<SearchableSelectOption> AssignmentUnitOptions =>
+        _chart.Units
+            .OrderBy(unit => unit.Code)
+            .Select(unit => new SearchableSelectOption(unit.Id.ToString(), $"{unit.DisplayName} ({unit.Code})"))
+            .ToArray();
+
+    private IReadOnlyList<SearchableSelectOption> AssignmentManagerOptions =>
+        GetPossibleManagers()
+            .Select(manager => new SearchableSelectOption(
+                manager.Id.ToString(),
+                $"{manager.PersonName} · {manager.PositionTitle} · {GetUnitName(manager.UnitId)}"))
+            .ToArray();
+
+    private IReadOnlyList<SearchableSelectOption> PositionOptions =>
+        (_chart.Positions ?? []).Where(position => position.Id != PositionModel.Id && position.Active)
+            .OrderBy(position => position.Title)
+            .Select(position => new SearchableSelectOption(position.Id.ToString(), $"{position.Title} · {position.Code}"))
+            .ToArray();
+
+    private IReadOnlyList<SearchableSelectOption> UnitParentOptions =>
+        _chart.Units
+            .Where(x => x.BranchId == UnitModel.BranchId && x.Id != UnitModel.Id)
+            .OrderBy(x => x.Code)
+            .Select(unit => new SearchableSelectOption(unit.Id.ToString(), $"{unit.DisplayName} ({unit.Code})"))
+            .ToArray();
+
+    private string DialogKindValue =>
+        ActiveDialog switch
+        {
+            OrganizationChartDialogKind.Company => "company",
+            OrganizationChartDialogKind.Branch => "branch",
+            OrganizationChartDialogKind.Unit => "unit",
+            OrganizationChartDialogKind.Assignment => "assignment",
+            _ => "unknown"
+        };
+
+    private string DialogTitle
+    {
+        get
+        {
+            string entity = ActiveDialog switch
+            {
+                OrganizationChartDialogKind.Company => O["Company"],
+                OrganizationChartDialogKind.Branch => O["Branch"],
+                OrganizationChartDialogKind.Unit => O["Unit"],
+                OrganizationChartDialogKind.Assignment => O["Assignment"],
+                _ => O["Chart"]
+            };
+            string action = DialogMode switch
+            {
+                FormMode.Create => T["Add"],
+                FormMode.Edit => T["Edit"],
+                _ => T["View"]
+            };
+            return $"{action} · {entity}";
+        }
+    }
+
+    protected override async Task OnInitializedAsync() => await LoadChart();
+
+    private async Task LoadChart()
+    {
+        Loading = true;
+        LoadError = false;
+        StateHasChanged();
+
+        (string Token, Guid Company)? session = await CurrentSession();
+        if (session is null)
+        {
+            LoadError = true;
+            Loading = false;
+            return;
+        }
+
+        ApiResult<JsonElement> chart = await Core.GetAsync("api/v1/organization/chart", session.Value.Token, session.Value.Company, default);
+        CurrentCompanyId = session.Value.Company;
+        if (chart.IsSuccess)
+        {
+            _chart = OrganizationChartJson.ParseChart(chart.Value);
+            var available = await Core.GetMyCompaniesAsync(session.Value.Token, default);
+            AccessibleCompanyIds = available.IsSuccess ? available.Value!.Select(x => x.CompanyId).ToHashSet() : [];
+            if(ShowCompanyDirectory && CanManageCompanies)
+            {
+                var directory = await Core.GetAsync("api/v1/organization/companies", session.Value.Token, session.Value.Company, default);
+                if(!directory.IsSuccess){LoadError=true;Loading=false;return;}
+                var directoryChart = OrganizationChartJson.ParseChart(JsonSerializer.SerializeToElement(new { companies = directory.Value }));
+                _chart = _chart with { Companies = directoryChart.Companies };
+            }
+            _chartRevision++;
+            RefreshExpandedState();
+        }
+        else
+        {
+            LoadError = true;
+        }
+
+        Loading = false;
+    }
+
+    private async Task HandleChartAction(OrganizationChartAction action)
+    {
+        LastAction = action;
+        if(action.ActionType==OrganizationChartActionType.AddBranch && action.NodeId!=CurrentCompanyId && !await SelectAdministrationCompany(action.NodeId))return;
+        if (!CanExecute(action))
+        {
+            return;
+        }
+
+        switch (action.ActionType)
+        {
+            case OrganizationChartActionType.ToggleNode:
+                ToggleNode(action.NodeId);
+                return;
+            case OrganizationChartActionType.AddCompany:
+                OpenCompanyCreate();
+                return;
+            case OrganizationChartActionType.ViewCompany:
+                OpenCompanyView(FindCompany(action.NodeId));
+                return;
+            case OrganizationChartActionType.EditCompany:
+                OpenCompanyEdit(FindCompany(action.NodeId));
+                return;
+            case OrganizationChartActionType.ActivateCompany:
+            case OrganizationChartActionType.DeactivateCompany:
+                await ToggleCompanyStatus(FindCompany(action.NodeId));
+                return;
+            case OrganizationChartActionType.DeleteCompany:
+                OpenDeleteConfirmation(FindCompany(action.NodeId), action.ParentId);
+                return;
+            case OrganizationChartActionType.AddBranch:
+                OpenBranchCreate(action.NodeId);
+                return;
+            case OrganizationChartActionType.ViewBranch:
+                OpenBranchView(FindBranch(action.NodeId));
+                return;
+            case OrganizationChartActionType.EditBranch:
+                OpenBranchEdit(FindBranch(action.NodeId));
+                return;
+            case OrganizationChartActionType.ActivateBranch:
+            case OrganizationChartActionType.DeactivateBranch:
+                await ToggleBranchStatus(FindBranch(action.NodeId));
+                return;
+            case OrganizationChartActionType.DeleteBranch:
+                OpenDeleteConfirmation(FindBranch(action.NodeId), action.ParentId);
+                return;
+            case OrganizationChartActionType.AddUnit:
+                OpenUnitCreate(action.NodeType, action.NodeId, action.ParentId);
+                return;
+            case OrganizationChartActionType.ViewUnit:
+                OpenUnitView(FindUnit(action.NodeId));
+                return;
+            case OrganizationChartActionType.EditUnit:
+                OpenUnitEdit(FindUnit(action.NodeId));
+                return;
+            case OrganizationChartActionType.ActivateUnit:
+            case OrganizationChartActionType.DeactivateUnit:
+                await ToggleUnitStatus(FindUnit(action.NodeId));
+                return;
+            case OrganizationChartActionType.DeleteUnit:
+                OpenDeleteConfirmation(FindUnit(action.NodeId), action.ParentId);
+                return;
+            case OrganizationChartActionType.AddPosition:
+                OpenPositionCreate(action.NodeId);
+                return;
+            case OrganizationChartActionType.ViewPosition:
+                OpenPositionView(FindPosition(action.NodeId));
+                return;
+            case OrganizationChartActionType.EditPosition:
+                OpenPositionEdit(FindPosition(action.NodeId));
+                return;
+            case OrganizationChartActionType.ActivatePosition:
+            case OrganizationChartActionType.DeactivatePosition:
+                await TogglePositionStatus(FindPosition(action.NodeId));
+                return;
+            case OrganizationChartActionType.DeletePosition:
+                OpenDeleteConfirmation(FindPosition(action.NodeId), action.ParentId);
+                return;
+            case OrganizationChartActionType.ViewAssignment:
+                await OpenAssignmentView(FindAssignment(action.NodeId));
+                return;
+            case OrganizationChartActionType.AddPerson:
+                OpenAssignmentCreate(action.NodeType, action.NodeId);
+                return;
+            case OrganizationChartActionType.EditAssignment:
+                await OpenAssignmentEdit(FindAssignment(action.NodeId));
+                return;
+            case OrganizationChartActionType.ChangeManager:
+            case OrganizationChartActionType.MoveUnit:
+                OpenFocusedAssignment(FindAssignment(action.NodeId), action.ActionType);
+                return;
+            case OrganizationChartActionType.AddSubordinate:
+                OpenAssignmentSubordinate(FindAssignment(action.NodeId));
+                return;
+            case OrganizationChartActionType.ActivateAssignment:
+            case OrganizationChartActionType.DeactivateAssignment:
+                await ToggleAssignmentStatus(FindAssignment(action.NodeId));
+                return;
+            case OrganizationChartActionType.DeleteAssignment:
+                OpenDeleteConfirmation(FindAssignment(action.NodeId), action.ParentId);
+                return;
+            case OrganizationChartActionType.ViewPerson:
+                await ViewPerson(action.NodeId);
+                return;
+        }
+    }
+
+    private void OpenCompanyCreate()
+    {
+        CompanyModel = new();
+        ActiveDialog = OrganizationChartDialogKind.Company;
+        DialogMode = FormMode.Create;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+    }
+
+    private void OpenCompanyView(CompanyRow? row)
+    {
+        if (row is null) return;
+        CompanyModel = row.ToFormModel();
+        ActiveDialog = OrganizationChartDialogKind.Company;
+        DialogMode = FormMode.View;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+    }
+
+    private void OpenCompanyEdit(CompanyRow? row)
+    {
+        if (row is null) return;
+        CompanyModel = row.ToFormModel();
+        ActiveDialog = OrganizationChartDialogKind.Company;
+        DialogMode = FormMode.Edit;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+    }
+
+    private void OpenBranchCreate(Guid companyId)
+    {
+        BranchModel = new() { CompanyId = companyId };
+        ActiveDialog = OrganizationChartDialogKind.Branch;
+        DialogMode = FormMode.Create;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+        Expanded.Add(companyId);
+    }
+
+    private void OpenBranchView(BranchRow? row)
+    {
+        if (row is null) return;
+        BranchModel = row.ToFormModel();
+        ActiveDialog = OrganizationChartDialogKind.Branch;
+        DialogMode = FormMode.View;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+    }
+
+    private void OpenBranchEdit(BranchRow? row)
+    {
+        if (row is null) return;
+        BranchModel = row.ToFormModel();
+        ActiveDialog = OrganizationChartDialogKind.Branch;
+        DialogMode = FormMode.Edit;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+        Expanded.Add(row.CompanyId);
+    }
+
+    private void OpenUnitCreate(OrganizationChartNodeType sourceType, Guid nodeId, Guid? parentId)
+    {
+        if (sourceType == OrganizationChartNodeType.Branch)
+        {
+            OpenUnitWithDefaults(nodeId, null);
+            return;
+        }
+
+        if (sourceType == OrganizationChartNodeType.Unit)
+        {
+            Guid branchId = parentId ?? _chart.Units.FirstOrDefault(x => x.Id == nodeId)?.BranchId ?? Guid.Empty;
+            if (branchId == Guid.Empty)
+            {
+                return;
+            }
+
+            UnitModel = new() { BranchId = branchId, ParentId = nodeId };
+            OpenUnitWithDefaults(branchId, nodeId);
+        }
+    }
+
+    private void OpenUnitWithDefaults(Guid nodeId, Guid? parentId)
+    {
+        UnitModel = new()
+        {
+            BranchId = nodeId,
+            ParentId = parentId
+        };
+
+        ActiveDialog = OrganizationChartDialogKind.Unit;
+        DialogMode = FormMode.Create;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+        Expanded.Add(nodeId);
+    }
+
+    private void OpenAssignmentCreate(OrganizationChartNodeType sourceType, Guid nodeId)
+    {
+        if (sourceType != OrganizationChartNodeType.Unit)
+        {
+            return;
+        }
+
+        AssignmentModel = new() { UnitId = nodeId };
+        LockAssignmentManager = false;
+        SelectedPerson = "";
+        PersonRows = [];
+        ActiveDialog = OrganizationChartDialogKind.Assignment;
+        DialogMode = FormMode.Create;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+        Expanded.Add(nodeId);
+    }
+
+    private void OpenUnitView(UnitRow? row)
+    {
+        if (row is null) return;
+        UnitModel = row.ToFormModel();
+        ActiveDialog = OrganizationChartDialogKind.Unit;
+        DialogMode = FormMode.View;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+    }
+
+    private void OpenUnitEdit(UnitRow? row)
+    {
+        if (row is null) return;
+        UnitModel = row.ToFormModel();
+        ActiveDialog = OrganizationChartDialogKind.Unit;
+        DialogMode = FormMode.Edit;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+        if (row.BranchId is Guid branchId)
+        {
+            Expanded.Add(branchId);
+        }
+    }
+
+    private void OpenPositionCreate(Guid unitId)
+    {
+        PositionModel = new() { UnitId = unitId };
+        ActiveDialog = OrganizationChartDialogKind.Position;
+        DialogMode = FormMode.Create;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+        Expanded.Add(unitId);
+    }
+
+    private void OpenPositionView(PositionRow? row)
+    {
+        if (row is null) return;
+        PositionModel = ToPositionModel(row);
+        ActiveDialog = OrganizationChartDialogKind.Position;
+        DialogMode = FormMode.View;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+    }
+
+    private void OpenPositionEdit(PositionRow? row)
+    {
+        if (row is null) return;
+        PositionModel = ToPositionModel(row);
+        ActiveDialog = OrganizationChartDialogKind.Position;
+        DialogMode = FormMode.Edit;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+    }
+
+    private Task SelectReportsTo(string value)
+    {
+        PositionModel.ReportsToPositionId = Guid.TryParse(value, out Guid id) ? id : null;
+        return Task.CompletedTask;
+    }
+
+    private static PositionFormModel ToPositionModel(PositionRow row) => new()
+    {
+        Id = row.Id,
+        UnitId = row.UnitId,
+        ReportsToPositionId = row.ReportsToPositionId,
+        Code = row.Code,
+        Title = row.Title,
+        Version = row.Version,
+        Active = row.Active
+    };
+
+    private async Task OpenAssignmentView(AssignmentRow? row)
+    {
+        if (row is null) return;
+        AssignmentModel = row.ToFormModel();
+        LockAssignmentManager = false;
+        SelectedPerson = row.PersonId.ToString();
+        PersonRows = [new PersonSearchRow(row.PersonId, "", row.PersonName, "")];
+        ActiveDialog = OrganizationChartDialogKind.Assignment;
+        DialogMode = FormMode.View;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+        await LoadAssignmentPersonSummary(row.PersonId);
+    }
+
+    private async Task OpenAssignmentEdit(AssignmentRow? row)
+    {
+        if (row is null) return;
+        AssignmentModel = row.ToFormModel();
+        LockAssignmentManager = false;
+        SelectedPerson = row.PersonId.ToString();
+        PersonRows = [new PersonSearchRow(row.PersonId, "", row.PersonName, "")];
+        ActiveDialog = OrganizationChartDialogKind.Assignment;
+        DialogMode = FormMode.Edit;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+        Expanded.Add(row.UnitId);
+        await LoadAssignmentPersonSummary(row.PersonId);
+    }
+
+    private void OpenAssignmentSubordinate(AssignmentRow? row)
+    {
+        if (row is null) return;
+        AssignmentModel = new()
+        {
+            UnitId = row.UnitId,
+            ManagerId = row.Id
+        };
+        LockAssignmentManager = true;
+        SelectedPerson = "";
+        PersonRows = [];
+        ActiveDialog = OrganizationChartDialogKind.Assignment;
+        DialogMode = FormMode.Create;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+        Expanded.Add(row.UnitId);
+    }
+
+    private async Task ToggleAssignmentStatus(AssignmentRow? row)
+    {
+        if (row is null) return;
+        (string Token, Guid Company)? session = await CurrentSession();
+        if (session is null) return;
+
+        ApiResult<JsonElement> response = await Core.SendAsync(
+            HttpMethod.Put,
+            $"api/v1/organization/chart/assignments/{row.Id}/activation",
+            new { isActive = !row.Active, version = row.Version },
+            session.Value.Token,
+            session.Value.Company,
+            default);
+
+        if (!response.IsSuccess)
+        {
+            PageActionSucceeded = false;
+            PageMessage = ProblemMessage(response);
+            return;
+        }
+
+        PageActionSucceeded = true;
+        PageMessage = O["SaveSuccess"];
+        await LoadChart();
+    }
+
+    private void OpenDeleteConfirmation(CompanyRow? row, Guid? parentId)
+    {
+        if (row is null) return;
+        PendingDelete = new ChartDeleteTarget(OrganizationChartNodeType.Company, row.Id, parentId, row.DisplayName, row.Version);
+        DeleteMessage = null;
+    }
+
+    private void OpenDeleteConfirmation(BranchRow? row, Guid? parentId)
+    {
+        if (row is null) return;
+        PendingDelete = new ChartDeleteTarget(OrganizationChartNodeType.Branch, row.Id, parentId ?? row.CompanyId, row.DisplayName, row.Version);
+        DeleteMessage = null;
+    }
+
+    private void OpenDeleteConfirmation(UnitRow? row, Guid? parentId)
+    {
+        if (row is null) return;
+        PendingDelete = new ChartDeleteTarget(OrganizationChartNodeType.Unit, row.Id, parentId ?? row.ParentId ?? row.BranchId, row.DisplayName, row.Version);
+        DeleteMessage = null;
+    }
+
+    private void OpenDeleteConfirmation(AssignmentRow? row, Guid? parentId)
+    {
+        if (row is null) return;
+        PendingDelete = new ChartDeleteTarget(OrganizationChartNodeType.Assignment, row.Id, parentId ?? row.UnitId, row.PersonName, row.Version);
+        DeleteMessage = null;
+    }
+
+    private void OpenDeleteConfirmation(PositionRow? row, Guid? parentId)
+    {
+        if (row is null) return;
+        PendingDelete = new ChartDeleteTarget(OrganizationChartNodeType.Position, row.Id, parentId ?? row.UnitId, row.Title, row.Version);
+        DeleteMessage = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (PendingDelete is null || DeleteBusy) return;
+
+        DeleteBusy = true;
+        DeleteMessage = null;
+        try
+        {
+            (string Token, Guid Company)? session = await CurrentSession();
+            if (session is null)
+            {
+                DeleteMessage = O["OperationFailed"];
+                return;
+            }
+
+            string route = PendingDelete.NodeType switch
+            {
+                OrganizationChartNodeType.Company => $"api/v1/organization/companies/{PendingDelete.Id}?version={PendingDelete.Version}",
+                OrganizationChartNodeType.Branch => $"api/v1/organization/branches/{PendingDelete.Id}?version={PendingDelete.Version}",
+                OrganizationChartNodeType.Unit => $"api/v1/organization/organizational-units/{PendingDelete.Id}?version={PendingDelete.Version}",
+                OrganizationChartNodeType.Position => $"api/v1/organization/positions/{PendingDelete.Id}?version={PendingDelete.Version}",
+                OrganizationChartNodeType.Assignment => $"api/v1/organization/chart/assignments/{PendingDelete.Id}?version={PendingDelete.Version}",
+                _ => ""
+            };
+            if (string.IsNullOrWhiteSpace(route))
+            {
+                DeleteMessage = O["OperationFailed"];
+                return;
+            }
+
+            ApiResult<JsonElement> response = await Core.SendAsync(
+                HttpMethod.Delete,
+                route,
+                null,
+                session.Value.Token,
+                session.Value.Company,
+                default);
+
+            if (!response.IsSuccess)
+            {
+                DeleteMessage = ProblemMessage(response);
+                return;
+            }
+
+            OrganizationChartNodeType deletedType = PendingDelete.NodeType;
+            bool archived = response.Value.ValueKind == JsonValueKind.Object && response.Value.TryGetProperty("archived", out JsonElement archivedValue) && archivedValue.GetBoolean();
+            Guid? parentId = PendingDelete.ParentId;
+            PendingDelete = null;
+            if (parentId is Guid parent)
+            {
+                Expanded.Add(parent);
+            }
+
+            PageActionSucceeded = true;
+            PageMessage = deletedType == OrganizationChartNodeType.Position && archived ? O["PositionArchived"] : O["DeleteSuccess"];
+            await LoadChart();
+        }
+        finally
+        {
+            DeleteBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleCompanyStatus(CompanyRow? row)
+    {
+        if (row is null) return;
+        (string Token, Guid Company)? session = await CurrentSession();
+        if (session is null) return;
+
+        ApiResult<JsonElement> response = await Core.SendAsync(
+            HttpMethod.Put,
+            $"api/v1/organization/companies/{row.Id}/activation",
+            new { isActive = !row.Active, version = row.Version },
+            session.Value.Token,
+            session.Value.Company,
+            default);
+
+        if (response.IsSuccess)
+        {
+            PageActionSucceeded = true;
+            PageMessage = O["SaveSuccess"];
+            await LoadChart();
+        }
+        else
+        {
+            PageActionSucceeded = false;
+            PageMessage = ProblemMessage(response);
+        }
+    }
+
+    private async Task ToggleBranchStatus(BranchRow? row)
+    {
+        if (row is null) return;
+        (string Token, Guid Company)? session = await CurrentSession();
+        if (session is null) return;
+
+        ApiResult<JsonElement> response = await Core.SendAsync(
+            HttpMethod.Put,
+            $"api/v1/organization/branches/{row.Id}/activation",
+            new { isActive = !row.Active, version = row.Version },
+            session.Value.Token,
+            session.Value.Company,
+            default);
+
+        if (response.IsSuccess)
+        {
+            PageActionSucceeded = true;
+            PageMessage = O["SaveSuccess"];
+            await LoadChart();
+        }
+        else
+        {
+            PageActionSucceeded = false;
+            PageMessage = ProblemMessage(response);
+        }
+    }
+
+    private async Task ToggleUnitStatus(UnitRow? row)
+    {
+        if (row is null) return;
+        (string Token, Guid Company)? session = await CurrentSession();
+        if (session is null) return;
+
+        ApiResult<JsonElement> response = await Core.SendAsync(
+            HttpMethod.Put,
+            $"api/v1/organization/organizational-units/{row.Id}/activation",
+            new { isActive = !row.Active, version = row.Version },
+            session.Value.Token,
+            session.Value.Company,
+            default);
+
+        if (response.IsSuccess)
+        {
+            PageActionSucceeded = true;
+            PageMessage = O["SaveSuccess"];
+            await LoadChart();
+        }
+        else
+        {
+            PageActionSucceeded = false;
+            PageMessage = ProblemMessage(response);
+        }
+    }
+
+    private async Task TogglePositionStatus(PositionRow? row)
+    {
+        if (row is null) return;
+        (string Token, Guid Company)? session = await CurrentSession();
+        if (session is null) return;
+
+        ApiResult<JsonElement> response = await Core.SendAsync(
+            HttpMethod.Put,
+            $"api/v1/organization/positions/{row.Id}/activation",
+            new { isActive = !row.Active, version = row.Version },
+            session.Value.Token,
+            session.Value.Company,
+            default);
+
+        PageActionSucceeded = response.IsSuccess;
+        PageMessage = response.IsSuccess ? O["SaveSuccess"] : ProblemMessage(response);
+        if (response.IsSuccess) await LoadChart();
+    }
+
+    private async Task Save()
+    {
+        if (Busy) return;
+
+        Busy = true;
+        LastSaveSucceeded = false;
+        OperationMessage = null;
+        try
+        {
+            (string Token, Guid Company)? session = await CurrentSession();
+            if (session is null)
+            {
+                OperationMessage = O["OperationFailed"];
+                return;
+            }
+
+            ApiResult<JsonElement> response = ActiveDialog switch
+            {
+                OrganizationChartDialogKind.Company => await SaveCompany(session.Value),
+                OrganizationChartDialogKind.Branch => await SaveBranch(session.Value),
+                OrganizationChartDialogKind.Unit => await SaveUnit(session.Value),
+                OrganizationChartDialogKind.Assignment => await SaveAssignment(session.Value),
+                OrganizationChartDialogKind.Position => await SavePosition(session.Value),
+                _ => ApiResult<JsonElement>.Failed(ApiFailure.Unexpected)
+            };
+
+            if (response.IsSuccess)
+            {
+                LastSaveSucceeded = true;
+                OperationMessage = O["SaveSuccess"];
+                await PersistExpandedAndReload();
+            }
+            else
+            {
+                OperationMessage = ProblemMessage(response);
+            }
+        }
+        finally
+        {
+            Busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<ApiResult<JsonElement>> SaveCompany((string Token, Guid Company) session)
+    {
+        if (string.IsNullOrWhiteSpace(CompanyModel.Code) || string.IsNullOrWhiteSpace(CompanyModel.LegalName) || string.IsNullOrWhiteSpace(CompanyModel.DisplayName))
+        {
+            return ApiResult<JsonElement>.Failed(ApiFailure.Validation, "client.required");
+        }
+
+        object request = new
+        {
+            CompanyModel.Code,
+            CompanyModel.DisplayName,
+            CompanyModel.LegalName,
+            NationalId = Empty(CompanyModel.NationalId),
+            RegistrationNumber = Empty(CompanyModel.RegistrationNumber),
+            EconomicCode = Empty(CompanyModel.EconomicCode),
+            TaxId = Empty(CompanyModel.TaxId),
+            Phone = Empty(CompanyModel.Phone),
+            Mobile = Empty(CompanyModel.Mobile),
+            Email = Empty(CompanyModel.Email),
+            Website = Empty(CompanyModel.Website),
+            CountryCode = Empty(CompanyModel.CountryCode),
+            Province = Empty(CompanyModel.Province),
+            City = Empty(CompanyModel.City),
+            Address = Empty(CompanyModel.Address),
+            PostalCode = Empty(CompanyModel.PostalCode),
+            DefaultCurrencyCode = Empty(CompanyModel.DefaultCurrencyCode),
+            Notes = Empty(CompanyModel.Notes),
+            CompanyModel.Version
+        };
+
+        if (DialogMode == FormMode.Create || CompanyModel.Id is null)
+        {
+            return await Core.SendAsync(
+                HttpMethod.Post,
+                "api/v1/organization/companies",
+                request,
+                session.Token,
+                session.Company,
+                default);
+        }
+
+        return await Core.SendAsync(
+            HttpMethod.Put,
+            $"api/v1/organization/companies/{CompanyModel.Id}",
+            request,
+            session.Token,
+            session.Company,
+            default);
+    }
+
+    private async Task<ApiResult<JsonElement>> SaveBranch((string Token, Guid Company) session)
+    {
+        if (string.IsNullOrWhiteSpace(BranchModel.Code) || string.IsNullOrWhiteSpace(BranchModel.DisplayName))
+        {
+            return ApiResult<JsonElement>.Failed(ApiFailure.Validation, "client.required");
+        }
+
+        object request = new
+        {
+            BranchModel.Code,
+            DisplayName = BranchModel.DisplayName,
+            Phone = Empty(BranchModel.Phone),
+            Mobile = Empty(BranchModel.Mobile),
+            Email = Empty(BranchModel.Email),
+            Province = Empty(BranchModel.Province),
+            City = Empty(BranchModel.City),
+            Address = Empty(BranchModel.Address),
+            PostalCode = Empty(BranchModel.PostalCode),
+            Notes = Empty(BranchModel.Notes),
+            BranchModel.Version
+        };
+
+        if (DialogMode == FormMode.Create || BranchModel.Id is null)
+        {
+            return await Core.SendAsync(
+                HttpMethod.Post,
+                $"api/v1/organization/branches/company/{BranchModel.CompanyId}",
+                request,
+                session.Token,
+                BranchModel.CompanyId,
+                default);
+        }
+
+        return await Core.SendAsync(
+            HttpMethod.Put,
+            $"api/v1/organization/branches/{BranchModel.Id}",
+            request,
+            session.Token,
+            BranchModel.CompanyId,
+            default);
+    }
+
+    private async Task<ApiResult<JsonElement>> SaveUnit((string Token, Guid Company) session)
+    {
+        if (string.IsNullOrWhiteSpace(UnitModel.Code) || string.IsNullOrWhiteSpace(UnitModel.DisplayName))
+        {
+            return ApiResult<JsonElement>.Failed(ApiFailure.Validation, "client.required");
+        }
+
+        if (UnitModel.BranchId == Guid.Empty)
+        {
+            return ApiResult<JsonElement>.Failed(ApiFailure.Validation, "client.required");
+        }
+
+        object request = new
+        {
+            UnitModel.Code,
+            DisplayName = UnitModel.DisplayName,
+            UnitModel.BranchId,
+            ParentId = UnitModel.ParentId,
+            Description = Empty(UnitModel.Description),
+            DisplayOrder = UnitModel.DisplayOrder,
+            UnitModel.Version
+        };
+
+        if (DialogMode == FormMode.Create || UnitModel.Id is null)
+        {
+            return await Core.SendAsync(
+                HttpMethod.Post,
+                "api/v1/organization/organizational-units",
+                request,
+                session.Token,
+                session.Company,
+                default);
+        }
+
+        return await Core.SendAsync(
+            HttpMethod.Put,
+            $"api/v1/organization/organizational-units/{UnitModel.Id}",
+            request,
+            session.Token,
+            session.Company,
+            default);
+    }
+
+    private async Task<ApiResult<JsonElement>> SaveAssignment((string Token, Guid Company) session)
+    {
+        if (AssignmentModel.UnitId == Guid.Empty || string.IsNullOrWhiteSpace(AssignmentModel.PositionCode) || string.IsNullOrWhiteSpace(AssignmentModel.PositionTitle))
+        {
+            return ApiResult<JsonElement>.Failed(ApiFailure.Validation, "client.required");
+        }
+
+        if (AssignmentModel.PersonId == Guid.Empty)
+        {
+            return ApiResult<JsonElement>.Failed(ApiFailure.Validation, "client.required");
+        }
+
+        object request = new
+        {
+            personId = AssignmentModel.PersonId,
+            organizationalUnitId = AssignmentModel.UnitId,
+            managerAssignmentId = AssignmentModel.ManagerId,
+            positionCode = AssignmentModel.PositionCode,
+            positionTitle = AssignmentModel.PositionTitle,
+            isPrimary = AssignmentModel.Primary,
+            startDate = AssignmentModel.StartDate,
+            endDate = AssignmentModel.EndDate,
+            notes = Empty(AssignmentModel.Notes),
+            AssignmentModel.Version
+        };
+
+        if (DialogMode == FormMode.Create || AssignmentModel.Id is null)
+        {
+            return await Core.SendAsync(
+                HttpMethod.Post,
+                "api/v1/organization/chart/assignments",
+                request,
+                session.Token,
+                session.Company,
+                default);
+        }
+
+        return await Core.SendAsync(
+            HttpMethod.Put,
+            $"api/v1/organization/chart/assignments/{AssignmentModel.Id}",
+            request,
+            session.Token,
+            session.Company,
+            default);
+    }
+
+    private async Task<ApiResult<JsonElement>> SavePosition((string Token, Guid Company) session)
+    {
+        if (PositionModel.UnitId == Guid.Empty || string.IsNullOrWhiteSpace(PositionModel.Code) || string.IsNullOrWhiteSpace(PositionModel.Title))
+        {
+            return ApiResult<JsonElement>.Failed(ApiFailure.Validation, "client.required");
+        }
+
+        object request = new
+        {
+            organizationalUnitId = PositionModel.UnitId,
+            reportsToPositionId = PositionModel.ReportsToPositionId,
+            code = PositionModel.Code,
+            title = PositionModel.Title,
+            semanticRole = Empty(PositionModel.SemanticRole),
+            notes = Empty(PositionModel.Notes),
+            PositionModel.Version
+        };
+
+        return DialogMode == FormMode.Create || PositionModel.Id is null
+            ? await Core.SendAsync(HttpMethod.Post, "api/v1/organization/positions", request, session.Token, session.Company, default)
+            : await Core.SendAsync(HttpMethod.Put, $"api/v1/organization/positions/{PositionModel.Id}", request, session.Token, session.Company, default);
+    }
+
+    private async Task SearchPeople(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query) || query.Trim().Length < 2)
+        {
+            PersonRows = [];
+            return;
+        }
+
+        (string Token, Guid Company)? session = await CurrentSession();
+        if (session is null) return;
+
+        ApiResult<JsonElement> result = await Core.GetAsync(
+            $"api/v1/organization/persons?search={Uri.EscapeDataString(query)}&take=30",
+            session.Value.Token,
+            session.Value.Company,
+            default);
+
+        if (!result.IsSuccess) return;
+
+        PersonRows = result.Value.EnumerateArray().Select(OrganizationChartJson.ParsePersonSearchRow).ToList();
+    }
+
+    private async Task LoadAssignmentPersonSummary(Guid personId)
+    {
+        (string Token, Guid Company)? session = await CurrentSession();
+        if (session is null) return;
+
+        ApiResult<JsonElement> result = await Core.GetAsync(
+            $"api/v1/organization/persons/{personId}",
+            session.Value.Token,
+            session.Value.Company,
+            default);
+        if (!result.IsSuccess) return;
+
+        PersonSearchRow person = OrganizationChartJson.ParsePersonSearchRow(result.Value);
+        PersonRows = [person];
+        SelectedPerson = person.Id.ToString();
+        AssignmentModel.PersonDisplayName = person.Name;
+        AssignmentModel.PersonPersonnelCode = person.PersonnelCode;
+        AssignmentModel.PersonMobile = person.Phone;
+    }
+
+    private Task SelectPerson(string personId)
+    {
+        SelectedPerson = personId;
+        if (Guid.TryParse(personId, out Guid person))
+        {
+            AssignmentModel.PersonId = person;
+            PersonSearchRow? selected = PersonRows.FirstOrDefault(x => x.Id == person);
+            AssignmentModel.PersonDisplayName = selected?.Name ?? "";
+            AssignmentModel.PersonPersonnelCode = selected?.PersonnelCode ?? "";
+            AssignmentModel.PersonMobile = selected?.Phone ?? "";
+        }
+        else
+        {
+            AssignmentModel.PersonId = Guid.Empty;
+            AssignmentModel.PersonDisplayName = "";
+            AssignmentModel.PersonPersonnelCode = "";
+            AssignmentModel.PersonMobile = "";
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task SelectUnit(string unitId)
+    {
+        if (Guid.TryParse(unitId, out Guid unit))
+        {
+            AssignmentModel.UnitId = unit;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task SelectManager(string managerId)
+    {
+        AssignmentModel.ManagerId = Guid.TryParse(managerId, out Guid manager) ? manager : null;
+        return Task.CompletedTask;
+    }
+
+    private void CloseDialog()
+    {
+        if (Busy) return;
+        FocusedAssignmentAction = null;
+        FocusedAssignment = null;
+        ActiveDialog = null;
+        DialogMode = FormMode.View;
+        OperationMessage = null;
+        LastSaveSucceeded = false;
+    }
+
+    private void HandleDialogKey(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape" && !Busy)
+        {
+            CloseDialog();
+        }
+    }
+
+    private void CloseDeleteConfirmation()
+    {
+        if (DeleteBusy) return;
+        PendingDelete = null;
+        DeleteMessage = null;
+    }
+
+    private void HandleDeleteDialogKey(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            CloseDeleteConfirmation();
+        }
+    }
+
+    private string DeleteEntityName(OrganizationChartNodeType nodeType) => nodeType switch
+    {
+        OrganizationChartNodeType.Company => O["Company"],
+        OrganizationChartNodeType.Branch => O["Branch"],
+        OrganizationChartNodeType.Unit => O["Unit"],
+        OrganizationChartNodeType.Assignment => O["Assignment"],
+        _ => O["Chart"]
+    };
+
+    private void SwitchEditMode()
+    {
+        if (ActiveDialog is null || !CanEditActiveDialog || ActiveDialog == OrganizationChartDialogKind.Assignment && DialogMode == FormMode.Create)
+        {
+            return;
+        }
+
+        DialogMode = FormMode.Edit;
+        if (ActiveDialog == OrganizationChartDialogKind.Assignment)
+        {
+            OperationMessage = null;
+        }
+    }
+
+    private void ToggleNode(Guid nodeId)
+    {
+        if (!Expanded.Remove(nodeId))
+        {
+            Expanded.Add(nodeId);
+        }
+    }
+
+    private async Task AddCompany()
+    {
+        if (CanManageCompanies)
+        {
+            ShowCompanyDirectory = true;
+            await LoadChart();
+            if(!LoadError)OpenCompanyCreate();
+        }
+    }
+
+    private async Task ToggleCompanyDirectory()
+    {
+        ShowCompanyDirectory = !ShowCompanyDirectory;
+        AdministrationCompanyId = null;
+        AdministrationIdentity = null;
+        Expanded.Clear();
+        await LoadChart();
+    }
+
+    private async Task<bool> SelectAdministrationCompany(Guid companyId)
+    {
+        var session = await CurrentSession();
+        if(session is null)return false;
+        var result = await Core.GetMeAsync(session.Value.Token, companyId, default);
+        if(!result.IsSuccess || result.Value is null || (!result.Value.IsSystemAdministrator && !result.Value.EffectivePermissionCodes.Contains("organization.branch.manage")))
+        {
+            PageActionSucceeded = false;
+            PageMessage = O["CompanyAdministrationDenied"];
+            return false;
+        }
+        AdministrationCompanyId = companyId;
+        AdministrationIdentity = result.Value;
+        Expanded.Clear();
+        await LoadChart();
+        return !LoadError;
+    }
+
+    private Task ViewPerson(Guid personId)
+    {
+        Navigator.NavigateTo($"/master/persons/{personId}");
+        return Task.CompletedTask;
+    }
+
+    private async Task PersistExpandedAndReload()
+    {
+        if (ActiveDialog == OrganizationChartDialogKind.Company)
+        {
+            if (CompanyModel.Id is not null)
+            {
+                Expanded.Add(CompanyModel.Id.Value);
+            }
+        }
+        else if (ActiveDialog == OrganizationChartDialogKind.Branch)
+        {
+            if (BranchModel.CompanyId != Guid.Empty)
+            {
+                Expanded.Add(BranchModel.CompanyId);
+            }
+            if (DialogMode == FormMode.Create)
+            {
+                Expanded.Add(BranchModel.CompanyId);
+            }
+        }
+        else if (ActiveDialog == OrganizationChartDialogKind.Unit)
+        {
+            Expanded.Add(UnitModel.BranchId);
+            if (UnitModel.ParentId is Guid parentId)
+            {
+                Expanded.Add(parentId);
+            }
+        }
+        else if (ActiveDialog == OrganizationChartDialogKind.Assignment)
+        {
+            Expanded.Add(AssignmentModel.UnitId);
+        }
+
+        await LoadChart();
+        Busy = false;
+        CloseDialog();
+    }
+
+    private void RefreshExpandedState()
+    {
+        HashSet<Guid> valid = [];
+        foreach (Guid id in Expanded)
+        {
+            if (_chart.Companies.Any(x => x.Id == id) || _chart.Branches.Any(x => x.Id == id) || _chart.Units.Any(x => x.Id == id))
+            {
+                valid.Add(id);
+            }
+        }
+
+        Expanded = valid;
+    }
+
+    private async Task<(string Token, Guid Company)?> CurrentSession()
+    {
+        System.Security.Claims.ClaimsPrincipal user = (await AuthState.GetAuthenticationStateAsync()).User;
+        bool isSystemAdministrator = AdministrationIdentity?.IsSystemAdministrator ?? user.HasClaim(AuthClaimTypes.SystemAdministrator, "true");
+        bool HasPermission(string code) => AdministrationIdentity?.EffectivePermissionCodes.Contains(code) ?? user.HasClaim(AuthClaimTypes.Permission, code);
+        CanManageCompanies = isSystemAdministrator || HasPermission("organization.company.manage");
+        CanManageBranches = isSystemAdministrator || HasPermission("organization.branch.manage");
+        CanManageUnits = isSystemAdministrator || HasPermission("organization.unit.manage");
+        if (!Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid company))
+        {
+            return null;
+        }
+
+        return user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token
+            ? (token, AdministrationCompanyId ?? company)
+            : null;
+    }
+
+    private bool CanEditActiveDialog => ActiveDialog switch
+    {
+        OrganizationChartDialogKind.Company => CanManageCompanies,
+        OrganizationChartDialogKind.Branch => CanManageBranches,
+        OrganizationChartDialogKind.Unit or OrganizationChartDialogKind.Assignment => CanManageUnits,
+        _ => false
+    };
+
+    private bool CanExecute(OrganizationChartAction action) => action.ActionType switch
+    {
+        OrganizationChartActionType.ToggleNode or OrganizationChartActionType.ViewPerson => true,
+        OrganizationChartActionType.AddCompany or OrganizationChartActionType.ViewCompany or OrganizationChartActionType.EditCompany or
+            OrganizationChartActionType.ActivateCompany or OrganizationChartActionType.DeactivateCompany or OrganizationChartActionType.DeleteCompany => CanManageCompanies,
+        OrganizationChartActionType.AddBranch => CanManageBranches && AccessibleCompanyIds.Contains(action.NodeId),
+        OrganizationChartActionType.ViewBranch or OrganizationChartActionType.EditBranch or
+            OrganizationChartActionType.ActivateBranch or OrganizationChartActionType.DeactivateBranch or OrganizationChartActionType.DeleteBranch => CanManageBranches,
+        _ => CanManageUnits
+    };
+
+    private string ProblemMessage(ApiResult<JsonElement> result)
+    {
+        return result.ProblemCode switch
+        {
+            "client.required" => O["RequiredFields"],
+            "organization.assignment.duplicate" => O["DuplicateAssignment"],
+            "organization.assignment.reporting_cycle" => O["ReportingCycle"],
+            "organization.resource.not_found" => O["InvalidScope"],
+            "organization.active_dependents" => O["ValidationError"],
+            "organization.code.duplicate" => O["DuplicateCode"],
+            "organization.display_order.invalid" => O["DisplayOrderInvalid"],
+            "organization.concurrency_conflict" => O["ValidationError"],
+            "organization.company.last_active_required" => O["LastActiveCompanyRequired"],
+            "organization.delete.has_children" => O["DeleteBlockedChildren"],
+            "organization.delete.protected_dependency" => O["DeleteProtectedDependency"],
+            null => O["OperationFailed"],
+            _ => O["OperationFailed"]
+        };
+    }
+
+    private string Empty(string value) => string.IsNullOrWhiteSpace(value) ? "" : value;
+
+    private string GetUnitName(Guid id) => _chart.Units.FirstOrDefault(x => x.Id == id)?.DisplayName ?? "";
+    private string GetCompanyName(Guid id) => _chart.Companies.FirstOrDefault(x => x.Id == id)?.DisplayName ?? "";
+    private string GetBranchName(Guid id) => _chart.Branches.FirstOrDefault(x => x.Id == id)?.DisplayName ?? "";
+    private string GetUnitCompanyName(Guid branchId) => _chart.Branches.FirstOrDefault(x => x.Id == branchId) is BranchRow branch ? GetCompanyName(branch.CompanyId) : "";
+    private IEnumerable<AssignmentRow> GetPossibleManagers()
+    {
+        if (AssignmentModel.UnitId == Guid.Empty) return [];
+
+        return _chart.Assignments.Where(x =>
+            x.Active &&
+            x.Id != AssignmentModel.Id &&
+            x.PersonId != AssignmentModel.PersonId);
+    }
+
+    private CompanyRow? FindCompany(Guid id) => _chart.Companies.FirstOrDefault(x => x.Id == id);
+    private BranchRow? FindBranch(Guid id) => _chart.Branches.FirstOrDefault(x => x.Id == id);
+    private UnitRow? FindUnit(Guid id) => _chart.Units.FirstOrDefault(x => x.Id == id);
+    private PositionRow? FindPosition(Guid id) => (_chart.Positions ?? []).FirstOrDefault(x => x.Id == id);
+    private AssignmentRow? FindAssignment(Guid id) => _chart.Assignments.FirstOrDefault(x => x.Id == id);
+
+    private sealed record ChartDeleteTarget(
+        OrganizationChartNodeType NodeType,
+        Guid Id,
+        Guid? ParentId,
+        string Name,
+        long Version);
+
+}

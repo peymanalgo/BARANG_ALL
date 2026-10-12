@@ -1,0 +1,77 @@
+@page "/master/reference-data/{DomainCode}"
+@page "/master/reference-data/{DomainCode}/{TypeCode}"
+@using System.Globalization
+@using System.Text.Json
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@implements IDisposable
+@inject IStringLocalizer<AppStrings> L
+@inject IStringLocalizer<CrudStrings> T
+@inject IStringLocalizer<ReferenceStrings> R
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<PageTitle>@Title · BARANG</PageTitle>
+<nav class="breadcrumbs"><span>@L["Module_master-data"]</span><span>/</span><span>@Title</span>@if(Selected is not null){<span>/</span><span>@Selected.Caption</span>}</nav>
+<header class="crud-header"><div><h1>@Title</h1><p>@L["AuthoritativeCoreData"]</p></div></header>
+@if(Loading){<BarangLoadingState Text="@T["Loading"]" />}
+else if(Failed){<div class="inline-error" role="alert">@R["ReferenceLoadFailed"]</div>}
+else
+{
+    <div class="reference-workspace" data-domain="@DomainCode">
+        <details class="reference-navigation" open>
+            <summary>@R["ReferenceTypes"]</summary>
+            <nav aria-label="@R["ReferenceTypes"]">
+                @foreach(var type in Types)
+                {
+                    <a href="@($"/master/reference-data/{DomainCode}/{type.Code}")" aria-current="@(Selected?.Code==type.Code?"page":null)">@type.Caption</a>
+                }
+            </nav>
+        </details>
+            <section class="reference-content" data-reference-type="@(Selected?.Code == "artwork.category" ? Selected.Code : null)">
+            @if(Selected is not null)
+            {
+                @if (Selected.Code == "artwork.category")
+                {
+                    <DesignCategoryTree Embedded="true" />
+                }
+                else
+                {
+                    <ReferenceValueGrid @key="Selected.Code" TypeCode="@Selected.Code" Caption="@Selected.Caption" Global="@(Selected.Scope=="Global")" CanManage="@(CanManage&&Selected.CanManage)" />
+                }
+            }
+            else { <section class="crud-card"><p>@R["NoConfigurableTypes"]</p></section> }
+        </section>
+    </div>
+}
+@code {
+    [Parameter] public string DomainCode { get; set; } = "";
+    [Parameter] public string? TypeCode { get; set; }
+    private string Title="";
+    private bool Loading,Failed,CanManage;
+    private List<Catalog> Types=[];
+    private Catalog? Selected;
+    private CancellationTokenSource? Request;
+    protected override async Task OnParametersSetAsync()
+    {
+        Request?.Cancel();Request?.Dispose();Request=new();
+        CancellationToken ct=Request.Token;
+        Loading=true;Failed=false;
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;
+        CanManage=user.HasClaim(AuthClaimTypes.SystemAdministrator,"true")||user.HasClaim(AuthClaimTypes.Permission,"lookup.manage");
+        if(!Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Guid company)||user.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string token){Failed=true;Loading=false;return;}
+        var result=await Core.GetAsync($"api/v1/lookups/domains?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}",token,company,ct);
+        if(ct.IsCancellationRequested)return;
+        Types=[];Selected=null;
+        if(!result.IsSuccess){Failed=true;Loading=false;return;}
+        var domain=result.Value.EnumerateArray().FirstOrDefault(x=>x.GetProperty("code").GetString()==DomainCode);
+        if(domain.ValueKind!=JsonValueKind.Object){Failed=true;Loading=false;return;}
+        Title=domain.GetProperty("caption").GetString()??"";
+        Types=domain.GetProperty("types").EnumerateArray().Select(x=>new Catalog(x.GetProperty("code").GetString()!,x.GetProperty("caption").GetString()!,x.GetProperty("scope").ToString(),x.GetProperty("canManage").GetBoolean() && (x.GetProperty("code").GetString() is not ("artwork.tag" or "defect.type") || user.HasClaim(AuthClaimTypes.SystemAdministrator,"true") || user.HasClaim(AuthClaimTypes.Permission,x.GetProperty("code").GetString()=="artwork.tag"?"artwork.manage":"qc.manage")))).ToList();
+        Selected=TypeCode is null?Types.FirstOrDefault():Types.FirstOrDefault(x=>x.Code==TypeCode);
+        if(TypeCode is not null&&Selected is null)Failed=true;
+        Loading=false;
+    }
+    public void Dispose(){Request?.Cancel();Request?.Dispose();}
+    private sealed record Catalog(string Code,string Caption,string Scope,bool CanManage);
+}

@@ -1,0 +1,2 @@
+@if (Visible) { <div class="barang-toast toast-@Kind" role="status"><BarangIcon Name="@(Kind == "success" ? "check" : "circle")" /><span>@Message</span></div> }
+@code { [Parameter] public bool Visible { get; set; } [Parameter] public string Kind { get; set; } = "success"; [Parameter] public string? Message { get; set; } }

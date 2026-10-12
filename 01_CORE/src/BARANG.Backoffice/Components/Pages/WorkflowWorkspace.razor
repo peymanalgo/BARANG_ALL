@@ -1,0 +1,230 @@
+@page "/workspace/workflow"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Text.Json
+@using System.Net.Http.Json
+@using BARANG.Backoffice.Localization
+@inject IStringLocalizer<WorkflowDesignerStrings> D
+@inject IStringLocalizer<WorkflowInteractionStrings> I
+@inject IStringLocalizer<WorkflowUiStrings> U
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject LocaleDateService Dates
+
+<PageTitle>@D["Designer"]</PageTitle>
+<div class="workflow-designer-page">
+<header class="workflow-toolbar">
+  <div><h1>@D["Designer"]</h1><small>@D["Version"] @Current.Number · @Status(Current.Status) @if (IsDirty) { <span class="workflow-dirty-indicator" aria-hidden="true">•</span> }</small></div>
+  <div class="workflow-toolbar-actions">
+    @if (ReadOnly) { <BarangButton Variant="secondary" Icon="edit" Text='@D["BeginEdit"]' Clicked="BeginEditClick" /> }
+    else { <BarangButton Variant="primary" Icon="save" Text='@D["SaveDraft"]' Busy="@Saving" BusyText='@D["SaveDraft"]' Disabled="@ReadOnly" Clicked="SaveClick" /> }
+    <BarangButton Variant="secondary" Icon="check" Text='@D["Validate"]' Busy="@Validating" BusyText='@D["Validate"]' Disabled="@(Saving || Validating)" Clicked="@(async _ => await Validate())" />
+    <BarangIconButton Icon="restore" Label='@I["Undo"]' Disabled="@(ReadOnly || UndoStack.Count == 0)" Clicked="UndoClick" />
+    <BarangIconButton Icon="refresh" Label='@I["Redo"]' Disabled="@(ReadOnly || RedoStack.Count == 0)" Clicked="RedoClick" />
+  </div>
+</header>
+@if (ReadOnly) { <div class="workflow-readonly"><span>@D["ReadOnly"]</span><BarangButton Variant="secondary" Icon="restore" Text='@D["BackToCurrent"]' Clicked="ReturnCurrentClick" /></div> }
+@if (Message is not null) { <div class="inline-error" role="alert">@Message</div> }
+<div class="workflow-designer-grid">
+  <aside class="workflow-palette panel">
+    <h2>@D["Palette"]</h2>
+    <div class="palette-group">
+      <button type="button" draggable="true" class="workflow-palette-item palette-start" aria-label="@D["Start"]" @ondragstart="e => StartPaletteDragHtml(0)" @ondragend="EndPaletteDragHtml" @onpointerdown="e => StartPaletteDrag(0,e)" @onpointerup="PalettePointerUp" @onclick="() => PaletteClick(0)"><span class="palette-shape" aria-hidden="true"></span><span>@D["Start"]</span></button>
+      <button type="button" draggable="true" class="workflow-palette-item palette-end" aria-label="@D["End"]" @ondragstart="e => StartPaletteDragHtml(1)" @ondragend="EndPaletteDragHtml" @onpointerdown="e => StartPaletteDrag(1,e)" @onpointerup="PalettePointerUp" @onclick="() => PaletteClick(1)"><span class="palette-shape" aria-hidden="true"></span><span>@D["End"]</span></button>
+      <button type="button" draggable="true" class="workflow-palette-item palette-task" aria-label="@D["UserTask"]" @ondragstart="e => StartPaletteDragHtml(2)" @ondragend="EndPaletteDragHtml" @onpointerdown="e => StartPaletteDrag(2,e)" @onpointerup="PalettePointerUp" @onclick="() => PaletteClick(2)"><span class="palette-shape" aria-hidden="true"><BarangIcon Name="workflow" /></span><span>@D["UserTask"]</span></button>
+      <button type="button" draggable="true" class="workflow-palette-item palette-exclusive" aria-label="@D["ExclusiveGateway"]" @ondragstart="e => StartPaletteDragHtml(3)" @ondragend="EndPaletteDragHtml" @onpointerdown="e => StartPaletteDrag(3,e)" @onpointerup="PalettePointerUp" @onclick="() => PaletteClick(3)"><span class="palette-shape" aria-hidden="true">×</span><span>@D["ExclusiveGateway"]</span></button>
+      <button type="button" draggable="true" class="workflow-palette-item palette-parallel" aria-label="@D["ParallelGateway"]" @ondragstart="e => StartPaletteDragHtml(4)" @ondragend="EndPaletteDragHtml" @onpointerdown="e => StartPaletteDrag(4,e)" @onpointerup="PalettePointerUp" @onclick="() => PaletteClick(4)"><span class="palette-shape" aria-hidden="true">+</span><span>@D["ParallelGateway"]</span></button>
+    </div>
+    <BarangButton Variant="@(ConnectMode ? "primary" : "secondary")" Icon="workflow" Text='@D["SequenceFlow"]' Disabled="@ReadOnly" Clicked="ToggleConnectClick" />
+    @if (ConnectMode) { <small class="workflow-help">@D["ConnectHint"]</small> }
+  </aside>
+  <main class="workflow-canvas panel" aria-label="@D["Canvas"]">
+    <div class="workflow-canvas-heading"><h2>@D["Canvas"]</h2><div class="workflow-canvas-tools"><BarangIconButton Icon="plus" Label='@D["Fit"]' Clicked="ZoomInClick" Disabled="@ReadOnly" /><span class="workflow-zoom-value">@($"{Zoom:P0}")</span><BarangIconButton Icon="minus" Label='@D["Fit"]' Clicked="ZoomOutClick" Disabled="@ReadOnly" /><BarangButton Variant="secondary" Icon="move" Text='@D["Fit"]' Disabled="@ReadOnly" Clicked="FitClick" /></div></div>
+    <div class="workflow-canvas-viewport"><div class="workflow-canvas-surface @(PaletteDragType is not null ? "drop-active" : null)" tabindex="0" style="width:@($"{SurfaceWidth}px");height:@($"{SurfaceHeight}px")" @ondragover:preventDefault @ondragover="HandleDragOver" @ondrop="HandleDrop" @onpointermove="HandlePointerMove" @onpointerup="HandlePointerUp" @onpointerleave="HandlePointerLeave" @onclick="CanvasClicked" @onkeydown="HandleCanvasKeyDown">
+      <svg class="workflow-connections" width="100%" height="100%" aria-hidden="true">
+        <defs><marker id="workflow-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" /></marker></defs>
+        @foreach (TransitionModel edge in Transitions)
+        {
+          <line class="@(SelectedEdge == edge ? "selected" : null)"
+                x1="@(EdgeX(edge, true))" y1="@(EdgeY(edge, true))"
+                x2="@(EdgeX(edge, false))" y2="@(EdgeY(edge, false))"
+                 marker-end="url(#workflow-arrow)" @onclick="() => SelectEdge(edge)" @onclick:stopPropagation="true" />
+          @if (SelectedEdge == edge && !ReadOnly)
+          {
+            <circle class="workflow-edge-anchor" cx="@(EdgeX(edge, true))" cy="@(EdgeY(edge, true))" r="7" @onpointerdown="e => StartEdgeAnchorDrag(edge, true, e)" @onpointerdown:stopPropagation="true" />
+            <circle class="workflow-edge-anchor" cx="@(EdgeX(edge, false))" cy="@(EdgeY(edge, false))" r="7" @onpointerdown="e => StartEdgeAnchorDrag(edge, false, e)" @onpointerdown:stopPropagation="true" />
+          }
+        }
+      </svg>
+      @foreach (TransitionModel edge in Transitions.Where(x => !string.IsNullOrWhiteSpace(EdgeLabel(x)))) { <span class="workflow-edge-label" style="left:@($"{EdgeMidX(edge)}px");top:@($"{EdgeMidY(edge)}px")">@EdgeLabel(edge)</span> }
+      @if (PaletteDragType is not null) { <div class="workflow-drop-ghost @NodeCss(PaletteDragType.Value)" style="left:@($"{DropX * Zoom}px");top:@($"{DropY * Zoom}px")"><span class="workflow-shape">@NodeIcon(PaletteDragType.Value)</span><span>@NodeType(PaletteDragType.Value)</span></div> }
+      @if (Nodes.Count == 0) { <p class="empty-state">@D["NoNodes"]</p> }
+      @foreach (NodeModel node in Nodes)
+      {
+        <button type="button" aria-label="@NodeTitle(node)" data-node-key="@node.Key" data-node-type="@NodeCss(node.Type)" class="workflow-node @NodeCss(node.Type) @(Selected == node ? "selected" : null) @(ConnectMode && ConnectSource == node ? "connect-source" : null)" style="left:@($"{node.X * Zoom}px");top:@($"{node.Y * Zoom}px")" @onclick="() => NodeClicked(node)" @onclick:stopPropagation="true" @onpointerdown="e => StartDrag(node,e)" @onpointerdown:stopPropagation="true">
+          <span class="workflow-connection-handle handle-in" title="@D["From"]" role="button" tabindex="0" @onclick="e => StartHandle(node)" @onclick:stopPropagation="true" @onpointerdown="e => StartHandle(node)" @onpointerdown:stopPropagation="true"></span><span class="workflow-connection-handle handle-out" title="@D["To"]" role="button" tabindex="0" @onclick="e => StartHandle(node)" @onclick:stopPropagation="true" @onpointerdown="e => StartHandle(node)" @onpointerdown:stopPropagation="true"></span>
+          <span class="workflow-shape">@NodeIcon(node.Type)</span><span class="workflow-node-label">@NodeTitle(node)</span><small>@(node.Type == 2 ? PositionTitle(node.PositionId) : node.Key)</small>
+        </button>
+      }
+    </div>
+    </div>
+  </main>
+  <aside class="workflow-properties panel">
+    <h2>@D["Properties"]</h2>
+    @if (SelectedEdge is not null) { <h3>@D["Transition"]</h3><p>@SelectedEdge.FromKey → @SelectedEdge.ToKey</p><label><span>@D["TitleFa"]</span><input @bind="SelectedEdge.TitleFa" /></label><label><span>@D["TitleAr"]</span><input @bind="SelectedEdge.TitleAr" /></label><label><span>@D["TitleEn"]</span><input @bind="SelectedEdge.TitleEn" /></label>@if (IsExclusiveSource(SelectedEdge)) { <label><span>@I["Outcome"]</span><select @bind="SelectedEdge.OutcomeCode"><option value="">—</option><option value="Approve">@I["Approve"]</option><option value="Reject">@I["Reject"]</option><option value="AuditReject">@I["AuditReject"]</option></select></label><label><span>@D["ConditionField"]</span><select @bind="SelectedEdge.FieldCode"><option value="">—</option><option value="Order.Total">@D["OrderTotal"]</option><option value="Order.CustomerType">@D["CustomerType"]</option><option value="Order.Source">@D["OrderSource"]</option><option value="Order.ItemCount">@D["ItemCount"]</option><option value="Order.TotalQuantity">@D["TotalQuantity"]</option></select></label><label><span>@D["Operator"]</span><select @bind="SelectedEdge.Operator"><option value="">—</option>@foreach (int op in OperatorsFor(SelectedEdge.FieldCode)) { <option value="@op">@OperatorLabel(op)</option> }</select></label><label><span>@D["Value"]</span><input @bind="SelectedEdge.Value" /></label><label><span>@I["SourceAnchor"]</span><select @bind="SelectedEdge.SourceAnchor"><option value="Auto">@I["Auto"]</option>@foreach (string anchor in AnchorsFor(SelectedEdge, true)) { <option value="@anchor">@AnchorLabel(anchor)</option> }</select></label><label><span>@I["TargetAnchor"]</span><select @bind="SelectedEdge.TargetAnchor"><option value="Auto">@I["Auto"]</option>@foreach (string anchor in AnchorsFor(SelectedEdge, false)) { <option value="@anchor">@AnchorLabel(anchor)</option> }</select></label><label><input type="checkbox" @bind="SelectedEdge.IsDefault" /> @D["Default"]</label> }<BarangButton Variant="danger" Icon="trash" Text='@D["Delete"]' Disabled="@ReadOnly" Clicked="DeleteSelectedClick" /> }
+    else if (Selected is null) { <p class="empty-state">@D["NoSelection"]</p> }
+    else
+    {
+      <label><span>@D["NodeKey"]</span><input value="@Selected.Key" readonly /></label>
+      <label><span>@D["NodeType"]</span><input value="@NodeType(Selected.Type)" readonly /></label>
+      @if (Selected.Type == 2)
+      {
+        <label><span>@D["Position"]</span><select @bind="Selected.PositionId"><option value="">—</option>@foreach (PositionModel p in Positions) { <option value="@p.Id">@p.Title</option> }</select></label>
+      }
+      <label><span>@D["TitleFa"]</span><input @bind="Selected.TitleFa" /></label>
+      <label><span>@D["TitleEn"]</span><input @bind="Selected.TitleEn" /></label>
+      <label><span>@D["TitleAr"]</span><input @bind="Selected.TitleAr" /></label>
+      <label><span>@D["Description"] (@D["TitleFa"])</span><textarea @bind="Selected.DescriptionFa"></textarea></label>
+      <label><span>@D["Description"] (@D["TitleEn"])</span><textarea @bind="Selected.DescriptionEn"></textarea></label>
+      <label><span>@D["Description"] (@D["TitleAr"])</span><textarea @bind="Selected.DescriptionAr"></textarea></label>
+      <div class="workflow-coordinate-grid"><label>@D["CoordinateX"]<input type="number" @bind="Selected.X" /></label><label>@D["CoordinateY"]<input type="number" @bind="Selected.Y" /></label></div>
+      <div class="workflow-selection-actions"><BarangButton Variant="secondary" Icon="copy" Text='@I["Duplicate"]' Disabled="@(ReadOnly || Selected.Type != 2)" Clicked="DuplicateSelectedClick" /><BarangButton Variant="danger" Icon="trash" Text='@D["Delete"]' Disabled="@ReadOnly" Clicked="DeleteSelectedClick" /></div>
+    }
+  </aside>
+</div>
+<section class="workflow-validation panel"><h2>@D["ValidationResults"]</h2>@if (Issues.Count == 0 && Validated && Message is null) { <p class="inline-success">@D["NoIssues"]</p> } @if (Message is not null && Validated) { <div class="workflow-issue">@Message</div> } @foreach (IssueModel issue in Issues) { <div class="workflow-issue">@ValidationText(issue) <small>@issue.NodeKey</small></div> }</section>
+@if (PendingDelete is not null || PendingDeleteEdge is not null) { <div class="workflow-delete-confirm" role="alert"><span>@I["DeleteConfirmation"]</span><div><BarangButton Variant="secondary" Text='@I["Cancel"]' Clicked="CancelDeleteClick" /><BarangButton Variant="danger" Icon="trash" Text='@D["Delete"]' Clicked="ConfirmDeleteClick" /></div></div> }
+<section class="workflow-history panel"><button type="button" class="workflow-history-toggle" aria-expanded="@HistoryOpen" @onclick="ToggleHistory"><span><BarangIcon Name="history" /> @D["History"]</span><span aria-hidden="true">@(HistoryOpen ? "−" : "+")</span></button>@if (HistoryOpen) { <div class="workflow-history-list">@foreach (VersionModel version in History) { <button type="button" class="workflow-history-row @(version.Id == Current.Id ? "selected" : null)" @onclick="() => OpenVersion(version.Id)"><span>@D["Version"] @version.Number</span><span>@Status(version.Status)</span><span>@Date(version.Created)</span></button> }</div> }</section>
+</div>
+
+@code {
+  private TransitionModel? DragEdge; private bool DragEdgeSource; private decimal EdgeDragX; private decimal EdgeDragY;
+  private List<NodeModel> Nodes = []; private List<TransitionModel> Transitions = []; private List<PositionModel> Positions = []; private List<VersionModel> History = []; private VersionModel Current = new(); private NodeModel? Selected; private TransitionModel? SelectedEdge; private NodeModel? PendingDelete; private TransitionModel? PendingDeleteEdge; private string? Message; private bool Validated; private bool IsDirty; private List<IssueModel> Issues = []; private bool Editing; private bool HistoryOpen; private bool ConnectMode; private NodeModel? ConnectSource; private NodeModel? DragNode; private double DragStartX; private double DragStartY; private decimal DragNodeX; private decimal DragNodeY; private int? PaletteDragType; private bool PalettePointerMoved; private decimal DropX = 160; private decimal DropY = 120; private decimal Zoom = 1m; private bool Saving; private bool Validating; private readonly Stack<EditorSnapshot> UndoStack = []; private readonly Stack<EditorSnapshot> RedoStack = []; private bool ReadOnly => Current.ReadOnly && !Editing; private int SurfaceWidth => Math.Max(1400, (int)(Nodes.Count == 0 ? 0 : Nodes.Max(x => x.X) * Zoom) + 420); private int SurfaceHeight => Math.Max(900, (int)(Nodes.Count == 0 ? 0 : Nodes.Max(x => x.Y) * Zoom) + 300);
+  [CascadingParameter(Name = "BarangCulture")] private string? Culture { get; set; }
+  private string CurrentCulture => LocalePolicy.Resolve(Culture).Code;
+  private string Date(DateTimeOffset value) => Dates.Format(value, CurrentCulture);
+  protected override async Task OnInitializedAsync() { await Load(null); await LoadPositions(); }
+  private async Task Load(Guid? versionId) { var s = await Session(); if (s is null) return; var r = await Core.GetAsync($"api/v1/workflows/definition{(versionId is null ? "" : $"?versionId={versionId}")}", s.Value.Token, s.Value.Company, default); if (!r.IsSuccess) { Message = D["LoadFailed"]; return; } JsonElement root = r.Value; Current = ParseVersion(root.GetProperty("current")); History = root.GetProperty("history").EnumerateArray().Select(ParseHistory).ToList(); Nodes = root.GetProperty("current").GetProperty("nodes").EnumerateArray().Select(ParseNode).ToList(); Transitions = root.GetProperty("current").GetProperty("transitions").EnumerateArray().Select(ParseTransition).ToList(); Selected = Nodes.FirstOrDefault(); SelectedEdge = null; Validated = false; IsDirty = false; Issues = []; UndoStack.Clear(); RedoStack.Clear(); }
+  private async Task LoadPositions() { var s = await Session(); if (s is null) return; var r = await Core.GetAsync("api/v1/workflows/definition/positions?limit=100", s.Value.Token, s.Value.Company, default); if (r.IsSuccess) Positions = r.Value.EnumerateArray().Select(x => new PositionModel(x.GetProperty("id").GetGuid(), x.GetProperty("title").GetString() ?? x.GetProperty("code").GetString() ?? "")).ToList(); }
+  private void Add(int type) => AddAt(type, 80 + Nodes.Count * 220, 100 + (Nodes.Count % 4) * 140);
+  private void AddAt(int type, decimal x, decimal y) { if (ReadOnly) return; PushUndo(); string key = $"{TypeKey(type)}-{NextKeyNumber(type)}"; NodeModel node = new() { Key = key, Type = type, TitleFa = NodeType(type), TitleEn = NodeType(type), TitleAr = NodeType(type), X = Math.Max(0, x), Y = Math.Max(0, y) }; Nodes.Add(node); Selected = node; SelectedEdge = null; IsDirty = true; }
+  private int NextKeyNumber(int type) { HashSet<int> used = Nodes.Select(x => x.Key).Where(x => x.StartsWith(TypeKey(type) + "-", StringComparison.OrdinalIgnoreCase)).Select(x => int.TryParse(x[(TypeKey(type).Length + 1)..], out int n) ? n : 0).ToHashSet(); int value = 1; while (used.Contains(value)) value++; return value; }
+  private void PaletteClick(int type) { if (PalettePointerMoved) { PalettePointerMoved = false; return; } Add(type); }
+  private void StartPaletteDrag(int type, PointerEventArgs _) { if (ReadOnly) return; PaletteDragType = type; PalettePointerMoved = false; }
+  private void StartPaletteDragHtml(int type) { if (ReadOnly) return; PaletteDragType = type; PalettePointerMoved = true; }
+  private void EndPaletteDragHtml(DragEventArgs _) { if (PaletteDragType is not null) PaletteDragType = null; }
+  private void PalettePointerUp(PointerEventArgs _) { if (!PalettePointerMoved) PaletteDragType = null; }
+  private void UpdateDropPoint(PointerEventArgs e) { DropX = Math.Max(0, (decimal)e.OffsetX / Zoom - 65); DropY = Math.Max(0, (decimal)e.OffsetY / Zoom - 35); }
+  private void UpdateDropPoint(DragEventArgs e) { DropX = Math.Max(0, (decimal)e.OffsetX / Zoom - 65); DropY = Math.Max(0, (decimal)e.OffsetY / Zoom - 35); }
+  private void HandleDragOver(DragEventArgs e) { if (PaletteDragType is not null) UpdateDropPoint(e); }
+  private void HandleDrop(DragEventArgs e) { if (ReadOnly || PaletteDragType is not int paletteType) return; UpdateDropPoint(e); AddAt(paletteType, DropX, DropY); PaletteDragType = null; PalettePointerMoved = true; }
+  private void HandlePointerMove(PointerEventArgs e) { if (PaletteDragType is int paletteType) { UpdateDropPoint(e); PalettePointerMoved = true; return; } if (DragEdge is not null) { EdgeDragX = Math.Max(0, (decimal)e.OffsetX / Zoom); EdgeDragY = Math.Max(0, (decimal)e.OffsetY / Zoom); return; } MoveDrag(e); }
+  private void HandlePointerUp(PointerEventArgs e) { if (PaletteDragType is int paletteType) { UpdateDropPoint(e); if (PalettePointerMoved) AddAt(paletteType, DropX, DropY); PaletteDragType = null; PalettePointerMoved = true; return; } if (DragEdge is not null) { FinishEdgeAnchorDrag(e); return; } EndDrag(e); }
+  private void HandlePointerLeave(PointerEventArgs e) { if (PaletteDragType is null && DragEdge is null) EndDrag(e); }
+  private void CanvasClicked() { if (PaletteDragType is null && DragNode is null) { Selected = null; SelectedEdge = null; } }
+  private void BeginEdit() { Editing = true; SelectedEdge = null; }
+  private void BeginEditClick(MouseEventArgs _) => BeginEdit();
+  private Task SaveClick(MouseEventArgs _) => Save();
+  private Task ValidateClick(MouseEventArgs _) => Validate();
+  private Task ReturnCurrentClick(MouseEventArgs _) => ReturnCurrent();
+  private void ToggleConnectClick(MouseEventArgs _) => ToggleConnect();
+  private void DeleteSelectedClick(MouseEventArgs _) => DeleteSelected();
+  private void DuplicateSelectedClick(MouseEventArgs _) => DuplicateSelected();
+  private void ConfirmDeleteClick(MouseEventArgs _) => ConfirmDelete();
+  private void CancelDeleteClick(MouseEventArgs _) { PendingDelete = null; PendingDeleteEdge = null; }
+  private void UndoClick(MouseEventArgs _) => Undo();
+  private void RedoClick(MouseEventArgs _) => Redo();
+  private void ZoomInClick(MouseEventArgs _) => ZoomBy(.1m);
+  private void ZoomOutClick(MouseEventArgs _) => ZoomBy(-.1m);
+  private void FitClick(MouseEventArgs _) => Fit();
+  private void ToggleHistory(MouseEventArgs _) => HistoryOpen = !HistoryOpen;
+  private void Select(NodeModel node) { Selected = node; SelectedEdge = null; }
+  private void SelectEdge(TransitionModel edge) { if (ReadOnly) return; SelectedEdge = edge; Selected = null; }
+  private void StartEdgeAnchorDrag(TransitionModel edge, bool source, PointerEventArgs e) { if (ReadOnly) return; PushUndo(); SelectedEdge = edge; Selected = null; DragEdge = edge; DragEdgeSource = source; EdgeDragX = EdgeX(edge, source) / Zoom; EdgeDragY = EdgeY(edge, source) / Zoom; }
+  private void FinishEdgeAnchorDrag(PointerEventArgs e) { if (DragEdge is null) return; decimal x = Math.Max(0, (decimal)e.OffsetX / Zoom); decimal y = Math.Max(0, (decimal)e.OffsetY / Zoom); (NodeModel? node, string anchor, decimal distance) = NearestAnchor(x, y, DragEdgeSource); if (node is not null && distance <= 110m) { if (DragEdgeSource) { DragEdge.FromKey = node.Key; DragEdge.SourceAnchor = anchor; } else { DragEdge.ToKey = node.Key; DragEdge.TargetAnchor = anchor; } IsDirty = true; } DragEdge = null; }
+  private (NodeModel? Node, string Anchor, decimal Distance) NearestAnchor(decimal x, decimal y, bool source) { NodeModel? bestNode = null; string bestAnchor = "Auto"; decimal best = decimal.MaxValue; foreach (NodeModel node in Nodes) { if (source && node.Type == 1 || !source && node.Type == 0) continue; foreach (string anchor in AnchorsForNode(node)) { decimal ax = AnchorPoint(node, anchor, true) / Zoom, ay = AnchorPoint(node, anchor, false) / Zoom; decimal distance = Math.Abs(ax - x) + Math.Abs(ay - y); if (distance < best) { best = distance; bestNode = node; bestAnchor = anchor; } } } return (bestNode, bestAnchor, best); }
+  private static IEnumerable<string> AnchorsForNode(NodeModel node) => node.Type is 3 or 4 ? ["Top", "Right", "Bottom", "Left"] : node.Type == 2 ? ["TopCenter", "RightCenter", "BottomCenter", "LeftCenter"] : ["Top", "Right", "Bottom", "Left"];
+  private void ToggleConnect() { if (ReadOnly) return; ConnectMode = !ConnectMode; ConnectSource = null; }
+  private void NodeClicked(NodeModel node) { if (!ConnectMode) { Select(node); return; } if (ConnectSource is null) { ConnectSource = node; Select(node); return; } if (ConnectSource != node && node.Type != 0 && ConnectSource.Type != 1 && !Transitions.Any(x => x.FromKey == ConnectSource.Key && x.ToKey == node.Key)) { PushUndo(); TransitionModel edge = new() { FromKey = ConnectSource.Key, ToKey = node.Key, SortOrder = Transitions.Count, SourceAnchor = DefaultAnchor(ConnectSource), TargetAnchor = DefaultAnchor(node) }; Transitions.Add(edge); SelectedEdge = edge; Selected = null; IsDirty = true; } ConnectSource = null; ConnectMode = false; }
+  private static string DefaultAnchor(NodeModel node) => node.Type switch { 3 or 4 => "Right", 0 => "Right", 1 => "Left", _ => "Auto" };
+  private void StartHandle(NodeModel node) { if (ReadOnly) return; ConnectMode = true; ConnectSource = node; Select(node); }
+  private void DeleteSelected() { if (ReadOnly) return; if (SelectedEdge is not null) { PendingDeleteEdge = SelectedEdge; PendingDelete = null; return; } if (Selected is not null) { PendingDelete = Selected; PendingDeleteEdge = null; } }
+  private void ConfirmDelete() { if (ReadOnly) return; PushUndo(); if (PendingDeleteEdge is not null) Transitions.Remove(PendingDeleteEdge); if (PendingDelete is not null) { string key = PendingDelete.Key; Transitions.RemoveAll(x => x.FromKey == key || x.ToKey == key); Nodes.Remove(PendingDelete); } PendingDelete = null; PendingDeleteEdge = null; Selected = null; SelectedEdge = null; IsDirty = true; }
+  private void DuplicateSelected() { if (ReadOnly || Selected is null || Selected.Type != 2) return; PushUndo(); NodeModel copy = CloneNode(Selected); copy.Id = Guid.Empty; copy.Key = $"task-{NextKeyNumber(2)}"; copy.X += 50; copy.Y += 50; Nodes.Add(copy); Selected = copy; SelectedEdge = null; IsDirty = true; }
+  private void StartDrag(NodeModel node, PointerEventArgs e) { if (ReadOnly || ConnectMode) return; PushUndo(); DragNode = node; DragStartX = e.ClientX; DragStartY = e.ClientY; DragNodeX = node.X; DragNodeY = node.Y; Select(node); }
+  private void MoveDrag(PointerEventArgs e) { if (DragNode is null || ReadOnly) return; DragNode.X = Math.Max(0, DragNodeX + (decimal)((e.ClientX - DragStartX) / (double)Zoom)); DragNode.Y = Math.Max(0, DragNodeY + (decimal)((e.ClientY - DragStartY) / (double)Zoom)); IsDirty = true; }
+  private void PushUndo() { UndoStack.Push(Capture()); if (UndoStack.Count > 50) { var items = UndoStack.Take(50).ToArray(); UndoStack.Clear(); foreach (var item in items.Reverse()) UndoStack.Push(item); } RedoStack.Clear(); }
+  private EditorSnapshot Capture() => new(Nodes.Select(CloneNode).ToList(), Transitions.Select(CloneTransition).ToList());
+  private void Restore(EditorSnapshot snapshot) { Nodes = snapshot.Nodes.Select(CloneNode).ToList(); Transitions = snapshot.Transitions.Select(CloneTransition).ToList(); Selected = null; SelectedEdge = null; IsDirty = true; }
+  private void Undo() { if (ReadOnly || UndoStack.Count == 0) return; RedoStack.Push(Capture()); Restore(UndoStack.Pop()); }
+  private void Redo() { if (ReadOnly || RedoStack.Count == 0) return; UndoStack.Push(Capture()); Restore(RedoStack.Pop()); }
+  private void EndDrag(PointerEventArgs _) { if (DragNode is not null) IsDirty = true; DragNode = null; }
+  private void HandleCanvasKeyDown(KeyboardEventArgs e) { if (ReadOnly) return; if (e.Key is "Delete" or "Backspace") DeleteSelected(); else if (e.CtrlKey && e.Key.Equals("z", StringComparison.OrdinalIgnoreCase)) Undo(); else if (e.CtrlKey && e.Key.Equals("y", StringComparison.OrdinalIgnoreCase)) Redo(); }
+  private static NodeModel CloneNode(NodeModel source) => new() { Id = source.Id, Key = source.Key, Type = source.Type, TitleFa = source.TitleFa, TitleEn = source.TitleEn, TitleAr = source.TitleAr, DescriptionFa = source.DescriptionFa, DescriptionEn = source.DescriptionEn, DescriptionAr = source.DescriptionAr, PositionId = source.PositionId, X = source.X, Y = source.Y };
+  private static TransitionModel CloneTransition(TransitionModel source) => new() { Id = source.Id, FromKey = source.FromKey, ToKey = source.ToKey, FieldCode = source.FieldCode, Operator = source.Operator, Value = source.Value, IsDefault = source.IsDefault, SortOrder = source.SortOrder, OutcomeCode = source.OutcomeCode, SourceAnchor = source.SourceAnchor, TargetAnchor = source.TargetAnchor, TitleFa = source.TitleFa, TitleEn = source.TitleEn, TitleAr = source.TitleAr };
+  private void ZoomBy(decimal delta) => Zoom = Math.Clamp(Zoom + delta, .5m, 2m);
+  private void Fit() { if (Nodes.Count == 0) { Zoom = 1m; return; } decimal width = Math.Max(1m, Nodes.Max(x => x.X) - Nodes.Min(x => x.X) + 180m); decimal height = Math.Max(1m, Nodes.Max(x => x.Y) - Nodes.Min(x => x.Y) + 140m); decimal widthFit = 900m / width; decimal heightFit = 620m / height; Zoom = Math.Clamp(Math.Min(widthFit, heightFit), .5m, 2m); }
+  private decimal CenterX(string key) { NodeModel? n = Nodes.FirstOrDefault(x => x.Key == key); return n is null ? 0 : (n.X + 70) * Zoom; }
+  private decimal CenterY(string key) { NodeModel? n = Nodes.FirstOrDefault(x => x.Key == key); return n is null ? 0 : (n.Y + 32) * Zoom; }
+  private decimal EdgeX(TransitionModel edge, bool source) => DragEdge == edge && DragEdgeSource == source ? EdgeDragX * Zoom : AnchorPoint(Nodes.FirstOrDefault(x => x.Key == (source ? edge.FromKey : edge.ToKey)), source ? edge.SourceAnchor : edge.TargetAnchor, true);
+  private decimal EdgeY(TransitionModel edge, bool source) => DragEdge == edge && DragEdgeSource == source ? EdgeDragY * Zoom : AnchorPoint(Nodes.FirstOrDefault(x => x.Key == (source ? edge.FromKey : edge.ToKey)), source ? edge.SourceAnchor : edge.TargetAnchor, false);
+  private decimal AnchorPoint(NodeModel? node, string anchor, bool xAxis) { if (node is null) return 0; decimal w = node.Type is 0 or 1 ? 48 : node.Type is 3 or 4 ? 62 : 142; decimal h = node.Type is 0 or 1 ? 48 : node.Type is 3 or 4 ? 62 : 70; decimal x = node.X + w / 2m, y = node.Y + h / 2m; return (anchor, xAxis) switch { ("Top", true) => x, ("Top", false) => node.Y, ("TopCenter", true) => x, ("TopCenter", false) => node.Y, ("Right", true) => node.X + w, ("Right", false) => y, ("RightCenter", true) => node.X + w, ("RightCenter", false) => y, ("Bottom", true) => x, ("Bottom", false) => node.Y + h, ("BottomCenter", true) => x, ("BottomCenter", false) => node.Y + h, ("Left", true) => node.X, ("Left", false) => y, ("LeftCenter", true) => node.X, ("LeftCenter", false) => y, _ => xAxis ? x : y } * Zoom; }
+  private decimal EdgeMidX(TransitionModel edge) => (EdgeX(edge, true) + EdgeX(edge, false)) / 2m;
+  private decimal EdgeMidY(TransitionModel edge) => (EdgeY(edge, true) + EdgeY(edge, false)) / 2m - 5m;
+  private string OutcomeLabel(string value) => value switch { "Approve" => I["Approve"], "Reject" => I["Reject"], "AuditReject" => I["AuditReject"], _ => value };
+  private string AnchorLabel(string value) => I[value];
+  private bool IsExclusiveSource(TransitionModel edge) => Nodes.FirstOrDefault(x => x.Key == edge.FromKey)?.Type == 3;
+  private IEnumerable<string> AnchorsFor(TransitionModel edge, bool source) { NodeModel? node = Nodes.FirstOrDefault(x => x.Key == (source ? edge.FromKey : edge.ToKey)); return node?.Type is 3 or 4 ? ["Top", "Right", "Bottom", "Left"] : node?.Type == 2 ? ["TopCenter", "RightCenter", "BottomCenter", "LeftCenter"] : ["Top", "Right", "Bottom", "Left"]; }
+  private string EdgeLabel(TransitionModel edge) { string title = CurrentCulture switch { "en" => edge.TitleEn, "ar" => edge.TitleAr, _ => edge.TitleFa }; return string.IsNullOrWhiteSpace(title) ? OutcomeLabel(edge.OutcomeCode) : title; }
+  private string ValidationText(IssueModel issue) => issue.MessageKey switch { "ConditionOnlyFromGateway" => I["ConditionOnlyFromGateway"], "DuplicateNodeKey" => I["DuplicateNodeKey"], "InvalidTransition" => I["InvalidTransition"], "InvalidOutcome" => I["InvalidOutcome"], "InvalidAnchor" => I["InvalidAnchor"], _ => D[issue.MessageKey] };
+  private string OperatorLabel(int op) => op switch { 0 => D["Equal"], 1 => D["NotEqual"], 2 => D["GreaterThan"], 3 => D["GreaterThanOrEqual"], 4 => D["LessThan"], 5 => D["LessThanOrEqual"], _ => "" };
+  private IEnumerable<int> OperatorsFor(string field) => field is "Order.CustomerType" or "Order.Source" ? [0, 1] : [0, 1, 2, 3, 4, 5];
+  private async Task Save() { if (Saving || ReadOnly) return; Saving = true; try { if (!ValidateLocal()) return; var s = await Session(); if (s is null) return; var body = BuildGraphPayload(); var r = await Core.SendAsync(HttpMethod.Put, "api/v1/workflows/definition/draft", body, s.Value.Token, s.Value.Company, default); if (!r.IsSuccess) { Message = ServerError(r.ProblemCode); return; } Message = null; await Load(null); } finally { Saving = false; } }
+  private object BuildGraphPayload() => new { versionId = Current.Id, name = new { fa = "گردش کار سفارش بارنگ", en = "BARANG Order Workflow", ar = "سير عمل طلبات بارنگ" }, changeNote = new { fa = "", en = "", ar = "" }, nodes = Nodes.Select(x => new { key = x.Key, type = x.Type, title = new { fa = x.TitleFa, en = x.TitleEn, ar = x.TitleAr }, description = new { fa = x.DescriptionFa, en = x.DescriptionEn, ar = x.DescriptionAr }, positionId = x.PositionId == Guid.Empty ? (Guid?)null : x.PositionId, x = x.X, y = x.Y }), transitions = Transitions.Select(x => new { fromKey = x.FromKey, toKey = x.ToKey, fieldCode = x.FieldCode, @operator = x.Operator, value = x.Value, isDefault = x.IsDefault, sortOrder = x.SortOrder, outcomeCode = x.OutcomeCode, sourceAnchor = x.SourceAnchor, targetAnchor = x.TargetAnchor, title = new { fa = x.TitleFa, en = x.TitleEn, ar = x.TitleAr } }) };
+  private string ServerError(string? code) => code switch { "workflow.definition.start_count" => D["ExactlyOneStart"], "workflow.definition.end_missing" => D["AtLeastOneEnd"], "workflow.definition.task_position_required" => D["TaskPositionRequired"], "workflow.definition.exclusive_default_required" => D["ExclusiveNeedsDefault"], "workflow.definition.exclusive_multiple_defaults" => D["OnlyOneDefault"], "workflow.definition.condition_invalid" => D["InvalidCondition"], "workflow.definition.cycle" => D["CyclesNotSupported"], "workflow.definition.parallel_split" => D["ParallelSplitNeedsBranches"], "workflow.definition.parallel_join" => D["ParallelJoinNeedsBranches"], "workflow.definition.parallel_join_outgoing" => D["ParallelJoinOneOutgoing"], "workflow.definition.node_outgoing_required" => D["NodeNeedsOutgoing"], _ => D["SaveFailed"] };
+  private bool ValidateLocal()
+  {
+    Issues = [];
+    List<NodeModel> starts = Nodes.Where(x => x.Type == 0).ToList();
+    if (starts.Count != 1) Issues.Add(new("", "ExactlyOneStart"));
+    if (!Nodes.Any(x => x.Type == 1)) Issues.Add(new("", "AtLeastOneEnd"));
+    foreach (NodeModel node in Nodes)
+    {
+      int incoming = Transitions.Count(x => x.ToKey == node.Key), outgoing = Transitions.Count(x => x.FromKey == node.Key);
+      if (node.Type == 0 && incoming > 0) Issues.Add(new(node.Key, "StartHasIncoming"));
+      if (node.Type == 0 && outgoing == 0) Issues.Add(new(node.Key, "StartNeedsOutgoing"));
+      if (node.Type == 1 && outgoing > 0) Issues.Add(new(node.Key, "EndHasOutgoing"));
+      if (node.Type != 0 && node.Type != 1 && outgoing == 0) Issues.Add(new(node.Key, "NodeNeedsOutgoing"));
+      if (node.Type == 2 && (node.PositionId is null || node.PositionId == Guid.Empty)) Issues.Add(new(node.Key, "TaskPositionRequired"));
+    }
+    foreach (TransitionModel edge in Transitions.Where(x => Nodes.All(n => n.Key != x.FromKey) || Nodes.All(n => n.Key != x.ToKey))) Issues.Add(new(edge.FromKey, "DanglingTransition"));
+    Validated = true;
+    return Issues.Count == 0;
+  }
+  private async Task Validate() { if (Validating || Saving) return; Validating = true; Message = null; Issues = []; try { var s = await Session(); if (s is null) { Message = D["LoadFailed"]; return; } var r = await Core.SendAsync(HttpMethod.Post, "api/v1/workflows/definition/validate", BuildGraphPayload(), s.Value.Token, s.Value.Company, default); if (r.IsSuccess) { JsonElement payload = r.Value; if (payload.ValueKind == JsonValueKind.Array) Issues = payload.EnumerateArray().Select(x => new IssueModel(x.TryGetProperty("nodeKey", out JsonElement nk) ? nk.GetString() ?? "" : "", x.TryGetProperty("messageKey", out JsonElement mk) ? mk.GetString() ?? "UnknownValidation" : "UnknownValidation")).ToList(); else if (payload.ValueKind == JsonValueKind.Object && payload.TryGetProperty("value", out JsonElement value) && value.ValueKind == JsonValueKind.Array) Issues = value.EnumerateArray().Select(x => new IssueModel(x.TryGetProperty("nodeKey", out JsonElement nk) ? nk.GetString() ?? "" : "", x.TryGetProperty("messageKey", out JsonElement mk) ? mk.GetString() ?? "UnknownValidation" : "UnknownValidation")).ToList(); else Message = D["LoadFailed"]; } else Message = ServerError(r.ProblemCode); Validated = true; } catch (Exception) { Message = D["LoadFailed"]; Validated = true; } finally { Validating = false; } }
+  private async Task OpenVersion(Guid id) => await Load(id);
+  private async Task ReturnCurrent() => await Load(null);
+  private string NodeTitle(NodeModel x) => CurrentCulture switch { "en" => x.TitleEn, "ar" => x.TitleAr, _ => x.TitleFa };
+  private string NodeType(int type) => type switch { 0 => D["Start"], 1 => D["End"], 2 => D["UserTask"], 3 => D["ExclusiveGateway"], 4 => D["ParallelGateway"], _ => D["Transition"] };
+  private string TypeKey(int type) => type switch { 0 => "start", 1 => "end", 2 => "task", 3 => "exclusive", 4 => "parallel", _ => "node" };
+  private string NodeCss(int type) => type switch { 0 => "node-start", 1 => "node-end", 2 => "node-usertask", 3 => "node-exclusivegateway", 4 => "node-parallelgateway", _ => "node-unknown" };
+  private string NodeIcon(int type) => type switch { 0 => "●", 1 => "◉", 2 => "▣", 3 => "×", 4 => "+", _ => "•" };
+  private string PositionTitle(Guid? id) => id is { } value ? Positions.FirstOrDefault(x => x.Id == value)?.Title ?? D["PositionRequired"] : D["PositionRequired"];
+  private sealed record EditorSnapshot(List<NodeModel> Nodes, List<TransitionModel> Transitions);
+  private string Status(string value) => value switch { "Draft" => D["Draft"], "Active" => D["Active"], "Superseded" => D["Superseded"], _ => value };
+  private static NodeModel ParseNode(JsonElement x) => new() { Id = x.GetProperty("id").GetGuid(), Key = x.GetProperty("key").GetString() ?? "", Type = TypeNumber(x.GetProperty("type")), PositionId = x.TryGetProperty("positionId", out var p) && p.ValueKind != JsonValueKind.Null ? p.GetGuid() : Guid.Empty, X = x.GetProperty("x").GetDecimal(), Y = x.GetProperty("y").GetDecimal(), TitleFa = Txt(x, "title", "fa"), TitleEn = Txt(x, "title", "en"), TitleAr = Txt(x, "title", "ar"), DescriptionFa = Txt(x, "description", "fa"), DescriptionEn = Txt(x, "description", "en"), DescriptionAr = Txt(x, "description", "ar") };
+  private static TransitionModel ParseTransition(JsonElement x) => new() { Id = x.GetProperty("id").GetGuid(), FromKey = x.GetProperty("fromKey").GetString() ?? "", ToKey = x.GetProperty("toKey").GetString() ?? "", FieldCode = x.GetProperty("fieldCode").GetString() ?? "", Value = x.TryGetProperty("value", out var v) && v.ValueKind != JsonValueKind.Null ? v.ToString() : null, IsDefault = x.GetProperty("isDefault").GetBoolean(), SortOrder = x.GetProperty("sortOrder").GetInt32(), Operator = OperatorNumber(x.TryGetProperty("operator", out var o) && o.ValueKind != JsonValueKind.Null ? o : default), OutcomeCode = x.TryGetProperty("outcomeCode", out var oc) ? oc.GetString() ?? "" : "", SourceAnchor = x.TryGetProperty("sourceAnchor", out var sa) ? sa.GetString() ?? "Auto" : "Auto", TargetAnchor = x.TryGetProperty("targetAnchor", out var ta) ? ta.GetString() ?? "Auto" : "Auto", TitleFa = Txt(x, "title", "fa"), TitleEn = Txt(x, "title", "en"), TitleAr = Txt(x, "title", "ar") };
+  private static int TypeNumber(JsonElement value) => value.ValueKind == JsonValueKind.Number ? value.GetInt32() : TypeNumber(value.GetString());
+  private static int TypeNumber(string? value) => value switch { "Start" => 0, "End" => 1, "UserTask" => 2, "ExclusiveGateway" => 3, "ParallelGateway" => 4, _ => 0 };
+  private static int? OperatorNumber(JsonElement value) => value.ValueKind == JsonValueKind.Number ? value.GetInt32() : value.ValueKind == JsonValueKind.String ? value.GetString() switch { "Equal" => 0, "NotEqual" => 1, "GreaterThan" => 2, "GreaterThanOrEqual" => 3, "LessThan" => 4, "LessThanOrEqual" => 5, "IsTrue" => 6, "IsFalse" => 7, _ => null } : null;
+  private static VersionModel ParseVersion(JsonElement x) => new() { Id = x.GetProperty("id").GetGuid(), Number = x.GetProperty("number").GetInt32(), Status = Scalar(x, "status"), Created = x.GetProperty("createdAtUtc").GetDateTimeOffset(), ReadOnly = x.GetProperty("isReadOnly").GetBoolean() };
+  private static VersionModel ParseHistory(JsonElement x) => new() { Id = x.GetProperty("id").GetGuid(), Number = x.GetProperty("number").GetInt32(), Status = Scalar(x, "status"), Created = x.GetProperty("createdAtUtc").GetDateTimeOffset(), ReadOnly = true };
+  private static string Scalar(JsonElement root, string name) => root.TryGetProperty(name, out JsonElement value) ? value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.ToString() : "";
+  private static string Txt(JsonElement root, string parent, string key) => root.TryGetProperty(parent, out JsonElement container) && container.ValueKind == JsonValueKind.Object && container.TryGetProperty(key, out JsonElement value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : "";
+  private async Task<(string Token, Guid Company)?> Session() { var u = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null; }
+  private sealed class NodeModel { public Guid Id { get; set; } public string Key { get; set; } = ""; public int Type { get; set; } public string TitleFa { get; set; } = ""; public string TitleEn { get; set; } = ""; public string TitleAr { get; set; } = ""; public string DescriptionFa { get; set; } = ""; public string DescriptionEn { get; set; } = ""; public string DescriptionAr { get; set; } = ""; public Guid? PositionId { get; set; } public decimal X { get; set; } public decimal Y { get; set; } }
+  private sealed class TransitionModel { public Guid Id { get; set; } public string FromKey { get; set; } = ""; public string ToKey { get; set; } = ""; public string FieldCode { get; set; } = ""; public int? Operator { get; set; } public string? Value { get; set; } public bool IsDefault { get; set; } public int SortOrder { get; set; } public string OutcomeCode { get; set; } = ""; public string SourceAnchor { get; set; } = "Auto"; public string TargetAnchor { get; set; } = "Auto"; public string TitleFa { get; set; } = ""; public string TitleEn { get; set; } = ""; public string TitleAr { get; set; } = ""; }
+  private sealed class PositionModel(Guid id, string title) { public Guid Id { get; } = id; public string Title { get; } = title; }
+  private sealed class VersionModel { public Guid Id { get; set; } public int Number { get; set; } public string Status { get; set; } = ""; public DateTimeOffset Created { get; set; } public bool ReadOnly { get; set; } }
+  private sealed record IssueModel(string NodeKey, string MessageKey);
+}

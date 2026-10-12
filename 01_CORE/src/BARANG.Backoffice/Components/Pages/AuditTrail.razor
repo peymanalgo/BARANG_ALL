@@ -1,0 +1,12 @@
+@page "/workspace/audit"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@inject IStringLocalizer<AppStrings> L
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+<PageTitle>@L["Timeline"]</PageTitle><div class="page-heading"><h1>@L["Timeline"]</h1></div>
+@if(Message is not null){<div class="inline-error">@L[Message]</div>}
+<section class="toolbar"><label><span>@L["Search"]</span><input @bind="Action" /></label><label><span>@L["EntityId"]</span><input @bind="Entity" /></label><label><span>@L["PageSize"]</span><select @bind="PageSize"><option>20</option><option>50</option><option>100</option></select></label><button type="button" @onclick="Refresh">@L["Refresh"]</button></section>
+<section class="panel">@if(Loading){<div class="state-box">@L["Loading"]</div>}else{<JsonDataView Value="Data" />}</section>
+<nav class="toolbar" aria-label="@L["Pagination"]"><button type="button" disabled="@(Page==1)" @onclick="Previous">@L["Previous"]</button><span>@L["Page"] @Page</span><button type="button" @onclick="Next">@L["Next"]</button></nav>
+@code{private System.Text.Json.JsonElement Data;private string Action="",Entity="";private int Page=1,PageSize=20;private bool Loading=true;private string?Message;protected override async Task OnInitializedAsync()=>await Load();private async Task Refresh(){Page=1;await Load();}private async Task Previous(){if(Page>1)Page--;await Load();}private async Task Next(){Page++;await Load();}private async Task Load(){Loading=true;var s=await Session();if(s is null)return;var p=$"api/v1/audit/events?pageNumber={Page}&pageSize={PageSize}";if(!string.IsNullOrWhiteSpace(Action))p+=$"&action={Uri.EscapeDataString(Action)}";if(!string.IsNullOrWhiteSpace(Entity))p+=$"&entityId={Uri.EscapeDataString(Entity)}";var r=await Core.GetAsync(p,s.Value.Token,s.Value.Company,default);Message=r.IsSuccess?null:r.Failure switch{ApiFailure.Unauthorized=>"SessionExpired",ApiFailure.Forbidden=>"Unauthorized",ApiFailure.Validation=>"ValidationError",_=>"GenericError"};if(r.IsSuccess)Data=r.Value;Loading=false;}private async Task<(string Token,Guid Company)?>Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t?(t,c):null;}}

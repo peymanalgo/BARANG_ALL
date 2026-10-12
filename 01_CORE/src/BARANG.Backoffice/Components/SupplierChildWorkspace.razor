@@ -1,0 +1,114 @@
+@using System.Globalization
+@using System.Text.Json
+@inject IStringLocalizer<SupplierStrings> S
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<section class="customer-editor-panel customer-child-grid" data-supplier-child="@Kind">
+    <div class="child-header"><h3>@S[TitleKey]</h3>@if(!ReadOnly){<button type="button" class="btn btn-primary btn-small" @onclick="New"><BarangIcon Name="plus" />@S["Add"]</button>}</div>
+    <p class="reference-scope-note">@S[Kind=="contacts"?"PrimaryRule":"DefaultRule"]</p>
+    @if(Kind=="bank-accounts"){<p class="read-only-note">@S["NoSecrets"]</p>}
+    @if(Message is not null&&!Dialog&&!Deleting){<p class="@(Success?"inline-success":"inline-error")" role="@(Success?"status":"alert")">@S[Message]</p>}
+    <BarangToolbar AriaLabel="@S[TitleKey]"><label class="search-box"><BarangIcon Name="search" /><input value="@Search" @oninput="SearchChanged" placeholder="@S["Search"]" aria-label="@S["Search"]" /></label><button type="button" class="btn btn-secondary" @onclick="Load">@S["Refresh"]</button></BarangToolbar>
+    @if(Loading){<BarangLoadingState Text="@S["Loading"]" />}
+    else if(Rows.Count==0){<CrudEmptyState Title="@S["NoRows"]" Description="" />}
+    else{
+        <div class="data-grid-wrap"><table class="data-grid"><thead><tr>
+            @foreach(var item in Columns){<th><BarangSortHeader Label="@S[item.Label]" Active="@(Sort==item.Key)" Descending="@Descending" Clicked="()=>SortChanged(item.Key)" /></th>}
+            <th>@S["Status"]</th><th>@S["Actions"]</th>
+        </tr></thead><tbody>
+        @foreach(var row in Filtered.Skip((Page-1)*PageSize).Take(PageSize)){
+            <tr data-id="@SupplierUiSchema.Text(row,"id")">
+                @foreach(var item in Columns){<td>@Cell(row,item)</td>}
+                <td><StatusBadge Active="@Active(row)" />@if(Selected(row)){<span class="status-badge">@S[Kind=="contacts"?"Primary":"Default"]</span>}</td>
+                <td><div class="row-actions"><BarangIconButton Icon="eye" Label="@S["View"]" Semantic="info" Clicked="()=>Show(row,true)" />
+                @if(!ReadOnly){
+                    <BarangIconButton Icon="edit" Label="@S["Edit"]" Semantic="edit" Clicked="()=>Show(row,false)" />
+                    <BarangIconButton Icon="power" Label="@S[Active(row)?"Deactivate":"Activate"]" Semantic="@(Active(row)?"warning":"success")" Clicked="()=>Activate(row)" />
+                    <BarangIconButton Icon="trash" Label="@S["Delete"]" Semantic="danger" Clicked="()=>AskDelete(row)" />
+                    @if(Active(row)&&!Selected(row)){<BarangIconButton Icon="check" Label="@S[Kind=="contacts"?"SetPrimary":"SetDefault"]" Semantic="success" Clicked="()=>SetDefault(row)" />}
+                }</div></td>
+            </tr>
+        }
+        </tbody></table></div>
+        <BarangPagination Page="@Page" HasNext="@(Filtered.Count>Page*PageSize)" PreviousText="@S["Previous"]" NextText="@S["Next"]" Previous="Previous" Next="Next" />
+    }
+</section>
+<BarangModal Open="@Dialog" Title="@S[Viewing?"View":Id is null?"Add":"Edit"]" Description="@S[TitleKey]" Size="large" ReserveSelectorSpace="true" ShowCloseButton="false" Busy="@Busy" CloseLabel="@S["Cancel"]" CloseRequested="Close" data-supplier-child-editor="@Kind">
+<ChildContent>
+    @if(Message is not null&&!Success){<p class="inline-error" role="alert">@S[Message]</p>}
+    <section class="form-section"><SupplierFields Fields="@Fields" Values="@Data" Disabled="@(Viewing||Busy||ReadOnly)" /></section>
+</ChildContent>
+<Footer><button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="Close">@S["Cancel"]</button>@if(!Viewing&&!ReadOnly){<button type="button" class="btn btn-primary" disabled="@Busy" @onclick="Save">@S["Save"]</button>}</Footer>
+</BarangModal>
+<BarangModal Open="@Deleting" Title="@S["Delete"]" ShowCloseButton="false" Busy="@Busy" CloseRequested="CloseDelete" data-supplier-child-delete="@Kind">
+<ChildContent><p>@S["ConfirmDelete"]</p>@if(Message is not null&&!Success){<p class="inline-error" role="alert">@S[Message]</p>}</ChildContent>
+<Footer><button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="CloseDelete">@S["Cancel"]</button><button type="button" class="btn btn-danger" disabled="@Busy" @onclick="Delete">@S["Delete"]</button></Footer>
+</BarangModal>
+<BarangConfirmDialog Open="@DiscardOpen" Title="@S["DiscardTitle"]" CancelText="@S["KeepEditing"]" ConfirmText="@S["Discard"]" Cancel="KeepEditing" Confirm="Discard">@S["DiscardText"]</BarangConfirmDialog>
+@code{
+    [Parameter]public Guid SupplierId{get;set;}
+    [Parameter,EditorRequired]public string Kind{get;set;}="";
+    [Parameter]public bool ReadOnly{get;set;}
+    private const int PageSize=10;
+    private string LoadedKey="",Search="",Sort="",Snapshot="";
+    private string?Token,Message;
+    private Guid Company;
+    private Guid?Id;
+    private long Version;
+    private bool Loading,Busy,Dialog,Deleting,Viewing,Success,Descending,DiscardOpen;
+    private int Page=1;
+    private List<JsonElement>Rows=[];
+    private Dictionary<string,string>Data=[],Captions=[];
+    private SupplierUiField[]Fields=>SupplierUiSchema.Children(Kind);
+    private string DefaultKey=>Kind=="contacts"?"isPrimary":"isDefault";
+    private string TitleKey=>Kind=="addresses"?"Addresses":Kind=="contacts"?"Contacts":"BankAccounts";
+    private string Path=>$"api/v1/suppliers/{SupplierId}/{Kind}";
+    private IEnumerable<SupplierUiField>Columns=>Fields.Where(x=>(Kind=="addresses"?new[]{"addressName","fullAddress","mobile"}:Kind=="contacts"?new[]{"firstName","lastName","contactRoleId","mobile","email"}:new[]{"bankId","accountName","accountHolderNames","accountNumber"}).Contains(x.Key));
+    private List<JsonElement>Filtered{get{var rows=Rows.Where(row=>string.Join(" ",Fields.Select(item=>Cell(row,item))).Contains(Search,StringComparison.CurrentCultureIgnoreCase));Func<JsonElement,string>key=row=>Fields.FirstOrDefault(x=>x.Key==Sort) is {} item?Cell(row,item):SupplierUiSchema.Text(row,"createdAtUtc");return(Descending?rows.OrderByDescending(key):rows.OrderBy(key)).ToList();}}
+    private static bool Active(JsonElement row)=>row.GetProperty("isActive").GetBoolean();
+    private bool Selected(JsonElement row)=>row.GetProperty(DefaultKey).GetBoolean();
+    protected override async Task OnParametersSetAsync(){
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;Token=user.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);
+        string key=$"{Company}:{SupplierId}:{Kind}:{CultureInfo.CurrentUICulture.Name}";if(LoadedKey==key)return;LoadedKey=key;await Load();
+    }
+    private async Task Load(){
+        if(Token is null)return;Loading=true;
+        var result=await Core.GetAsync(Path,Token,Company,default);Rows=[];
+        if(result.IsSuccess)Rows=result.Value.EnumerateArray().ToList();else Report(result);
+        Captions=[];
+        foreach(string type in Fields.Where(x=>x.Reference is not null).Select(x=>x.Reference!).Distinct()){
+            var values=await Core.GetAsync($"api/v1/lookups/{type}/options?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}&activeOnly=false",Token,Company,default);
+            if(values.IsSuccess)foreach(var value in values.Value.EnumerateArray())Captions[SupplierUiSchema.Text(value,"id")]=SupplierUiSchema.Text(value,"displayName");else Report(values);
+        }
+        Page=Math.Clamp(Page,1,Math.Max(1,(Filtered.Count+PageSize-1)/PageSize));Loading=false;
+    }
+    private string Cell(JsonElement row,SupplierUiField item){string value=SupplierUiSchema.Text(row,item.Key);return item.Reference is not null?Captions.GetValueOrDefault(value,S["NotSpecified"]):item.Kind=="bool"?S[string.Equals(value,"true",StringComparison.OrdinalIgnoreCase)?"Yes":"No"]:item.Kind=="ownership"?S[value]:value;}
+    private void SearchChanged(ChangeEventArgs e){Search=e.Value?.ToString()??"";Page=1;}
+    private void SortChanged(string key){Descending=Sort==key&&!Descending;Sort=key;Page=1;}
+    private void Previous(){if(Page>1)Page--;}private void Next(){if(Page*PageSize<Filtered.Count)Page++;}
+    private void New(){if(ReadOnly)return;Data=SupplierUiSchema.Empty(Fields);Id=null;Version=0;Viewing=false;Message=null;Success=false;Snapshot=JsonSerializer.Serialize(Data);Dialog=true;}
+    private void Show(JsonElement row,bool view){Data=SupplierUiSchema.Read(row,Fields);Id=row.GetProperty("id").GetGuid();Version=row.GetProperty("version").GetInt64();Viewing=view;Message=null;Success=false;Snapshot=JsonSerializer.Serialize(Data);Dialog=true;}
+    private void Close(){if(Busy)return;if(!Viewing&&Snapshot!=JsonSerializer.Serialize(Data))DiscardOpen=true;else Dialog=false;}
+    private void KeepEditing()=>DiscardOpen=false;private void Discard(){DiscardOpen=false;Dialog=false;}
+    private void CloseDelete(){if(!Busy)Deleting=false;}
+    private void AskDelete(JsonElement row){Id=row.GetProperty("id").GetGuid();Version=row.GetProperty("version").GetInt64();Message=null;Success=false;Deleting=true;}
+    private async Task Save(){
+        if(Token is null||Busy||ReadOnly||Viewing)return;Busy=true;Message=null;
+        try{
+            var result=await Core.SendAsync(Id is null?HttpMethod.Post:HttpMethod.Put,Path+(Id is Guid id?$"/{id}":""),new{data=SupplierUiSchema.Body(Data,Fields),version=Version},Token,Company,default);
+            Report(result);if(result.IsSuccess){Dialog=false;await Load();}
+        }catch(FormatException){Success=false;Message="ValidationError";}catch(OverflowException){Success=false;Message="ValidationError";}finally{Busy=false;}
+    }
+    private Task Activate(JsonElement row)=>Action(row,"activation",new{isActive=!Active(row),version=row.GetProperty("version").GetInt64()});
+    private Task SetDefault(JsonElement row)=>Action(row,Kind=="contacts"?"primary":"default",new{version=row.GetProperty("version").GetInt64()});
+    private async Task Action(JsonElement row,string action,object body){
+        if(Token is null||Busy||ReadOnly)return;Busy=true;
+        try{var result=await Core.SendAsync(HttpMethod.Post,Path+"/"+SupplierUiSchema.Text(row,"id")+"/"+action,body,Token,Company,default);Report(result);if(result.IsSuccess)await Load();}finally{Busy=false;}
+    }
+    private async Task Delete(){
+        if(Token is null||Busy||ReadOnly||Id is null)return;Busy=true;
+        try{var result=await Core.SendAsync(HttpMethod.Delete,$"{Path}/{Id}?version={Version}",null,Token,Company,default);Report(result);if(result.IsSuccess){Deleting=false;await Load();}}finally{Busy=false;}
+    }
+    private void Report(ApiResult<JsonElement> result){Success=result.IsSuccess;Message=result.IsSuccess?"Saved":SupplierUiSchema.Error(result);}
+}

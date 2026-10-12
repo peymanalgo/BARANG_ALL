@@ -1,0 +1,23 @@
+@inject IStringLocalizer<CartablePriorityStrings> P
+
+<span class="barang-priority-indicator barang-priority-@PriorityKey" title="@Label" aria-label="@Label" role="img">
+    <span class="barang-priority-flag" aria-hidden="true"></span>
+    @if (PriorityKey == "Urgent")
+    {
+        <span class="barang-priority-beacon" aria-hidden="true"></span>
+    }
+    <span class="barang-priority-label">@Label</span>
+</span>
+
+@code {
+    [Parameter] public string? Priority { get; set; }
+
+    private string PriorityKey => Priority?.Trim() switch
+    {
+        "Important" => "Important",
+        "Urgent" => "Urgent",
+        _ => "Normal"
+    };
+
+    private string Label => P[PriorityKey].Value;
+}

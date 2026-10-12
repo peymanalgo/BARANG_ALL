@@ -1,0 +1,83 @@
+@using System.Globalization
+@using System.Text.Json
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject IStringLocalizer<SupplierSourcingStrings> S
+@inject IStringLocalizer<SupplierStrings> C
+
+<SearchableSelect Name="@Name" Options="@Options" Value="@Value" ValueChanged="Changed" SearchChanged="Search" Disabled="@(Disabled||Loading||Failed)" Placeholder="@Placeholder" />
+@if(Failed){<span class="inline-error" role="alert">@C["ReferenceUnavailable"]</span>}
+@code{
+    [Parameter]public string Kind{get;set;}="product";
+    [Parameter]public Guid SupplierId{get;set;}
+    [Parameter]public string ProductId{get;set;}="";
+    [Parameter]public string Value{get;set;}="";
+    [Parameter]public EventCallback<string> ValueChanged{get;set;}
+    [Parameter]public string?Name{get;set;}
+    [Parameter]public string?Placeholder{get;set;}
+    [Parameter]public bool Disabled{get;set;}
+    private List<SearchableSelectOption> Options=[];
+    private string LoadedKey="";
+    private bool Loading,Failed;
+    private int Revision;
+    private static readonly string[] CurrencyCodes=CurrencyList();
+    private static string[] CurrencyList()
+    {
+        HashSet<string> codes=new(StringComparer.Ordinal);
+        foreach(var culture in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
+            try{codes.Add(new RegionInfo(culture.Name).ISOCurrencySymbol);}catch(ArgumentException){}
+        return codes.Where(x=>x.Length==3).Order(StringComparer.Ordinal).ToArray();
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;
+        string key=$"{user.FindFirst(AuthClaimTypes.CompanyId)?.Value}:{SupplierId}:{Kind}:{ProductId}:{Value}:{CultureInfo.CurrentUICulture.Name}";
+        if(key==LoadedKey)return;LoadedKey=key;await Load("");
+    }
+    private Task Search(string search)=>Kind=="currency"?Task.CompletedTask:Load(search);
+    private async Task Changed(string value){Value=value;await ValueChanged.InvokeAsync(value);}
+    private async Task Load(string search)
+    {
+        int revision=++Revision;Failed=false;
+        if(Kind=="currency"){
+            Options=CurrencyCodes.Concat(string.IsNullOrEmpty(Value)?[]:new[]{Value}).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)
+                .Select(code=>new SearchableSelectOption(code,S["Currency_"+code].ResourceNotFound?code:$"{code} - {S["Currency_"+code]}")).ToList();
+            return;
+        }
+        if(Kind=="sku"&&!Guid.TryParse(ProductId,out _)){Options=[new("",C["NotSpecified"])];return;}
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;
+        if(user.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string token||!Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var company)){Failed=true;return;}
+        Loading=true;string query=Uri.EscapeDataString(search);
+        string path=Kind switch{"product"=>$"api/v1/products?pageNumber=1&pageSize=100&activeOnly=true&search={query}","sku"=>$"api/v1/products/{ProductId}/variants/options?limit=100&search={query}",_=>$"api/v1/suppliers/{SupplierId}/sourcing/products?pageSize=100&activeOnly=true&search={query}"};
+        var response=await Core.GetAsync(path,token,company,default);
+        if(revision!=Revision)return;
+        if(!response.IsSuccess&&Kind=="product")
+            response=await Core.GetAsync($"api/v1/products?pageNumber=1&pageSize=100&activeOnly=true&search={query}",token,company,default);
+        if(!response.IsSuccess){Failed=true;Loading=false;return;}
+        List<SearchableSelectOption> options=[new("",C["NotSpecified"])];
+        var rows=response.Value.ValueKind==JsonValueKind.Object&&response.Value.TryGetProperty("items",out var items)
+            ?items.EnumerateArray():response.Value.EnumerateArray();
+        foreach(var row in rows)options.Add(Option(row));
+        if(Guid.TryParse(Value,out var selected)&&options.All(x=>x.Value!=Value)){
+            string historical=Kind switch{"product"=>$"api/v1/products/{selected}","sku"=>$"api/v1/products/{ProductId}/variants?activeOnly=false",_=>$"api/v1/suppliers/{SupplierId}/sourcing/products/{selected}"};
+            var old=await Core.GetAsync(historical,token,company,default);
+            if(revision!=Revision)return;
+            if(old.IsSuccess){
+                JsonElement item=old.Value;
+                if(Kind=="sku")item=old.Value.EnumerateArray().FirstOrDefault(x=>SupplierUiSchema.Text(x,"id")==Value);
+                if(item.ValueKind==JsonValueKind.Object)options.Add(Option(item));
+            }else Failed=true;
+        }
+        Options=options;Loading=false;
+    }
+    private SearchableSelectOption Option(JsonElement row)
+    {
+        if(Kind=="link"){
+            var link=row.GetProperty("relationship");string name=SupplierUiSchema.Text(row,"productName"),sku=SupplierUiSchema.Text(row,"sku");
+            return new(SupplierUiSchema.Text(link,"id"),name+" - "+(sku.Length>0?sku:SupplierUiSchema.Text(row,"productCode")));
+        }
+        if(Kind=="sku")return new(SupplierUiSchema.Text(row,"id"),SupplierUiSchema.Text(row,"sku")+" - "+SupplierUiSchema.Text(row,"displayName"));
+        string code=SupplierUiSchema.Text(row,"code");if(code.Length==0)code=SupplierUiSchema.Text(row,"productCode");
+        return new(SupplierUiSchema.Text(row,"id"),SupplierUiSchema.Text(row,"name")+" - "+code);
+    }
+}

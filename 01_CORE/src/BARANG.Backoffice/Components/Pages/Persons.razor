@@ -1,0 +1,355 @@
+@page "/master/persons"
+@page "/master/persons/{Id:guid}"
+@attribute [Authorize(Policy = AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@inject IStringLocalizer<OrganizationStrings> O
+@inject IStringLocalizer<CrudStrings> T
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+@inject NavigationManager Navigation
+
+<PageTitle>@O["Persons"] · BARANG</PageTitle>
+
+<header class="crud-header">
+    <div><h1>@O["Persons"]</h1></div>
+    <button type="button" class="btn btn-primary" @onclick="New"><BarangIcon Name="plus" /> @T["Add"]</button>
+</header>
+
+@if (Message is not null)
+{
+    <div class="@(Success ? "inline-success" : "inline-error")" role="@(Success ? "status" : "alert")">@Message</div>
+}
+
+<section class="crud-card">
+    <div class="crud-toolbar">
+        <label class="search-box"><BarangIcon Name="search" /><input aria-label="@O["SearchPerson"]" placeholder="@O["SearchPerson"]" @bind="Search" @bind:event="oninput" @onkeyup="SearchNow" /></label>
+        <label class="compact-filter"><span class="visually-hidden">@T["Status"]</span><select aria-label="@T["Status"]" @bind="StatusFilter" @bind:after="ResetPage"><option value="all">@O["AllStatuses"]</option><option value="active">@T["Active"]</option><option value="inactive">@T["Inactive"]</option></select></label>
+        <button type="button" class="btn btn-secondary" @onclick="Load"><BarangIcon Name="refresh" /> @T["Refresh"]</button>
+    </div>
+    @if (Loading)
+    {
+        <BarangLoadingState Text="@T["Loading"]" />
+    }
+    else if (FilteredPeople.Count == 0)
+    {
+        <CrudEmptyState Title="@T["NoRecords"]" Description="@T["NoRecordsHelp"]" />
+    }
+    else
+    {
+        <div class="data-grid-wrap">
+            <table class="data-grid persons-grid">
+                <thead><tr>
+                    <th><BarangSortHeader Label="@O["PersonnelCode"]" Active="@(SortBy == "code")" Descending="@SortDescending" Clicked="SortCode" /></th>
+                    <th><BarangSortHeader Label="@T["Name"]" Active="@(SortBy == "name")" Descending="@SortDescending" Clicked="SortName" /></th>
+                    <th><BarangSortHeader Label="@O["Email"]" Active="@(SortBy == "email")" Descending="@SortDescending" Clicked="SortEmail" /></th>
+                    <th><BarangSortHeader Label="@T["Status"]" Active="@(SortBy == "status")" Descending="@SortDescending" Clicked="SortStatus" /></th>
+                    <th>@T["Actions"]</th>
+                </tr></thead>
+                <tbody>
+                    @foreach (PersonRow person in PagedPeople)
+                    {
+                        <tr data-person-id="@person.Id">
+                            <td><span class="code-pill">@person.Code</span></td>
+                            <td><button type="button" class="table-link" @onclick="() => Open(person.Id, true)">@person.Name</button></td>
+                            <td class="truncate-cell" title="@person.Email">@person.Email</td>
+                            <td><StatusBadge Active="@person.Active" /></td>
+                            <td><div class="grid-actions">
+                                <BarangIconButton Icon="eye" Semantic="info" Label="@T["View"]" Clicked="() => Open(person.Id, true)" />
+                                <BarangIconButton Icon="edit" Semantic="edit" Label="@T["Edit"]" Clicked="() => Open(person.Id, false)" />
+                                <BarangIconButton Icon="power" Semantic="@(person.Active ? "warning" : "success")" Label="@(person.Active ? T["Deactivate"] : T["Activate"])" Clicked="() => ToggleActive(person)" />
+                                <BarangIconButton Icon="trash" Semantic="danger" Label="@O["Delete"]" Clicked="() => AskDelete(person)" />
+                            </div></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <BarangPagination Page="@Page" HasNext="@(Page < TotalPages)" PageLabel="@O["Page"]" PreviousText="@T["Previous"]" NextText="@T["Next"]" AriaLabel="@O["Persons"]" Previous="PreviousPage" Next="NextPage" />
+    }
+</section>
+
+<BarangModal Open="@Dialog" Title="@DialogTitle" CloseLabel="@T["Cancel"]" CloseRequested="Cancel" ShowCloseButton="false" Size="large" Busy="@Busy">
+    <ChildContent>
+        @if (EditorLoading)
+        {
+            <BarangLoadingState Text="@T["Loading"]" />
+        }
+        else
+        {
+            @if (EditorMessage is not null) { <div class="@(EditorSuccess ? "inline-success" : "inline-error")" role="@(EditorSuccess ? "status" : "alert")">@EditorMessage</div> }
+            @if (SelectedId is not null)
+            {
+                <div class="tabs" role="tablist">
+                    @foreach (var tab in Tabs)
+                    {
+                        <button type="button" role="tab" aria-selected="@(Tab == tab.Key)" class="@(Tab == tab.Key ? "active" : null)" @onclick="() => Tab = tab.Key">@O[tab.Label]</button>
+                    }
+                </div>
+            }
+            <section class="person-tab">
+                @switch (Tab)
+                {
+                    case "chart": <ReadOnlyOrganizationalChart HighlightPersonId="SelectedId" /> break;
+                    case "user": @UserPanel break;
+                    case "roles": @AccessPanel break;
+                    default: @FullForm break;
+                }
+            </section>
+        }
+    </ChildContent>
+</BarangModal>
+
+<BarangConfirmDialog Open="@DiscardDialog" Title="@O["UnsavedChangesTitle"]" CancelText="@T["Cancel"]" ConfirmText="@O["DiscardChanges"]" Busy="false" Cancel="() => DiscardDialog = false" Confirm="DiscardAndClose">
+    @O["UnsavedChangesMessage"]
+</BarangConfirmDialog>
+
+<BarangConfirmDialog Open="@DeleteDialog" Title="@O["DeleteConfirmTitle"]" CancelText="@T["Cancel"]" ConfirmText="@O["Delete"]" Busy="@Busy" Cancel="() => DeleteDialog = false" Confirm="Delete">
+    @(PendingDelete is null ? "" : string.Format(O["DeleteConfirmMessage"], O["Person"], PendingDelete.Name))
+</BarangConfirmDialog>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private const int PageSize = 20;
+    private bool Loading, EditorLoading, Dialog, DiscardDialog, DeleteDialog, Busy, AccountEnabled = true, Success, EditorSuccess;
+    private bool ReadOnly;
+    private string Search = "", StatusFilter = "all", SortBy = "code", Tab = "full", Code = "", First = "", Last = "", NationalId = "", Email = "", Phone = "", Address = "", Notes = "", Username = "", NewPassword = "", ConfirmPassword = "";
+    private string? Message, EditorMessage;
+    private bool SortDescending;
+    private int Page = 1;
+    private DateOnly? Birth;
+    private long Version;
+    private Guid? SelectedId, LoadedRouteId;
+    private PersonRow? Current, PendingDelete;
+    private PersonSnapshot Snapshot = PersonSnapshot.Empty;
+    private UserRow? LinkedUser;
+    private List<string> AssignedRoles = [], EffectivePermissions = [];
+    private List<PersonRow> People = [];
+    private static readonly (string Key, string Label)[] Tabs = [("full", "FullInformation"), ("chart", "OrganizationalChart"), ("user", "UserInformation"), ("roles", "RolesPermissions")];
+
+    private IReadOnlyList<PersonRow> FilteredPeople => Ordered(People.Where(person => StatusFilter == "all" || person.Active == (StatusFilter == "active"))).ToArray();
+    private IReadOnlyList<PersonRow> PagedPeople => FilteredPeople.Skip((Page - 1) * PageSize).Take(PageSize).ToArray();
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredPeople.Count / (double)PageSize));
+    private string DialogTitle => SelectedId is null ? T["Add"] : ReadOnly ? T["View"] : T["Edit"];
+    private bool IsDirty => Snapshot != Capture();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Load();
+        if (Id is { } routeId && LoadedRouteId != routeId)
+        {
+            LoadedRouteId = routeId;
+            await Open(routeId, false);
+        }
+    }
+
+    private RenderFragment FullForm => @<div class="crud-form person-editor-form">
+        <fieldset disabled="@ReadOnly">
+            <div class="form-grid">
+                <label><span>@O["PersonnelCode"]</span><input value="@(SelectedId is null ? O["AssignedAutomatically"] : Code)" disabled /></label>
+                <label><span>@O["FirstName"] *</span><input data-testid="person-first-name" @bind="First" maxlength="100" /></label>
+                <label><span>@O["LastName"] *</span><input data-testid="person-last-name" @bind="Last" maxlength="100" /></label>
+                <label><span>@O["NationalId"]</span><input @bind="NationalId" maxlength="64" /></label>
+                <label><span>@O["BirthDate"]</span><LocaleDateInput Name="person-birth-date" @bind-Value="Birth" Disabled="@ReadOnly" /></label>
+                <label><span>@O["Email"]</span><input type="email" @bind="Email" /></label>
+                <label><span>@O["Phone"]</span><input @bind="Phone" /></label>
+                <label><span>@O["Address"]</span><textarea @bind="Address"></textarea></label>
+                <label><span>@O["Notes"]</span><textarea @bind="Notes"></textarea></label>
+            </div>
+        </fieldset>
+        <footer>
+            <button type="button" class="btn btn-secondary" @onclick="Cancel">@T["Cancel"]</button>
+            @if (!ReadOnly) { <button type="button" class="btn btn-primary" disabled="@Busy" @onclick="Save">@T["Save"]</button> }
+        </footer>
+    </div>;
+
+    private RenderFragment UserPanel => @<div>
+        <h3>@O["UserInformation"]</h3>
+        @if (LinkedUser is null)
+        {
+            <p>@O["NoAccount"]</p>
+            @if (!ReadOnly)
+            {
+                <div class="form-grid"><Field Label="@O["Username"]" @bind-Value="Username" /><label><span>@O["NewPassword"]</span><input type="password" @bind="NewPassword" autocomplete="new-password" /></label><label><span>@O["ConfirmPassword"]</span><input type="password" @bind="ConfirmPassword" autocomplete="new-password" /></label><label><span>@O["Enabled"]</span><input type="checkbox" @bind="AccountEnabled" /></label></div>
+                <button type="button" class="btn btn-primary" disabled="@Busy" @onclick="CreateAccount">@O["CreateUserAccount"]</button>
+            }
+        }
+        else
+        {
+            <dl class="details-list"><dt>@O["Username"]</dt><dd>@LinkedUser.Username</dd><dt>@T["Status"]</dt><dd>@LinkedUser.State</dd></dl>
+            @if (!ReadOnly)
+            {
+                <div class="form-grid"><label><span>@O["NewPassword"]</span><input type="password" @bind="NewPassword" autocomplete="new-password" /></label><label><span>@O["ConfirmPassword"]</span><input type="password" @bind="ConfirmPassword" autocomplete="new-password" /></label></div>
+                <button type="button" class="btn btn-secondary" @onclick="ToggleAccount">@(LinkedUser.Active ? O["Deactivate"] : O["Activate"])</button>
+                <button type="button" class="btn btn-primary" @onclick="ResetPassword">@O["ResetPassword"]</button>
+            }
+        }
+    </div>;
+
+    private RenderFragment AccessPanel => @<div><p class="read-only-note">@O["ReadOnly"]</p>@if (LinkedUser is null) { <CrudEmptyState Title="@O["NoAccount"]" Description="" /> } else { <h3>@O["AssignedRoles"]</h3>@if (AssignedRoles.Count == 0) { <CrudEmptyState Title="@T["NoRecords"]" Description="" /> } else { <ul class="permission-list">@foreach (string role in AssignedRoles) { <li>@role</li> }</ul> }<h3>@O["EffectivePermissions"]</h3>@if (EffectivePermissions.Count == 0) { <CrudEmptyState Title="@T["NoRecords"]" Description="" /> } else { <ul class="permission-list">@foreach (string permission in EffectivePermissions) { <li><code>@permission</code></li> }</ul> } }</div>;
+
+    private void New()
+    {
+        Clear(); SelectedId = null; Current = null; ReadOnly = false; Tab = "full"; Dialog = true; Snapshot = Capture(); EditorMessage = null;
+    }
+
+    private async Task Open(Guid id, bool readOnly)
+    {
+        Clear(); SelectedId = id; ReadOnly = readOnly; Tab = "full"; Dialog = true; EditorLoading = true; EditorMessage = null;
+        await LoadPerson(id);
+        Snapshot = Capture(); EditorLoading = false;
+    }
+
+    private void Cancel()
+    {
+        if (!ReadOnly && IsDirty) { DiscardDialog = true; return; }
+        CloseEditor();
+    }
+
+    private void DiscardAndClose() { DiscardDialog = false; CloseEditor(); }
+    private void CloseEditor()
+    {
+        Dialog = false; Clear();
+        if (Id is not null) { LoadedRouteId = null; Navigation.NavigateTo("/master/persons"); }
+    }
+
+    private void Clear()
+    {
+        Code = First = Last = NationalId = Email = Phone = Address = Notes = Username = NewPassword = ConfirmPassword = "";
+        Birth = null; Version = 0; LinkedUser = null; AssignedRoles = []; EffectivePermissions = []; AccountEnabled = true; Snapshot = PersonSnapshot.Empty;
+    }
+
+    private async Task SearchNow() { Page = 1; await Load(); }
+    private void ResetPage() => Page = 1;
+    private void PreviousPage() { if (Page > 1) Page--; }
+    private void NextPage() { if (Page < TotalPages) Page++; }
+    private void Sort(string column) { if (SortBy == column) SortDescending = !SortDescending; else { SortBy = column; SortDescending = false; } Page = 1; }
+    private void SortCode() => Sort("code");
+    private void SortName() => Sort("name");
+    private void SortEmail() => Sort("email");
+    private void SortStatus() => Sort("status");
+    private IEnumerable<PersonRow> Ordered(IEnumerable<PersonRow> source)
+    {
+        Func<PersonRow, object> key = SortBy switch { "name" => x => x.Name, "email" => x => x.Email, "status" => x => x.Active, _ => x => int.TryParse(x.Code, out int code) ? code : int.MaxValue };
+        return SortDescending ? source.OrderByDescending(key).ThenByDescending(x => x.Id) : source.OrderBy(key).ThenBy(x => x.Id);
+    }
+
+    private async Task Load()
+    {
+        Loading = true;
+        (string Token, Guid Company)? session = await Session();
+        if (session is not null)
+        {
+            ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/organization/persons?search={Uri.EscapeDataString(Search)}&take=100", session.Value.Token, session.Value.Company, default);
+            if (result.IsSuccess) People = result.Value.EnumerateArray().Select(Parse).ToList(); else Show(result);
+        }
+        Loading = false;
+        if (Page > TotalPages) Page = TotalPages;
+    }
+
+    private async Task LoadPerson(Guid id)
+    {
+        (string Token, Guid Company)? session = await Session(); if (session is null) return;
+        ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/organization/persons/{id}", session.Value.Token, session.Value.Company, default);
+        if (!result.IsSuccess) { ShowEditor(result); return; }
+        Current = Parse(result.Value); Code = Current.Code; First = Get(result.Value, "firstName"); Last = Get(result.Value, "lastName"); NationalId = Get(result.Value, "nationalId"); Email = Current.Email; Phone = Get(result.Value, "phone"); Address = Get(result.Value, "address"); Notes = Get(result.Value, "notes"); Version = Current.Version;
+        Birth = result.Value.TryGetProperty("birthDate", out JsonElement dateValue) && dateValue.ValueKind != JsonValueKind.Null && Dates.TryParseCanonical(dateValue.GetString() ?? "", out DateOnly date) ? date : null;
+        await LoadAccess(session.Value);
+    }
+
+    private async Task LoadAccess((string Token, Guid Company) session)
+    {
+        if (SelectedId is not Guid person) return;
+        ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/security/users/by-person/{person}", session.Token, session.Company, default);
+        LinkedUser = null; AssignedRoles = []; EffectivePermissions = [];
+        if (!result.IsSuccess) return;
+        if (result.Value.TryGetProperty("user", out JsonElement user) && user.ValueKind != JsonValueKind.Null)
+        {
+            JsonElement raw = user.GetProperty("accountState"); string state = raw.ValueKind == JsonValueKind.String ? raw.GetString() ?? "Active" : raw.GetInt32() switch { 1 => "Inactive", 2 => "Locked", _ => "Active" };
+            LinkedUser = new(user.GetProperty("id").GetGuid(), Get(user, "username"), state == "Active" ? T["Active"] : state == "Inactive" ? T["Inactive"] : O["Locked"], state == "Active", user.GetProperty("version").GetInt64());
+        }
+        if (result.Value.TryGetProperty("assignedRoles", out JsonElement roles)) AssignedRoles = roles.EnumerateArray().Select(x => x.GetString() ?? "").ToList();
+        if (result.Value.TryGetProperty("effectivePermissions", out JsonElement permissions)) EffectivePermissions = permissions.EnumerateArray().Select(x => x.GetString() ?? "").ToList();
+    }
+
+    private async Task Save()
+    {
+        if (Busy || string.IsNullOrWhiteSpace(First) || string.IsNullOrWhiteSpace(Last)) { EditorSuccess = false; EditorMessage = O["RequiredFields"]; return; }
+        Busy = true; (string Token, Guid Company)? session = await Session();
+        if (session is not null)
+        {
+            object body = new { personnelCode = Code, firstName = First, lastName = Last, nationalId = Empty(NationalId), birthDate = Birth, email = Empty(Email), phone = Empty(Phone), address = Empty(Address), notes = Empty(Notes), version = Version };
+            ApiResult<JsonElement> result = await Core.SendAsync(SelectedId is null ? HttpMethod.Post : HttpMethod.Put, SelectedId is null ? "api/v1/organization/persons" : $"api/v1/organization/persons/{SelectedId}", body, session.Value.Token, session.Value.Company, default);
+            if (result.IsSuccess)
+            {
+                Guid savedId = result.Value.GetProperty("id").GetGuid();
+                await LoadPerson(savedId);
+                await Load();
+                Success = true; Message = O["SaveSuccess"];
+                Busy = false; CloseEditor(); return;
+            }
+            ShowEditor(result);
+        }
+        Busy = false;
+    }
+
+    private async Task ToggleActive(PersonRow person)
+    {
+        (string Token, Guid Company)? session = await Session(); if (session is null) return;
+        ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Put, $"api/v1/organization/persons/{person.Id}/activation", new { isActive = !person.Active, version = person.Version }, session.Value.Token, session.Value.Company, default);
+        if (result.IsSuccess) { Success = true; Message = T["OperationSucceeded"]; await Load(); } else Show(result);
+    }
+
+    private void AskDelete(PersonRow person) { PendingDelete = person; DeleteDialog = true; }
+    private async Task Delete()
+    {
+        if (PendingDelete is null) return;
+        Busy = true; (string Token, Guid Company)? session = await Session();
+        if (session is not null)
+        {
+            ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Delete, $"api/v1/organization/persons/{PendingDelete.Id}?version={PendingDelete.Version}", null, session.Value.Token, session.Value.Company, default);
+            DeleteDialog = false;
+            if (result.IsSuccess) { Success = true; Message = O["DeleteSuccess"]; await Load(); }
+            else if (result.ProblemCode == "organization.delete.protected_dependency") { Success = false; Message = O["DeleteProtectedDependency"]; }
+            else Show(result);
+        }
+        PendingDelete = null; Busy = false;
+    }
+
+    private async Task CreateAccount()
+    {
+        if (SelectedId is not Guid person || NewPassword != ConfirmPassword || string.IsNullOrWhiteSpace(Username)) { EditorSuccess = false; EditorMessage = O["RequiredFields"]; return; }
+        (string Token, Guid Company)? session = await Session(); if (session is null) return; Busy = true;
+        ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Post, $"api/v1/security/users/for-person/{person}", new { username = Username, password = NewPassword, displayName = Current?.Name, email = Empty(Email), enabled = AccountEnabled }, session.Value.Token, session.Value.Company, default);
+        Busy = false; if (result.IsSuccess) { NewPassword = ConfirmPassword = ""; EditorSuccess = true; EditorMessage = O["AccountCreated"]; await LoadAccess(session.Value); } else ShowEditor(result);
+    }
+
+    private async Task ToggleAccount()
+    {
+        if (LinkedUser is null) return; (string Token, Guid Company)? session = await Session(); if (session is null) return;
+        ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Put, $"api/v1/security/users/{LinkedUser.Id}/activation", new { isActive = !LinkedUser.Active, version = LinkedUser.Version }, session.Value.Token, session.Value.Company, default);
+        if (result.IsSuccess) { EditorSuccess = true; EditorMessage = T["OperationSucceeded"]; await LoadAccess(session.Value); } else ShowEditor(result);
+    }
+
+    private async Task ResetPassword()
+    {
+        if (LinkedUser is null || NewPassword != ConfirmPassword || string.IsNullOrWhiteSpace(NewPassword)) { EditorSuccess = false; EditorMessage = O["RequiredFields"]; return; }
+        (string Token, Guid Company)? session = await Session(); if (session is null) return;
+        ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Put, $"api/v1/security/users/{LinkedUser.Id}/password", new { password = NewPassword }, session.Value.Token, session.Value.Company, default);
+        if (result.IsSuccess) { NewPassword = ConfirmPassword = ""; EditorSuccess = true; EditorMessage = T["OperationSucceeded"]; } else ShowEditor(result);
+    }
+
+    private void Show(ApiResult<JsonElement> result) { Success = false; Message = LocalizedFailure(result); }
+    private void ShowEditor(ApiResult<JsonElement> result) { EditorSuccess = false; EditorMessage = LocalizedFailure(result); }
+    private string LocalizedFailure(ApiResult<JsonElement> result) => result.Failure switch { ApiFailure.Forbidden => T["Forbidden"], ApiFailure.Conflict => T["ConcurrencyConflict"], ApiFailure.Validation => T["ValidationError"], _ => O["OperationFailed"] };
+    private PersonSnapshot Capture() => new(First, Last, NationalId, Birth, Email, Phone, Address, Notes);
+    private async Task<(string Token, Guid Company)?> Session() { var user = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid company) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? (token, company) : null; }
+    private static PersonRow Parse(JsonElement value) => new(value.GetProperty("id").GetGuid(), Get(value, "personnelCode"), Get(value, "displayName"), Get(value, "email"), value.GetProperty("isActive").GetBoolean(), value.GetProperty("version").GetInt64());
+    private static string Get(JsonElement value, string name) => value.TryGetProperty(name, out JsonElement property) && property.ValueKind != JsonValueKind.Null ? property.GetString() ?? "" : "";
+    private static string? Empty(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private sealed record UserRow(Guid Id, string Username, string State, bool Active, long Version);
+    private sealed record PersonRow(Guid Id, string Code, string Name, string Email, bool Active, long Version);
+    private sealed record PersonSnapshot(string First, string Last, string NationalId, DateOnly? Birth, string Email, string Phone, string Address, string Notes) { public static PersonSnapshot Empty { get; } = new("", "", "", null, "", "", "", ""); }
+}

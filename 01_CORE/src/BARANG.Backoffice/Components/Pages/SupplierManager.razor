@@ -1,0 +1,130 @@
+@page "/master/suppliers"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@inject IStringLocalizer<SupplierStrings> S
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<PageTitle>@S["Title"] | BARANG</PageTitle>
+<nav class="breadcrumbs"><span>@S["MasterData"]</span><span>/</span><span>@S["SystemManagement"]</span><span>/</span><span>@S["Title"]</span></nav>
+<header class="crud-header"><div><h1>@S["Title"]</h1><p>@S["Subtitle"]</p></div>@if(CanManage){<button type="button" class="btn btn-primary" data-supplier-add="true" @onclick="New"><BarangIcon Name="plus" />@S["NewSupplier"]</button>}</header>
+@if(Message is not null){<p class="@(Success?"inline-success":"inline-error")" role="@(Success?"status":"alert")">@S[Message]</p>}
+<section class="crud-card" data-supplier-directory="true">
+    <BarangToolbar AriaLabel="@S["Title"]" Class="customer-toolbar">
+        <label class="search-box"><BarangIcon Name="search" /><input name="supplierSearch" value="@Search" @oninput="SearchChanged" placeholder="@S["SearchHint"]" aria-label="@S["SearchHint"]" /></label>
+        <select name="supplierTypeFilter" value="@Type" @onchange="TypeChanged" aria-label="@S["EntityType"]"><option value="">@S["AllTypes"]</option><option value="Individual">@S["Individual"]</option><option value="LegalEntity">@S["LegalEntity"]</option></select>
+        <select name="supplierStatusFilter" value="@Status" @onchange="StatusChanged" aria-label="@S["Status"]"><option value="">@S["AllStatuses"]</option><option value="Active">@S["Active"]</option><option value="Inactive">@S["Inactive"]</option><option value="Blocked">@S["Blocked"]</option></select>
+        <ReferenceSelect TypeCode="supplier.category" Name="supplierCategoryFilter" Value="@Category" ValueChanged="CategoryChanged" Placeholder="@S["Categories"]" />
+        <button type="button" class="btn btn-secondary" @onclick="Load"><BarangIcon Name="refresh" />@S["Refresh"]</button>
+    </BarangToolbar>
+    @if(Loading){<BarangLoadingState Text="@S["Loading"]" />}
+    else if(Rows.Count==0){<CrudEmptyState Title="@S["NoSuppliers"]" Description="@S["Subtitle"]" />}
+    else{
+        <div class="data-grid-wrap"><table class="data-grid"><thead><tr>
+            <th><BarangSortHeader Label="@S["SupplierNumber"]" Active="@(Sort=="number")" Descending="@Descending" Clicked='()=>SortChanged("number")' /></th>
+            <th><BarangSortHeader Label="@S["DisplayName"]" Active="@(Sort=="name")" Descending="@Descending" Clicked='()=>SortChanged("name")' /></th>
+            <th><BarangSortHeader Label="@S["EntityType"]" Active="@(Sort=="type")" Descending="@Descending" Clicked='()=>SortChanged("type")' /></th>
+            <th>@S["Categories"]</th><th><BarangSortHeader Label="@S["PrimaryMobile"]" Active="@(Sort=="mobile")" Descending="@Descending" Clicked='()=>SortChanged("mobile")' /></th>
+            <th>@S["GradePreferred"]</th><th><BarangSortHeader Label="@S["Status"]" Active="@(Sort=="status")" Descending="@Descending" Clicked='()=>SortChanged("status")' /></th><th>@S["Actions"]</th>
+        </tr></thead><tbody>
+        @foreach(var item in Rows){
+            var row=item.GetProperty("supplier");Guid id=row.GetProperty("id").GetGuid();string status=SupplierUiSchema.Text(row,"status");
+            <tr data-id="@id">
+                <td>@SupplierUiSchema.Text(row,"supplierNumber")</td>
+                <td><button type="button" class="entity-link" @onclick="()=>Show(id,true)">@SupplierUiSchema.Text(row,"displayName")</button></td>
+                <td>@S[SupplierUiSchema.Text(row,"entityType")]</td>
+                <td>@string.Join(", ",item.GetProperty("categoryIds").EnumerateArray().Select(x=>Caption(x.GetString()!)))</td>
+                <td dir="ltr">@(SupplierUiSchema.Text(row,"primaryMobile") is string mobile&&mobile.Length>0?mobile:SupplierUiSchema.Text(row,"primaryPhone"))</td>
+                <td>@Caption(SupplierUiSchema.Text(row,"gradeId"))@if(row.GetProperty("isPreferred").GetBoolean()){<span class="status-badge">@S["Preferred"]</span>}</td>
+                <td><span class="customer-status status-@status.ToLowerInvariant()">@S[status]</span></td>
+                <td><div class="row-actions">
+                    <BarangIconButton Icon="eye" Label="@S["View"]" Semantic="info" Clicked="()=>Show(id,true)" />
+                    @if(CanManage){
+                        <BarangIconButton Icon="edit" Label="@S["Edit"]" Semantic="edit" Clicked="()=>Show(id,false)" />
+                        <BarangIconButton Icon="trash" Label="@S["Delete"]" Semantic="danger" Clicked="()=>AskDelete(row)" />
+                        @if(status=="Blocked"){<BarangIconButton Icon="restore" Label="@S["Unblock"]" Semantic="success" Clicked='()=>ChangeStatus(row,"Active")' />}
+                        else{
+                            <BarangIconButton Icon="power" Label="@S[status=="Active"?"Deactivate":"Activate"]" Semantic="@(status=="Active"?"warning":"success")" Clicked='()=>ChangeStatus(row,status=="Active"?"Inactive":"Active")' />
+                            <BarangIconButton Icon="unlink" Label="@S["Block"]" Semantic="danger" Clicked="()=>Block(id)" />
+                        }
+                    }
+                </div></td>
+            </tr>
+        }
+        </tbody></table></div>
+    }
+    <BarangPagination Page="@Page" HasNext="@(Total>Page*PageSize)" PreviousText="@S["Previous"]" NextText="@S["Next"]" Previous="Previous" Next="Next" />
+</section>
+<SupplierEditor @key="EditorRevision" Open="@EditorOpen" SupplierId="@EditingId" ReadOnly="@Viewing" InitialStatus="@InitialStatus" Closed="CloseEditor" Saved="Saved" />
+<BarangModal Open="@DeleteOpen" Title="@S["Delete"]" ShowCloseButton="false" Busy="@Busy" CloseRequested="CancelDelete" data-supplier-delete="true">
+<ChildContent><p>@S["ConfirmDelete"]</p>@if(DeleteError is not null){<p class="inline-error" role="alert">@S[DeleteError]</p>}</ChildContent>
+<Footer><button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="CancelDelete">@S["Cancel"]</button><button type="button" class="btn btn-danger" disabled="@Busy" @onclick="Delete">@S["Delete"]</button></Footer>
+</BarangModal>
+@code{
+    private const int PageSize=20;
+    private int Page=1,EditorRevision,LoadRevision;
+    private long Total;
+    private bool Loading,Busy,CanManage,EditorOpen,Viewing,DeleteOpen,Success,Descending;
+    private string Search="",Type="",Status="Active",Category="",Sort="number",LoadedContext="";
+    private string?Message,DeleteError,InitialStatus;
+    private Guid?EditingId;
+    private Guid CurrentCompany;
+    private JsonElement PendingDelete;
+    private List<JsonElement>Rows=[];
+    private Dictionary<string,string>Captions=[];
+    protected override async Task OnParametersSetAsync(){
+        var session=await Session();if(session is null){Message="Forbidden";return;}
+        string key=$"{session.Value.Company}:{CultureInfo.CurrentUICulture.Name}";
+        if(key==LoadedContext)return;LoadedContext=key;
+        if(CurrentCompany!=session.Value.Company){Rows=[];EditorOpen=false;DeleteOpen=false;Page=1;Search=Type=Category="";Status="Active";CurrentCompany=session.Value.Company;}
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;CanManage=user.HasClaim(AuthClaimTypes.Permission,"supplier.manage");
+        await LoadCaptions(session.Value.Token,session.Value.Company);await Load();
+    }
+    private async Task LoadCaptions(string token,Guid company){
+        Captions=[];
+        foreach(string type in new[]{"supplier.category","supplier.grade"}){
+            var result=await Core.GetAsync($"api/v1/lookups/{type}/options?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}&activeOnly=false",token,company,default);
+            if(result.IsSuccess)foreach(var item in result.Value.EnumerateArray())Captions[SupplierUiSchema.Text(item,"id")]=SupplierUiSchema.Text(item,"displayName");else{Success=false;Message="ReferenceUnavailable";}
+        }
+    }
+    private string Caption(string id)=>Captions.GetValueOrDefault(id,"");
+    private void New(){EditingId=null;Viewing=false;InitialStatus=null;EditorRevision++;EditorOpen=true;}
+    private void Show(Guid id,bool view){EditingId=id;Viewing=view;InitialStatus=null;EditorRevision++;EditorOpen=true;}
+    private void Block(Guid id){Show(id,false);InitialStatus="Blocked";}
+    private void CloseEditor()=>EditorOpen=false;
+    private async Task Saved(){EditorOpen=false;Success=true;Message="Saved";await Load();}
+    private async Task Load(){
+        var session=await Session();if(session is null){Message="Forbidden";return;}
+        int revision=++LoadRevision;Loading=true;
+        string url=$"api/v1/suppliers/core?search={Uri.EscapeDataString(Search)}&pageNumber={Page}&pageSize={PageSize}&sortBy={Sort}&sortDescending={Descending.ToString().ToLowerInvariant()}";
+        if(Type.Length>0)url+="&entityType="+Type;if(Status.Length>0)url+="&status="+Status;if(Category.Length>0)url+="&categoryId="+Category;
+        var result=await Core.GetAsync(url,session.Value.Token,session.Value.Company,default);
+        if(revision!=LoadRevision||session.Value.Company!=CurrentCompany)return;
+        Rows=[];
+        if(result.IsSuccess){Rows=result.Value.GetProperty("items").EnumerateArray().ToList();Total=result.Value.GetProperty("totalCount").GetInt64();if(Page>1&&Total<=(Page-1)*PageSize){Page=Math.Max(1,(int)((Total+PageSize-1)/PageSize));await Load();return;}}
+        else{Success=false;Message=SupplierUiSchema.Error(result);Total=0;}
+        Loading=false;
+    }
+    private async Task SearchChanged(ChangeEventArgs e){Search=e.Value?.ToString()??"";Page=1;await Load();}
+    private async Task TypeChanged(ChangeEventArgs e){Type=e.Value?.ToString()??"";Page=1;await Load();}
+    private async Task StatusChanged(ChangeEventArgs e){Status=e.Value?.ToString()??"";Page=1;await Load();}
+    private async Task CategoryChanged(string value){Category=value;Page=1;await Load();}
+    private async Task SortChanged(string key){Descending=Sort==key&&!Descending;Sort=key;Page=1;await Load();}
+    private async Task Previous(){if(Page>1){Page--;await Load();}}private async Task Next(){if(Total>Page*PageSize){Page++;await Load();}}
+    private async Task ChangeStatus(JsonElement row,string status){
+        if(Busy||!CanManage)return;var session=await Session();if(session is null)return;Busy=true;
+        try{var result=await Core.SendAsync(HttpMethod.Post,$"api/v1/suppliers/{SupplierUiSchema.Text(row,"id")}/status",new{status,version=row.GetProperty("version").GetInt64()},session.Value.Token,session.Value.Company,default);Success=result.IsSuccess;Message=result.IsSuccess?"Saved":SupplierUiSchema.Error(result);if(result.IsSuccess)await Load();}finally{Busy=false;}
+    }
+    private void AskDelete(JsonElement row){PendingDelete=row;DeleteError=null;DeleteOpen=true;}
+    private void CancelDelete(){if(!Busy)DeleteOpen=false;}
+    private async Task Delete(){
+        if(Busy||!CanManage)return;var session=await Session();if(session is null)return;Busy=true;
+        try{
+            var result=await Core.SendAsync(HttpMethod.Delete,$"api/v1/suppliers/{SupplierUiSchema.Text(PendingDelete,"id")}?version={PendingDelete.GetProperty("version").GetInt64()}",null,session.Value.Token,session.Value.Company,default);
+            if(result.IsSuccess){DeleteOpen=false;Success=true;Message="Deleted";await Load();}else DeleteError=SupplierUiSchema.Error(result);
+        }finally{Busy=false;}
+    }
+    private async Task<(string Token,Guid Company)?>Session(){var user=(await AuthState.GetAuthenticationStateAsync()).User;return user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token&&Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var company)?(token,company):null;}
+}

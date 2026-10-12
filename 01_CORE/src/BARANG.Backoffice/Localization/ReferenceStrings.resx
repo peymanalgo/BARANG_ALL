@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+<resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+<resheader name="version"><value>2.0</value></resheader>
+<data name="ReferenceTypes" xml:space="preserve"><value>انواع داده پایه</value></data>
+<data name="CompanyScope" xml:space="preserve"><value>داده‌های شرکت جاری</value></data>
+<data name="GlobalScope" xml:space="preserve"><value>داده سراسری: مدیریت فقط توسط مدیر سیستم</value></data>
+<data name="NoConfigurableTypes" xml:space="preserve"><value>در این حوزه داده مرجع ساده قابل ویرایش یافت نشد. نوع و اولویت کار قواعد سیستم هستند؛ سیاست‌های SLA در گردش کار مدیریت می‌شوند.</value></data>
+<data name="Referenced" xml:space="preserve"><value>این مقدار استفاده شده است. به جای حذف، آن را غیرفعال کنید.</value></data>
+<data name="Protected" xml:space="preserve"><value>این رکورد محافظت‌شده است یا به دسترسی مدیر سیستم نیاز دارد.</value></data>
+<data name="ConfirmDelete" xml:space="preserve"><value>این رکورد حذف شود؟ رکوردهای استفاده‌شده قابل حذف نیستند.</value></data>
+<data name="AccountName" xml:space="preserve"><value>نام حساب</value></data>
+<data name="AccountType" xml:space="preserve"><value>نوع حساب</value></data>
+<data name="OwnershipType" xml:space="preserve"><value>نوع مالکیت</value></data>
+<data name="IndividualOwnership" xml:space="preserve"><value>انفرادی</value></data>
+<data name="JointOwnership" xml:space="preserve"><value>مشترک</value></data>
+<data name="CardNumber" xml:space="preserve"><value>شماره کارت</value></data>
+<data name="BranchCode" xml:space="preserve"><value>کد شعبه</value></data>
+<data name="ContactRole" xml:space="preserve"><value>نقش مخاطب</value></data>
+<data name="LegalContactsOnly" xml:space="preserve"><value>مخاطبان فقط برای مشتری حقوقی مجاز هستند.</value></data>
+<data name="DefaultAddressRule" xml:space="preserve"><value>حذف یا غیرفعال‌سازی نشانی پیش‌فرض، پیش‌فرض را پاک می‌کند. نشانی فعال دیگری را صریحاً انتخاب کنید.</value></data>
+<data name="InactiveHistorical" xml:space="preserve"><value>مقدار تاریخی غیرفعال</value></data>
+<data name="NamesRequired" xml:space="preserve"><value>عنوان فارسی، عربی و انگلیسی را وارد کنید.</value></data>
+<data name="ReferenceLoadFailed" xml:space="preserve"><value>داده‌های پایه بارگذاری نشد. پیش از ذخیره دوباره تلاش کنید.</value></data>
+<data name="Description" xml:space="preserve"><value>شرح</value></data>
+  <data name="DefectCategory" xml:space="preserve"><value>دسته عیب</value></data>
+  <data name="Severity" xml:space="preserve"><value>شدت</value></data>
+  <data name="Minor" xml:space="preserve"><value>جزئی</value></data>
+  <data name="Major" xml:space="preserve"><value>عمده</value></data>
+  <data name="Critical" xml:space="preserve"><value>بحرانی</value></data>
+  <data name="Blocking" xml:space="preserve"><value>مسدودکننده</value></data>
+  <data name="UseDefaultAddress" xml:space="preserve"><value>استفاده از نشانی پیش‌فرض مشتری</value></data>
+  <data name="NoDefaultAddress" xml:space="preserve"><value>نشانی پیش‌فرض فعال انتخاب نشده است.</value></data>
+</root>

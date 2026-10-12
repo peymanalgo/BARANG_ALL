@@ -1,0 +1,93 @@
+@using System.Globalization
+@using System.Text.Json
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject IStringLocalizer<CustomerStrings> C
+@inject IStringLocalizer<ReferenceStrings> R
+@inject ILogger<ReferenceSelect> Logger
+
+<SearchableSelect Name="@Name" Options="@VisibleOptions" Value="@SelectedValue" ValueChanged="Changed" Disabled="@(Disabled||Failed||Loading)" Placeholder="@Placeholder" />
+@if(Failed){<span class="inline-error" role="alert">@R["ReferenceLoadFailed"]</span>}
+else if(!Loading&&Options.Count==0){<span class="reference-empty" role="status">@C["NoOptions"]</span>}
+@code {
+    [Parameter,EditorRequired] public string TypeCode { get; set; }="";
+    [Parameter] public string Value { get; set; }="";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public bool UseCode { get; set; }
+    [Parameter] public bool IncludeInactive { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    private string LoadedKey="";
+    private string SelectedValue => Options.FirstOrDefault(x=>string.Equals(x.Id,Value,StringComparison.OrdinalIgnoreCase))?.Id??Value;
+    private bool Failed,Loading=true;
+    private List<Option> Options=[];
+    private IReadOnlyList<SearchableSelectOption> VisibleOptions => new[]{new SearchableSelectOption("",Placeholder ?? C["NotSpecified"])}.Concat(
+        Options.Where(x=>(x.Active||IncludeInactive)||string.Equals(x.Id,Value,StringComparison.OrdinalIgnoreCase)).Select(x=>new SearchableSelectOption(x.Id,x.Active?x.Caption:$"{x.Caption} ({R["InactiveHistorical"]})"))).ToArray();
+    protected override async Task OnParametersSetAsync()
+    {
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;
+        if(!Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Guid company)||user.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string token)return;
+        string key=$"{company}:{TypeCode}:{UseCode}:{CultureInfo.CurrentUICulture.Name}";
+        if(key==LoadedKey)return;
+        Loading=true;
+        bool adapter=TypeCode is "artwork.tag" or "defect.type";
+        try
+        {
+            var r=await Core.GetAsync(adapter?$"api/v1/reference-entities/{TypeCode}/values":$"api/v1/lookups/{TypeCode}/options?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}&activeOnly=true",token,company,default);
+            if(r.IsSuccess)
+            {
+                Options=ParseOptions(r.Value,adapter);
+                if(!adapter&&Options.Count==0)
+                {
+                    var values=await Core.GetAsync($"api/v1/lookups/types/{TypeCode}/values?activeOnly=true",token,company,default);
+                    if(values.IsSuccess) Options=ParseOptions(values.Value,false);
+                    else Logger.LogWarning("Lookup fallback failed for {TypeCode}: {Failure} {ProblemCode}",TypeCode,values.Failure,values.ProblemCode);
+                }
+                Failed=false;
+                LoadedKey=key;
+            }
+            else
+            {
+                Failed=true;
+                Logger.LogWarning("Lookup request failed for {TypeCode}: {Failure} {ProblemCode}",TypeCode,r.Failure,r.ProblemCode);
+            }
+        }
+        catch(Exception ex)
+        {
+            Failed=true;
+            Logger.LogError(ex,"Lookup request could not be parsed for {TypeCode}",TypeCode);
+        }
+        finally { Loading=false; }
+    }
+    private static List<Option> ParseOptions(JsonElement root,bool adapter)
+    {
+        JsonElement rows=root.ValueKind==JsonValueKind.Array?root:root.ValueKind==JsonValueKind.Object&&root.TryGetProperty("items",out var items)?items:default;
+        if(rows.ValueKind!=JsonValueKind.Array)return [];
+        return rows.EnumerateArray().Select(x=>new Option(
+            x.TryGetProperty("code",out var code)&&code.ValueKind==JsonValueKind.String?code.GetString()!:
+                x.TryGetProperty("id",out var id)&&id.ValueKind==JsonValueKind.String?id.GetString()!:string.Empty,
+            adapter?Caption(x):DisplayName(x),
+            !x.TryGetProperty("isActive",out var active)||active.ValueKind!=JsonValueKind.False)).Where(x=>x.Id.Length>0).ToList();
+    }
+    private static string DisplayName(JsonElement row)
+    {
+        if(row.TryGetProperty("displayName",out var name)&&name.ValueKind==JsonValueKind.String&&!string.IsNullOrWhiteSpace(name.GetString()))return name.GetString()!;
+        if(row.TryGetProperty("translations",out var translations)&&translations.ValueKind==JsonValueKind.Array)
+        {
+            string culture=CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+            JsonElement selected=translations.EnumerateArray().FirstOrDefault(x=>x.TryGetProperty("culture",out var c)&&c.GetString()==culture);
+            if(selected.ValueKind==JsonValueKind.Object&&selected.TryGetProperty("displayName",out var localized)&&localized.ValueKind==JsonValueKind.String&&!string.IsNullOrWhiteSpace(localized.GetString()))return localized.GetString()!;
+            JsonElement fallback=translations.EnumerateArray().FirstOrDefault(x=>x.TryGetProperty("culture",out var c)&&c.GetString()=="fa");
+            if(fallback.ValueKind==JsonValueKind.Object&&fallback.TryGetProperty("displayName",out var fa)&&fa.ValueKind==JsonValueKind.String&&!string.IsNullOrWhiteSpace(fa.GetString()))return fa.GetString()!;
+        }
+        return row.TryGetProperty("code",out var code)?code.GetString()??string.Empty:string.Empty;
+    }
+    private static string Caption(JsonElement row) {
+        var translations=row.GetProperty("translations").EnumerateArray().ToArray();
+        var translation=translations.FirstOrDefault(x=>x.GetProperty("culture").GetString()==CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        return translation.ValueKind==JsonValueKind.Object?translation.GetProperty("displayName").GetString()!:row.GetProperty("code").GetString()!;
+    }
+    private async Task Changed(string value){Value=value;await ValueChanged.InvokeAsync(value);}
+    private sealed record Option(string Id,string Caption,bool Active);
+}

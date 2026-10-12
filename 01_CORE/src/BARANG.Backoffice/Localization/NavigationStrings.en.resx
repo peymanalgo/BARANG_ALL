@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Nav_Foundation">
+    <value>Foundation</value>
+  </data>
+  <data name="Nav_Companies">
+    <value>Companies</value>
+  </data>
+  <data name="Nav_CompanySettings">
+    <value>Company settings</value>
+  </data>
+  <data name="Nav_Branches">
+    <value>Branches</value>
+  </data>
+  <data name="Nav_Units">
+    <value>Organizational units</value>
+  </data>
+  <data name="Nav_Warehouses">
+    <value>Warehouses</value>
+  </data>
+  <data name="Nav_UserAccessManagement">
+    <value>User &amp; Access Management</value>
+  </data>
+  <data name="Nav_Users">
+    <value>Users and company access</value>
+  </data>
+  <data name="Nav_Roles">
+    <value>Roles and permissions</value>
+  </data>
+  <data name="Nav_Audit">
+    <value>Audit trail</value>
+  </data>
+  <data name="Nav_MasterData">
+    <value>Master data</value>
+  </data>
+  <data name="Nav_Lookups">
+    <value>Lookups and translations</value>
+  </data>
+  <data name="Nav_Products">
+    <value>Products</value>
+  </data>
+  <data name="Nav_Variants">
+    <value>Variants and SKU</value>
+  </data>
+  <data name="Nav_Suppliers">
+    <value>Suppliers</value>
+  </data>
+  <data name="Nav_Equipment">
+    <value>Company Equipment</value>
+  </data>
+  <data name="Nav_Customers">
+    <value>Customers</value>
+  </data>
+  <data name="Nav_ArtworkFiles">
+    <value>Design Bank</value>
+  </data>
+  <data name="Nav_ArtworkBank">
+    <value>Design Bank</value>
+  </data>
+  <data name="Nav_ArtworkTags">
+    <value>Categories and tags</value>
+  </data>
+  <data name="Nav_FileHistory">
+    <value>Versions, processing and history</value>
+  </data>
+  <data name="Nav_Orders">
+    <value>Orders</value>
+  </data>
+  <data name="Nav_NewOrder">
+    <value>New order</value>
+  </data>
+  <data name="Nav_OrderSearch">
+    <value>Search and Order 360</value>
+  </data>
+  <data name="Nav_InventoryPurchasing">
+    <value>Inventory &amp; purchasing</value>
+  </data>
+  <data name="Nav_Inventory">
+    <value>Balances, ledger and reservations</value>
+  </data>
+  <data name="Nav_Shortages">
+    <value>Shortages</value>
+  </data>
+  <data name="Nav_Purchasing">
+    <value>Requests and purchase orders</value>
+  </data>
+  <data name="Nav_Production">
+    <value>Production, design, print and heat press</value>
+  </data>
+  <data name="Nav_Quality">
+    <value>Quality and reproduction</value>
+  </data>
+  <data name="Nav_QualityCatalogs">
+    <value>Templates and defect catalog</value>
+  </data>
+  <data name="Nav_Logistics">
+    <value>Packaging, shipping and delivery</value>
+  </data>
+  <data name="Nav_Workflow">
+    <value>Workflow</value>
+  </data>
+  <data name="Nav_Notifications">
+    <value>Notifications</value>
+  </data>
+  <data name="Nav_ManagementDashboard">
+    <value>Management Dashboard</value>
+  </data>
+  <data name="Nav_OrganizationalChart">
+    <value>Organizational Chart</value>
+  </data>
+  <data name="Nav_Persons">
+    <value>Persons</value>
+  </data>
+<data name="Nav_Reference_customers" xml:space="preserve"><value>Customer Reference Data</value></data>
+<data name="Nav_Reference_shared" xml:space="preserve"><value>Shared Basic Data</value></data>
+<data name="Nav_Reference_products" xml:space="preserve"><value>Product Reference Data</value></data>
+<data name="Nav_Reference_artwork" xml:space="preserve"><value>Design Bank Reference Data</value></data>
+<data name="Nav_DesignCategories" xml:space="preserve"><value>Design Categories</value></data>
+<data name="Nav_Reference_orders" xml:space="preserve"><value>Orders Reference Data</value></data>
+<data name="Nav_Reference_pricing" xml:space="preserve"><value>Pricing Reference Data</value></data>
+<data name="Nav_Reference_inventory" xml:space="preserve"><value>Inventory &amp; Purchasing Reference Data</value></data>
+<data name="Nav_Reference_production" xml:space="preserve"><value>Design, Print &amp; Heat Press Reference Data</value></data>
+<data name="Nav_Reference_quality" xml:space="preserve"><value>Quality Control &amp; Reproduction Reference Data</value></data>
+<data name="Nav_Reference_logistics" xml:space="preserve"><value>Packaging, Shipping &amp; Delivery Reference Data</value></data>
+<data name="Nav_Reference_workflow" xml:space="preserve"><value>Inbox &amp; Workflow Reference Data</value></data>
+<data name="Nav_SystemManagement" xml:space="preserve"><value>System Management</value></data>
+<data name="Nav_Reference_suppliers" xml:space="preserve"><value>Supplier Reference Data</value></data>
+<data name="Nav_Reference_equipment" xml:space="preserve"><value>Equipment Reference Data</value></data>
+<data name="Nav_Pricing" xml:space="preserve"><value>Pricing</value></data>
+<data name="Nav_Cartable" xml:space="preserve"><value>Cartable</value></data>
+</root>

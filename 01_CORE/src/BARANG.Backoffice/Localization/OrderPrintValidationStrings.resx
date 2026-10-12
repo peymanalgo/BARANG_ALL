@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Incomplete"><value>اطلاعات چاپ ناقص است</value></data>
+  <data name="MissingMethod"><value>روش چاپ را انتخاب کنید.</value></data>
+  <data name="SaveBeforeNext"><value>اطلاعات چاپ قلم انتخاب‌شده را با «افزودن» ثبت کنید.</value></data>
+  <data name="MissingArtwork"><value>برای این قلم یک طرح از بانک طرح انتخاب کنید یا فایل آپلود کنید.</value></data>
+  <data name="BothArtworkSources"><value>هم‌زمان فقط یکی از طرح بانک یا فایل آپلودی را انتخاب کنید.</value></data>
+  <data name="Saving"><value>در حال ذخیره‌سازی...</value></data>
+  <data name="SaveFailed"><value>ذخیره عملیات چاپ انجام نشد. اطلاعات واردشده حفظ شد.</value></data>
+  <data name="DeleteFailed"><value>حذف عملیات چاپ انجام نشد.</value></data>
+  <data name="SourceLinkFailed"><value>پیوند فایل به عملیات چاپ انجام نشد.</value></data>
+<data name="PrintOperationValidationTitle"><value>خطا در ثبت عملیات چاپ</value></data><data name="SaveFailedWithReason"><value>ثبت عملیات چاپ انجام نشد: {0}</value></data><data name="SaveFailedWithReference"><value>ثبت عملیات چاپ انجام نشد. کد پیگیری: {0}</value></data><data name="InvalidOperationData"><value>داده‌های عملیات چاپ معتبر نیست؛ روش چاپ، محل چاپ، ابعاد و منبع طرح را بررسی کنید.</value></data><data name="InvalidPrintMethod"><value>روش چاپ انتخاب‌شده معتبر نیست.</value></data><data name="InvalidLocation"><value>کد محل چاپ انتخاب‌شده معتبر نیست.</value></data><data name="InvalidArtworkSource"><value>طرح انتخاب‌شده برای این شرکت معتبر نیست.</value></data><data name="InvalidFileSource"><value>فایل انتخاب‌شده برای این شرکت معتبر نیست.</value></data><data name="PrintItemNotOwned"><value>قلم سفارش معتبر نیست یا به این سفارش و شرکت تعلق ندارد.</value></data><data name="DuplicateOperation"><value>برای این قلم قبلاً عملیات چاپ ثبت شده است.</value></data></root>

@@ -1,8 +1,0 @@
-@page "/inventory/shortages"
-@rendermode InteractiveServer
-@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
-@inject IStringLocalizer<AppStrings> L
-@inject AuthenticationStateProvider AuthState
-@inject ICoreApiClient Core
-<PageTitle>@L["Module_inventory"]</PageTitle><nav class="breadcrumbs"><a href="/workspace/inventory">@L["Module_inventory"]</a><span>/</span><span>@L["Action_Request"]</span></nav><section class="panel"><label><span>@L["Inactive"]</span><input type="checkbox" @bind="IncludeClosed" /></label><button @onclick="Load">@L["Refresh"]</button><pre>@Rows</pre></section>
-@code{private bool IncludeClosed;private string Rows="";protected override async Task OnInitializedAsync()=>await Load();private async Task Load(){var u=(await AuthState.GetAuthenticationStateAsync()).User;if(!Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)||u.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string t)return;var r=await Core.GetAsync($"api/v1/inventory/shortages?includeClosed={IncludeClosed}&limit=200",t,c,default);Rows=r.IsSuccess?r.Value.ToString():L[r.Failure==ApiFailure.Forbidden?"Unauthorized":"GenericError"];} }

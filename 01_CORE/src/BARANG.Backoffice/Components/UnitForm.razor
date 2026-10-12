@@ -1,0 +1,46 @@
+@inject IStringLocalizer<OrganizationStrings> O
+@inject IStringLocalizer<CrudStrings> T
+
+<div class="structure-form" data-chart-form="unit">
+    <div class="scope-summary" data-chart-scope="unit">
+        <span>@O["Company"]</span><strong>@CompanyName</strong>
+        <span>@O["Branch"]</span><strong>@BranchName</strong>
+    </div>
+    <section>
+        <h3>@O["GeneralInformation"]</h3>
+        <div class="form-grid">
+            <label>
+                <span>@T["Code"] *</span>
+                <input name="unit-code" @bind="Model.Code" disabled="@(Mode != FormMode.Create)" maxlength="64" autofocus="@(Mode == FormMode.Create)" />
+            </label>
+            <Field Name="unit-display-name" Label="@($"{O["DisplayName"]} *")" @bind-Value="Model.DisplayName" Disabled="ReadOnly" />
+            <label>
+                <span>@T["DisplayOrder"]</span>
+                <input name="unit-display-order" type="number" min="0" step="1" @bind="Model.DisplayOrder" disabled="@ReadOnly" />
+            </label>
+            <label>
+                <span>@O["ParentUnit"]</span>
+                <SearchableSelect Name="unit-parent" Options="ParentOptions" Value="@ParentValue" ValueChanged="ParentChanged" Disabled="ReadOnly" Placeholder="@T["SearchOptions"]" />
+            </label>
+            <label class="form-wide">
+                <span>@O["Description"]</span>
+                <textarea name="unit-description" @bind="Model.Description" disabled="@ReadOnly"></textarea>
+            </label>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public UnitFormModel Model { get; set; } = null!;
+    [Parameter] public FormMode Mode { get; set; }
+    [Parameter] public IReadOnlyList<SearchableSelectOption> ParentOptions { get; set; } = [];
+    [Parameter] public string CompanyName { get; set; } = "";
+    [Parameter] public string BranchName { get; set; } = "";
+    private bool ReadOnly => Mode == FormMode.View;
+    private string ParentValue => Model.ParentId?.ToString() ?? "";
+    private Task ParentChanged(string value)
+    {
+        Model.ParentId = Guid.TryParse(value, out Guid id) ? id : null;
+        return Task.CompletedTask;
+    }
+}

@@ -1,0 +1,157 @@
+@page "/"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@using System.Security.Claims
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Localization
+@inject IStringLocalizer<HomeStrings> H
+@inject IStringLocalizer<NavigationStrings> N
+@inject IStringLocalizer<EffectiveStatusStrings> E
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+@inject NavigationManager Navigation
+
+<PageTitle>@H["Home"] · BARANG</PageTitle>
+<link rel="stylesheet" href="/home.css" />
+
+<main class="home-page">
+    <header class="home-header" aria-labelledby="home-title">
+        <div class="home-header-copy">
+            <span class="home-overline">BARANG <span aria-hidden="true">·</span> @H["PersonalWorkspace"]</span>
+            <h1 id="home-title">@H["Greeting", DisplayName]</h1>
+            <p class="home-header-prompt">@H["MyWorkDescription"]</p>
+            <div class="home-context" aria-label="@CompanyName">
+                <span class="home-context-item"><BarangIcon Name="calendar" />@Today</span>
+                <span class="home-context-divider" aria-hidden="true"></span>
+                <span class="home-context-item"><BarangIcon Name="building" />@CompanyName@if (!string.IsNullOrWhiteSpace(BranchName)) { <text> · @BranchName</text> }</span>
+            </div>
+        </div>
+        <div class="home-attention" aria-label='@H["ActionableTasks"]'>
+            <span class="home-attention-icon"><BarangIcon Name="inbox" /></span>
+            <span class="home-attention-value">@TaskTotal</span>
+            <span class="home-attention-label">@H["ActionableTasks"]</span>
+        </div>
+        <div class="home-print-art" aria-hidden="true">
+            <span class="print-orb print-orb-cyan"></span><span class="print-orb print-orb-magenta"></span><span class="print-orb print-orb-yellow"></span>
+            <svg viewBox="0 0 180 150" role="presentation"><path class="shirt-shadow" d="M52 34 25 51 39 73l15-9v56h72V64l15 9 14-22-27-17-17-9H69z"/><path class="shirt-body" d="M55 36 28 52l12 18 16-10v67h68V60l16 10 12-18-27-16-15-8c-3 10-10 16-20 16S73 38 70 28z"/><path class="shirt-print" d="M75 65h30l8 27-23 12-23-12z"/><circle class="shirt-dot" cx="90" cy="77" r="6"/></svg>
+            <span class="print-registration"><i></i><i></i><i></i></span>
+        </div>
+    </header>
+
+    <section class="home-section home-work-section" aria-labelledby="home-work-title">
+        <div class="home-section-heading">
+            <div class="home-section-title"><span class="home-section-marker" aria-hidden="true"></span><div><h2 id="home-work-title">@H["MyWork"]</h2><p>@H["MyWorkDescription"]</p></div></div>
+            <a class="home-link" href="/cartable?tab=received">@H["ViewAllCartable"] <BarangIcon Name="arrow-left" /></a>
+        </div>
+        @if (TasksLoading)
+        {
+            <div class="home-loading"><BarangLoadingState Text='@H["Loading"]' /></div>
+        }
+        else if (Tasks.Count == 0)
+        {
+            <div class="home-empty"><span class="home-empty-icon"><BarangIcon Name="check" /></span><strong>@H["NoWork"]</strong><span>@H["NoWorkDescription"]</span></div>
+        }
+        else
+        {
+            <div class="home-task-list">
+                @foreach (TaskRow item in Tasks)
+                {
+                    <article class="home-task-row"><div class="home-task-main"><span class="home-order-number" dir="ltr">@item.OrderNumber</span><strong>@item.Customer</strong></div><span class="home-stage-badge">@Localized(item.Stage)</span><div class="home-task-status"><span>@Status(item.StatusCode, item.CurrentStages)</span><small>@Dates.Format(item.CreatedAt, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)</small></div><BarangIconButton Icon="eye" Semantic="info" Label='@H["View"]' Clicked='@(() => OpenTask(item.Id))' /></article>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="home-section home-quick-section" aria-labelledby="home-quick-title">
+        <div class="home-section-heading compact"><div class="home-section-title"><span class="home-section-marker" aria-hidden="true"></span><div><h2 id="home-quick-title">@H["QuickAccess"]</h2><p>@H["QuickAccessDescription"]</p></div></div></div>
+        <nav class="home-shortcuts" aria-label='@H["QuickAccess"]'>
+            @foreach (QuickLink link in QuickLinks)
+            {
+                <a class="home-shortcut" href="@link.Route"><span class="shortcut-icon"><BarangIcon Name="@link.Icon" /></span><span class="shortcut-label">@N[link.LabelKey]</span><BarangIcon Name="chevron-left" Class="shortcut-arrow" /></a>
+            }
+        </nav>
+    </section>
+
+    <div class="home-columns">
+        <section class="home-section home-feed-section" aria-labelledby="home-activity-title">
+            <div class="home-section-heading compact"><div class="home-section-title"><span class="home-section-marker" aria-hidden="true"></span><div><h2 id="home-activity-title">@H["RecentActivity"]</h2><p>@H["RecentActivityDescription"]</p></div></div></div>
+            @if (!ActivityAvailable) { <div class="home-muted">@H["ActivityUnavailable"]</div> } else if (Activity.Count == 0) { <div class="home-empty small"><span>@H["NoActivity"]</span></div> } else { <div class="home-activity-list">@foreach (ActivityRow item in Activity) { <div class="home-activity-row"><span class="activity-dot"><BarangIcon Name="check" /></span><div><strong>@ActivityCaption(item.Action)</strong><span>@EntityCaption(item)</span></div><time>@Dates.Format(item.OccurredAt, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)</time></div> }</div> }
+        </section>
+        <section class="home-section home-feed-section" aria-labelledby="home-follow-title">
+            <div class="home-section-heading compact"><div class="home-section-title"><span class="home-section-marker" aria-hidden="true"></span><div><h2 id="home-follow-title">@H["RecentFollowUps"]</h2><p>@H["RecentFollowUpsDescription"]</p></div></div><a class="home-link" href="/cartable?tab=referrals">@H["ViewMyReferrals"] <BarangIcon Name="arrow-left" /></a></div>
+            @if (FollowLoading) { <div class="home-loading"><BarangLoadingState Text='@H["Loading"]' /></div> } else if (FollowUps.Count == 0) { <div class="home-empty small"><span>@H["NoFollowUps"]</span></div> } else { <div class="home-follow-list">@foreach (ReferralRow item in FollowUps) { <div class="home-follow-row"><div class="home-follow-main"><span class="home-order-number" dir="ltr">@item.OrderNumber</span><strong>@Localized(item.Stage) · @Outcome(item.Outcome)</strong><small>@H["CurrentStatus"]: @Status(item.StatusCode, item.CurrentStages)</small></div><div class="home-follow-right"><time>@Dates.Format(item.ActionDate, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)</time><BarangIconButton Icon="eye" Semantic="info" Label='@H["View"]' Clicked='@(() => OpenReferral(item.Id))' /></div></div> }</div> }
+        </section>
+    </div>
+
+    @if (Notifications.Count > 0)
+    {
+        <section class="home-section home-notification-section" aria-labelledby="home-notifications-title">
+            <div class="home-section-heading compact"><div class="home-section-title"><span class="home-section-marker" aria-hidden="true"></span><div><h2 id="home-notifications-title">@H["RecentNotifications"]</h2><p>@H["RecentNotificationsDescription"]</p></div></div><a class="home-link" href="/workspace/notifications">@H["ViewAll"] <BarangIcon Name="arrow-left" /></a></div>
+            <div class="home-notification-list">
+                @foreach (NotificationRow item in Notifications)
+                {
+                    <div class="home-notification-row"><span class="notification-icon"><BarangIcon Name="bell" /></span><div><strong>@H["NotificationReceived"]</strong><small>@item.Channel</small></div><time>@Dates.Format(item.CreatedAt, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)</time></div>
+                }
+            </div>
+        </section>
+    }
+</main>
+
+@code {
+    private string DisplayName = "", CompanyName = "", BranchName = "", Today = "";
+    private int TaskTotal;
+    private bool TasksLoading = true, FollowLoading = true, ActivityAvailable;
+    private List<TaskRow> Tasks = [];
+    private List<ReferralRow> FollowUps = [];
+    private List<ActivityRow> Activity = [];
+    private List<NotificationRow> Notifications = [];
+    private IReadOnlyList<QuickLink> QuickLinks = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        ClaimsPrincipal user = (await AuthState.GetAuthenticationStateAsync()).User;
+        DisplayName = user.FindFirst(AuthClaimTypes.DisplayName)?.Value ?? user.Identity?.Name ?? "";
+        CompanyName = user.FindFirst(AuthClaimTypes.CompanyName)?.Value ?? "";
+        Today = Dates.Format(DateOnly.FromDateTime(DateTime.Today), CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        QuickLinks = BuildQuickLinks(user);
+        var session = Session(user);
+        if (session is null) { TasksLoading = false; FollowLoading = false; return; }
+        Task<ApiResult<JsonElement>> workRequest = Core.GetAsync("api/v1/workflows/definition/runtime/tasks/eligible?search=&page=1&pageSize=5", session.Value.Token, session.Value.Company, default);
+        Task<ApiResult<JsonElement>> referralRequest = Core.GetAsync("api/v1/workflows/definition/runtime/tasks/referrals?search=&page=1&pageSize=5", session.Value.Token, session.Value.Company, default);
+        Task<ApiResult<JsonElement>> activityRequest = user.HasClaim(AuthClaimTypes.Permission, "audit.read") && Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out Guid actorId) ? Core.GetAsync($"api/v1/audit/events/?actorUserId={actorId}&pageNumber=1&pageSize=5", session.Value.Token, session.Value.Company, default) : Task.FromResult(ApiResult<JsonElement>.Failed(ApiFailure.Forbidden));
+        Task<ApiResult<JsonElement>> notificationRequest = user.HasClaim(AuthClaimTypes.Permission, "notification.read") ? Core.GetAsync("api/v1/notifications/mine?page=1&pageSize=3", session.Value.Token, session.Value.Company, default) : Task.FromResult(ApiResult<JsonElement>.Failed(ApiFailure.Forbidden));
+        await Task.WhenAll(workRequest, referralRequest, activityRequest, notificationRequest);
+        ParseTasks(workRequest.Result); ParseReferrals(referralRequest.Result); ParseActivity(activityRequest.Result); ParseNotifications(notificationRequest.Result);
+        TasksLoading = false; FollowLoading = false;
+    }
+    private void ParseTasks(ApiResult<JsonElement> result) { if (!result.IsSuccess) return; if (result.Value.TryGetProperty("totalCount", out var total)) TaskTotal = total.GetInt32(); if (result.Value.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array) Tasks = items.EnumerateArray().Select(ParseTask).ToList(); }
+    private void ParseReferrals(ApiResult<JsonElement> result) { if (result.IsSuccess && result.Value.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array) FollowUps = items.EnumerateArray().Select(ParseReferral).ToList(); }
+    private void ParseActivity(ApiResult<JsonElement> result) { ActivityAvailable = result.IsSuccess; if (result.IsSuccess && result.Value.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array) Activity = items.EnumerateArray().Select(ParseActivity).ToList(); }
+    private void ParseNotifications(ApiResult<JsonElement> result) { if (result.IsSuccess && result.Value.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array) Notifications = items.EnumerateArray().Select(ParseNotification).ToList(); }
+    private void OpenTask(Guid id) => Navigation.NavigateTo($"/cartable/task/{id}?mode=received&returnUrl={Uri.EscapeDataString("/")}");
+    private void OpenReferral(Guid id) => Navigation.NavigateTo($"/cartable/task/{id}?mode=referrals&returnUrl={Uri.EscapeDataString("/")}");
+    private string Outcome(string value) => value.Equals("Reject", StringComparison.OrdinalIgnoreCase) ? H["Rejected"].Value : value.Equals("AuditReject", StringComparison.OrdinalIgnoreCase) ? H["AuditRejected"].Value : H["Approved"].Value;
+    private string ActivityCaption(string value) => value switch { "authentication.login.succeeded" => H["ActivityLogin"].Value, "notification.read" or "notification.read_all" => H["ActivityNotification"].Value, _ when value.Contains("created", StringComparison.OrdinalIgnoreCase) => H["ActivityCreated"].Value, _ when value.Contains("updated", StringComparison.OrdinalIgnoreCase) => H["ActivityUpdated"].Value, _ when value.Contains("approved", StringComparison.OrdinalIgnoreCase) || value.Contains("completed", StringComparison.OrdinalIgnoreCase) => H["ActivityApproved"].Value, _ => H["ActivityRecorded"].Value };
+    private string EntityCaption(ActivityRow item) => string.IsNullOrWhiteSpace(item.EntityId) ? item.EntityType ?? H["ActivityDetail"].Value : $"{item.EntityType ?? H["ActivityDetail"].Value} · {item.EntityId}";
+    private IReadOnlyList<QuickLink> BuildQuickLinks(ClaimsPrincipal user) => ModuleCatalog.Navigation.Where(g => ModuleCatalog.IsVisible(g, user)).SelectMany(g => g.Route is not null ? [new QuickLink(g.LabelKey, g.Route, g.Icon)] : g.Items.Where(i => ModuleCatalog.IsVisible(i, user)).Select(i => new QuickLink(i.LabelKey, i.Route, g.Icon))).Take(6).ToArray();
+    private TaskRow ParseTask(JsonElement x) => new(x.GetProperty("id").GetGuid(), Text(x, "orderNumber") ?? "—", Text(x, "customerName") ?? "—", Localized(x, "stage"), CurrentStages(x), Text(x, "currentStatusCode") ?? Text(x, "effectiveStatusCode") ?? "Registered", x.TryGetProperty("createdAtUtc", out var date) ? date.GetDateTimeOffset() : DateTimeOffset.UtcNow);
+    private ReferralRow ParseReferral(JsonElement x) => new(x.GetProperty("id").GetGuid(), Text(x, "orderNumber") ?? "—", Localized(x, "stage"), Text(x, "outcome") ?? "", Text(x, "currentStatusCode") ?? Text(x, "effectiveStatusCode") ?? "Registered", CurrentStages(x), x.TryGetProperty("completedAtUtc", out var date) && date.ValueKind != JsonValueKind.Null ? date.GetDateTimeOffset() : DateTimeOffset.UtcNow);
+    private static ActivityRow ParseActivity(JsonElement x) => new(Text(x, "action") ?? "", Text(x, "entityType"), Text(x, "entityId"), x.TryGetProperty("occurredAtUtc", out var date) ? date.GetDateTimeOffset() : DateTimeOffset.UtcNow);
+    private static NotificationRow ParseNotification(JsonElement x) => new(Text(x, "channel") ?? "", x.TryGetProperty("createdAtUtc", out var date) ? date.GetDateTimeOffset() : DateTimeOffset.UtcNow);
+    private string Status(string code, IReadOnlyList<LocalizedText>? stages = null) => code switch { "WorkflowCompleted" => E["WorkflowCompleted"].Value, "AuditRejected" => E["AuditRejected"].Value, "InWorkflow" => CartableStatus(stages), _ => E["Registered"].Value };
+    private string CartableStatus(IReadOnlyList<LocalizedText>? stages) { string title = string.Join(" / ", (stages ?? []).Select(Localized).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.Ordinal)); return string.IsNullOrWhiteSpace(title) ? E["InCartable"].Value : string.Concat(E["InCartable"].Value, " ", title); }
+    private static LocalizedText[] CurrentStages(JsonElement x) => x.TryGetProperty("currentStages", out var stages) && stages.ValueKind == JsonValueKind.Array ? stages.EnumerateArray().Select(v => new LocalizedText(Text(v, "fa") ?? "", Text(v, "en") ?? "", Text(v, "ar") ?? "")).ToArray() : [];
+    private static LocalizedText Localized(JsonElement x, string name) => x.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Object ? new(Text(v, "fa") ?? "", Text(v, "en") ?? "", Text(v, "ar") ?? "") : new("", "", "");
+    private string Localized(LocalizedText value) => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => value.En, "ar" => value.Ar, _ => value.Fa };
+    private static string? Text(JsonElement x, string name) => x.TryGetProperty(name, out var v) && v.ValueKind != JsonValueKind.Null ? v.ToString() : null;
+    private static (string Token, Guid Company)? Session(ClaimsPrincipal user) => Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var company) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? (token, company) : null;
+    private sealed record TaskRow(Guid Id, string OrderNumber, string Customer, LocalizedText Stage, LocalizedText[] CurrentStages, string StatusCode, DateTimeOffset CreatedAt);
+    private sealed record ReferralRow(Guid Id, string OrderNumber, LocalizedText Stage, string Outcome, string StatusCode, LocalizedText[] CurrentStages, DateTimeOffset ActionDate);
+    private sealed record ActivityRow(string Action, string? EntityType, string? EntityId, DateTimeOffset OccurredAt);
+    private sealed record NotificationRow(string Channel, DateTimeOffset CreatedAt);
+    private sealed record QuickLink(string LabelKey, string Route, string Icon);
+    private sealed record LocalizedText(string Fa, string En, string Ar);
+}

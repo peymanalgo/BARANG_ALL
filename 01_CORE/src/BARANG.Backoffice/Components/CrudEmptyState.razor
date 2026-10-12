@@ -1,0 +1,6 @@
+@inject IStringLocalizer<CrudStrings> C
+<div class="crud-empty"><BarangIcon Name="search" /><strong>@(Title ?? C["NoRecords"])</strong><p>@(Description ?? C["NoRecordsHelp"])</p></div>
+@code {
+ [Parameter] public string? Title { get; set; }
+ [Parameter] public string? Description { get; set; }
+}

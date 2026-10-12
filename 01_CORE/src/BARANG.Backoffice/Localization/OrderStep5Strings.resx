@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0</value></resheader>
+  <data name="DeliveryShipping"><value>آدرس تحویل و روش ارسال</value></data>
+  <data name="OrderStep5Description"><value>مقصد و روش تحویل سفارش را مشخص کنید.</value></data>
+  <data name="DeliveryAddress"><value>آدرس تحویل</value></data>
+  <data name="CustomerAddresses"><value>آدرس‌های مشتری</value></data>
+  <data name="OrderSpecificAddress"><value>آدرس اختصاصی این سفارش</value></data>
+  <data name="UseAddress"><value>استفاده از این آدرس</value></data>
+  <data name="SelectedAddress"><value>آدرس انتخاب‌شده</value></data>
+  <data name="NoAddresses"><value>برای این مشتری آدرس فعالی ثبت نشده است.</value></data>
+  <data name="Recipient"><value>نام گیرنده</value></data>
+  <data name="RecipientPhone"><value>تلفن گیرنده</value></data>
+  <data name="Country"><value>کشور</value></data>
+  <data name="Province"><value>استان</value></data>
+  <data name="City"><value>شهر</value></data>
+  <data name="District"><value>منطقه</value></data>
+  <data name="Address"><value>نشانی</value></data>
+  <data name="AddressLine2"><value>جزئیات تکمیلی</value></data>
+  <data name="PostalCode"><value>کد پستی</value></data>
+  <data name="ShippingMethod"><value>روش ارسال</value></data>
+  <data name="ShippingMethodRequired"><value>روش ارسال را انتخاب کنید.</value></data>
+  <data name="AddressRequiredForShipping"><value>برای ادامه، آدرس تحویل معتبر الزامی است.</value></data>
+  <data name="ShippingAddressInvalid"><value>اطلاعات آدرس تحویل معتبر نیست.</value></data>
+  <data name="ShippingMethodInvalid"><value>روش ارسال انتخاب‌شده معتبر نیست.</value></data>
+  <data name="AddressNotOwned"><value>این آدرس متعلق به مشتری سفارش نیست.</value></data>
+  <data name="ProtectedOrder"><value>این سفارش در وضعیت فعلی قابل ویرایش نیست.</value></data>
+  <data name="ShippingSaved"><value>اطلاعات تحویل ذخیره شد.</value></data>
+  <data name="ShippingSaveFailed"><value>ذخیره اطلاعات تحویل انجام نشد.</value></data>
+  <data name="Customer"><value>مشتری</value></data>
+  <data name="RequestedDeliveryDate"><value>تاریخ تحویل مورد انتظار</value></data>
+  <data name="NoShipmentExecution"><value>این مرحله فقط تنظیمات تحویل را ثبت می‌کند؛ ارسال واقعی در این مرحله انجام نمی‌شود.</value></data>
+</root>

@@ -1,0 +1,185 @@
+@using System.Globalization
+@inject ILocaleDateService Dates
+@inject IStringLocalizer<OrganizationStrings> O
+@inject IJSRuntime JS
+
+<div class="locale-date-input" data-calendar-culture="@EffectiveCulture" data-calendar-ready="@CultureReady.ToString().ToLowerInvariant()">
+    <div class="locale-date-control">
+        <input name="@Name" value="@Text" disabled="@(Disabled || !CultureReady)" inputmode="numeric" placeholder="@O["DatePlaceholder"]" aria-invalid="@Invalid.ToString().ToLowerInvariant()" @oninput="Input" @onkeydown="InputKeyDown" />
+        <button type="button" class="date-picker-button" disabled="@(Disabled || !CultureReady)" title="@O["Calendar"]" aria-label="@O["Calendar"]" aria-expanded="@Open.ToString().ToLowerInvariant()" @onclick="Toggle"><BarangIcon Name="calendar" /></button>
+    </div>
+    @if (Invalid)
+    {
+        <small class="field-validation" role="alert">@O["InvalidDate"]</small>
+    }
+    @if (Open && !Disabled)
+    {
+        <section class="locale-calendar" role="dialog" aria-modal="false" aria-label="@O["Calendar"]" @onkeydown="CalendarKeyDown" @onkeydown:stopPropagation="true">
+            <header>
+                <button type="button" class="calendar-navigation" title="@PreviousLabel" aria-label="@PreviousLabel" @onclick="Previous">‹</button>
+                <div class="calendar-period">
+                    <button type="button" class="calendar-period-button @(Panel == "months" ? "active" : null)" aria-label="@O["SelectMonth"]" aria-expanded="@(Panel == "months")" @onclick="ShowMonths">@MonthName</button>
+                    <button type="button" class="calendar-period-button @(Panel == "years" ? "active" : null)" aria-label="@O["SelectYear"]" aria-expanded="@(Panel == "years")" @onclick="ShowYears">@LocalizedNumber(CurrentYear)</button>
+                </div>
+                <button type="button" class="calendar-navigation" title="@NextLabel" aria-label="@NextLabel" @onclick="Next">›</button>
+            </header>
+            @if (Panel == "months")
+            {
+                <div class="calendar-selector calendar-months" role="grid" aria-label="@O["SelectMonth"]">
+                    @for (int month = 1; month <= 12; month++)
+                    {
+                        int selectedMonth = month;
+                        <button type="button" class="@(selectedMonth == CurrentMonth ? "selected" : null)" aria-pressed="@(selectedMonth == CurrentMonth)" @onclick="() => SelectMonth(selectedMonth)">@MonthNames[selectedMonth - 1]</button>
+                    }
+                </div>
+            }
+            else if (Panel == "years")
+            {
+                <div class="calendar-selector calendar-years" role="grid" aria-label="@O["SelectYear"]">
+                    @foreach (int year in VisibleYears)
+                    {
+                        <button type="button" class="@(year == CurrentYear ? "selected" : null)" aria-pressed="@(year == CurrentYear)" @onclick="() => SelectYear(year)">@LocalizedNumber(year)</button>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="calendar-weekdays" aria-hidden="true">
+                    @foreach (string day in Weekdays) { <span>@day</span> }
+                </div>
+                <div class="calendar-days" role="grid">
+                    @foreach (CalendarDay day in Days)
+                    {
+                        <button type="button" id="@DayId(day.Date)" data-calendar-date="@CanonicalDate(day.Date)" class="@(day.InMonth ? null : "outside") @(day.Date == Value ? "selected" : null)" aria-label="@Dates.Format(day.Date, EffectiveCulture)" aria-selected="@(day.Date == Value)" @onclick="() => Select(day.Date)" @onkeydown="args => DayKeyDown(args, day.Date)">@LocalizedNumber(day.Number)</button>
+                    }
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter] public DateOnly? Value { get; set; }
+    [Parameter] public EventCallback<DateOnly?> ValueChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Name { get; set; }
+    [CascadingParameter(Name = "BarangCulture")] private string? BarangCulture { get; set; }
+
+    private static readonly string[] PersianMonths = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+    private static readonly string[] ArabicMonths = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+    private static readonly string[] EnglishMonths = CultureInfo.InvariantCulture.DateTimeFormat.MonthNames.Take(12).ToArray();
+    private string Text = "", Panel = "days", LastCulture = "";
+    private bool Open, Invalid, CultureReady;
+    private DateOnly DisplayMonth;
+    private DateOnly? LastValue;
+    private int YearPageStart;
+    private string EffectiveCulture => LocalePolicy.Resolve(BarangCulture ?? CultureInfo.CurrentUICulture.Name).Code;
+    private bool IsPersian => EffectiveCulture == "fa";
+    private bool IsArabic => EffectiveCulture == "ar";
+    private string[] Weekdays => IsPersian ? ["ش", "ی", "د", "س", "چ", "پ", "ج"] : IsArabic ? ["ح", "ن", "ث", "ر", "خ", "ج", "س"] : ["S", "M", "T", "W", "T", "F", "S"];
+    private string[] MonthNames => IsPersian ? PersianMonths : IsArabic ? ArabicMonths : EnglishMonths;
+    private int CurrentYear => Dates.CalendarDate(DisplayMonth, EffectiveCulture).Year;
+    private int CurrentMonth => Dates.CalendarDate(DisplayMonth, EffectiveCulture).Month;
+    private string MonthName => MonthNames[CurrentMonth - 1];
+    private string PreviousLabel => Panel == "years" ? O["PreviousYears"] : O["PreviousMonth"];
+    private string NextLabel => Panel == "years" ? O["NextYears"] : O["NextMonth"];
+    private IEnumerable<int> VisibleYears => Enumerable.Range(YearPageStart, 12);
+    private IReadOnlyList<CalendarDay> Days => BuildDays();
+
+    protected override void OnParametersSet()
+    {
+        string culture = EffectiveCulture;
+        bool changed = LastCulture != culture || LastValue != Value || DisplayMonth == default;
+        Text = Value is null ? "" : Dates.Format(Value.Value, culture);
+        if (changed && (!Open || LastCulture != culture)) DisplayMonth = Dates.StartOfMonth(Value ?? DateOnly.FromDateTime(DateTime.Today), culture);
+        if (LastCulture != culture) YearPageStart = CurrentYear - 5;
+        LastCulture = culture;
+        LastValue = Value;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        CultureReady = true;
+        string culture = EffectiveCulture;
+        Text = Value is null ? "" : Dates.Format(Value.Value, culture);
+        DisplayMonth = Dates.StartOfMonth(Value ?? DateOnly.FromDateTime(DateTime.Today), culture);
+        LastCulture = culture;
+        LastValue = Value;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void Toggle()
+    {
+        Open = !Open;
+        Panel = "days";
+        if (Open) DisplayMonth = Dates.StartOfMonth(Value ?? DateOnly.FromDateTime(DateTime.Today), EffectiveCulture);
+    }
+
+    private void InputKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape") Open = false;
+        else if (args.Key is "ArrowDown" or "Enter") { Open = true; Panel = "days"; DisplayMonth = Dates.StartOfMonth(Value ?? DateOnly.FromDateTime(DateTime.Today), EffectiveCulture); }
+    }
+
+    private void CalendarKeyDown(KeyboardEventArgs args) { if (args.Key == "Escape") Open = false; }
+
+    private async Task Input(ChangeEventArgs args)
+    {
+        Text = args.Value?.ToString() ?? "";
+        if (string.IsNullOrWhiteSpace(Text)) { Invalid = false; LastValue = null; await ValueChanged.InvokeAsync(null); return; }
+        Invalid = !Dates.TryParse(Text, EffectiveCulture, out DateOnly parsed);
+        if (!Invalid) { DisplayMonth = Dates.StartOfMonth(parsed, EffectiveCulture); LastValue = parsed; await ValueChanged.InvokeAsync(parsed); }
+    }
+
+    private async Task Select(DateOnly date)
+    {
+        Invalid = false; Open = false; Text = Dates.Format(date, EffectiveCulture); LastValue = date;
+        await ValueChanged.InvokeAsync(date);
+    }
+
+    private void ShowMonths() => Panel = Panel == "months" ? "days" : "months";
+    private void ShowYears() { Panel = Panel == "years" ? "days" : "years"; YearPageStart = CurrentYear - 5; }
+    private void SelectMonth(int month) { DisplayMonth = Dates.FromCalendar(CurrentYear, month, 1, EffectiveCulture); Panel = "days"; }
+    private void SelectYear(int year) { DisplayMonth = Dates.FromCalendar(year, CurrentMonth, 1, EffectiveCulture); Panel = "months"; }
+
+    private void Previous()
+    {
+        if (Panel == "years") YearPageStart -= 12;
+        else if (Panel == "months") DisplayMonth = Dates.FromCalendar(CurrentYear - 1, CurrentMonth, 1, EffectiveCulture);
+        else DisplayMonth = Dates.AddMonths(DisplayMonth, -1, EffectiveCulture);
+    }
+
+    private void Next()
+    {
+        if (Panel == "years") YearPageStart += 12;
+        else if (Panel == "months") DisplayMonth = Dates.FromCalendar(CurrentYear + 1, CurrentMonth, 1, EffectiveCulture);
+        else DisplayMonth = Dates.AddMonths(DisplayMonth, 1, EffectiveCulture);
+    }
+
+    private async Task DayKeyDown(KeyboardEventArgs args, DateOnly date)
+    {
+        int delta = args.Key switch { "ArrowLeft" => -1, "ArrowRight" => 1, "ArrowUp" => -7, "ArrowDown" => 7, "Home" => -((int)date.DayOfWeek), "End" => 6 - (int)date.DayOfWeek, _ => 0 };
+        if (delta == 0) return;
+        DateOnly target = date.AddDays(delta);
+        DisplayMonth = Dates.StartOfMonth(target, EffectiveCulture);
+        await InvokeAsync(StateHasChanged);
+        await JS.InvokeVoidAsync("barangFocusCalendarDay", target.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+    }
+
+    private string LocalizedNumber(int number) => number.ToString(CultureInfo.GetCultureInfo(EffectiveCulture));
+    private static string CanonicalDate(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    private static string DayId(DateOnly date) => $"barang-calendar-{date:yyyyMMdd}";
+
+    private IReadOnlyList<CalendarDay> BuildDays()
+    {
+        DateOnly first = Dates.StartOfMonth(DisplayMonth, EffectiveCulture);
+        int offset = IsPersian ? ((int)first.DayOfWeek + 1) % 7 : (int)first.DayOfWeek;
+        DateOnly cursor = first.AddDays(-offset);
+        int activeMonth = CurrentMonth;
+        return Enumerable.Range(0, 42).Select(index => { DateOnly date = cursor.AddDays(index); (int _,int month,int number)=Dates.CalendarDate(date, EffectiveCulture); return new CalendarDay(date, number, month == activeMonth); }).ToArray();
+    }
+
+    private sealed record CalendarDay(DateOnly Date, int Number, bool InMonth);
+}
+

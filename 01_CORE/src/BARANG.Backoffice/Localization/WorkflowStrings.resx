@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Title"><value>مرکز گردش کار</value></data>
+  <data name="TaskInbox"><value>وظایف من</value></data>
+  <data name="TaskDetails"><value>جزئیات وظیفه</value></data>
+  <data name="Status"><value>وضعیت</value></data>
+  <data name="AllStatuses"><value>همه</value></data>
+  <data name="Open"><value>باز</value></data>
+  <data name="Claimed"><value>در اختیار</value></data>
+  <data name="Completed"><value>تکمیل‌شده</value></data>
+  <data name="Cancelled"><value>لغوشده</value></data>
+  <data name="Refresh"><value>بازخوانی</value></data>
+  <data name="Order"><value>سفارش</value></data>
+  <data name="WorkflowInstance"><value>نمونه گردش کار</value></data>
+  <data name="Task"><value>وظیفه</value></data>
+  <data name="Version"><value>نسخه</value></data>
+  <data name="Reason"><value>دلیل</value></data>
+  <data name="Create"><value>ایجاد</value></data>
+  <data name="Claim"><value>دریافت</value></data>
+  <data name="Release"><value>آزادسازی</value></data>
+  <data name="Complete"><value>تکمیل</value></data>
+  <data name="Suspend"><value>تعلیق</value></data>
+  <data name="Resume"><value>ادامه</value></data>
+  <data name="Cancel"><value>لغو</value></data>
+  <data name="ProcessEscalations"><value>پردازش تشدیدها</value></data>
+  <data name="Timeline"><value>خط زمانی گردش کار</value></data>
+  <data name="NoTasks"><value>وظیفه‌ای برای نمایش وجود ندارد.</value></data>
+  <data name="NoHistory"><value>هنوز رویدادی برای این گردش کار ثبت نشده است.</value></data>
+  <data name="NotSelected"><value>یک وظیفه را انتخاب کنید.</value></data>
+  <data name="Overdue"><value>سررسید گذشته</value></data>
+  <data name="SystemActor"><value>سیستم</value></data>
+  <data name="EventCreated"><value>گردش کار ایجاد شد</value></data>
+  <data name="EventStarted"><value>گردش کار آغاز شد</value></data>
+  <data name="EventClaimed"><value>وظیفه دریافت شد</value></data>
+  <data name="EventCompleted"><value>وظیفه تکمیل شد</value></data>
+  <data name="EventSuspended"><value>گردش کار معلق شد</value></data>
+  <data name="EventResumed"><value>گردش کار ادامه یافت</value></data>
+  <data name="EventCancelled"><value>گردش کار لغو شد</value></data>
+  <data name="EventEscalated"><value>وظیفه تشدید شد</value></data>
+  <data name="UnknownEvent"><value>رویداد گردش کار</value></data>
+  <data name="UnknownStage"><value>مرحله گردش کار</value></data>
+  <data name="UnknownTask"><value>وظیفه گردش کار</value></data>
+  <data name="Concurrency"><value>این داده تغییر کرده است؛ ابتدا بازخوانی کنید و دوباره تلاش کنید.</value></data>
+  <data name="Unauthorized"><value>شما مجوز انجام این عملیات را ندارید.</value></data>
+  <data name="UnexpectedError"><value>خطای غیرمنتظره‌ای رخ داد. دوباره تلاش کنید.</value></data>
+  <data name="StageAdministrativeReview"><value>بررسی اداری</value></data><data name="StageFinancialApproval"><value>تأیید مالی</value></data><data name="StageProductionPlanning"><value>برنامه‌ریزی تولید</value></data><data name="StageDesignPreparation"><value>آماده‌سازی طرح</value></data><data name="StageInventoryReservation"><value>رزرو موجودی</value></data><data name="StagePrinting"><value>چاپ</value></data><data name="StageHeatPress"><value>پرس حرارتی</value></data><data name="StageQualityControl"><value>کنترل کیفیت</value></data><data name="StagePackaging"><value>بسته‌بندی</value></data><data name="StageShipping"><value>ارسال</value></data><data name="StageDelivery"><value>تحویل</value></data><data name="StageCompleted"><value>تکمیل‌شده</value></data>
+  <data name="ReasonRequired"><value>برای این عملیات وارد کردن دلیل الزامی است.</value></data>
+</root>

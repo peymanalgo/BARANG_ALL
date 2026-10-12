@@ -1,0 +1,79 @@
+@page "/master/organization-chart/print/{CompanyId:guid}"
+@layout EmptyLayout
+@attribute [Authorize(Policy = AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@inject IStringLocalizer<OrganizationStrings> O
+@inject IStringLocalizer<CrudStrings> T
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+@inject IJSRuntime JS
+@inject NavigationManager Navigator
+
+<PageTitle>@O["PrintChart"] · @CompanyName</PageTitle>
+<main class="chart-print-preview" data-chart-print-preview data-print-company-id="@CompanyId">
+    @if (Loading)
+    {
+        <div class="crud-loading" role="status">@T["Loading"]</div>
+    }
+    else if (Error)
+    {
+        <div class="inline-error" role="alert">@O["PrintError"]</div>
+    }
+    else
+    {
+        <header class="chart-print-heading">
+            <div><p>@O["Chart"]</p><h1>@CompanyName</h1></div>
+            <div><span>@O["PrintDate"]</span><time datetime="@PrintedAt.ToString("O")">@Dates.Format(PrintedAt, CultureInfo.CurrentUICulture.Name)</time></div>
+        </header>
+        <OrganizationalChartPrintTree Data="Chart" CompanyId="CompanyId" />
+    }
+    <footer class="chart-print-actions">
+        @if (!Loading && !Error)
+        {
+            <span data-chart-print-action="print"><BarangButton Icon="print" Variant="primary" Text="@O["Print"]" Clicked="Print" /></span>
+            <span data-chart-print-action="pdf"><BarangButton Icon="print" Text="@O["SavePdf"]" Clicked="Print" /></span>
+        }
+        <span data-chart-print-action="close"><BarangButton Text="@T["Close"]" Clicked="Close" /></span>
+    </footer>
+</main>
+
+@code {
+    [Parameter] public Guid CompanyId { get; set; }
+    private OrganizationChartData Chart = OrganizationChartData.Empty;
+    private bool Loading = true;
+    private bool Error;
+    private string CompanyName = "";
+    private DateTimeOffset PrintedAt;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Loading = true;
+        Error = false;
+        Chart = OrganizationChartData.Empty;
+        try
+        {
+            var user = (await AuthState.GetAuthenticationStateAsync()).User;
+            string? token = user.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+            if (token is null || CompanyId == Guid.Empty) { Error = true; return; }
+            var allowed = await Core.GetMyCompaniesAsync(token, default);
+            if (!allowed.IsSuccess || allowed.Value?.Any(company => company.CompanyId == CompanyId) != true) { Error = true; return; }
+            ApiResult<JsonElement> response = await Core.GetAsync($"api/v1/organization/chart/companies/{CompanyId}", token, CompanyId, default);
+            if (!response.IsSuccess) { Error = true; return; }
+            OrganizationChartData data = OrganizationChartJson.ParseChart(response.Value);
+            var company = data.Companies.FirstOrDefault(row => row.Id == CompanyId);
+            if (company is null) { Error = true; return; }
+            var units = data.Units.Where(row => row.CompanyId == CompanyId).ToArray();
+            HashSet<Guid> unitIds = units.Select(row => row.Id).ToHashSet();
+            Chart = new([company], data.Branches.Where(row => row.CompanyId == CompanyId).ToArray(), units,
+                data.Assignments.Where(row => unitIds.Contains(row.UnitId)).ToArray());
+            CompanyName = company.DisplayName;
+            PrintedAt = DateTimeOffset.UtcNow;
+        }
+        finally { Loading = false; }
+    }
+
+    private async Task Print() => await JS.InvokeVoidAsync("print");
+    private void Close() => Navigator.NavigateTo("/master/organization-chart");
+}

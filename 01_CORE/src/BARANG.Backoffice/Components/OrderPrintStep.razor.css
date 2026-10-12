@@ -1,0 +1,91 @@
+.order-print-step-redesign{--print-accent:var(--barang-accent,#6c4df6);--print-accent-soft:var(--barang-accent-soft,#f0edff);--print-page:var(--barang-page-bg,#f7f5ff);--print-surface:var(--barang-surface,#fff);--print-muted:var(--barang-text-muted,#827c94);--print-text:var(--barang-text,#29233d);--print-border:var(--barang-border,#ebe8f4);--print-success:var(--barang-success,#22955f);--print-success-bg:var(--barang-success-bg,#e8f7ef);--print-danger:var(--barang-danger,#c94747);--print-danger-bg:var(--barang-danger-bg,#fdecec);color:var(--print-text);font-family:inherit}
+.order-print-step-redesign>h2{margin:0 0 6px;font-size:28px;line-height:1.35;font-weight:750}
+.order-print-step-redesign>.form-help{margin:0 0 22px;color:var(--barang-text-secondary,#625b75);font-size:16px;line-height:1.8}
+.order-print-validation-summary{display:block;margin:0 0 18px;padding:12px 16px;border:1px solid color-mix(in srgb,var(--print-danger) 34%,var(--print-border));border-radius:9px;background:var(--print-danger-bg);color:var(--print-danger);font-size:14px;line-height:1.7}
+.order-print-validation-summary strong{display:block;margin-block-end:4px;font-weight:750}
+.order-print-validation-summary ul{margin:0;padding-inline-start:22px}
+.order-print-step-redesign :is(button,input,select,textarea){font:inherit}
+.order-print-step-redesign :is(button,input,select,textarea):focus-visible{outline:3px solid color-mix(in srgb,var(--print-accent) 30%,transparent);outline-offset:2px}
+.order-print-step-redesign>.print-item-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-flow:row;grid-auto-columns:minmax(0,1fr);gap:20px;width:100%;min-width:0;margin:0 0 24px;align-items:stretch}
+.order-print-step-redesign>.print-item-grid>.print-item-card{position:relative;display:grid;width:100%;min-width:0;min-height:250px;grid-template-rows:minmax(0,1fr) auto;align-items:stretch;overflow:hidden;padding:18px 18px 16px;border:1px solid var(--print-border);border-radius:10px;background:var(--print-surface);color:inherit;cursor:pointer;text-align:start;appearance:none;box-sizing:border-box;box-shadow:0 2px 8px rgb(23 32 51 / 4%);transition:border-color .16s ease,background-color .16s ease,box-shadow .16s ease}
+.print-item-card:hover,.print-item-card:focus-visible{border-color:color-mix(in srgb,var(--print-accent) 58%,var(--print-border));box-shadow:0 5px 16px rgb(23 32 51 / 8%)}
+.print-item-card.is-selected{border:1.5px solid var(--print-accent);background:color-mix(in srgb,var(--print-accent) 5%,var(--print-surface));box-shadow:0 4px 16px rgb(108 77 246 / 9%)}
+.print-item-card-content{display:grid;width:100%;min-width:0;min-height:96px;grid-template-columns:minmax(60px,72px) minmax(0,1fr);align-items:center;gap:12px;direction:ltr;box-sizing:border-box}
+.print-item-shirt{display:grid;place-items:center;flex:0 0 60px;width:60px;height:72px;min-width:60px;min-height:72px;max-width:60px;max-height:72px;overflow:hidden;padding:0;contain:layout paint}
+.order-print-step-redesign .print-item-shirt>svg{display:block;width:50px;height:60px;max-width:50px;max-height:60px;flex:0 0 50px;overflow:hidden;box-sizing:border-box}
+.print-item-info{display:flex;min-width:0;flex-direction:column;gap:7px;direction:rtl;text-align:right}
+.print-item-field{display:flex;min-width:0;align-items:baseline;justify-content:space-between;gap:12px;padding-block:1px;color:var(--barang-text-secondary,#625b75);font-size:14px;line-height:1.45}
+.print-item-field strong,.print-item-field>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--print-text);font-weight:500}
+.print-item-product strong{font-size:17px;font-weight:750}
+.print-item-sku strong{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:15px;direction:ltr}
+.print-item-label{font-weight:500}
+.print-item-color-value{display:inline-flex;min-width:0;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.print-item-color-dot{display:inline-block;width:17px;height:17px;flex:0 0 auto;border:1px solid rgb(15 23 42 / 18%);border-radius:50%}
+.print-item-status{display:inline-flex;align-items:center;align-self:flex-end;gap:6px;margin-top:8px;padding:7px 12px;border-radius:7px;font-size:13px;font-weight:650;line-height:1.2}
+.print-item-status.is-configured{color:var(--print-success);background:var(--print-success-bg)}
+.print-item-status.is-incomplete{color:var(--print-danger);background:var(--print-danger-bg)}
+.print-item-status-icon{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:currentColor;color:#fff;font-size:11px;font-weight:800;line-height:1}
+.print-item-check{position:absolute;inset-block-start:14px;inset-inline-start:14px;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--print-accent);color:#fff;font-size:20px;font-weight:800;line-height:1;box-shadow:0 4px 10px rgb(108 77 246 / 22%)}
+.order-print-editor,.order-print-grid-section{margin-block-start:20px;padding:24px;border:1px solid var(--print-border);border-radius:12px;background:var(--print-surface);box-shadow:0 2px 8px rgb(23 32 51 / 4%)}
+.order-print-editor h3,.order-print-grid-section h3{margin:0 0 20px;font-size:20px;line-height:1.5;font-weight:750}
+.order-print-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px}
+.order-print-form-grid label,.order-print-note{display:flex;min-width:0;flex-direction:column;gap:8px}
+.order-print-form-grid label>span:first-child,.order-print-note>span{font-size:14px;font-weight:650}
+.order-print-form-grid :is(input,select),.order-print-note textarea,.order-print-design-filters :is(input,select){width:100%;min-height:42px;padding:9px 12px;border:1px solid var(--print-border);border-radius:8px;background:var(--print-surface);color:inherit}
+.order-print-measurement{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;direction:rtl}
+.order-print-measurement input{min-width:0;border-radius:8px 0 0 8px!important}
+.order-print-measurement>span{display:inline-flex;align-items:center;padding-inline:15px;border:1px solid var(--print-border);border-inline-start:0;border-radius:0 8px 8px 0;background:var(--barang-surface-muted,#faf9ff);color:var(--barang-text-secondary,#625b75);white-space:nowrap}
+.order-print-artwork-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-block:22px;direction:rtl;align-items:stretch}
+.order-print-design-panel{display:flex;min-width:0;min-height:168px;flex-direction:column;padding:18px;border:1px solid var(--print-border);border-radius:9px;background:var(--barang-surface-muted,#faf9ff)}
+.order-print-design-panel h4{margin:0 0 6px;font-size:17px;font-weight:750}
+.order-print-artwork-empty{display:flex;flex:1 1 auto;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center}
+.order-print-artwork-empty p{margin:0;color:var(--print-text);font-weight:700}
+.order-print-artwork-empty small{max-width:360px;color:var(--barang-text-secondary,#625b75);font-size:13px;line-height:1.7}
+.order-print-artwork-icon{display:grid;place-items:center;width:48px;height:48px;margin-bottom:2px;border-radius:8px;background:var(--print-accent-soft);color:var(--print-accent)}
+.order-print-step-redesign .order-print-artwork-icon>svg{display:block;width:29px;height:29px;max-width:29px;max-height:29px;box-sizing:border-box}
+.order-print-source-card,.order-print-upload-preview{display:flex;align-items:center;gap:12px;min-height:70px}
+.order-print-source-card span,.order-print-upload-preview span{display:flex;min-width:0;flex-direction:column;gap:4px}
+.order-print-source-card small,.order-print-upload-preview small,.order-print-source-help{color:var(--print-muted);font-size:12px}
+.order-print-upload-preview img{width:70px;height:70px;object-fit:cover;border-radius:8px}
+.order-print-source-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:14px}
+.order-print-source-button,.order-print-purple-primary,.order-print-purple-secondary{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 18px;border-radius:8px;font-weight:700;cursor:pointer}
+.order-print-source-button{margin-top:7px;border:1px solid var(--print-accent);background:var(--print-surface);color:var(--print-accent)}
+.order-print-source-button:hover,.order-print-source-button:focus-visible,.order-print-purple-secondary:hover,.order-print-purple-secondary:focus-visible{background:var(--print-accent-soft)}
+.order-print-source-button input,.link-button input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.order-print-source-actions .link-button,.order-print-grid-section .icon-button{border:0;background:transparent;color:var(--print-accent);cursor:pointer}
+.order-print-source-actions .danger,.order-print-grid-section .danger{color:var(--print-danger)}
+.order-print-source-help{margin:0 0 16px}
+.order-print-note textarea{min-height:58px;resize:vertical}
+.order-print-actions{display:flex;justify-content:center;gap:12px;margin-top:18px}
+.order-print-purple-primary,.order-print-purple-secondary{min-width:136px;min-height:48px;border-radius:9px;font-size:16px}
+.order-print-purple-primary{position:relative;z-index:2;pointer-events:auto;border:1px solid var(--print-accent);background:var(--print-accent);color:#fff}
+.order-print-purple-primary::before{content:"+";margin-inline-end:8px;font-size:22px;line-height:1}
+.order-print-purple-secondary{border:1px solid var(--print-accent);background:var(--print-surface);color:var(--print-accent)}
+.order-print-purple-primary:disabled{cursor:not-allowed;opacity:.55}
+.order-print-grid-section{overflow:hidden}
+.order-print-grid-section .data-grid-wrap{width:100%;overflow-x:auto}
+.order-print-grid-section .data-grid{width:100%}
+.order-print-modal-backdrop{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;padding:24px;background:rgb(15 23 42 / 62%);overflow:auto}
+.order-print-design-modal{position:relative;z-index:2001;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;width:min(92vw,980px);min-width:min(320px,92vw);height:min(760px,calc(100vh - 48px));min-height:420px;max-height:calc(100vh - 48px);margin:0;padding:0;overflow:hidden;border:1px solid var(--print-border,#ebe8f4);border-radius:12px;background:#fff;color:var(--print-text,#29233d);opacity:1;visibility:visible;transform:none;box-shadow:0 24px 64px rgb(23 32 51 / 28%)}
+.order-print-design-modal-header{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;min-height:64px;padding:16px 20px;background:#fff;color:var(--print-text,#29233d);border-block-end:1px solid var(--print-border,#ebe8f4)}
+.order-print-design-modal-header h3{display:block;margin:0;color:var(--print-text,#29233d);font-size:20px;font-weight:750}
+.order-print-design-modal-close{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;min-width:36px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--print-text,#29233d);cursor:pointer;font:inherit;font-size:24px;line-height:1}
+.order-print-design-modal-close:hover,.order-print-design-modal-close:focus-visible{background:var(--print-accent-soft);outline:3px solid color-mix(in srgb,var(--print-accent) 28%,transparent);outline-offset:2px}
+.order-print-design-filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;min-width:0;padding:16px 20px;background:#fff;color:var(--print-text,#29233d)}
+.order-print-design-filters label{display:flex;min-width:0;flex-direction:column;gap:6px}
+.order-print-design-filters input,.order-print-design-filters select{width:100%;min-height:42px;box-sizing:border-box}
+.order-print-design-gallery{display:grid;flex:1 1 auto;grid-template-columns:repeat(4,minmax(0,1fr));align-content:start;gap:12px;min-width:0;min-height:0;padding:0 20px 16px;background:#fff;color:var(--print-text,#29233d);overflow-x:hidden;overflow-y:auto}
+.order-print-design-gallery>.empty-state,.order-print-design-gallery>.inline-error{grid-column:1/-1}
+.order-print-design-card{position:relative;display:flex;min-width:0;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--print-border);border-radius:8px;background:var(--print-surface);color:inherit;cursor:pointer;text-align:start}
+.order-print-design-card:hover,.order-print-design-card:focus-visible,.order-print-design-card.is-selected{border-color:var(--print-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--print-accent) 14%,transparent);outline:none}
+.order-print-design-card .design-thumb,.order-print-design-card img{display:block;width:100%;height:112px;object-fit:contain}
+.order-print-design-modal-footer{display:flex;flex:0 0 auto;align-items:center;justify-content:center;gap:12px;min-height:72px;padding:16px 20px;background:#fff;color:var(--print-text,#29233d);border-block-start:1px solid var(--print-border,#ebe8f4)}
+.order-print-design-modal-footer .order-print-purple-primary,.order-print-design-modal-footer .order-print-purple-secondary{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;min-width:136px;min-height:48px;box-sizing:border-box;opacity:1;visibility:visible;transform:none;white-space:nowrap}
+.order-print-design-modal-footer .order-print-purple-primary{appearance:none;border:1px solid var(--print-accent,#6c4df6);background:var(--print-accent,#6c4df6);color:#fff;font:inherit;font-weight:750;cursor:pointer}
+.order-print-design-modal-footer .order-print-purple-primary:disabled{background:#b9b0e9;color:#fff;cursor:not-allowed;opacity:.7}
+.order-print-design-modal-footer .order-print-purple-secondary{appearance:none;border:1px solid var(--print-accent,#6c4df6);background:#fff;color:var(--print-accent,#6c4df6);font:inherit;font-weight:750;cursor:pointer}
+@media(max-width:900px){.order-print-step-redesign>.print-item-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.order-print-modal-backdrop{padding:12px}.order-print-design-modal{width:100%;height:calc(100vh - 24px);max-height:calc(100vh - 24px)}.order-print-design-filters{grid-template-columns:1fr 1fr}.order-print-design-filters label:first-child{grid-column:1/-1}.order-print-design-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.print-item-grid,.order-print-form-grid,.order-print-artwork-row{grid-template-columns:1fr}.print-item-card-content{grid-template-columns:minmax(60px,72px) minmax(0,1fr);min-height:96px}.print-item-shirt{justify-self:start}.order-print-editor,.order-print-grid-section{padding:16px}}
+@media(max-width:480px){.order-print-design-filters,.order-print-design-gallery{grid-template-columns:1fr}.order-print-actions{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.print-item-card{transition:none}}

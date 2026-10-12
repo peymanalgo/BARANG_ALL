@@ -1,11 +1,13 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/BARANG.Backoffice/BARANG.Backoffice.csproj" />
     <Project Path="src/BARANG.Core.Api/BARANG.Core.Api.csproj" />
     <Project Path="src/BARANG.Core.Application/BARANG.Core.Application.csproj" />
     <Project Path="src/BARANG.Core.Domain/BARANG.Core.Domain.csproj" />
     <Project Path="src/BARANG.Core.Infrastructure/BARANG.Core.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/BARANG.Backoffice.Tests/BARANG.Backoffice.Tests.csproj" />
     <Project Path="tests/BARANG.Core.ArchitectureTests/BARANG.Core.ArchitectureTests.csproj" />
     <Project Path="tests/BARANG.Core.IntegrationTests/BARANG.Core.IntegrationTests.csproj" />
     <Project Path="tests/BARANG.Core.UnitTests/BARANG.Core.UnitTests.csproj" />

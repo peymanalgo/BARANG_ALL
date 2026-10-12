@@ -1,0 +1,616 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Login" xml:space="preserve">
+    <value>تسجيل الدخول إلى حسابك</value>
+  </data>
+  <data name="Username" xml:space="preserve">
+    <value>اسم المستخدم</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>كلمة المرور</value>
+  </data>
+  <data name="SignIn" xml:space="preserve">
+    <value>تسجيل الدخول</value>
+  </data>
+  <data name="SigningIn" xml:space="preserve">
+    <value>جارٍ تسجيل الدخول…</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>تسجيل الخروج</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>اللغة</value>
+  </data>
+  <data name="SelectCompany" xml:space="preserve">
+    <value>اختيار الشركة</value>
+  </data>
+  <data name="Continue" xml:space="preserve">
+    <value>متابعة</value>
+  </data>
+  <data name="Welcome" xml:space="preserve">
+    <value>مرحباً بك</value>
+  </data>
+  <data name="InvalidCredentials" xml:space="preserve">
+    <value>اسم المستخدم أو كلمة المرور غير صحيحة.</value>
+  </data>
+  <data name="NoCompanyAccess" xml:space="preserve">
+    <value>لا يوجد وصول إلى شركة</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>غير مصرح لك بتنفيذ هذا الإجراء.</value>
+  </data>
+  <data name="SessionExpired" xml:space="preserve">
+    <value>انتهت جلستك أو أُلغيت. يرجى تسجيل الدخول مجدداً.</value>
+  </data>
+  <data name="GenericError" xml:space="preserve">
+    <value>حدث خطأ غير متوقع. يرجى المحاولة مجدداً.</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>جارٍ التحميل…</value>
+  </data>
+  <data name="ApiUnavailable" xml:space="preserve">
+    <value>الخدمة المركزية غير متاحة. حاول بعد قليل.</value>
+  </data>
+  <data name="ValidationError" xml:space="preserve">
+    <value>يرجى مراجعة المعلومات المدخلة.</value>
+  </data>
+  <data name="WizardValidationTitle" xml:space="preserve">
+    <value>تعذر إكمال هذه الخطوة</value>
+  </data>
+  <data name="Backoffice" xml:space="preserve">
+    <value>المكتب الخلفي</value>
+  </data>
+  <data name="Home" xml:space="preserve">
+    <value>الرئيسية</value>
+  </data>
+  <data name="Navigation" xml:space="preserve">
+    <value>التنقل الرئيسي</value>
+  </data>
+  <data name="ModulesComingSoon" xml:space="preserve">
+    <value>ستُضاف الوحدات التشغيلية في المراحل القادمة.</value>
+  </data>
+  <data name="CurrentCompany" xml:space="preserve">
+    <value>الشركة الحالية</value>
+  </data>
+  <data name="WelcomeMessage" xml:space="preserve">
+    <value>مساحة BARANG الآمنة جاهزة. ستُضاف وحدات الأعمال إلى هذه الواجهة في المراحل القادمة.</value>
+  </data>
+  <data name="SecureWorkspace" xml:space="preserve">
+    <value>مساحة عمل آمنة</value>
+  </data>
+  <data name="LoginDescription" xml:space="preserve">
+    <value>أدخل بيانات حسابك للوصول إلى النظام المركزي.</value>
+  </data>
+  <data name="ShowPassword" xml:space="preserve">
+    <value>إظهار كلمة المرور</value>
+  </data>
+  <data name="HidePassword" xml:space="preserve">
+    <value>إخفاء كلمة المرور</value>
+  </data>
+  <data name="SessionSecurityNote" xml:space="preserve">
+    <value>لا تُحفظ بيانات الدخول أو رمز الجلسة في تخزين المتصفح.</value>
+  </data>
+  <data name="NoCompanyDescription" xml:space="preserve">
+    <value>لا يملك حسابك حالياً وصولاً إلى شركة نشطة.</value>
+  </data>
+  <data name="CompanyContext" xml:space="preserve">
+    <value>نطاق العمل</value>
+  </data>
+  <data name="SelectCompanyDescription" xml:space="preserve">
+    <value>اختر الشركة التي تريد العمل معها للمتابعة.</value>
+  </data>
+  <data name="Reload" xml:space="preserve">
+    <value>إعادة التحميل</value>
+  </data>
+  <data name="Dashboard">
+    <value>لوحة المعلومات</value>
+  </data>
+  <data name="NewOrder">
+    <value>طلب جديد</value>
+  </data>
+  <data name="OpenWorkspace">
+    <value>فتح الوحدة</value>
+  </data>
+  <data name="SwitchCompany">
+    <value>تغيير الشركة</value>
+  </data>
+  <data name="OperationalWorkspace">
+    <value>مساحة التشغيل</value>
+  </data>
+  <data name="Search">
+    <value>بحث</value>
+  </data>
+  <data name="SearchPlaceholder">
+    <value>البحث في السجلات</value>
+  </data>
+  <data name="Refresh">
+    <value>تحديث</value>
+  </data>
+  <data name="Reset"><value>إعادة ضبط</value></data>
+  <data name="CurrentRecords">
+    <value>السجلات الحالية</value>
+  </data>
+  <data name="AuthoritativeCoreData">
+    <value>بيانات الشركة الموثوقة من واجهة Core.</value>
+  </data>
+  <data name="TryAgain">
+    <value>إعادة المحاولة</value>
+  </data>
+  <data name="NoRecords">
+    <value>لا توجد سجلات</value>
+  </data>
+  <data name="NoRecordsDescription">
+    <value>غيّر عوامل التصفية أو أنشئ أول سجل.</value>
+  </data>
+  <data name="ConcurrencyConflict">
+    <value>تم تغيير السجل؛ حدّث الصفحة أولاً.</value>
+  </data>
+  <data name="NotFound">
+    <value>مساحة العمل غير موجودة.</value>
+  </data>
+  <data name="ActionUsesCore">
+    <value>يتم التحقق والتنفيذ بواسطة Core.</value>
+  </data>
+  <data name="OrderWizard">
+    <value>معالج الطلب</value>
+  </data>
+  <data name="CreateDraft">
+    <value>إنشاء مسودة طلب</value>
+  </data>
+  <data name="OrderWizardDescription">
+    <value>أكمل الرأس والبنود والطباعة والشحن والتسعير.</value>
+  </data>
+  <data name="Branch">
+    <value>الفرع</value>
+  </data>
+  <data name="Customer">
+    <value>العميل</value>
+  </data>
+  <data name="OrderSource">
+    <value>مصدر الطلب</value>
+  </data>
+  <data name="ExternalReference">
+    <value>المرجع الخارجي</value>
+  </data>
+  <data name="OrderDate">
+    <value>تاريخ الطلب</value>
+  </data>
+  <data name="RequestedDelivery">
+    <value>التسليم المطلوب</value>
+  </data>
+  <data name="Choose">
+    <value>اختر…</value>
+  </data>
+  <data name="Cancel">
+    <value>إلغاء</value>
+  </data>
+  <data name="Saving">
+    <value>جارٍ الحفظ…</value>
+  </data>
+  <data name="SaveDraft">
+    <value>حفظ المسودة</value>
+  </data>
+  <data name="DraftCreated">
+    <value>تم إنشاء المسودة</value>
+  </data>
+  <data name="DraftCreatedDescription">
+    <value>حُفظت المسودة في Core وأصبحت جاهزة للإكمال.</value>
+  </data>
+  <data name="ContinueToOrders">
+    <value>متابعة الطلبات</value>
+  </data>
+  <data name="Module_foundation">
+    <value>إدارة الأساس</value>
+  </data>
+  <data name="Module_master-data">
+    <value>البيانات الرئيسية</value>
+  </data>
+  <data name="Module_customers">
+    <value>العملاء</value>
+  </data>
+  <data name="Module_artwork-files">
+    <value>الأعمال الفنية والملفات</value>
+  </data>
+  <data name="Module_orders">
+    <value>الطلبات</value>
+  </data>
+  <data name="Module_finance">
+    <value>المالية</value>
+  </data>
+  <data name="Module_inventory">
+    <value>المخزون</value>
+  </data>
+  <data name="Module_purchasing">
+    <value>المشتريات</value>
+  </data>
+  <data name="Module_production">
+    <value>الإنتاج</value>
+  </data>
+  <data name="Module_quality">
+    <value>الجودة وإعادة الإنتاج</value>
+  </data>
+  <data name="Module_logistics">
+    <value>الخدمات اللوجستية</value>
+  </data>
+  <data name="Module_workflow">
+    <value>مركز المهام</value>
+  </data>
+  <data name="Description_foundation">
+    <value>الشركات والإعدادات والفروع والمستودعات والمستخدمون والأدوار.</value>
+  </data>
+  <data name="Description_master-data">
+    <value>القوائم والمنتجات والمتغيرات والموردون والمعدات.</value>
+  </data>
+  <data name="Description_customers">
+    <value>ملفات العملاء والاتصالات والعناوين ودورة الحياة.</value>
+  </data>
+  <data name="Description_artwork-files">
+    <value>مكتبة الأعمال والإصدارات والملفات الآمنة والمعالجة.</value>
+  </data>
+  <data name="Description_orders">
+    <value>إنشاء الطلبات والبحث والإرسال والتتبع.</value>
+  </data>
+  <data name="Description_finance">
+    <value>المدفوعات والأرصدة والموافقات والفواتير.</value>
+  </data>
+  <data name="Description_inventory">
+    <value>الأرصدة والحركات والحجوزات والتحويلات.</value>
+  </data>
+  <data name="Description_purchasing">
+    <value>النواقص والطلبات وأوامر الشراء والاستلام.</value>
+  </data>
+  <data name="Description_production">
+    <value>طوابير الإنتاج والتعيين والتنفيذ والسعة.</value>
+  </data>
+  <data name="Description_quality">
+    <value>الفحوص والعيوب والقرارات وسلاسل إعادة الإنتاج.</value>
+  </data>
+  <data name="Description_logistics">
+    <value>الطرود والتسليم للمستودع والشحن والتوصيل.</value>
+  </data>
+  <data name="Description_workflow">
+    <value>مهامي ومهام الأدوار وSLA وسجل سير العمل.</value>
+  </data>
+  <data name="Description_reports">
+    <value>تقارير تشغيلية للقراءة فقط.</value>
+  </data>
+  <data name="Wizard_Header">
+    <value>الرأس</value>
+  </data>
+  <data name="Wizard_Items">
+    <value>البنود</value>
+  </data>
+  <data name="Wizard_Print">
+    <value>الطباعة</value>
+  </data>
+  <data name="Wizard_Shipping">
+    <value>التسليم والشحن</value>
+  </data>
+  <data name="Wizard_Pricing">
+    <value>التسعير</value>
+  </data>
+  <data name="PricingStale"><value>السعر يحتاج إلى إعادة الحساب.</value></data>
+  <data name="PricingBreakdown"><value>تفاصيل السعر</value></data>
+  <data name="PricingComponent"><value>مكوّن السعر</value></data>
+  <data name="AdditionalServices"><value>الخدمات الإضافية</value></data><data name="SelectedServicesOnly"><value>تُحسب الخدمات المحددة فقط.</value></data><data name="OrderItem"><value>عنصر الطلب</value></data><data name="OrderLevel"><value>مستوى الطلب</value></data>
+  <data name="OrderWizardSteps"><value>مراحل الطلب</value></data>
+  <data name="OrderStep1Description"><value>تأتي الشركة من سياق المصادقة. أكمل العميل ورأس المسودة.</value></data>
+  <data name="OrderStep1Required"><value>الفرع والعميل وتاريخ الطلب مطلوبة للمتابعة.</value></data>
+  <data name="OrderStep2Description"><value>اختر منتجاً وSKU صالحاً وأدخل كمية كل صنف.</value></data>
+  <data name="OrderItemProductRequired"><value>يجب اختيار منتج للصنف.</value></data><data name="OrderItemSkuRequired"><value>يجب اختيار SKU للصنف.</value></data><data name="OrderItemQuantityInvalid"><value>يجب أن تكون كمية الصنف أكبر من صفر.</value></data><data name="OrderItemRequired"><value>يجب أن يحتوي الطلب على صنف واحد على الأقل.</value></data><data name="AddItem"><value>إضافة صنف</value></data><data name="RemoveItem"><value>إزالة الصنف</value></data><data name="Unit"><value>الوحدة</value></data><data name="OrderItemsEmpty"><value>لم تتم إضافة أصناف بعد.</value></data><data name="OrderFutureStepNotice"><value>سيتم إكمال المراحل المتبقية في خطوات لاحقة.</value></data>
+  <data name="OrderInvalidBranch"><value>الفرع المحدد غير نشط أو لا ينتمي إلى الشركة الحالية.</value></data>
+  <data name="OrderInvalidCustomer"><value>العميل المحدد غير نشط أو لا ينتمي إلى الشركة الحالية.</value></data>
+  <data name="OrderInvalidSource"><value>مصدر الطلب غير صالح.</value></data>
+  <data name="OrderInvalidOrderDate"><value>تاريخ الطلب غير صالح.</value></data>
+  <data name="OrderInvalidDeliveryDate"><value>لا يمكن أن يسبق تاريخ التسليم تاريخ الطلب.</value></data>
+  <data name="Wizard_Finalize"><value>الإتمام</value></data>
+  <data name="Wizard_Review">
+    <value>المراجعة</value>
+  </data>
+  <data name="Action_Create">
+    <value>إنشاء</value>
+  </data>
+  <data name="Action_Edit">
+    <value>تحرير</value>
+  </data>
+  <data name="Action_Lifecycle">
+    <value>دورة الحالة</value>
+  </data>
+  <data name="Action_Product">
+    <value>منتج</value>
+  </data>
+  <data name="Action_Variant">
+    <value>متغير</value>
+  </data>
+  <data name="Action_Supplier">
+    <value>مورد</value>
+  </data>
+  <data name="Action_Equipment">
+    <value>معدات</value>
+  </data>
+  <data name="Action_Contact">
+    <value>اتصال</value>
+  </data>
+  <data name="Action_Address">
+    <value>عنوان</value>
+  </data>
+  <data name="Action_Artwork">
+    <value>عمل فني</value>
+  </data>
+  <data name="Action_Upload">
+    <value>رفع</value>
+  </data>
+  <data name="Action_Version">
+    <value>إصدار</value>
+  </data>
+  <data name="Action_Draft">
+    <value>مسودة</value>
+  </data>
+  <data name="Action_Submit">
+    <value>إرسال</value>
+  </data>
+  <data name="Action_Cancel">
+    <value>إلغاء</value>
+  </data>
+  <data name="Action_Payment">
+    <value>دفعة</value>
+  </data>
+  <data name="Action_Approval">
+    <value>موافقة</value>
+  </data>
+  <data name="Action_Invoice">
+    <value>فاتورة</value>
+  </data>
+  <data name="Action_Reserve">
+    <value>حجز</value>
+  </data>
+  <data name="Action_Transfer">
+    <value>تحويل</value>
+  </data>
+  <data name="Action_Adjust">
+    <value>تسوية</value>
+  </data>
+  <data name="Action_Request">
+    <value>طلب</value>
+  </data>
+  <data name="Action_PurchaseOrder">
+    <value>أمر شراء</value>
+  </data>
+  <data name="Action_Receipt">
+    <value>استلام</value>
+  </data>
+  <data name="Action_Plan">
+    <value>تخطيط</value>
+  </data>
+  <data name="Action_Assign">
+    <value>تعيين</value>
+  </data>
+  <data name="Action_Execute">
+    <value>تنفيذ</value>
+  </data>
+  <data name="Action_Inspect">
+    <value>فحص</value>
+  </data>
+  <data name="Action_Defect">
+    <value>عيب</value>
+  </data>
+  <data name="Action_Reproduction">
+    <value>إعادة إنتاج</value>
+  </data>
+  <data name="Action_Package">
+    <value>طرد</value>
+  </data>
+  <data name="Action_Shipment">
+    <value>شحنة</value>
+  </data>
+  <data name="Action_Delivery">
+    <value>تسليم</value>
+  </data>
+  <data name="Action_Claim">
+    <value>استلام المهمة</value>
+  </data>
+  <data name="Action_Release">
+    <value>تحرير</value>
+  </data>
+  <data name="Action_Complete">
+    <value>إكمال</value>
+  </data>
+  <data name="Action_Filter">
+    <value>تصفية</value>
+  </data>
+  <data name="Action_Export">
+    <value>تصدير</value>
+  </data>
+  <data name="CustomerDetails">
+    <value>جهات الاتصال والعناوين</value>
+  </data>
+  <data name="LastActiveCompanyRequired">
+    <value>يجب أن تبقى شركة واحدة نشطة على الأقل.</value>
+  </data>
+  <data name="CompanyRecovery">
+    <value>استعادة الوصول إلى الشركة</value>
+  </data>
+  <data name="RestrictedRecovery">
+    <value>استعادة نظام مقيّدة</value>
+  </data>
+  <data name="CompanyRecoveryDescription">
+    <value>أعد تنشيط شركة موجودة لاستعادة الوصول. تبقى الوحدات الخاصة بالشركة غير متاحة حتى ذلك الحين.</value>
+  </data>
+  <data name="ReactivateCompany">
+    <value>إعادة التنشيط</value>
+  </data>
+  <data name="CompanyReactivated">
+    <value>تمت إعادة تنشيط الشركة بنجاح.</value>
+  </data>
+  <data name="Active">
+    <value>نشطة</value>
+  </data>
+  <data name="Inactive">
+    <value>غير نشطة</value>
+  </data>
+  <data name="Admin_settings"><value>إعدادات الشركة</value></data>
+  <data name="Admin_units"><value>الوحدات التنظيمية</value></data>
+  <data name="Admin_warehouses"><value>المستودعات</value></data>
+  <data name="ValueType"><value>نوع القيمة</value></data>
+  <data name="Parent"><value>الوحدة الأصلية</value></data>
+  <data name="Classification"><value>التصنيف</value></data>
+  <data name="Text"><value>نص</value></data>
+  <data name="Boolean"><value>منطقي</value></data>
+  <data name="WholeNumber"><value>عدد صحيح</value></data>
+  <data name="DecimalNumber"><value>عدد عشري</value></data>
+  <data name="RawMaterials"><value>مواد خام</value></data>
+  <data name="WorkInProcess"><value>قيد التشغيل</value></data>
+  <data name="FinishedGoods"><value>منتجات نهائية</value></data>
+  <data name="Shipping"><value>الشحن</value></data>
+  <data name="Returns"><value>المرتجعات</value></data>
+  <data name="Scrap"><value>الهالك</value></data>
+  <data name="ContactType"><value>نوع جهة الاتصال</value></data>
+  <data name="AddressType"><value>نوع العنوان</value></data>
+  <data name="CountryCode"><value>رمز الدولة</value></data>
+  <data name="AddressLine"><value>سطر العنوان</value></data>
+  <data name="Title"><value>العنوان</value></data>
+  <data name="City"><value>المدينة</value></data>
+  <data name="Admin_users"><value>المستخدمون ووصول الشركات</value></data>
+  <data name="Admin_roles"><value>الأدوار والصلاحيات</value></data>
+  <data name="Company"><value>الشركة</value></data>
+  <data name="Permission"><value>الصلاحية</value></data>
+  <data name="GrantAccess"><value>منح الوصول</value></data>
+  <data name="GrantPermission"><value>منح الصلاحية</value></data>
+  <data name="Master_suppliers"><value>الموردون وعلاقات المنتجات</value></data>
+  <data name="Master_equipment"><value>المعدات</value></data>
+  <data name="EquipmentType"><value>نوع المعدة</value></data>
+  <data name="Status"><value>الحالة</value></data>
+  <data name="SupplierItemCode"><value>رمز صنف المورد</value></data>
+  <data name="LinkProduct"><value>ربط المنتج</value></data>
+  <data name="Lookups"><value>القوائم والترجمات</value></data>
+  <data name="DisplayOrder"><value>ترتيب العرض</value></data>
+  <data name="ArtworkTags"><value>تصنيفات ووسوم الأعمال الفنية</value></data>
+  <data name="Version"><value>الإصدار</value></data>
+  <data name="ProcessingStatus"><value>حالة المعالجة والصورة المصغرة</value></data>
+  <data name="File"><value>الملف</value></data>
+  <data name="FileVersion"><value>إصدار الملف</value></data>
+  <data name="Notes"><value>الملاحظات</value></data>
+  <data name="SecureDownload"><value>تنزيل آمن</value></data>
+  <data name="FileLink"><value>رابط الملف</value></data>
+  <data name="EntityType"><value>نوع الكيان</value></data>
+  <data name="EntityId"><value>معرّف الكيان</value></data>
+  <data name="Purpose"><value>الغرض</value></data>
+  <data name="CreateLink"><value>إنشاء رابط</value></data>
+  <data name="AssignTag"><value>إسناد وسم</value></data>
+  <data name="Tag"><value>الوسم</value></data>
+  <data name="CreateArtworkVersion"><value>إنشاء إصدار للعمل الفني</value></data>
+  <data name="Page"><value>الصفحة</value></data>
+  <data name="PageSize"><value>حجم الصفحة</value></data>
+  <data name="Previous"><value>السابق</value></data>
+  <data name="Next"><value>التالي</value></data>
+  <data name="Pagination"><value>ترقيم الصفحات</value></data>
+  <data name="Order360"><value>عرض الطلب 360</value></data>
+  <data name="AllowedActions"><value>الإجراءات المسموحة</value></data>
+  <data name="Order360_summary"><value>الملخص</value></data>
+  <data name="Order360_customer"><value>العميل</value></data>
+  <data name="Order360_items"><value>الأصناف</value></data>
+  <data name="Order360_printOperations"><value>مواصفات الطباعة</value></data>
+  <data name="Order360_shippingAddress"><value>عنوان الشحن</value></data>
+  <data name="Order360_pricing"><value>التسعير</value></data>
+  <data name="Order360_finance"><value>المالية</value></data>
+  <data name="Order360_inventory"><value>المخزون والمشتريات</value></data>
+  <data name="Order360_production"><value>الإنتاج</value></data>
+  <data name="Order360_quality"><value>الجودة وإعادة الإنتاج</value></data>
+  <data name="Order360_logistics"><value>التعبئة والتسليم</value></data>
+  <data name="Order360_workflow"><value>سير العمل</value></data>
+  <data name="Order360_timeline"><value>الخط الزمني</value></data>
+  <data name="Order360_audit"><value>التدقيق</value></data>
+  <data name="SourceInternal"><value>داخلي</value></data>
+  <data name="SourceWeb"><value>الويب</value></data>
+  <data name="SourceMobile"><value>الهاتف المحمول</value></data>
+  <data name="SourcePartner"><value>شريك</value></data>
+
+  <data name="DecisionApproved"><value>مقبول</value></data>
+  <data name="DecisionPending"><value>قيد الانتظار</value></data>
+  <data name="DecisionRejected"><value>مرفوض</value></data>
+  <data name="DecisionSuspended"><value>معلّق</value></data>
+  <data name="EntityArtwork"><value>العمل الفني</value></data>
+  <data name="EntityCustomer"><value>العميل</value></data>
+  <data name="EntityOrder"><value>الطلب</value></data>
+  <data name="EntityOrderItem"><value>صنف الطلب</value></data>
+  <data name="EntityOrderPrintOperation"><value>عملية طباعة الطلب</value></data>
+  <data name="EntityProduct"><value>المنتج</value></data>
+  <data name="ErrorMessage"><value>حدث خطأ أثناء معالجة الطلب.</value></data>
+  <data name="ErrorTitle"><value>خطأ</value></data>
+  <data name="IdentifierPlaceholder"><value>المعرّف</value></data>
+  <data name="InvoiceProforma"><value>فاتورة أولية</value></data>
+  <data name="NotFoundDescription"><value>المحتوى المطلوب غير موجود أو غير متاح لك.</value></data>
+  <data name="NotFoundTitle"><value>الصفحة غير موجودة</value></data>
+  <data name="PurposeAttachment"><value>المرفق</value></data>
+  <data name="PurposeProof"><value>إثبات</value></data>
+  <data name="PurposeReference"><value>المرجع</value></data>
+  <data name="PurposeSource"><value>المصدر</value></data>
+  <data name="RequestId"><value>معرّف الطلب</value></data>
+<data name="StatusCancelled"><value>ملغي</value></data><data name="StatusAuditRejected"><value>مرفوض بالتدقيق</value></data>
+  <data name="StatusClaimed"><value>مستلم</value></data>
+  <data name="StatusCompleted"><value>مكتمل</value></data>
+  <data name="StatusDraft"><value>مسودة</value></data>
+  <data name="StatusFailed"><value>فاشل</value></data>
+  <data name="StatusInProgress"><value>قيد التنفيذ</value></data>
+  <data name="StatusOpen"><value>مفتوح</value></data>
+  <data name="StatusPlanned"><value>مخطط</value></data>
+  <data name="StatusReady"><value>جاهز</value></data>
+<data name="StatusSubmitted"><value>مسجّل</value></data>
+  <data name="StatusSuspended"><value>معلّق</value></data>
+  <data name="Actions"><value>الإجراءات</value></data>
+  <data name="All"><value>الكل</value></data>
+  <data name="Amount"><value>المبلغ</value></data>
+  <data name="Artwork"><value>التصميم</value></data>
+  <data name="AssignRole"><value>تعيين دور</value></data>
+  <data name="Capacity"><value>السعة</value></data>
+  <data name="Code"><value>الرمز</value></data>
+  <data name="Country"><value>الدولة</value></data>
+  <data name="CreateNew"><value>إنشاء جديد</value></data>
+  <data name="Currency"><value>العملة</value></data>
+  <data name="ManageRecords"><value>إدارة السجلات</value></data>
+  <data name="Method"><value>الطريقة</value></data>
+  <data name="Module"><value>الوحدة</value></data>
+  <data name="Name"><value>الاسم</value></data>
+  <data name="Position"><value>الموضع</value></data>
+  <data name="Product"><value>المنتج</value></data>
+  <data name="Quantity"><value>الكمية</value></data>
+  <data name="Reason"><value>السبب</value></data>
+  <data name="Revoke"><value>إلغاء الوصول</value></data>
+  <data name="Save"><value>حفظ</value></data>
+  <data name="Sequence"><value>التسلسل</value></data>
+  <data name="TagApiLimitation"><value>أدخل معرّف وسم موجود لتحديث اسمه وحالته.</value></data>
+  <data name="Timeline"><value>السجل الزمني</value></data>
+  <data name="User"><value>المستخدم</value></data>
+  <data name="Variant"><value>المتغير</value></data>
+  <data name="Warehouse"><value>المستودع</value></data>
+  <data name="CollapseNavigation"><value>طي القائمة الرئيسية</value></data>
+  <data name="ExpandNavigation"><value>توسيع القائمة الرئيسية</value></data>
+  <data name="CompanyInactiveReason"><value>هذه الشركة غير نشطة ولا يمكن اختيارها.</value></data>
+  <data name="CompanyNoAccessReason"><value>لا يملك حسابك صلاحية الوصول إلى هذه الشركة.</value></data>
+  <data name="CompanyRestrictedReason"><value>اختيار الشركة مقيّد أثناء وضع استرداد النظام.</value></data>
+  <data name="CompanySelectionFailed"><value>تعذّر اختيار الشركة. حدّث القائمة وحاول مرة أخرى.</value></data>
+  <data name="LoginWelcome"><value>أهلاً وسهلاً</value></data>
+  <data name="LoginBrandTagline"><value>النظام المركزي المتكامل لشركة برنگ</value></data>
+  <data name="LoginBrandDescription"><value>إدارة متكاملة لمعلومات الشركة وعملياتها</value></data>
+  <data name="UsernamePlaceholder"><value>أدخل اسم المستخدم</value></data>
+  <data name="PasswordPlaceholder"><value>أدخل كلمة المرور</value></data>
+  <data name="LoginFooter"><value>الدخول الآمن لشركة برنگ</value></data>
+  <data name="LoginCompanyName"><value>شركة برنگ</value></data>
+  <data name="LoginPlatformLabel"><value>النظام المركزي</value></data>
+  <data name="GeneralInformation"><value>المعلومات العامة</value></data><data name="TechnicalSpecifications"><value>المواصفات الفنية</value></data><data name="AssignmentLocation"><value>التعيين والموقع</value></data><data name="AcquisitionWarranty"><value>الاقتناء والضمان</value></data><data name="FailureHistory"><value>سجل الأعطال</value></data><data name="RepairHistory"><value>سجل الإصلاح</value></data><data name="ServiceMaintenance"><value>الخدمة والصيانة</value></data><data name="InspectionCalibration"><value>الفحص والمعايرة</value></data><data name="DocumentsAttachments"><value>المستندات والمرفقات</value></data><data name="Lifecycle"><value>دورة الحياة</value></data><data name="Resolve"><value>حل</value></data><data name="Complete"><value>إكمال</value></data><data name="Failed"><value>فشل</value></data><data name="InService"><value>قيد الخدمة</value></data><data name="OutOfService"><value>خارج الخدمة</value></data><data name="UnderRepair"><value>قيد الإصلاح</value></data><data name="UnderMaintenance"><value>قيد الصيانة</value></data><data name="Reserved"><value>محجوز</value></data><data name="RetiredDisposed"><value>متقاعد/مُتخلص منه</value></data><data name="EquipmentDocumentsHelp"><value>تُخزّن مستندات المعدات بأمان ضمن نطاق الشركة.</value></data><data name="UploadComplete"><value>اكتمل الرفع.</value></data><data name="UploadFailed"><value>فشل الرفع.</value></data><data name="AssignmentHistoryPreserved"><value>يُحفظ سجل التعيينات.</value></data><data name="StructuredSpecificationsHelp"><value>مواصفات المعدات المنظمة</value></data>
+  <data name="AcquisitionMethod"><value>طريقة الاقتناء</value></data><data name="Activate"><value>تفعيل</value></data><data name="Add"><value>إضافة</value></data><data name="AssetNumber"><value>رقم الأصل</value></data><data name="AssetTag"><value>وسم الأصل</value></data><data name="AssignedPerson"><value>الشخص المعيّن</value></data><data name="Brand"><value>العلامة التجارية</value></data><data name="BrandModel"><value>العلامة والطراز</value></data><data name="CertificateNumber"><value>رقم الشهادة</value></data><data name="Close"><value>إغلاق</value></data><data name="Cost"><value>التكلفة</value></data><data name="Criticality"><value>الأهمية</value></data><data name="Date"><value>التاريخ</value></data><data name="Deactivate"><value>تعطيل</value></data><data name="Delete"><value>حذف</value></data><data name="Description"><value>الوصف</value></data><data name="Details"><value>التفاصيل</value></data><data name="Edit"><value>تحرير</value></data><data name="EquipmentCategory"><value>فئة المعدة</value></data><data name="EquipmentCondition"><value>حالة المعدة</value></data><data name="EquipmentNumber"><value>رقم المعدة</value></data><data name="EquipmentStatus"><value>حالة المعدة</value></data><data name="EquipmentSubtype"><value>نوع المعدة الفرعي</value></data><data name="FailureCause"><value>سبب العطل</value></data><data name="FailureDateTime"><value>تاريخ ووقت العطل</value></data><data name="FailureNumber"><value>رقم العطل</value></data><data name="FailureType"><value>نوع العطل</value></data><data name="InspectionType"><value>نوع الفحص</value></data><data name="LaborCost"><value>تكلفة العمالة</value></data><data name="LifecycleStatus"><value>حالة دورة الحياة</value></data><data name="MaintenanceType"><value>نوع الصيانة</value></data><data name="Manufacturer"><value>المصنّع</value></data><data name="Model"><value>الطراز</value></data><data name="NextDueDate"><value>تاريخ الاستحقاق التالي</value></data><data name="NextServiceDate"><value>تاريخ الخدمة التالية</value></data><data name="OperationalStatus"><value>الحالة التشغيلية</value></data><data name="OrganizationalUnit"><value>الوحدة التنظيمية</value></data><data name="OwnershipType"><value>نوع الملكية</value></data><data name="PartsCost"><value>تكلفة القطع</value></data><data name="Passed"><value>ناجح</value></data><data name="PhysicalLocation"><value>الموقع الفعلي</value></data><data name="PurchaseDate"><value>تاريخ الشراء</value></data><data name="PurchasePrice"><value>سعر الشراء</value></data><data name="PurchaseReference"><value>مرجع الشراء</value></data><data name="RepairNumber"><value>رقم الإصلاح</value></data><data name="RepairType"><value>نوع الإصلاح</value></data><data name="ResponsiblePerson"><value>الشخص المسؤول</value></data><data name="RetirementDate"><value>تاريخ التقاعد/التخلص</value></data><data name="RetirementReason"><value>سبب التقاعد/التخلص</value></data><data name="SearchHint"><value>البحث عن المعدات...</value></data><data name="SerialNumber"><value>الرقم التسلسلي</value></data><data name="ServiceDate"><value>تاريخ الخدمة</value></data><data name="Severity"><value>الخطورة</value></data><data name="StartDateTime"><value>تاريخ ووقت البدء</value></data><data name="UsefulLifeMonths"><value>العمر الافتراضي (بالأشهر)</value></data><data name="View"><value>عرض</value></data><data name="WarrantyEnd"><value>نهاية الضمان</value></data><data name="WarrantyNotes"><value>ملاحظات الضمان</value></data><data name="WarrantyProvider"><value>جهة الضمان</value></data><data name="WarrantyStart"><value>بداية الضمان</value></data><data name="WorkPerformed"><value>العمل المنجز</value></data>
+<data name="OrderStep3Description"><value>قم بتكوين التصميم والملفات وعمليات الطباعة لكل صنف.</value></data><data name="PrintOperations"><value>عمليات الطباعة</value></data><data name="PrintLocation"><value>موضع الطباعة</value></data><data name="PrintFront"><value>الأمام</value></data><data name="PrintBack"><value>الخلف</value></data><data name="PrintSleeve"><value>الكم</value></data><data name="PrintOther"><value>أخرى</value></data><data name="SelectArtwork"><value>اختر التصميم</value></data><data name="PrintDimensionsInvalid"><value>يجب أن يكون عرض وارتفاع الطباعة أكبر من صفر.</value></data><data name="PrintOperationsEmpty"><value>لا توجد عمليات طباعة لهذا الصنف.</value></data><data name="ArtworkPreview"><value>معاينة التصميم</value></data><data name="Preview"><value>معاينة</value></data><data name="ArtworkPreviewRequired"><value>قبل المتابعة، اعرض ملف التصميم المرفوع وراجعه.</value></data><data name="OperationSucceeded"><value>اكتملت العملية بنجاح.</value></data><data name="Width"><value>العرض</value></data><data name="Height"><value>الارتفاع</value></data><data name="Source"><value>المصدر</value></data><data name="Back"><value>رجوع</value></data></root>
+
+

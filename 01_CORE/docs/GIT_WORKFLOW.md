@@ -5,7 +5,7 @@ This workflow keeps repository changes reviewable, validated, and recoverable. I
 ## Repository model
 
 - The repository root is `D:\00_BARANG`.
-- One Git repository contains `01_CORE`, `02_WEB_APP`, `03_MOB_APP`, and `04_Document`.
+- One Git repository contains `01_CORE`, `03_MOB_APP`, and `04_Document`.
 - The current implementation scope is only `01_CORE`. Do not modify a client or project-document area unless a later task explicitly includes it.
 - The canonical remote is `https://github.com/peymanalgo/BARANG_ALL.git`; the expected primary branch is `main`.
 

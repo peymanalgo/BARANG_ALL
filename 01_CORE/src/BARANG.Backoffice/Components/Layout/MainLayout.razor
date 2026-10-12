@@ -1,0 +1,121 @@
+@inherits LocaleLayoutBase
+@implements IDisposable
+@inject IStringLocalizer<AppStrings> L
+@inject IStringLocalizer<NavigationStrings> N
+@inject AuthenticationStateProvider AuthState
+@inject NavigationManager Navigation
+
+<div class="shell @(NavigationOpen ? "navigation-open" : null)">
+    <button type="button" class="sidebar-scrim" aria-label="@L["Navigation"]" @onclick="CloseNavigationFromClick"></button>
+    <aside class="sidebar" id="barang-sidebar" aria-label="@L["Navigation"]">
+        <header class="sidebar-header">
+            <a class="brand" href="/" @onclick="CloseNavigationFromClick">
+                <span class="brand-mark"><BarangIcon Name="building" /></span>
+                <span><strong>BARANG</strong><small>@L["Backoffice"]</small></span>
+            </a>
+        </header>
+
+        <nav class="sidebar-navigation">
+            <NavLink class="nav-item" href="/" Match="NavLinkMatch.All" @onclick="CloseNavigationFromClick">
+                <BarangIcon Name="home" /><b>@L["Home"]</b>
+            </NavLink>
+            @foreach (BackofficeNavigationGroup group in VisibleGroups)
+            {
+                @if (group.Route is not null)
+                {
+                    <NavLink class="nav-item" href="@group.Route" @onclick="CloseNavigationFromClick"><BarangIcon Name="@group.Icon" /><b>@N[group.LabelKey]</b></NavLink>
+                }
+                else
+                {
+                    <details class="nav-group" data-navigation-group="@group.LabelKey" open="@IsGroupActive(group)">
+                        <summary><BarangIcon Name="@group.Icon" /><b>@N[group.LabelKey]</b><BarangIcon Name="chevron-down" Class="nav-chevron" /></summary>
+                        <div class="nav-children">
+                            @foreach (BackofficeNavigationItem item in group.Items)
+                            {
+                                @if (item.Children is not null)
+                                {
+                                    <details class="nav-subgroup" data-navigation-item="@item.LabelKey" open="@IsItemActive(item)">
+                                        <summary>@N[item.LabelKey]<BarangIcon Name="chevron-down" Class="nav-chevron" /></summary>
+                                        @foreach (BackofficeNavigationItem child in item.Children)
+                                        {
+                                            <NavLink class="nav-subitem" href="@child.Route" @onclick="CloseNavigationFromClick">@N[child.LabelKey]</NavLink>
+                                        }
+                                    </details>
+                                }
+                                else
+                                {
+                                    <NavLink class="nav-subitem" href="@item.Route" @onclick="CloseNavigationFromClick">@N[item.LabelKey]</NavLink>
+                                }
+                            }
+                        </div>
+                    </details>
+                }
+            }
+        </nav>
+
+        <footer class="sidebar-account">
+            <div class="account-summary">
+                <span class="account-avatar" aria-hidden="true">@Initials</span>
+                <span><strong>@DisplayName</strong><small>@CompanyName</small></span>
+            </div>
+            <form method="post" action="/auth/logout">
+                <AntiforgeryToken />
+                <button type="submit" class="sidebar-logout"><BarangIcon Name="logout" /><span>@L["Logout"]</span></button>
+            </form>
+        </footer>
+    </aside>
+
+    <button type="button"
+            class="mobile-navigation-trigger"
+            aria-controls="barang-sidebar"
+            aria-expanded="@NavigationOpen"
+            @onclick="ToggleNavigationFromClick">
+        @L["Navigation"]
+    </button>
+
+    <div class="main-column">
+        <header class="topbar">
+            <div class="top-actions">
+                <a class="company-chip" href="@($"/company?returnUrl={Uri.EscapeDataString(CurrentPath)}")" data-enhance-nav="false" title="@L["SwitchCompany"]">
+                    <BarangIcon Name="building" />
+                    <span><small>@L["CurrentCompany"]</small><strong>@CompanyName</strong></span>
+                </a>
+                <LanguageSwitcher />
+            </div>
+        </header>
+        <main class="content" id="main-content">@Body</main>
+    </div>
+</div>
+<div id="blazor-error-ui">@L["GenericError"] <a href="." class="reload">@L["Reload"]</a></div>
+
+@code {
+    private string DisplayName = "";
+    private string CompanyName = "";
+    private bool NavigationOpen;
+    private IReadOnlyList<BackofficeNavigationGroup> VisibleGroups = [];
+    private string CurrentPath => "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/');
+    private string Initials => string.Concat(DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => part[0])).ToUpperInvariant();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        DisplayName = user.FindFirst(AuthClaimTypes.DisplayName)?.Value ?? user.Identity?.Name ?? "";
+        CompanyName = user.FindFirst(AuthClaimTypes.CompanyName)?.Value ?? "";
+        VisibleGroups = ModuleCatalog.Navigation
+            .Where(group => ModuleCatalog.IsVisible(group, user))
+            .Select(group => group.Route is null ? group with { Items = group.Items.Where(item => ModuleCatalog.IsVisible(item, user)).Select(item => item.Children is null ? item : item with { Children = item.Children.Where(child => ModuleCatalog.IsVisible(child, user)).ToArray() }).ToArray() } : group)
+            .Where(group => group.Route is not null || group.Items.Count > 0)
+            .ToArray();
+        Navigation.LocationChanged += HandleLocationChanged;
+    }
+
+    private bool IsItemActive(BackofficeNavigationItem item) => item.Children is not null ? item.Children.Any(IsItemActive) : CurrentPath.Equals(item.Route, StringComparison.OrdinalIgnoreCase) || (item.Route != "/" && CurrentPath.StartsWith(item.Route + "/", StringComparison.OrdinalIgnoreCase));
+    private bool IsGroupActive(BackofficeNavigationGroup group) => group.Route is not null
+        ? CurrentPath.Equals(group.Route, StringComparison.OrdinalIgnoreCase) || CurrentPath.StartsWith(group.Route + "/", StringComparison.OrdinalIgnoreCase)
+        : group.Items.Any(IsItemActive);
+    private void ToggleNavigationFromClick(MouseEventArgs _) => NavigationOpen = !NavigationOpen;
+    private void CloseNavigation() => NavigationOpen = false;
+    private void CloseNavigationFromClick(MouseEventArgs _) => CloseNavigation();
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs args) { NavigationOpen = false; _ = InvokeAsync(StateHasChanged); }
+    public void Dispose() => Navigation.LocationChanged -= HandleLocationChanged;
+}

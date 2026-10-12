@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ProductsServices" xml:space="preserve"><value>المنتجات والخدمات</value></data>
+  <data name="PricesAndLists" xml:space="preserve"><value>الأسعار وقوائم الأسعار</value></data>
+  <data name="PriceHistory" xml:space="preserve"><value>سجل الأسعار</value></data>
+  <data name="PriceLists" xml:space="preserve"><value>قوائم الأسعار</value></data>
+  <data name="Lines" xml:space="preserve"><value>بنود قائمة الأسعار</value></data>
+  <data name="Product" xml:space="preserve"><value>المنتج</value></data>
+  <data name="Sku" xml:space="preserve"><value>رمز الصنف (SKU)</value></data>
+  <data name="ProductSku" xml:space="preserve"><value>المنتج / الصنف</value></data>
+  <data name="SupplierItemCode" xml:space="preserve"><value>رمز صنف المورد</value></data>
+  <data name="SupplierItemName" xml:space="preserve"><value>اسم صنف المورد</value></data>
+  <data name="SupplierBrand" xml:space="preserve"><value>علامة المورد التجارية</value></data>
+  <data name="Description" xml:space="preserve"><value>الوصف</value></data>
+  <data name="PurchaseUnit" xml:space="preserve"><value>وحدة الشراء</value></data>
+  <data name="PackagingType" xml:space="preserve"><value>نوع التغليف</value></data>
+  <data name="MOQ" xml:space="preserve"><value>الحد الأدنى لكمية الطلب</value></data>
+  <data name="MinimumOrderAmount" xml:space="preserve"><value>الحد الأدنى لمبلغ الطلب</value></data>
+  <data name="LeadTimeDays" xml:space="preserve"><value>مهلة التوريد (أيام)</value></data>
+  <data name="PreferredForItem" xml:space="preserve"><value>المورد المفضل لهذا الصنف</value></data>
+  <data name="Availability" xml:space="preserve"><value>التوفر</value></data>
+  <data name="Available" xml:space="preserve"><value>متاح</value></data>
+  <data name="OnRequest" xml:space="preserve"><value>عند الطلب</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>غير متاح</value></data>
+  <data name="Preferred" xml:space="preserve"><value>مفضل</value></data>
+  <data name="SetPreferred" xml:space="preserve"><value>تعيين المورد المفضل</value></data>
+  <data name="UnsetPreferred" xml:space="preserve"><value>إلغاء تفضيل المورد</value></data>
+  <data name="CurrentPrice" xml:space="preserve"><value>السعر الحالي</value></data>
+  <data name="NoCurrentPrice" xml:space="preserve"><value>لا يوجد سعر صالح</value></data>
+  <data name="Currency" xml:space="preserve"><value>العملة</value></data>
+  <data name="UnitPrice" xml:space="preserve"><value>سعر الوحدة</value></data>
+  <data name="MinimumQuantity" xml:space="preserve"><value>كمية شريحة السعر</value></data>
+  <data name="DiscountPercent" xml:space="preserve"><value>نسبة الخصم</value></data>
+  <data name="TaxTreatment" xml:space="preserve"><value>المعاملة الضريبية</value></data>
+  <data name="TaxRatePercent" xml:space="preserve"><value>نسبة الضريبة المعروضة</value></data>
+  <data name="FreightPerUnit" xml:space="preserve"><value>تكلفة النقل الإضافية للوحدة</value></data>
+  <data name="NetUnitCost" xml:space="preserve"><value>تكلفة الوحدة المحسوبة</value></data>
+  <data name="EffectiveFrom" xml:space="preserve"><value>ساري من</value></data>
+  <data name="EffectiveTo" xml:space="preserve"><value>ساري حتى</value></data>
+  <data name="PriceListCode" xml:space="preserve"><value>رمز قائمة الأسعار</value></data>
+  <data name="PriceListTitle" xml:space="preserve"><value>عنوان قائمة الأسعار</value></data>
+  <data name="Draft" xml:space="preserve"><value>مسودة</value></data>
+  <data name="Published" xml:space="preserve"><value>منشور</value></data>
+  <data name="Current" xml:space="preserve"><value>حالي</value></data>
+  <data name="EndPrice" xml:space="preserve"><value>تحديد نهاية صلاحية السعر</value></data>
+  <data name="PreferredRule" xml:space="preserve"><value>مورد نشط مفضل واحد لكل منتج أو صنف محدد داخل الشركة. يحل الاختيار الجديد محل السابق ذرياً.</value></data>
+  <data name="PublishedRule" xml:space="preserve"><value>المسودات قابلة للتعديل. تبقى الأسعار والبنود المنشورة سجلاً ثابتاً؛ عطّلها أو استبدلها بدلاً من تعديلها.</value></data>
+  <data name="CostRule" xml:space="preserve"><value>تكلفة الوحدة هي السعر بعد الخصم مضافاً إليه الضريبة المعروضة والنقل الإضافي للوحدة. لا يُفترض تحويل العملات أو الوحدات.</value></data>
+  <data name="PriceOverlap" xml:space="preserve"><value>يوجد سعر نشط للصنف والوحدة والعملة وشريحة الكمية والفترة نفسها. أنهِ صلاحيته أو عطّله أولاً.</value></data>
+  <data name="PublishedImmutable" xml:space="preserve"><value>الأسعار المنشورة ثابتة. استخدم مسودة بديلة أو التعطيل أو تاريخ انتهاء مسموحاً.</value></data>
+  <data name="DeleteProtected" xml:space="preserve"><value>لهذا السجل مراجع محمية أو سجل منشور ولا يمكن حذفه. عطّله بدلاً من ذلك.</value></data>
+  <data name="InvalidReference" xml:space="preserve"><value>اختر صنفاً وقيماً مرجعية نشطة وصالحة من الشركة الحالية. يجب أن تطابق وحدة السعر وحدة شراء علاقة التوريد.</value></data>
+  <data name="Ineligible" xml:space="preserve"><value>المورد أو الصنف أو علاقة التوريد أو وحدة الشراء غير نشطة أو محظورة أو غير متاحة.</value></data>
+  <data name="EmptyList" xml:space="preserve"><value>أضف بنداً صالحاً واحداً على الأقل قبل تفعيل قائمة الأسعار.</value></data>
+  <data name="Currency_IRR" xml:space="preserve"><value>الريال الإيراني</value></data>
+  <data name="Currency_IQD" xml:space="preserve"><value>الدينار العراقي</value></data>
+  <data name="Currency_USD" xml:space="preserve"><value>الدولار الأمريكي</value></data>
+  <data name="Currency_EUR" xml:space="preserve"><value>اليورو</value></data>
+</root>

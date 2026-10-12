@@ -1,8 +1,0 @@
-@page "/quality/catalogs"
-@rendermode InteractiveServer
-@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
-@inject IStringLocalizer<AppStrings> L
-@inject AuthenticationStateProvider AuthState
-@inject ICoreApiClient Core
-<PageTitle>@L["Module_quality"]</PageTitle><nav class="breadcrumbs"><a href="/workspace/quality">@L["Module_quality"]</a><span>/</span><span>@L["CurrentRecords"]</span></nav><section class="panel"><label><span>@L["Inactive"]</span><input type="checkbox" @bind="IncludeInactive" /></label><button @onclick="Load">@L["Refresh"]</button><h2>@L["Action_Inspect"]</h2><pre>@Templates</pre><h2>@L["Action_Defect"]</h2><pre>@Defects</pre></section>
-@code{private bool IncludeInactive;private string Templates="",Defects="";protected override async Task OnInitializedAsync()=>await Load();private async Task Load(){var u=(await AuthState.GetAuthenticationStateAsync()).User;if(!Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)||u.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string t)return;var a=await Core.GetAsync($"api/v1/quality/templates?includeInactive={IncludeInactive}&limit=200",t,c,default);Templates=a.IsSuccess?a.Value.ToString():L[a.Failure==ApiFailure.Forbidden?"Unauthorized":"GenericError"];var b=await Core.GetAsync($"api/v1/quality/defect-types?includeInactive={IncludeInactive}&limit=200",t,c,default);Defects=b.IsSuccess?b.Value.ToString():L[b.Failure==ApiFailure.Forbidden?"Unauthorized":"GenericError"];}}

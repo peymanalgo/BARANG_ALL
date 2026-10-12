@@ -1,0 +1,132 @@
+@using System.Text.Json
+@using System.Globalization
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject IStringLocalizer<DesignBankStrings> D
+
+<div class="design-category-picker">
+    <div class="design-category-picker-control">
+        <div class="design-category-field @(Disabled ? "is-disabled" : null)" role="combobox" tabindex="@(Disabled ? "-1" : "0")" aria-disabled="@Disabled" aria-haspopup="tree" aria-expanded="@Open" aria-controls="@PopoverId" aria-readonly="true" @onclick="OpenPicker" @onkeydown="HandleFieldKeyDown">
+            <span class="design-category-field-value">@SelectedCaption</span>
+            <BarangIcon Name="chevron-down" Class="design-category-field-icon" />
+        </div>
+    </div>
+    @if (Open)
+    {
+        <div id="@PopoverId" class="design-category-popover" role="tree" aria-label="@D["Categories"]">
+            <div class="design-category-search-row">
+                <input @ref="SearchInput" value="@Search" @oninput="Filter" @onkeydown="HandleSearchKeyDown" placeholder='@D["SearchCategories"]' aria-label='@D["SearchCategories"]' />
+                @if (!string.IsNullOrWhiteSpace(Search))
+                {
+                    <button type="button" class="category-clear" title='@D["ClearSearch"]' aria-label='@D["ClearSearch"]' @onclick="ClearSearch">×</button>
+                }
+            </div>
+            @if (SelectedId is not null)
+            {
+                <button type="button" class="design-category-clear-selection" @onclick="ClearSelection">@ClearCategoryLabel</button>
+            }
+            <ul class="design-category-tree-group" role="group">
+                @foreach (var node in VisibleRoots)
+                {
+                    @RenderNode(node, 1)
+                }
+            </ul>
+            @if (!VisibleRoots.Any())
+            {
+                <div class="searchable-select-empty">@D["NoMatchingCategories"]</div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public Guid? SelectedId { get; set; }
+    [Parameter] public EventCallback<Guid?> SelectedIdChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+
+    private List<Node> Items = [];
+    private string Search = "";
+    private bool Open;
+    private string Token = "";
+    private Guid Company;
+    private ElementReference SearchInput;
+    private bool FocusSearchPending;
+    private readonly string PopoverId = $"design-category-picker-{Guid.NewGuid():N}";
+    private string ClearCategoryLabel => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "ar" => "مسح الفئة", "en" => "Clear category", _ => "پاک کردن دسته‌بندی" };
+    private string SelectedCaption => SelectedId is Guid id && Items.FirstOrDefault(x => x.Id == id) is Node selected ? PathFor(selected) : Items.FirstOrDefault(x => x.Code.Equals(Value, StringComparison.OrdinalIgnoreCase)) is Node byCode ? PathFor(byCode) : Placeholder ?? D["Category"];
+    private IEnumerable<Node> VisibleRoots => Items.Where(x => x.ParentId is null && (string.IsNullOrWhiteSpace(Search) || Items.Any(m => Matches(m) && IsInBranch(m, x.Id))));
+    private bool Matches(Node node) => node.Caption.Contains(Search, StringComparison.CurrentCultureIgnoreCase) || node.Code.Contains(Search, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsInBranch(Node node, Guid root)
+    {
+        Guid? current = node.Id; var seen = new HashSet<Guid>();
+        while (current is Guid id && seen.Add(id)) { if (id == root) return true; current = Items.FirstOrDefault(x => x.Id == id)?.ParentId; }
+        return false;
+    }
+
+    private string PathFor(Node node)
+    {
+        var parts = new List<string>(); Guid? current = node.Id; var seen = new HashSet<Guid>();
+        while (current is Guid id && seen.Add(id)) { var item = Items.FirstOrDefault(x => x.Id == id); if (item is null) break; parts.Add(item.Caption); current = item.ParentId; }
+        parts.Reverse(); return string.Join(" > ", parts);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var user = await AuthState.GetAuthenticationStateAsync(); Token = user.User.FindFirst(AuthClaimTypes.AccessToken)?.Value ?? ""; Guid.TryParse(user.User.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Company);
+        var result = await Core.GetAsync("api/v1/lookups/types/artwork.category/values?activeOnly=false", Token, Company, default);
+        if (!result.IsSuccess) return; Items = result.Value.EnumerateArray().Select(x => new Node(x)).ToList(); foreach (var root in Items.Where(x => x.ParentId is null)) root.Expanded = true;
+    }
+
+    private async Task OpenPicker()
+    {
+        if (Disabled) return; Open = true; FocusSearchPending = true; await InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!FocusSearchPending || !Open) return;
+        FocusSearchPending = false;
+        await SearchInput.FocusAsync();
+    }
+
+    private void Filter(ChangeEventArgs args) { Search = args.Value?.ToString() ?? ""; foreach (var node in Items.Where(Matches)) ExpandAncestors(node); }
+    private async Task HandleFieldKeyDown(KeyboardEventArgs args) { if (Disabled) return; if (args.Key is "Enter" or " " or "ArrowDown") await OpenPicker(); else if (args.Key == "Escape") Open = false; }
+    private void HandleSearchKeyDown(KeyboardEventArgs args) { if (args.Key == "Escape") Open = false; }
+    private void ClearSearch() => Search = "";
+    private void ExpandAncestors(Node node) { Guid? current = node.ParentId; var seen = new HashSet<Guid>(); while (current is Guid id && seen.Add(id)) { var parent = Items.FirstOrDefault(x => x.Id == id); if (parent is null) break; parent.Expanded = true; current = parent.ParentId; } }
+
+    private async Task ClearSelection() { Open = false; await ValueChanged.InvokeAsync(""); await SelectedIdChanged.InvokeAsync(null); }
+
+    private RenderFragment RenderNode(Node node, int level) => builder =>
+    {
+        int seq = 0; var children = Items.Where(x => x.ParentId == node.Id && (string.IsNullOrWhiteSpace(Search) || Matches(x) || Items.Any(m => Matches(m) && IsInBranch(m, x.Id)))).ToArray();
+        builder.OpenElement(seq++, "li"); builder.AddAttribute(seq++, "class", $"design-category-node {(SelectedId == node.Id ? "is-selected" : null)}"); builder.AddAttribute(seq++, "role", "treeitem"); builder.AddAttribute(seq++, "aria-level", level); builder.AddAttribute(seq++, "aria-expanded", children.Length > 0 ? node.Expanded.ToString().ToLowerInvariant() : null);
+        builder.OpenElement(seq++, "div"); builder.AddAttribute(seq++, "class", "design-category-node-row");
+        if (children.Length > 0)
+        {
+            builder.OpenElement(seq++, "button"); builder.AddAttribute(seq++, "type", "button"); builder.AddAttribute(seq++, "class", "tree-toggle"); builder.AddAttribute(seq++, "title", node.Expanded ? D["Collapse"] : D["Expand"]); builder.AddAttribute(seq++, "aria-label", node.Expanded ? D["Collapse"] : D["Expand"]); builder.AddAttribute(seq++, "aria-controls", $"{PopoverId}-children-{node.Id:N}"); builder.AddAttribute(seq++, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _ => Toggle(node)));
+            builder.OpenComponent<BarangIcon>(seq++); builder.AddAttribute(seq++, "Name", node.Expanded ? "chevron-down" : "chevron-right"); builder.AddAttribute(seq++, "Class", "tree-toggle-icon"); builder.CloseComponent(); builder.CloseElement();
+        }
+        else { builder.OpenElement(seq++, "span"); builder.AddAttribute(seq++, "class", "tree-toggle-spacer"); builder.CloseElement(); }
+        builder.OpenElement(seq++, "button"); builder.AddAttribute(seq++, "type", "button"); builder.AddAttribute(seq++, "class", $"tree-node-select {(node.Active ? null : "is-inactive")}"); builder.AddAttribute(seq++, "role", "option"); builder.AddAttribute(seq++, "aria-selected", (SelectedId == node.Id).ToString().ToLowerInvariant()); builder.AddAttribute(seq++, "aria-disabled", (!node.Active).ToString().ToLowerInvariant()); builder.AddAttribute(seq++, "tabindex", node.Active ? "0" : "-1"); builder.AddAttribute(seq++, "title", node.Active ? node.Caption : $"{node.Caption} ({D["Inactive"]})"); builder.AddAttribute(seq++, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _ => Choose(node))); builder.AddAttribute(seq++, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, args => HandleNodeKeyDown(node, args))); builder.AddContent(seq++, node.Caption); builder.CloseElement(); builder.CloseElement();
+        if (node.Expanded && children.Length > 0) { builder.OpenElement(seq++, "ul"); builder.AddAttribute(seq++, "id", $"{PopoverId}-children-{node.Id:N}"); builder.AddAttribute(seq++, "class", "design-category-tree-group"); builder.AddAttribute(seq++, "role", "group"); foreach (var child in children) builder.AddContent(seq++, RenderNode(child, level + 1)); builder.CloseElement(); }
+        builder.CloseElement();
+    };
+
+    private void Toggle(Node node) => node.Expanded = !node.Expanded;
+    private async Task HandleNodeKeyDown(Node node, KeyboardEventArgs args) { if (args.Key is "Enter" or " ") await Choose(node); }
+    private async Task Choose(Node node) { if (!node.Active) return; Open = false; await ValueChanged.InvokeAsync(node.Code); await SelectedIdChanged.InvokeAsync(node.Id); }
+
+    private sealed class Node
+    {
+        public Guid Id { get; } public Guid? ParentId { get; } public string Code { get; } public string Caption { get; } public bool Active { get; } public bool Expanded { get; set; }
+        public Node(JsonElement json)
+        {
+            Id = json.GetProperty("id").GetGuid(); ParentId = json.TryGetProperty("parentId", out var parent) && parent.ValueKind != JsonValueKind.Null ? parent.GetGuid() : null; Code = json.GetProperty("code").GetString() ?? ""; Active = json.GetProperty("isActive").GetBoolean(); var culture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName; var translations = json.TryGetProperty("translations", out var values) && values.ValueKind == JsonValueKind.Array ? values.EnumerateArray() : []; var match = translations.FirstOrDefault(x => x.TryGetProperty("culture", out var c) && c.GetString() == culture); if (match.ValueKind == JsonValueKind.Undefined) match = translations.FirstOrDefault(x => x.TryGetProperty("culture", out var c) && c.GetString() == "en"); Caption = match.ValueKind == JsonValueKind.Object && match.TryGetProperty("displayName", out var display) ? display.GetString() ?? Code : Code;
+        }
+    }
+}

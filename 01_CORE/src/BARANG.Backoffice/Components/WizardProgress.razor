@@ -1,0 +1,6 @@
+@using BARANG.Backoffice.Localization
+@inject IStringLocalizer<AppStrings> L
+<div class="wizard-progress wizard-stepper" role="list" aria-label="@L["OrderWizardSteps"]">
+ @for(var i=0;i<Steps.Count;i++){var step=i+1;<div class="wizard-progress-step @(step<CurrentStep?"complete":step==CurrentStep?"current":"future")" role="listitem"><span class="wizard-progress-title">@L[Steps[i]]</span><button type="button" class="wizard-progress-node" aria-current="@(step==CurrentStep?"step":null)" disabled aria-label="@L[Steps[i]]">@step</button>@if(step<Steps.Count){<span class="wizard-progress-connector @(step<CurrentStep?"complete":null)" aria-hidden="true"></span>}</div>}
+</div>
+@code{[Parameter,EditorRequired]public IReadOnlyList<string> Steps{get;set;}=[];[Parameter]public int CurrentStep{get;set;}=1;}

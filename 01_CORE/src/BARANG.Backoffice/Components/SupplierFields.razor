@@ -1,0 +1,63 @@
+@using System.Globalization
+@inject IStringLocalizer<SupplierStrings> S
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<fieldset disabled="@Disabled" class="customer-readonly-fieldset">
+<div class="form-grid customer-form-grid">
+@foreach(var item in Fields.Where(Visible))
+{
+    <label class="@(item.Kind=="textarea"?"span-2":item.Kind=="bool"?"check-field":null)">
+        @if(item.Kind!="bool"){<span>@Caption(item.Label) @(item.Required?"*":"")</span>}
+        @if(item.Kind=="reference"){<ReferenceSelect @key="item.Key" Name="@item.Key" TypeCode="@(item.Reference!)" Value="@Value(item.Key)" ValueChanged="v=>Set(item.Key,v)" Disabled="@Disabled" Placeholder="@Caption(item.Label)" />}
+        else if(item.Kind=="date"){<LocaleDateInput Name="@item.Key" Value="@Date(item.Key)" ValueChanged="v=>SetDate(item.Key,v)" Disabled="@Disabled" />}
+        else if(item.Kind=="bool"){<input name="@item.Key" type="checkbox" checked="@IsTrue(item.Key)" disabled="@(Disabled||(item.Key is "isDefault" or "isPrimary")&&!IsTrue("isActive"))" @onchange='@(e=>Set(item.Key,e.Value is true?"true":"false"))' /><span>@Caption(item.Label)</span>}
+        else if(item.Kind is "entity" or "status" or "ownership"){
+            <select name="@item.Key" value="@Value(item.Key)" @onchange="e=>Set(item.Key,e.Value?.ToString()??string.Empty)">
+                @foreach(string choice in Choices(item.Kind)){<option value="@choice">@S[choice]</option>}
+            </select>
+        }
+        else if(item.Kind=="province"){<SearchableSelect Name="@item.Key" Value="@Value(item.Key)" ValueChanged="ProvinceChanged" Options="@Provinces" Disabled="@Disabled" Placeholder="@Caption(item.Label)" />}
+        else if(item.Kind=="city"){<SearchableSelect Name="@item.Key" Value="@Value(item.Key)" ValueChanged="v=>Set(item.Key,v)" Options="@Cities" Disabled="@(Disabled||Value("provinceCode").Length==0)" Placeholder="@Caption(item.Label)" />}
+        else if(item.Kind=="textarea"){<textarea name="@item.Key" rows="4" maxlength="@item.MaxLength" value="@Value(item.Key)" @oninput="e=>Set(item.Key,e.Value?.ToString()??string.Empty)"></textarea>}
+        else{<input name="@item.Key" type="@(item.Kind=="email"?"email":item.Kind is "integer" or "decimal"?"number":"text")" step="@(item.Kind=="decimal"?(item.Scale==4?"0.0001":"0.01"):null)" min="@(item.Kind is "integer" or "decimal"?"0":null)" maxlength="@(item.MaxLength>0?item.MaxLength:null)" dir="@(item.Kind is "technical" or "email" or "integer" or "decimal"?"ltr":null)" value="@Value(item.Key)" disabled="@(Disabled||(Existing&&item.Key=="supplierCode"))" @oninput="e=>Set(item.Key,e.Value?.ToString()??string.Empty)" />}
+    </label>
+}
+</div>
+</fieldset>
+@if(GeoFailed){<p class="inline-error" role="alert">@S["ReferenceUnavailable"]</p>}
+@code{
+    [Parameter]public IReadOnlyList<SupplierUiField> Fields{get;set;}=[];
+    [Parameter]public Dictionary<string,string> Values{get;set;}=[];
+    [Parameter]public bool Disabled{get;set;}
+    [Parameter]public bool Existing{get;set;}
+    [Parameter]public IStringLocalizer? Labels{get;set;}
+    private LocalizedString Caption(string key){var caption=Labels?[key];return caption is null||caption.ResourceNotFound?S[key]:caption;}
+    [Parameter]public EventCallback Changed{get;set;}
+    private List<SearchableSelectOption> Provinces=[],Cities=[];
+    private string LoadedGeo="";
+    private bool GeoFailed;
+    private string Value(string key)=>Values.GetValueOrDefault(key,"");
+    private bool IsTrue(string key)=>string.Equals(Value(key),"true",StringComparison.OrdinalIgnoreCase);
+    private bool Visible(SupplierUiField item)=>item.Only is null||(item.Only=="Blocked"?Value("status")=="Blocked":Value("entityType")==item.Only);
+    private static string[] Choices(string kind)=>kind=="entity"?["Individual","LegalEntity"]:kind=="status"?["Active","Inactive","Blocked"]:["Individual","Joint"];
+    private async Task Set(string key,string value){Values[key]=value;if(key=="isActive"&&value=="false"){if(Values.ContainsKey("isDefault"))Values["isDefault"]="false";if(Values.ContainsKey("isPrimary"))Values["isPrimary"]="false";}await Changed.InvokeAsync();}
+    private DateOnly? Date(string key)=>DateOnly.TryParseExact(Value(key),"yyyy-MM-dd",CultureInfo.InvariantCulture,DateTimeStyles.None,out var date)?date:null;
+    private Task SetDate(string key,DateOnly? value)=>Set(key,value?.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture)??"");
+    protected override async Task OnParametersSetAsync(){
+        if(!Fields.Any(x=>x.Kind=="province"))return;
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;
+        string key=user.FindFirst(AuthClaimTypes.CompanyId)?.Value+":"+CultureInfo.CurrentUICulture.Name+":"+Value("provinceCode");
+        if(key==LoadedGeo)return;LoadedGeo=key;GeoFailed=false;
+        Provinces=await Geography("geography.province");Cities=Value("provinceCode").Length==0?[]:await Geography("geography.city."+Value("provinceCode"));
+    }
+    private async Task ProvinceChanged(string value){await Set("provinceCode",value);await Set("cityCode","");Cities=value.Length==0?[]:await Geography("geography.city."+value);}
+    private async Task<List<SearchableSelectOption>> Geography(string type){
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;
+        if(user.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string token||!Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var company))return [];
+        var result=await Core.GetAsync($"api/v1/lookups/{type}/options?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}&activeOnly=false",token,company,default);
+        if(!result.IsSuccess){GeoFailed=true;return [];}
+        string previous=Value(type=="geography.province"?"provinceCode":"cityCode");
+        return new[]{new SearchableSelectOption("",S["NotSpecified"])}.Concat(result.Value.EnumerateArray().Where(x=>x.GetProperty("isActive").GetBoolean()||SupplierUiSchema.Text(x,"code")==previous).Select(x=>new SearchableSelectOption(SupplierUiSchema.Text(x,"code"),SupplierUiSchema.Text(x,"displayName")))).ToList();
+    }
+}

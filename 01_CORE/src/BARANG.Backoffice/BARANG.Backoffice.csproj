@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
+    <!-- Backoffice predates the Core repository analyzer baseline; keep its existing
+         source behavior while it participates in the unified Core solution. -->
+    <NoWarn>$(NoWarn);CA1000;CA1305;CA1310;CA1725;CA1816;CA1848;CA1859</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BARANG.Core.Application\BARANG.Core.Application.csproj" />
+    <ProjectReference Include="..\BARANG.Core.Domain\BARANG.Core.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

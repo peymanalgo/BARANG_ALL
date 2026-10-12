@@ -1,0 +1,13 @@
+@inject IStringLocalizer<OrganizationStrings> O
+
+<span class="org-kind org-kind-@EntityType.ToString().ToLowerInvariant()" title="@Caption" aria-label="@Caption">
+    <BarangIcon Name="@IconName" />
+</span>
+
+@code {
+    [Parameter] public OrganizationTreeEntityType EntityType { get; set; }
+    [Parameter] public string? UnitType { get; set; }
+
+    private string IconName => OrganizationTreeIconResolver.Icon(EntityType, UnitType);
+    private string Caption => O[OrganizationTreeIconResolver.CaptionKey(EntityType, UnitType)];
+}

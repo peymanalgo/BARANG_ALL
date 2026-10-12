@@ -1,0 +1,33 @@
+@using Microsoft.AspNetCore.Localization
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    string culture = HttpContextAccessor.HttpContext?.Features.Get<IRequestCultureFeature>()?.RequestCulture.UICulture.Name ?? "fa";
+    LocaleDefinition locale = LocalePolicy.Resolve(culture);
+}
+<!DOCTYPE html>
+<html lang="@locale.Code" dir="@locale.Direction">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets[LocalePolicy.FontStylesheetUrl]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["barang-design-system.css"]" />
+    <link rel="stylesheet" href="@Assets["order360.css"]" />
+    <link rel="stylesheet" href="@Assets["organization-chart.css"]" />
+    <link rel="stylesheet" href="@Assets["reference-data.css"]" />
+    <link rel="stylesheet" href="@Assets["workflow-designer.css"]" />
+    <link rel="stylesheet" href="@Assets["BARANG.Backoffice.styles.css"]" />
+    <script src="/workflow-designer.js" defer></script>
+    <ImportMap />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+<body>
+    <Routes @rendermode="InteractiveServer" />
+    <ReconnectModal />
+    <script src="@Assets["app.js"]"></script>
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+</html>

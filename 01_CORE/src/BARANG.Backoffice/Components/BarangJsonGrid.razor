@@ -1,0 +1,116 @@
+@using System.Text.Json
+@inject IStringLocalizer<AppStrings> L
+
+@if (Rows.Count == 0)
+{
+    <CrudEmptyState Title="@L["NoRecords"]" Description="@L["NoRecordsDescription"]" />
+}
+else
+{
+    <div class="data-grid-wrap barang-json-grid">
+        <table class="data-grid compact">
+            <thead>
+                <tr>
+                    @foreach (string column in Columns)
+                    {
+                        <th>@ColumnLabel(column)</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (IReadOnlyDictionary<string, string> row in Rows)
+                {
+                    <tr>
+                        @foreach (string column in Columns)
+                        {
+                            <td>@(row.TryGetValue(column, out string? value) ? value : "—")</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter] public string? Json { get; set; }
+
+    private IReadOnlyList<string> Columns = [];
+    private IReadOnlyList<IReadOnlyDictionary<string, string>> Rows = [];
+
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrWhiteSpace(Json))
+        {
+            Columns = [];
+            Rows = [];
+            return;
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(Json);
+            JsonElement root = document.RootElement;
+            if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("items", out JsonElement items)) root = items;
+
+            List<IReadOnlyDictionary<string, string>> rows = [];
+            if (root.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement item in root.EnumerateArray()) AddRow(item, rows);
+            }
+            else
+            {
+                AddRow(root, rows);
+            }
+
+            Rows = rows;
+            Columns = rows.SelectMany(row => row.Keys).Distinct(StringComparer.OrdinalIgnoreCase).Take(12).ToArray();
+        }
+        catch (JsonException)
+        {
+            Rows = [];
+            Columns = [];
+        }
+    }
+
+    private static void AddRow(JsonElement element, ICollection<IReadOnlyDictionary<string, string>> rows)
+    {
+        if (element.ValueKind != JsonValueKind.Object) return;
+        Dictionary<string, string> row = new(StringComparer.OrdinalIgnoreCase);
+        foreach (JsonProperty property in element.EnumerateObject())
+        {
+            row[property.Name] = property.Value.ValueKind switch
+            {
+                JsonValueKind.Null => "—",
+                JsonValueKind.True => "✓",
+                JsonValueKind.False => "—",
+                JsonValueKind.Object or JsonValueKind.Array => property.Value.GetRawText(),
+                _ => property.Value.ToString()
+            };
+        }
+        rows.Add(row);
+    }
+
+    private string ColumnLabel(string column)
+    {
+        string key = column switch
+        {
+            "id" => "EntityId",
+            "createdAtUtc" or "updatedAtUtc" => "Timeline",
+            "isActive" => "Active",
+            "status" or "state" => "Status",
+            "code" => "Code",
+            "name" or "displayName" => "Name",
+            "type" => "Type",
+            "quantity" => "Quantity",
+            "amount" => "Amount",
+            "currencyCode" => "Currency",
+            "version" => "Version",
+            _ => char.ToUpperInvariant(column[0]) + column[1..]
+        };
+        LocalizedString localized = L[key];
+        return localized.ResourceNotFound
+            ? System.Text.RegularExpressions.Regex.Replace(column, "([a-z])([A-Z])", "$1 $2")
+            : localized.Value;
+    }
+}

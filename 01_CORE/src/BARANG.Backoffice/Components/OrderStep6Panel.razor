@@ -1,0 +1,111 @@
+@using System.Text.Json
+@using BARANG.Backoffice.Localization
+@inject IStringLocalizer<AppStrings> L
+@inject IStringLocalizer<OrderStep6Strings> S
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+
+<section class="panel order-pricing-step" aria-labelledby="order-step6-title">
+    <h2 id="order-step6-title">@S["Pricing"]</h2>
+    <p class="form-help">@S["Description"]</p>
+    @if (Errors.Count > 0) { <div class="validation-summary" role="alert" aria-live="assertive"><strong>@L["ValidationError"]</strong><ul>@foreach (string error in Errors) { <li>@error</li> }</ul></div> }
+    @if (Stale && !Loading) { <div class="inline-error" role="status">@S["Stale"]</div> }
+    @if (Loading) { <div class="loading-state" role="status">@S["LoadingPricing"]</div> }
+    else if (Pricing is null) { <div class="empty-state">@S["NoPricing"]</div> }
+    else
+    {
+        <div class="pricing-summary-grid">
+            <div><span>@S["Subtotal"]</span><strong dir="ltr">@Money(Pricing.Subtotal)</strong></div>
+            <div><span>@S["Discount"]</span><strong dir="ltr">@Money(Pricing.DiscountTotal)</strong></div>
+            <div><span>@S["Tax"]</span><strong dir="ltr">@Money(Pricing.TaxTotal)</strong></div>
+            <div class="pricing-final"><span>@S["FinalTotal"]</span><strong dir="ltr">@Money(Pricing.FinalTotal)</strong><small dir="ltr">@Pricing.CurrencyCode</small></div>
+        </div>
+        <section class="form-section" aria-labelledby="order-step6-items-title"><h3 id="order-step6-items-title">@S["ItemBreakdown"]</h3>
+            @if (Pricing.Items.Count == 0) { <div class="empty-state">@S["NoItems"]</div> }
+            else { <div class="pricing-item-list">@foreach (ItemPricing item in Pricing.Items) { <article class="pricing-item-card"><header><strong>@ItemCaption(item.OrderItemId)</strong><span dir="ltr">@L["Quantity"]: @ItemQuantity(item.OrderItemId)</span></header><dl><dt>@S["Product"]</dt><dd dir="ltr">@Money(item.RawProductTotal)</dd><dt>@S["Print"]</dt><dd dir="ltr">@Money(item.PrintTotal)</dd><dt>@S["AdditionalServices"]</dt><dd dir="ltr">@Money(item.AdditionalServiceTotal)</dd><dt>@S["Subtotal"]</dt><dd dir="ltr">@Money(item.Subtotal)</dd><dt>@S["FinalTotal"]</dt><dd dir="ltr">@Money(item.FinalTotal)</dd></dl></article> } </div> }
+        </section>
+        <section class="form-section" aria-labelledby="order-step6-charges-title"><h3 id="order-step6-charges-title">@S["OrderCharges"]</h3><div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@L["Component"]</th><th>@L["OrderItem"]</th><th>@L["Amount"]</th></tr></thead><tbody>@foreach (ComponentLine part in OrderComponents) { <tr><td>@ComponentCaption(part.Type)</td><td>@(part.OrderItemId is Guid id ? ItemCaption(id) : L["OrderLevel"])</td><td dir="ltr">@Money(part.Amount)</td></tr>}</tbody></table></div></section>
+    }
+    <div class="form-actions"><button type="button" class="secondary-action" @onclick="Back" disabled="@Busy">@BackLabel</button><button type="button" class="secondary-action" @onclick="Recalculate" disabled="@Busy">@(Busy ? S["LoadingPricing"] : S["Recalculate"])</button><button type="button" class="secondary-action" @onclick="SaveDraft" disabled="@Busy">@L["SaveDraft"]</button><button type="button" class="primary-link" @onclick="Next" disabled="@(Busy || Pricing is null)">@L["Next"]</button></div>
+</section>
+
+@code {
+    [Parameter] public Guid? OrderId { get; set; }
+    [Parameter] public EventCallback NextRequested { get; set; }
+    [Parameter] public EventCallback BackRequested { get; set; }
+    private bool Loading = true, Busy, Stale;
+    private List<string> Errors = [];
+    private string? LastPricingContext;
+    private PricingView? Pricing;
+    private List<ItemLabel> Items = [];
+    private List<ComponentLine> OrderComponents => Pricing?.Components.Where(x => x.OrderItemId is null).ToList() ?? [];
+    protected override async Task OnParametersSetAsync() { if (OrderId is not Guid order) return; Loading = true; Stale = true; Errors = []; var session = await Session(); if (session is null) { Errors = [L["SessionExpired"]]; Loading = false; return; } await LoadOrder(order, session.Value); await Recalculate(); Loading = false; }
+    private async Task LoadOrder(Guid order, (string Token, Guid Company) session) { ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/orders/{order}", session.Token, session.Company, default); if (!result.IsSuccess) { AddError(result, "PricingFailed"); return; } Items = []; if (result.Value.TryGetProperty("items", out JsonElement lines) && lines.ValueKind == JsonValueKind.Array) foreach (JsonElement line in lines.EnumerateArray()) Items.Add(new(line.GetProperty("id").GetGuid(), LineText(line), D(line, "quantity"))); }
+    private async Task Recalculate() { if (OrderId is not Guid order) return; var session = await Session(); if (session is null) return; Busy = true; Stale = true; Errors = []; ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Post, $"api/v1/orders/{order}/pricing/recalculate", new { orderVersion = await CurrentOrderVersion(order, session.Value) }, session.Value.Token, session.Value.Company, default); if (!result.IsSuccess) { Pricing = null; AddError(result, "PricingFailed"); Busy = false; return; } Pricing = ParsePricing(result.Value); Stale = false; Busy = false; }
+    private async Task<long> CurrentOrderVersion(Guid order, (string Token, Guid Company) session) { ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/orders/{order}", session.Token, session.Company, default); return result.IsSuccess ? Long(result.Value, "version") : 0; }
+    private Task SaveDraft() => Recalculate();
+    private string BackLabel => L["Back"].Value;
+    private Task Back() => BackRequested.InvokeAsync();
+    private async Task Next() { if (Pricing is not null && Errors.Count == 0) await NextRequested.InvokeAsync(); }
+    private string ItemCaption(Guid id) => Items.FirstOrDefault(x => x.Id == id)?.Text ?? id.ToString();
+    private decimal ItemQuantity(Guid id) => Items.FirstOrDefault(x => x.Id == id)?.Quantity ?? 0;
+    private string ComponentCaption(string type) => type switch { "RawProduct" => S["Product"], "Print" => S["Print"], "Design" => S["Design"], "AdditionalService" => S["AdditionalServices"], "Packaging" => S["Packaging"], "Shipping" => S["Shipping"], "Discount" => S["Discount"], "Tax" => S["Tax"], _ => type };
+    private static string Money(decimal value) => value.ToString("N2", System.Globalization.CultureInfo.CurrentCulture);
+    private void AddError(ApiResult<JsonElement> result, string fallback)
+    {
+        string code = result.ProblemCode ?? string.Empty;
+        LastPricingContext = result.ProblemDescription;
+        Errors.Add(code switch
+        {
+            "pricing.tariff.missing" or "pricing.product_price.missing" or "pricing.print_tariff.missing" or "pricing.service_tariff.missing" or "pricing.packaging_tariff.missing" or "pricing.shipping_tariff.missing" => MissingPricingMessage(code),
+            "pricing.currency_mismatch" => S["InvalidCurrency"],
+            "pricing.tariff.ambiguous" or "pricing.ambiguous" => AmbiguousPricingMessage(),
+            "pricing.order.concurrency" or "pricing.concurrency_conflict" => L["ConcurrencyConflict"],
+            "order.item_required" => S["NoItems"],
+            _ => L["GenericError"]
+        });
+    }
+    private string MissingPricingMessage(string code)
+    {
+        string language = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        return language switch
+        {
+            "ar" => code == "pricing.product_price.missing" ? ProductPriceMessage("ar") : "لم يتم العثور على تعريفة نشطة لمكوّن التسعير المحدد.",
+            "en" => code == "pricing.product_price.missing" ? ProductPriceMessage("en") : "No active pricing tariff is configured for the affected order component.",
+            _ => code == "pricing.product_price.missing" ? ProductPriceMessage("fa") : "برای مؤلفه مربوط به سفارش تعرفه فعال تعریف نشده است."
+        };
+    }
+    private string ProductPriceMessage(string language)
+    {
+        Dictionary<string,string> values = (LastPricingContext ?? string.Empty).Split('|', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Split(':', 2)).Where(x => x.Length == 2).ToDictionary(x => x[0], x => x[1], StringComparer.OrdinalIgnoreCase);
+        string product = values.GetValueOrDefault("product", "محصول انتخاب‌شده");
+        string sku = values.GetValueOrDefault("sku", "");
+        string label = string.IsNullOrWhiteSpace(sku) ? $"«{product}»" : $"«{product} / {sku}»";
+        string date = values.TryGetValue("date", out string? raw) && Dates.TryParseCanonical(raw, out DateOnly parsed) ? Dates.Format(parsed, System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName) : "";
+        return language switch
+        {
+            "en" => string.IsNullOrWhiteSpace(date) ? $"No active sales price exists for {label}." : $"No active sales price exists for {label} on {date}.",
+            "ar" => string.IsNullOrWhiteSpace(date) ? $"لا يوجد سعر بيع نشط لـ{label}." : $"لا يوجد سعر بيع نشط لـ{label} في تاريخ {date}.",
+            _ => string.IsNullOrWhiteSpace(date) ? $"برای {label} قیمت فروش فعال تعریف نشده است." : $"برای {label} در تاریخ {date} قیمت فروش فعال تعریف نشده است."
+        };
+    }
+    private string AmbiguousPricingMessage() => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch
+    {
+        "ar" => "أكثر من تعريفة نشطة تنطبق على أحد مكونات الطلب؛ يجب تصحيح إعداد التسعير.",
+        "en" => "More than one active tariff applies to an order component; pricing configuration must be corrected.",
+        _ => "بیش از یک تعرفه فعال برای یکی از مؤلفه‌های سفارش اعمال می‌شود؛ تنظیمات قیمت‌گذاری را اصلاح کنید."
+    };
+    private async Task<(string Token, Guid Company)?> Session() { var user = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid company) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? (token, company) : null; }
+    private static PricingView ParsePricing(JsonElement x) { List<ItemPricing> items = []; if (x.TryGetProperty("items", out JsonElement a) && a.ValueKind == JsonValueKind.Array) foreach (JsonElement i in a.EnumerateArray()) items.Add(new(N(i, "orderItemId"), D(i, "rawProductTotal"), D(i, "printTotal"), D(i, "additionalServiceTotal"), D(i, "subtotal"), D(i, "discountAllocated"), D(i, "finalTotal"), D(i, "taxAmount"), D(i, "taxableAmount"))); List<ComponentLine> components = []; if (x.TryGetProperty("components", out JsonElement c) && c.ValueKind == JsonValueKind.Array) foreach (JsonElement part in c.EnumerateArray()) components.Add(new(G(part, "componentType"), GN(part, "orderItemId"), D(part, "totalAmount"))); return new(D(x, "rawProductTotal"), D(x, "printTotal"), D(x, "additionalServiceTotal"), D(x, "packagingTotal"), D(x, "shippingTotal"), D(x, "subtotal"), D(x, "discountTotal"), D(x, "taxTotal"), D(x, "finalTotal"), G(x, "currencyCode"), items, components); }
+    private static string LineText(JsonElement x) { if (x.TryGetProperty("snapshot", out JsonElement s) && s.ValueKind == JsonValueKind.Object) return string.Join(" · ", new[] { G(s, "productName"), G(s, "variantSku") }.Where(v => !string.IsNullOrWhiteSpace(v))); return G(x, "productVariantId"); }
+    private static string G(JsonElement x, string n) => x.ValueKind == JsonValueKind.Object && x.TryGetProperty(n, out JsonElement p) && p.ValueKind != JsonValueKind.Null ? p.ToString() : "";
+    private static Guid N(JsonElement x, string n) => Guid.TryParse(G(x, n), out Guid id) ? id : Guid.Empty;
+    private static Guid? GN(JsonElement x, string n) => Guid.TryParse(G(x, n), out Guid id) ? id : null;
+    private static long Long(JsonElement x, string n) => x.ValueKind == JsonValueKind.Object && x.TryGetProperty(n, out JsonElement p) && p.TryGetInt64(out long value) ? value : 0;
+    private static decimal D(JsonElement x, string n) => x.ValueKind == JsonValueKind.Object && x.TryGetProperty(n, out JsonElement p) && p.TryGetDecimal(out decimal value) ? value : 0;
+    private sealed record PricingView(decimal RawProductTotal, decimal PrintTotal, decimal AdditionalServiceTotal, decimal PackagingTotal, decimal ShippingTotal, decimal Subtotal, decimal DiscountTotal, decimal TaxTotal, decimal FinalTotal, string CurrencyCode, List<ItemPricing> Items, List<ComponentLine> Components);
+    private sealed record ItemPricing(Guid OrderItemId, decimal RawProductTotal, decimal PrintTotal, decimal AdditionalServiceTotal, decimal Subtotal, decimal DiscountAllocated, decimal FinalTotal, decimal TaxAmount, decimal TaxableAmount);
+    private sealed record ComponentLine(string Type, Guid? OrderItemId, decimal Amount);
+    private sealed record ItemLabel(Guid Id, string Text, decimal Quantity);
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Undo"><value>تراجع</value></data>
+  <data name="Redo"><value>إعادة</value></data>
+  <data name="Duplicate"><value>تكرار</value></data>
+  <data name="Cancel"><value>إلغاء</value></data>
+  <data name="DeleteConfirmation"><value>سيتم حذف هذا العنصر والاتصالات المرتبطة به من مخطط سير العمل الحالي.</value></data>
+  <data name="Outcome"><value>نتيجة المسار</value></data><data name="Approve"><value>موافقة</value></data><data name="Reject"><value>رفض</value></data><data name="AuditReject"><value>رفض التدقيق</value></data><data name="SourceAnchor"><value>مرساة المصدر</value></data><data name="TargetAnchor"><value>مرساة الهدف</value></data><data name="Auto"><value>تلقائي</value></data><data name="Top"><value>أعلى</value></data><data name="Right"><value>يمين</value></data><data name="Bottom"><value>أسفل</value></data><data name="Left"><value>يسار</value></data>
+  <data name="ConditionOnlyFromGateway"><value>لا تُسمح الشروط والنتائج إلا بمخارج البوابة الحصرية.</value></data><data name="DuplicateNodeKey"><value>يجب أن تكون مفاتيح العقد مستقرة وفريدة.</value></data><data name="InvalidTransition"><value>الاتصال غير صالح.</value></data><data name="InvalidOutcome"><value>نتيجة المسار غير صالحة.</value></data><data name="InvalidAnchor"><value>مرساة الاتصال غير صالحة لهذا النوع من العقد.</value></data>
+</root>

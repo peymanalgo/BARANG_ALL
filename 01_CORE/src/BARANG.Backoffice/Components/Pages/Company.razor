@@ -1,0 +1,32 @@
+@page "/company"
+@layout EmptyLayout
+@attribute [Authorize]
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+@inject IStringLocalizer<AppStrings> L
+<PageTitle>@L["SelectCompany"] · BARANG</PageTitle>
+<main class="company-page" data-enhance-nav="false"><section class="company-panel">
+    <div class="company-header"><a class="brand dark-brand" href="/"><span class="brand-mark">B</span><span><strong>BARANG</strong><small>@L["Backoffice"]</small></span></a><LanguageSwitcher /></div>
+    @if(!string.IsNullOrWhiteSpace(Message)){<div class="inline-error company-selection-error" role="alert">@SelectionError</div>}
+    @if (Loading) { <div class="state-block" aria-live="polite"><span class="spinner"></span><h1>@L["Loading"]</h1></div> }
+    else if (Companies.Count == 0) { <div class="state-block"><span class="state-icon">!</span><h1>@L["NoCompanyAccess"]</h1><p>@L["NoCompanyDescription"]</p>@if(IsSystemAdministrator){<a class="secondary-button" href="/recovery/companies">@L["CompanyRecovery"]</a>}<form method="post" action="/auth/logout"><AntiforgeryToken /><button type="submit" class="secondary-button">@L["Logout"]</button></form></div> }
+    else { <div class="selection-copy"><span class="eyebrow">@L["CompanyContext"]</span><h1>@L["SelectCompany"]</h1><p>@L["SelectCompanyDescription"]</p></div><div class="company-list">
+        @foreach (var company in Companies) { <form method="post" action="/auth/company" class="submitting-form"><AntiforgeryToken /><input type="hidden" name="companyId" value="@company.CompanyId" /><input type="hidden" name="returnUrl" value="@ReturnUrl" /><button type="submit" class="company-option"><span><strong>@company.DisplayName</strong><small>@company.Code</small></span><span class="direction-arrow" aria-hidden="true">←</span></button></form> }
+    </div> }
+</section></main>
+@code {
+    private bool Loading { get; set; } = true;
+    private IReadOnlyList<MyCompanyView> Companies { get; set; } = [];
+    private bool IsSystemAdministrator { get; set; }
+    [SupplyParameterFromQuery(Name="message")] public string? Message { get; set; }
+    [SupplyParameterFromQuery(Name="returnUrl")] public string? ReturnUrl { get; set; }
+    private string SelectionError => Message switch { "inactive"=>L["CompanyInactiveReason"], "forbidden"=>L["CompanyNoAccessReason"], "restricted"=>L["CompanyRestrictedReason"], _=>L["CompanySelectionFailed"] };
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        string? token = user.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+        IsSystemAdministrator=user.HasClaim(AuthClaimTypes.SystemAdministrator,"true");
+        if (token is not null) { var result = await Core.GetMyCompaniesAsync(token, CancellationToken.None); if (result.IsSuccess && result.Value is not null) Companies = result.Value; else Message = "error"; }
+        Loading = false;
+    }
+}

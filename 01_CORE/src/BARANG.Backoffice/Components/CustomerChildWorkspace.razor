@@ -1,0 +1,157 @@
+@using System.Globalization
+@using System.Text.Json
+@inject IStringLocalizer<CustomerStrings> C
+@inject IStringLocalizer<CrudStrings> T
+@inject IStringLocalizer<ReferenceStrings> R
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+
+<section class="customer-editor-panel customer-child-grid" data-child-kind="@Kind">
+    <div class="child-header"><h3>@Title</h3>@if(!ReadOnly){<button type="button" class="btn btn-primary btn-small" @onclick="New"><BarangIcon Name="plus" /> @AddTitle</button>}</div>
+    @if(Kind=="addresses"){<p class="reference-scope-note">@R["DefaultAddressRule"]</p>}
+    @if(Kind=="bank-accounts"){<p class="read-only-note">@C["SensitiveData"]</p>}
+    @if(Message is not null&&!Dialog&&!DeleteDialog){<div class="@(Success?"inline-success":"inline-error")" role="status">@Message</div>}
+    <div class="crud-toolbar"><label class="search-box"><input value="@Search" @oninput="SearchChanged" placeholder="@T["SearchHint"]" aria-label="@T["SearchHint"]" /></label><button type="button" class="btn btn-secondary" @onclick="Load">@T["Refresh"]</button></div>
+    @if(Loading){<BarangLoadingState Text="@C["Loading"]" />}
+    else if(Rows.Count==0){<CrudEmptyState Title="@C[Kind=="addresses"?"NoAddresses":Kind=="contacts"?"NoContacts":"NoBankAccounts"]" Description="" />}
+    else
+    {
+        <div class="data-grid-wrap"><table class="data-grid"><thead><tr>
+            @foreach(var field in Columns){<th><BarangSortHeader Label="@Label(field)" Active="@(Sort==field.Key)" Descending="Descending" Clicked="()=>SortChanged(field.Key)" /></th>}
+            <th>@C["Status"]</th><th>@C["Actions"]</th>
+        </tr></thead><tbody>
+            @foreach(var row in Filtered.Skip((Page-1)*PageSize).Take(PageSize)){
+                <tr data-id="@Text(row,"id")">
+                    @foreach(var field in Columns){<td dir="@(field.Kind is "phone" or "email" or "number"?"ltr":null)">@Cell(row,field)</td>}
+                    <td><StatusBadge Active="@Boolean(row,"isActive")" />@if(Boolean(row,DefaultKey)){<span class="status-badge">@C[Kind=="contacts"?"Primary":"Default"]</span>}</td>
+                    <td><div class="row-actions"><BarangIconButton Icon="eye" Label="@T["View"]" Semantic="info" Clicked="()=>Open(row,true)" />
+                    @if(!ReadOnly){
+                        <BarangIconButton Icon="edit" Label="@T["Edit"]" Semantic="edit" Clicked="()=>Open(row,false)" />
+                        <BarangIconButton Icon="power" Label="@(Boolean(row,"isActive")?T["Deactivate"]:T["Activate"])" Semantic="@(Boolean(row,"isActive")?"warning":"success")" Clicked="()=>Activate(row)" />
+                        <BarangIconButton Icon="trash" Label="@T["Delete"]" Semantic="danger" Clicked="()=>AskDelete(row)" />
+                        @if(Boolean(row,"isActive")&&!Boolean(row,DefaultKey)){<button type="button" class="btn btn-secondary btn-small" @onclick="()=>SetDefault(row)">@C[Kind=="contacts"?"SetPrimary":"SetDefault"]</button>}
+                    }</div></td>
+                </tr>
+            }
+        </tbody></table></div>
+        <BarangPagination Page="Page" HasNext="@(Filtered.Count>Page*PageSize)" PreviousText="@C["Previous"]" NextText="@C["Next"]" Previous="Previous" Next="Next" />
+    }
+</section>
+<BarangModal Open="Dialog" Title="@(Viewing?T["View"]:EditingId is null?T["Add"]:T["Edit"])" Description="@Title" Size="large" ReserveSelectorSpace="true" Busy="Busy" CloseLabel="@T["Close"]" CloseRequested="Close">
+    <ChildContent>
+        @if(Message is not null&&!Success){<div class="inline-error" role="alert">@Message</div>}
+        <section class="reference-editor"><fieldset disabled="@(Viewing||Busy)"><div class="form-grid customer-form-grid">
+            @foreach(var field in Fields)
+            {
+                <label class="@(field.Kind=="textarea"?"span-2":null)"><span>@Label(field) @(field.Required?"*":"")</span>
+                    @if(field.Reference is not null){<ReferenceSelect @key="field.Key" TypeCode="@field.Reference" Name="@field.Key" Value="@Value(field.Key)" ValueChanged="v=>Set(field.Key,v)" Disabled="@Viewing" Placeholder="@Label(field)" />}
+                    else if(field.Kind=="ownership"){<select name="@field.Key" value="@Value(field.Key)" @onchange="e=>Set(field.Key,e.Value?.ToString()??string.Empty)"><option value="Individual">@R["IndividualOwnership"]</option><option value="Joint">@R["JointOwnership"]</option></select>}
+                    else if(field.Kind=="province"){<SearchableSelect Name="@field.Key" Options="Provinces" Value="@Value(field.Key)" ValueChanged="ProvinceChanged" Disabled="@Viewing" />}
+                    else if(field.Kind=="city"){<SearchableSelect Name="@field.Key" Options="Cities" Value="@Value(field.Key)" ValueChanged="v=>Set(field.Key,v)" Disabled="@(Viewing||Value("provinceCode").Length==0)" />}
+                    else if(field.Kind=="textarea"){<textarea name="@field.Key" value="@Value(field.Key)" @onchange="e=>Set(field.Key,e.Value?.ToString()??string.Empty)"></textarea>}
+                    else {<input name="@field.Key" type="@(field.Kind=="email"?"email":"text")" dir="@(field.Kind is "phone" or "email" or "number"?"ltr":null)" value="@Value(field.Key)" @onchange="e=>Set(field.Key,e.Value?.ToString()??string.Empty)" />}
+                </label>
+            }
+            <label class="check-field"><input type="checkbox" name="@DefaultKey" @bind="IsDefault" disabled="@(!EditingActive)" /><span>@C[Kind=="contacts"?"Primary":"Default"]</span></label>
+        </div></fieldset></section>
+    </ChildContent>
+    <Footer><button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="Close">@T["Cancel"]</button>@if(!Viewing){<button type="button" class="btn btn-primary" disabled="@Busy" @onclick="Save">@T["Save"]</button>}</Footer>
+</BarangModal>
+<BarangModal Open="DeleteDialog" Title="@T["Delete"]" Busy="Busy" CloseLabel="@T["Close"]" CloseRequested="CloseDelete">
+    <ChildContent><p>@R["ConfirmDelete"]</p>@if(Message is not null&&!Success){<div class="inline-error" role="alert">@Message</div>}</ChildContent>
+    <Footer><button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="CloseDelete">@T["Cancel"]</button><button type="button" class="btn btn-danger" disabled="@Busy" @onclick="Delete">@T["Delete"]</button></Footer>
+</BarangModal>
+@code {
+    [Parameter] public Guid CustomerId { get; set; }
+    [Parameter,EditorRequired] public string Kind { get; set; }="";
+    [Parameter] public bool ReadOnly { get; set; }
+    private const int PageSize=10;
+    private string Title=>C[Kind=="addresses"?"Addresses":Kind=="contacts"?"Contacts":"BankAccounts"];
+    private string AddTitle=>Kind=="addresses"?C["AddAddress"]:Kind=="contacts"?C["AddContact"]:T["Add"];
+    private string DefaultKey=>Kind=="contacts"?"isPrimary":"isDefault";
+    private string Path=>$"api/v1/customers/{CustomerId}/{Kind}";
+    private string LoadedKey="",Search="",Sort="",LegacyBankName="";
+    private string? Token,Message;
+    private Guid Company;
+    private List<JsonElement> Rows=[];
+    private Dictionary<string,string> Data=[];
+    private Dictionary<string,string> Captions=[];
+    private List<SearchableSelectOption> Provinces=[],Cities=[];
+    private bool Loading,Busy,Dialog,DeleteDialog,Viewing,Success,Descending,IsDefault,EditingActive=true;
+    private Guid? EditingId;
+    private long Version;
+    private int Page=1,DisplayOrder;
+    private static readonly Field[] AddressFields=[
+        new("title","AddressTitle",Required:true),new("addressTypeId","AddressType",Reference:"address.type",Required:true),
+        new("postalCode","PostalCode","number"),new("addressLine1","AddressLine","textarea",Required:true),
+        new("recipientPhone","Phone","phone"),new("recipientMobile","Mobile","phone"),new("email","Email","email"),new("notes","Notes","textarea"),
+        new("countryCode","Country",Required:true),new("provinceCode","Province","province"),new("cityCode","City","city"),new("district","District"),new("addressLine2","AddressLine","textarea"),new("recipientName","Recipient")];
+    private static readonly Field[] ContactFields=[
+        new("firstName","FirstName",Required:true),new("lastName","LastName"),new("phone","Phone","phone"),new("mobile","Mobile","phone"),new("email","Email","email"),new("contactRoleId","R:ContactRole",Reference:"contact.role",Required:true),new("positionTitle","PositionTitle"),new("notes","Notes","textarea")];
+    private static readonly Field[] BankFields=[
+        new("bankId","Bank",Reference:"bank",Required:true),new("accountName","R:AccountName"),new("accountTypeId","R:AccountType",Reference:"bank.account.type"),
+        new("ownershipType","R:OwnershipType","ownership"),new("accountHolderName","AccountHolder",Required:true),
+        new("accountNumber","AccountNumber","number"),new("iban","Iban","number"),new("cardNumber","R:CardNumber","number"),new("branchCode","R:BranchCode"),new("notes","Notes","textarea"),new("currencyCode","Currency",Required:true)];
+    private IReadOnlyList<Field> Fields=>Kind switch{"addresses"=>AddressFields,"contacts"=>ContactFields,"bank-accounts"=>BankFields,_=>[]};
+    private IEnumerable<Field> Columns=>Fields.Where(column=>Kind!="addresses"||new[]{"title","postalCode","addressLine1","recipientPhone","recipientMobile","email","notes"}.Contains(column.Key)).Where(column=>column.Kind!="textarea"||column.Key=="addressLine1");
+    private List<JsonElement> Filtered {
+        get {var filtered=Rows.Where(row=>string.Join(" ",Columns.Select(column=>Cell(row,column))).Contains(Search.Trim(),StringComparison.CurrentCultureIgnoreCase));Func<JsonElement,string> key=row=>Fields.FirstOrDefault(x=>x.Key==Sort) is Field column?Cell(row,column):Text(row,"id");return(Descending?filtered.OrderByDescending(key):filtered.OrderBy(key)).ToList();}
+    }
+    protected override async Task OnParametersSetAsync(){
+        if(Fields.Count==0)return;
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;Token=user.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);
+        string key=$"{Company}:{CustomerId}:{Kind}:{CultureInfo.CurrentUICulture.Name}";
+        if(LoadedKey==key)return;LoadedKey=key;await Load();
+    }
+    private async Task Load(){
+        if(Token is null)return;Loading=true;
+        var result=await Core.GetAsync(Path,Token,Company,default);
+        if(result.IsSuccess)Rows=result.Value.EnumerateArray().ToList();else Show(result);
+        Captions=[];
+        foreach(string type in Fields.Where(x=>x.Reference is not null).Select(x=>x.Reference!).Distinct()){
+            var options=await Core.GetAsync($"api/v1/lookups/{type}/options?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}&activeOnly=false",Token,Company,default);
+            if(options.IsSuccess)foreach(var option in options.Value.EnumerateArray())Captions[Text(option,"id")]=Text(option,"displayName");
+            else Show(options);
+        }
+        Page=Math.Clamp(Page,1,Math.Max(1,(Filtered.Count+PageSize-1)/PageSize));Loading=false;
+    }
+    private string Label(Field field)=>field.Label.StartsWith("R:",StringComparison.Ordinal)?R[field.Label[2..]]:C[field.Label];
+    private string Cell(JsonElement row,Field field){
+        string value=Text(row,field.Key);
+        if(field.Reference is not null)return Captions.GetValueOrDefault(value,field.Key=="bankId"?Text(row,"bankName"):value);
+        if(field.Kind=="ownership")return R[value=="Joint"?"JointOwnership":"IndividualOwnership"];
+        return value;
+    }
+    private string Value(string key)=>Data.GetValueOrDefault(key,"");
+    private void Set(string key,string value)=>Data[key]=value;
+    private void SearchChanged(ChangeEventArgs e){Search=e.Value?.ToString()??"";Page=1;}
+    private void SortChanged(string key){Descending=Sort==key&&!Descending;Sort=key;Page=1;}
+    private void Previous(){if(Page>1)Page--;}private void Next(){if(Page*PageSize<Filtered.Count)Page++;}
+    private async Task New(){Data=Fields.ToDictionary(x=>x.Key,_=>"");Data["countryCode"]="IR";Data["currencyCode"]="IRR";Data["ownershipType"]="Individual";EditingId=null;Version=0;DisplayOrder=0;LegacyBankName="";IsDefault=false;EditingActive=true;Viewing=false;Message=null;Dialog=true;if(Kind=="addresses")await LoadGeography();}
+    private async Task Open(JsonElement row,bool viewing){Data=Fields.ToDictionary(x=>x.Key,x=>Text(row,x.Key));EditingId=row.GetProperty("id").GetGuid();Version=row.GetProperty("version").GetInt64();DisplayOrder=row.TryGetProperty("displayOrder",out var order)?order.GetInt32():0;LegacyBankName=Text(row,"bankName");IsDefault=Boolean(row,DefaultKey);EditingActive=Boolean(row,"isActive");Viewing=viewing;Message=null;Dialog=true;if(Kind=="addresses")await LoadGeography();}
+    private void Close(){if(!Busy)Dialog=false;}private void CloseDelete(){if(!Busy)DeleteDialog=false;}
+    private void AskDelete(JsonElement row){EditingId=row.GetProperty("id").GetGuid();Version=row.GetProperty("version").GetInt64();Message=null;DeleteDialog=true;}
+    private async Task Save(){
+        if(Token is null||Busy||ReadOnly||Viewing)return;
+        if(Fields.Any(x=>x.Required&&string.IsNullOrWhiteSpace(Value(x.Key)))){Success=false;Message=C["ValidationError"];return;}
+        Dictionary<string,object?> body=Fields.ToDictionary(field=>field.Key,field=>field.Reference is not null?(Guid.TryParse(Value(field.Key),out Guid id)?(object)id:null):(object?)Value(field.Key));
+        body[DefaultKey]=IsDefault;body["version"]=Version;body["displayOrder"]=DisplayOrder;
+        if(Kind=="addresses")body["addressTypeCode"]="";
+        else if(Kind=="contacts")body["contactTypeCode"]="";
+        else body["bankName"]=LegacyBankName;
+        Busy=true;
+        var result=await Core.SendAsync(EditingId is null?HttpMethod.Post:HttpMethod.Put,Path+(EditingId is Guid id?$"/{id}":""),body,Token,Company,default);
+        Show(result);Busy=false;if(result.IsSuccess){Dialog=false;await Load();}
+    }
+    private async Task Activate(JsonElement row)=>await Action(row,"activation",new{isActive=!Boolean(row,"isActive"),version=row.GetProperty("version").GetInt64()});
+    private Task SetDefault(JsonElement row)=>Action(row,Kind=="contacts"?"primary":"default",new{version=row.GetProperty("version").GetInt64()});
+    private async Task Action(JsonElement row,string action,object body){if(Token is null||Busy||ReadOnly)return;Busy=true;var result=await Core.SendAsync(HttpMethod.Post,$"{Path}/{Text(row,"id")}/{action}",body,Token,Company,default);Show(result);Busy=false;if(result.IsSuccess)await Load();}
+    private async Task Delete(){if(Token is null||Busy||ReadOnly||EditingId is null)return;Busy=true;var result=await Core.SendAsync(HttpMethod.Delete,$"{Path}/{EditingId}?version={Version}",null,Token,Company,default);Show(result);Busy=false;if(result.IsSuccess){DeleteDialog=false;await Load();}}
+    private async Task LoadGeography(){Provinces=await Geography("geography.province");Cities=Value("provinceCode").Length==0?[]:await Geography($"geography.city.{Value("provinceCode")}");}
+    private async Task ProvinceChanged(string value){Set("provinceCode",value);Set("cityCode","");Cities=value.Length==0?[]:await Geography($"geography.city.{value}");}
+    private async Task<List<SearchableSelectOption>> Geography(string type){if(Token is null)return[];var r=await Core.GetAsync($"api/v1/lookups/{type}/options?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}&activeOnly=true",Token,Company,default);return r.IsSuccess?r.Value.EnumerateArray().Select(x=>new SearchableSelectOption(Text(x,"code"),Text(x,"displayName"))).ToList():[];}
+    private void Show(ApiResult<JsonElement> result){Success=result.IsSuccess;Message=result.IsSuccess?C["Saved"]:result.ProblemCode switch{"customer.contacts_legal_only"=>R["LegalContactsOnly"],"organization.delete.protected_dependency" or "customer.referenced"=>R["Referenced"],_=>result.Failure switch{ApiFailure.Forbidden=>C["Forbidden"],ApiFailure.Conflict=>C["Conflict"],_=>C["ValidationError"]}};}
+    private static string Text(JsonElement row,string name)=>row.TryGetProperty(name,out var value)&&value.ValueKind!=JsonValueKind.Null?value.ToString():"";
+    private static bool Boolean(JsonElement row,string name)=>row.TryGetProperty(name,out var value)&&value.ValueKind==JsonValueKind.True;
+    private sealed record Field(string Key,string Label,string Kind="text",string? Reference=null,bool Required=false);
+}

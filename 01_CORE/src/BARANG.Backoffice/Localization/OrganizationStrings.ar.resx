@@ -1,0 +1,289 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Chart">
+    <value>الهيكل التنظيمي</value>
+  </data>
+  <data name="Persons">
+    <value>الأشخاص</value>
+  </data>
+  <data name="AddCompany">
+    <value>إضافة شركة</value>
+  </data>
+  <data name="AddBranch">
+    <value>إضافة فرع</value>
+  </data>
+  <data name="AddUnit">
+    <value>إضافة وحدة تنظيمية</value>
+  </data>
+  <data name="AddPerson">
+    <value>إضافة شخص</value>
+  </data>
+  <data name="Company">
+    <value>الشركة</value>
+  </data>
+  <data name="Branch">
+    <value>الفرع</value>
+  </data>
+  <data name="Office">
+    <value>المكتب</value>
+  </data>
+  <data name="OrganizationalUnit">
+    <value>الوحدة التنظيمية</value>
+  </data>
+  <data name="Unit">
+    <value>الوحدة التنظيمية</value>
+  </data>
+  <data name="Person">
+    <value>الشخص</value>
+  </data>
+  <data name="Position">
+    <value>المنصب</value>
+  </data>
+  <data name="SemanticRole"><value>الدور التنظيمي</value></data>
+  <data name="ReportsToPosition"><value>يرفع التقارير إلى المنصب</value></data>
+  <data name="Vacant">
+    <value>شاغر</value>
+  </data>
+  <data name="Manager">
+    <value>المدير</value>
+  </data>
+  <data name="FullInformation">
+    <value>المعلومات الكاملة</value>
+  </data>
+  <data name="OrganizationalChart">
+    <value>الهيكل التنظيمي</value>
+  </data>
+  <data name="UserInformation">
+    <value>معلومات المستخدم</value>
+  </data>
+  <data name="RolesPermissions">
+    <value>الأدوار والصلاحيات الفعلية</value>
+  </data>
+  <data name="NoAccount">
+    <value>لا يوجد حساب مستخدم مرتبط بهذا الشخص.</value>
+  </data>
+  <data name="ReadOnly">
+    <value>هذا القسم للقراءة فقط.</value>
+  </data>
+  <data name="PersonnelCode">
+    <value>الرقم الوظيفي</value>
+  </data>
+  <data name="FirstName">
+    <value>الاسم الأول</value>
+  </data>
+  <data name="LastName">
+    <value>اسم العائلة</value>
+  </data>
+  <data name="BirthDate">
+    <value>تاريخ الميلاد</value>
+  </data>
+  <data name="NationalId">
+    <value>المعرّف الوطني</value>
+  </data>
+  <data name="Email">
+    <value>البريد الإلكتروني</value>
+  </data>
+  <data name="Phone">
+    <value>الهاتف</value>
+  </data>
+  <data name="Address">
+    <value>العنوان</value>
+  </data>
+  <data name="Notes">
+    <value>ملاحظات</value>
+  </data>
+  <data name="EmptyChart">
+    <value>لم يتم تسجيل هيكل تنظيمي بعد.</value>
+  </data>
+  <data name="SearchPerson">
+    <value>البحث بالاسم أو الرقم الوظيفي</value>
+  </data>
+  <data name="AssignedRoles">
+    <value>الأدوار المسندة</value>
+  </data>
+  <data name="EffectivePermissions">
+    <value>الصلاحيات الفعلية</value>
+  </data>
+  <data name="ResetPassword">
+    <value>إعادة تعيين كلمة المرور</value>
+  </data>
+  <data name="Website">
+    <value>الموقع الإلكتروني</value>
+  </data>
+  <data name="AddressSection">
+    <value>العنوان</value>
+  </data>
+  <data name="ContactInformation">
+    <value>معلومات الاتصال</value>
+  </data>
+  <data name="CreateUserAccount">
+    <value>إنشاء حساب مستخدم</value>
+  </data>
+  <data name="SaveSuccess">
+    <value>تم الحفظ بنجاح</value>
+  </data>
+  <data name="Deactivate">
+    <value>تعطيل</value>
+  </data>
+  <data name="View">
+    <value>عرض</value>
+  </data>
+  <data name="EconomicCode">
+    <value>الرمز الاقتصادي</value>
+  </data>
+  <data name="Mobile">
+    <value>الهاتف المحمول</value>
+  </data>
+  <data name="Close">
+    <value>إغلاق</value>
+  </data>
+  <data name="StartDate">
+    <value>تاريخ البدء</value>
+  </data>
+  <data name="DisplayName">
+    <value>الاسم التجاري/العرض</value>
+  </data>
+  <data name="City">
+    <value>المدينة</value>
+  </data>
+  <data name="Province">
+    <value>المحافظة</value>
+  </data>
+  <data name="BusinessInformation">
+    <value>معلومات الأعمال والنظام</value>
+  </data>
+  <data name="RegistrationNumber">
+    <value>رقم التسجيل</value>
+  </data>
+  <data name="Edit">
+    <value>تعديل</value>
+  </data>
+  <data name="LegalName">
+    <value>الاسم القانوني</value>
+  </data>
+  <data name="TaxId">
+    <value>المعرّف الضريبي</value>
+  </data>
+  <data name="Username">
+    <value>اسم المستخدم</value>
+  </data>
+  <data name="GeneralInformation">
+    <value>المعلومات العامة</value>
+  </data>
+  <data name="PrimaryAssignment">
+    <value>التعيين الأساسي</value>
+  </data>
+  <data name="EndDate">
+    <value>تاريخ الانتهاء</value>
+  </data>
+  <data name="PostalCode">
+    <value>الرمز البريدي</value>
+  </data>
+  <data name="AddSubordinate">
+    <value>إضافة مرؤوس</value>
+  </data>
+  <data name="ConfirmPassword">
+    <value>تأكيد كلمة المرور</value>
+  </data>
+  <data name="Description">
+    <value>الوصف</value>
+  </data>
+  <data name="CountryCode">
+    <value>الدولة</value>
+  </data>
+  <data name="SelectPerson">
+    <value>اختيار شخص</value>
+  </data>
+  <data name="Assignment">
+    <value>التعيين التنظيمي</value>
+  </data>
+  <data name="Activate">
+    <value>تفعيل</value>
+  </data>
+  <data name="DefaultCurrency">
+    <value>العملة الافتراضية</value>
+  </data>
+  <data name="ParentUnit">
+    <value>الوحدة الأم</value>
+  </data>
+  <data name="Enabled">
+    <value>مفعّل</value>
+  </data>
+  <data name="NewPassword">
+    <value>كلمة مرور جديدة</value>
+  </data>
+  <data name="LegalInformation">
+    <value>المعلومات القانونية</value>
+  </data>
+  <data name="AccountCreated">
+    <value>تم إنشاء حساب المستخدم</value>
+  </data>
+  <data name="Locked">
+    <value>مقفل</value>
+  </data>
+  <data name="Calendar"><value>التقويم</value></data>
+  <data name="PreviousMonth"><value>الشهر السابق</value></data>
+  <data name="NextMonth"><value>الشهر التالي</value></data>
+  <data name="SelectMonth"><value>اختيار الشهر</value></data>
+  <data name="SelectYear"><value>اختيار السنة</value></data>
+  <data name="PreviousYears"><value>السنوات السابقة</value></data>
+  <data name="NextYears"><value>السنوات التالية</value></data>
+  <data name="AllStatuses"><value>كل الحالات</value></data>
+  <data name="Page"><value>الصفحة</value></data>
+  <data name="UnsavedChangesTitle"><value>تغييرات غير محفوظة</value></data>
+  <data name="UnsavedChangesMessage"><value>هل تريد تجاهل التغييرات التي أُجريت في هذا النموذج؟</value></data>
+  <data name="DiscardChanges"><value>تجاهل التغييرات</value></data>
+  <data name="InvalidDate"><value>التاريخ المُدخل غير صالح.</value></data>
+  <data name="RequiredFields"><value>أكمل الحقول المطلوبة.</value></data>
+  <data name="OperationFailed"><value>تعذّر تنفيذ العملية. راجع المعلومات وحاول مرة أخرى.</value></data>
+  <data name="SearchFailed"><value>تعذّر البحث عن الأشخاص.</value></data>
+  <data name="DuplicateAssignment"><value>لهذا الشخص تعيين نشط بالفعل في هذه الوحدة.</value></data>
+  <data name="ReportingCycle"><value>سيؤدي هذا المدير إلى إنشاء دورة إشراف غير صالحة.</value></data>
+  <data name="InvalidScope"><value>العلاقة التنظيمية المحددة خارج نطاق الشركة المسموح.</value></data>
+  <data name="DatePlaceholder"><value>السنة/الشهر/اليوم</value></data>
+  <data name="AddChildUnit"><value>إضافة وحدة فرعية</value></data>
+  <data name="Move"><value>نقل</value></data>
+  <data name="ChangeManager"><value>تغيير المدير</value></data>
+  <data name="Delete"><value>حذف</value></data>
+  <data name="RemoveAssignment"><value>إزالة التعيين</value></data>
+  <data name="Expand"><value>توسيع</value></data>
+  <data name="Collapse"><value>طي</value></data>
+  <data name="More"><value>إجراءات إضافية</value></data>
+  <data name="ViewPerson"><value>عرض الشخص</value></data>
+  <data name="DeleteConfirmTitle"><value>تأكيد الحذف</value></data>
+  <data name="DeleteConfirmMessage"><value>هل تريد بالتأكيد حذف {0} «{1}»؟</value></data>
+  <data name="DeleteBlockedChildren"><value>الحذف غير متاح لأن لهذا العنصر عناصر تنظيمية فرعية.</value></data>
+  <data name="DeleteProtectedDependency"><value>الحذف غير متاح لوجود سجل أو مراجع محمية. استخدم التعطيل للحفاظ على السجل.</value></data>
+  <data name="DeleteSuccess"><value>تم حذف العنصر بنجاح.</value></data>
+  <data name="PositionArchived"><value>تعذر حذف المنصب فعلياً لوجود سجل أو ارتباطات بسير العمل؛ تم تعطيله للحفاظ على السجل.</value></data>
+  <data name="AssignedAutomatically"><value>يُعيّن تلقائيًا عند الحفظ</value></data>
+  <data name="MoveUnitTitle"><value>نقل إلى وحدة تنظيمية</value></data>
+  <data name="NoManager"><value>بدون مدير مباشر</value></data>
+  <data name="SearchChart"><value>البحث عن شركة أو فرع أو وحدة أو شخص</value></data>
+  <data name="SearchChartNoResults"><value>لا توجد نتائج في الهيكل لـ «{0}».</value></data>
+  <data name="PrintChart"><value>طباعة الهيكل التنظيمي</value></data>
+  <data name="SelectPrintCompany"><value>اختيار الشركة</value></data>
+  <data name="Print"><value>طباعة</value></data>
+  <data name="SavePdf"><value>حفظ بصيغة PDF</value></data>
+  <data name="PrintDate"><value>تاريخ الطباعة (UTC)</value></data>
+  <data name="PrintError"><value>تعذر تحميل هيكل الشركة. تحقق من صلاحية الوصول إلى الشركة وحاول مجدداً.</value></data>
+  <data name="PrintManager"><value>مدير</value></data>
+  <data name="PrintEmployee"><value>موظف</value></data>
+  <data name="PrintContinuation"><value>يتبع في القسم</value></data>
+  <data name="ManageCompanies"><value>إدارة الشركات</value></data>
+  <data name="CurrentCompanyChart"><value>الهيكل التنظيمي للشركة الحالية</value></data>
+  <data name="CompanyAdministrationDenied"><value>ليس لديك وصول أو صلاحية سارية لإدارة هذه الشركة.</value></data>
+  <data name="DisplayOrderInvalid"><value>يجب أن يكون ترتيب العرض عدداً صحيحاً يساوي صفراً أو أكبر.</value></data>
+</root>

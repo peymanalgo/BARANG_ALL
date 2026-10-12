@@ -1,0 +1,63 @@
+@inject IStringLocalizer<OrganizationStrings> O
+@inject IStringLocalizer<CrudStrings> T
+
+<div class="structure-form" data-chart-form="company">
+    <section>
+        <h3>@O["GeneralInformation"]</h3>
+        <div class="form-grid">
+            <label>
+                <span>@T["Code"] *</span>
+                <input name="company-code" @bind="Model.Code" disabled="@(Mode != FormMode.Create)" maxlength="64" autofocus="@(Mode == FormMode.Create)" />
+            </label>
+            <Field Name="company-legal-name" Label="@($"{O["LegalName"]} *")" @bind-Value="Model.LegalName" Disabled="ReadOnly" />
+            <Field Name="company-display-name" Label="@($"{O["DisplayName"]} *")" @bind-Value="Model.DisplayName" Disabled="ReadOnly" />
+        </div>
+    </section>
+    <section>
+        <h3>@O["LegalInformation"]</h3>
+        <div class="form-grid">
+            <Field Name="company-national-id" Label="@O["NationalId"]" @bind-Value="Model.NationalId" Disabled="ReadOnly" />
+            <Field Name="company-registration-number" Label="@O["RegistrationNumber"]" @bind-Value="Model.RegistrationNumber" Disabled="ReadOnly" />
+            <Field Name="company-economic-code" Label="@O["EconomicCode"]" @bind-Value="Model.EconomicCode" Disabled="ReadOnly" />
+            <Field Name="company-tax-id" Label="@O["TaxId"]" @bind-Value="Model.TaxId" Disabled="ReadOnly" />
+        </div>
+    </section>
+    <section>
+        <h3>@O["ContactInformation"]</h3>
+        <div class="form-grid">
+            <Field Name="company-phone" Label="@O["Phone"]" @bind-Value="Model.Phone" Disabled="ReadOnly" />
+            <Field Name="company-mobile" Label="@O["Mobile"]" @bind-Value="Model.Mobile" Disabled="ReadOnly" />
+            <Field Name="company-email" Label="@O["Email"]" @bind-Value="Model.Email" Disabled="ReadOnly" Type="email" />
+            <Field Name="company-website" Label="@O["Website"]" @bind-Value="Model.Website" Disabled="ReadOnly" />
+        </div>
+    </section>
+    <section>
+        <h3>@O["AddressSection"]</h3>
+        <div class="form-grid">
+            <Field Name="company-country-code" Label="@O["CountryCode"]" @bind-Value="Model.CountryCode" Disabled="ReadOnly" />
+            <Field Name="company-province" Label="@O["Province"]" @bind-Value="Model.Province" Disabled="ReadOnly" />
+            <Field Name="company-city" Label="@O["City"]" @bind-Value="Model.City" Disabled="ReadOnly" />
+            <Field Name="company-postal-code" Label="@O["PostalCode"]" @bind-Value="Model.PostalCode" Disabled="ReadOnly" />
+            <label class="form-wide">
+                <span>@O["Address"]</span>
+                <textarea name="company-address" @bind="Model.Address" disabled="@ReadOnly"></textarea>
+            </label>
+        </div>
+    </section>
+    <section>
+        <h3>@O["BusinessInformation"]</h3>
+        <div class="form-grid">
+            <Field Name="company-currency" Label="@O["DefaultCurrency"]" @bind-Value="Model.DefaultCurrencyCode" Disabled="ReadOnly" />
+            <label class="form-wide">
+                <span>@O["Notes"]</span>
+                <textarea name="company-notes" @bind="Model.Notes" disabled="@ReadOnly"></textarea>
+            </label>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CompanyFormModel Model { get; set; } = null!;
+    [Parameter] public FormMode Mode { get; set; }
+    private bool ReadOnly => Mode == FormMode.View;
+}

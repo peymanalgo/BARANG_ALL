@@ -1,0 +1,4 @@
+using System.Collections.Concurrent;
+using Microsoft.Playwright;
+namespace BARANG.Backoffice.E2ETests;
+internal sealed class BrowserDiagnostics(IPage page){private readonly ConcurrentQueue<string> events=new();public void Attach(){page.Console+=(_,m)=>Record($"console.{m.Type}: {m.Text}");page.PageError+=(_,e)=>Record($"pageerror: {e}");page.RequestFailed+=(_,r)=>Record($"requestfailed: {r.Method} {r.Url} {r.Failure}");page.Response+=(_,r)=>{if(r.Status>=400)Record($"response: {r.Status} {r.Request.Method} {r.Url}");};page.WebSocket+=(_,s)=>{Record($"websocket: opened {s.Url}");s.Close+=(_,_)=>Record($"websocket: closed {s.Url}");s.SocketError+=(_,e)=>Record($"websocket: error {s.Url} {e}");};}public IReadOnlyCollection<string> Events=>events.ToArray();public void Dump(string title){Console.WriteLine($"--- {title} ---");foreach(string e in Events)Console.WriteLine(e);}private void Record(string value){events.Enqueue(value);Console.WriteLine(value);}}

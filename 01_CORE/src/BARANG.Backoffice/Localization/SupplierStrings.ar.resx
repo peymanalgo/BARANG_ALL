@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Title" xml:space="preserve"><value>&#x627;&#x644;&#x645;&#x648;&#x631;&#x62f;&#x648;&#x646;</value></data>
+  <data name="Subtitle" xml:space="preserve"><value>&#x647;&#x648;&#x64a;&#x627;&#x62a; &#x627;&#x644;&#x645;&#x648;&#x631;&#x62f;&#x64a;&#x646; &#x648;&#x62c;&#x647;&#x627;&#x62a; &#x627;&#x644;&#x627;&#x62a;&#x635;&#x627;&#x644; &#x648;&#x627;&#x644;&#x625;&#x639;&#x62f;&#x627;&#x62f;&#x627;&#x62a; &#x627;&#x644;&#x62a;&#x62c;&#x627;&#x631;&#x64a;&#x629; &#x627;&#x644;&#x62e;&#x627;&#x635;&#x629; &#x628;&#x627;&#x644;&#x634;&#x631;&#x643;&#x629;.</value></data>
+  <data name="MasterData" xml:space="preserve"><value>&#x627;&#x644;&#x628;&#x64a;&#x627;&#x646;&#x627;&#x62a; &#x627;&#x644;&#x623;&#x633;&#x627;&#x633;&#x64a;&#x629;</value></data>
+  <data name="SystemManagement" xml:space="preserve"><value>&#x625;&#x62f;&#x627;&#x631;&#x629; &#x627;&#x644;&#x646;&#x638;&#x627;&#x645;</value></data>
+  <data name="NewSupplier" xml:space="preserve"><value>&#x625;&#x636;&#x627;&#x641;&#x629; &#x645;&#x648;&#x631;&#x62f;</value></data>
+  <data name="ViewSupplier" xml:space="preserve"><value>&#x639;&#x631;&#x636; &#x627;&#x644;&#x645;&#x648;&#x631;&#x62f;</value></data>
+  <data name="EditSupplier" xml:space="preserve"><value>&#x62a;&#x639;&#x62f;&#x64a;&#x644; &#x627;&#x644;&#x645;&#x648;&#x631;&#x62f;</value></data>
+  <data name="EditorHelp" xml:space="preserve"><value>&#x64a;&#x63a;&#x644;&#x642; &#x627;&#x644;&#x62d;&#x641;&#x638; &#x647;&#x630;&#x627; &#x627;&#x644;&#x645;&#x62d;&#x631;&#x631;. &#x62a;&#x62d;&#x641;&#x638; &#x627;&#x644;&#x633;&#x62c;&#x644;&#x627;&#x62a; &#x627;&#x644;&#x62a;&#x627;&#x628;&#x639;&#x629; &#x628;&#x634;&#x643;&#x644; &#x645;&#x633;&#x62a;&#x642;&#x644;.</value></data>
+  <data name="General" xml:space="preserve"><value>&#x639;&#x627;&#x645; / &#x627;&#x644;&#x647;&#x648;&#x64a;&#x629;</value></data>
+  <data name="Addresses" xml:space="preserve"><value>&#x627;&#x644;&#x639;&#x646;&#x627;&#x648;&#x64a;&#x646;</value></data>
+  <data name="Contacts" xml:space="preserve"><value>&#x62c;&#x647;&#x627;&#x62a; &#x627;&#x644;&#x627;&#x62a;&#x635;&#x627;&#x644;</value></data>
+  <data name="Financial" xml:space="preserve"><value>&#x62a;&#x62c;&#x627;&#x631;&#x64a; / &#x645;&#x627;&#x644;&#x64a;</value></data>
+  <data name="BankAccounts" xml:space="preserve"><value>&#x627;&#x644;&#x62d;&#x633;&#x627;&#x628;&#x627;&#x62a; &#x627;&#x644;&#x628;&#x646;&#x643;&#x64a;&#x629;</value></data>
+  <data name="SupplierNumber" xml:space="preserve"><value>&#x631;&#x642;&#x645; &#x627;&#x644;&#x645;&#x648;&#x631;&#x62f;</value></data>
+  <data name="SupplierCode" xml:space="preserve"><value>&#x631;&#x645;&#x632; &#x627;&#x644;&#x645;&#x648;&#x631;&#x62f;</value></data>
+  <data name="DisplayName" xml:space="preserve"><value>&#x627;&#x633;&#x645; &#x627;&#x644;&#x645;&#x648;&#x631;&#x62f;</value></data>
+  <data name="EntityType" xml:space="preserve"><value>&#x646;&#x648;&#x639; &#x627;&#x644;&#x643;&#x64a;&#x627;&#x646;</value></data>
+  <data name="Individual" xml:space="preserve"><value>&#x641;&#x631;&#x62f;&#x64a;</value></data>
+  <data name="LegalEntity" xml:space="preserve"><value>&#x627;&#x639;&#x62a;&#x628;&#x627;&#x631;&#x64a;</value></data>
+  <data name="Joint" xml:space="preserve"><value>&#x645;&#x634;&#x62a;&#x631;&#x643;</value></data>
+  <data name="Status" xml:space="preserve"><value>&#x627;&#x644;&#x62d;&#x627;&#x644;&#x629;</value></data>
+  <data name="Active" xml:space="preserve"><value>&#x646;&#x634;&#x637;</value></data>
+  <data name="Inactive" xml:space="preserve"><value>&#x63a;&#x64a;&#x631; &#x646;&#x634;&#x637;</value></data>
+  <data name="Blocked" xml:space="preserve"><value>&#x645;&#x62d;&#x638;&#x648;&#x631; / &#x645;&#x639;&#x644;&#x642;</value></data>
+  <data name="Categories" xml:space="preserve"><value>&#x641;&#x626;&#x627;&#x62a; &#x627;&#x644;&#x645;&#x648;&#x631;&#x62f;</value></data>
+  <data name="GradeId" xml:space="preserve"><value>&#x62f;&#x631;&#x62c;&#x629; &#x627;&#x644;&#x645;&#x648;&#x631;&#x62f;</value></data>
+  <data name="GradePreferred" xml:space="preserve"><value>&#x627;&#x644;&#x62f;&#x631;&#x62c;&#x629; / &#x627;&#x644;&#x62a;&#x641;&#x636;&#x64a;&#x644;</value></data>
+  <data name="Preferred" xml:space="preserve"><value>&#x645;&#x641;&#x636;&#x644;</value></data>
+  <data name="IsPreferred" xml:space="preserve"><value>&#x645;&#x648;&#x631;&#x62f; &#x645;&#x641;&#x636;&#x644;</value></data>
+  <data name="CooperationStartDate" xml:space="preserve"><value>&#x62a;&#x627;&#x631;&#x64a;&#x62e; &#x628;&#x62f;&#x621; &#x627;&#x644;&#x62a;&#x639;&#x627;&#x648;&#x646;</value></data>
+  <data name="PrimaryMobile" xml:space="preserve"><value>&#x627;&#x644;&#x62c;&#x648;&#x627;&#x644; / &#x627;&#x644;&#x647;&#x627;&#x62a;&#x641;</value></data>
+  <data name="PrimaryPhone" xml:space="preserve"><value>&#x627;&#x644;&#x647;&#x627;&#x62a;&#x641;</value></data>
+  <data name="PrimaryEmail" xml:space="preserve"><value>&#x627;&#x644;&#x628;&#x631;&#x64a;&#x62f; &#x627;&#x644;&#x625;&#x644;&#x643;&#x62a;&#x631;&#x648;&#x646;&#x64a;</value></data>
+  <data name="Website" xml:space="preserve"><value>&#x627;&#x644;&#x645;&#x648;&#x642;&#x639; &#x627;&#x644;&#x625;&#x644;&#x643;&#x62a;&#x631;&#x648;&#x646;&#x64a;</value></data>
+  <data name="Notes" xml:space="preserve"><value>&#x645;&#x644;&#x627;&#x62d;&#x638;&#x627;&#x62a;</value></data>
+  <data name="FirstName" xml:space="preserve"><value>&#x627;&#x644;&#x627;&#x633;&#x645; &#x627;&#x644;&#x623;&#x648;&#x644;</value></data>
+  <data name="LastName" xml:space="preserve"><value>&#x627;&#x633;&#x645; &#x627;&#x644;&#x639;&#x627;&#x626;&#x644;&#x629;</value></data>
+  <data name="NationalId" xml:space="preserve"><value>&#x627;&#x644;&#x645;&#x639;&#x631;&#x641; &#x627;&#x644;&#x648;&#x637;&#x646;&#x64a;</value></data>
+  <data name="Occupation" xml:space="preserve"><value>&#x627;&#x644;&#x645;&#x647;&#x646;&#x629; / &#x627;&#x644;&#x646;&#x634;&#x627;&#x637;</value></data>
+  <data name="LegalName" xml:space="preserve"><value>&#x627;&#x644;&#x627;&#x633;&#x645; &#x627;&#x644;&#x642;&#x627;&#x646;&#x648;&#x646;&#x64a;</value></data>
+  <data name="TradeName" xml:space="preserve"><value>&#x627;&#x644;&#x627;&#x633;&#x645; &#x627;&#x644;&#x62a;&#x62c;&#x627;&#x631;&#x64a;</value></data>
+  <data name="RegistrationNo" xml:space="preserve"><value>&#x631;&#x642;&#x645; &#x627;&#x644;&#x62a;&#x633;&#x62c;&#x64a;&#x644;</value></data>
+  <data name="TaxId" xml:space="preserve"><value>&#x627;&#x644;&#x631;&#x645;&#x632; &#x627;&#x644;&#x627;&#x642;&#x62a;&#x635;&#x627;&#x62f;&#x64a;</value></data>
+  <data name="LegalEntityTypeId" xml:space="preserve"><value>&#x646;&#x648;&#x639; &#x627;&#x644;&#x643;&#x64a;&#x627;&#x646; &#x627;&#x644;&#x642;&#x627;&#x646;&#x648;&#x646;&#x64a;</value></data>
+  <data name="EstablishmentDate" xml:space="preserve"><value>&#x62a;&#x627;&#x631;&#x64a;&#x62e; &#x627;&#x644;&#x62a;&#x623;&#x633;&#x64a;&#x633;</value></data>
+  <data name="BusinessActivity" xml:space="preserve"><value>&#x627;&#x644;&#x646;&#x634;&#x627;&#x637; &#x627;&#x644;&#x62a;&#x62c;&#x627;&#x631;&#x64a;</value></data>
+  <data name="HoldReasonId" xml:space="preserve"><value>&#x633;&#x628;&#x628; &#x627;&#x644;&#x62d;&#x638;&#x631; / &#x627;&#x644;&#x62a;&#x639;&#x644;&#x64a;&#x642;</value></data>
+  <data name="AddressName" xml:space="preserve"><value>&#x627;&#x633;&#x645; &#x627;&#x644;&#x639;&#x646;&#x648;&#x627;&#x646;</value></data>
+  <data name="AddressTypeId" xml:space="preserve"><value>&#x646;&#x648;&#x639; &#x627;&#x644;&#x639;&#x646;&#x648;&#x627;&#x646;</value></data>
+  <data name="CountryCode" xml:space="preserve"><value>&#x631;&#x645;&#x632; &#x627;&#x644;&#x628;&#x644;&#x62f;</value></data>
+  <data name="ProvinceCode" xml:space="preserve"><value>&#x627;&#x644;&#x645;&#x62d;&#x627;&#x641;&#x638;&#x629;</value></data>
+  <data name="CityCode" xml:space="preserve"><value>&#x627;&#x644;&#x645;&#x62f;&#x64a;&#x646;&#x629;</value></data>
+  <data name="PostalCode" xml:space="preserve"><value>&#x627;&#x644;&#x631;&#x645;&#x632; &#x627;&#x644;&#x628;&#x631;&#x64a;&#x62f;&#x64a;</value></data>
+  <data name="FullAddress" xml:space="preserve"><value>&#x627;&#x644;&#x639;&#x646;&#x648;&#x627;&#x646; &#x627;&#x644;&#x643;&#x627;&#x645;&#x644;</value></data>
+  <data name="Landline" xml:space="preserve"><value>&#x627;&#x644;&#x647;&#x627;&#x62a;&#x641; &#x627;&#x644;&#x62b;&#x627;&#x628;&#x62a;</value></data>
+  <data name="Mobile" xml:space="preserve"><value>&#x627;&#x644;&#x62c;&#x648;&#x627;&#x644;</value></data>
+  <data name="Email" xml:space="preserve"><value>&#x627;&#x644;&#x628;&#x631;&#x64a;&#x62f; &#x627;&#x644;&#x625;&#x644;&#x643;&#x62a;&#x631;&#x648;&#x646;&#x64a;</value></data>
+  <data name="RecipientName" xml:space="preserve"><value>&#x627;&#x644;&#x645;&#x633;&#x62a;&#x644;&#x645; / &#x62c;&#x647;&#x629; &#x627;&#x644;&#x627;&#x62a;&#x635;&#x627;&#x644;</value></data>
+  <data name="IsDefault" xml:space="preserve"><value>&#x627;&#x641;&#x62a;&#x631;&#x627;&#x636;&#x64a;</value></data>
+  <data name="IsPrimary" xml:space="preserve"><value>&#x62c;&#x647;&#x629; &#x627;&#x644;&#x627;&#x62a;&#x635;&#x627;&#x644; &#x627;&#x644;&#x631;&#x626;&#x64a;&#x633;&#x64a;&#x629;</value></data>
+  <data name="IsActive" xml:space="preserve"><value>&#x646;&#x634;&#x637;</value></data>
+  <data name="Default" xml:space="preserve"><value>&#x627;&#x641;&#x62a;&#x631;&#x627;&#x636;&#x64a;</value></data>
+  <data name="Primary" xml:space="preserve"><value>&#x631;&#x626;&#x64a;&#x633;&#x64a;</value></data>
+  <data name="SetDefault" xml:space="preserve"><value>&#x62a;&#x639;&#x64a;&#x64a;&#x646; &#x643;&#x627;&#x641;&#x62a;&#x631;&#x627;&#x636;&#x64a;</value></data>
+  <data name="SetPrimary" xml:space="preserve"><value>&#x62a;&#x639;&#x64a;&#x64a;&#x646; &#x62c;&#x647;&#x629; &#x627;&#x62a;&#x635;&#x627;&#x644; &#x631;&#x626;&#x64a;&#x633;&#x64a;&#x629;</value></data>
+  <data name="ContactRoleId" xml:space="preserve"><value>&#x62f;&#x648;&#x631; &#x62c;&#x647;&#x629; &#x627;&#x644;&#x627;&#x62a;&#x635;&#x627;&#x644;</value></data>
+  <data name="PositionTitle" xml:space="preserve"><value>&#x627;&#x644;&#x645;&#x646;&#x635;&#x628; / &#x627;&#x644;&#x645;&#x633;&#x645;&#x649;</value></data>
+  <data name="Extension" xml:space="preserve"><value>&#x627;&#x644;&#x631;&#x642;&#x645; &#x627;&#x644;&#x62f;&#x627;&#x62e;&#x644;&#x64a;</value></data>
+  <data name="PaymentTermId" xml:space="preserve"><value>&#x623;&#x62c;&#x644; &#x627;&#x644;&#x62f;&#x641;&#x639;</value></data>
+  <data name="PaymentConditionId" xml:space="preserve"><value>&#x634;&#x631;&#x637; &#x627;&#x644;&#x62f;&#x641;&#x639;</value></data>
+  <data name="PaymentMethodId" xml:space="preserve"><value>&#x637;&#x631;&#x64a;&#x642;&#x629; &#x627;&#x644;&#x62f;&#x641;&#x639;</value></data>
+  <data name="DefaultCurrencyCode" xml:space="preserve"><value>&#x631;&#x645;&#x632; &#x627;&#x644;&#x639;&#x645;&#x644;&#x629; &#x627;&#x644;&#x627;&#x641;&#x62a;&#x631;&#x627;&#x636;&#x64a;&#x629;</value></data>
+  <data name="MinimumOrderAmount" xml:space="preserve"><value>&#x627;&#x644;&#x62d;&#x62f; &#x627;&#x644;&#x623;&#x62f;&#x646;&#x649; &#x644;&#x642;&#x64a;&#x645;&#x629; &#x627;&#x644;&#x637;&#x644;&#x628;</value></data>
+  <data name="DefaultLeadTimeDays" xml:space="preserve"><value>&#x645;&#x647;&#x644;&#x629; &#x627;&#x644;&#x62a;&#x648;&#x631;&#x64a;&#x62f; &#x627;&#x644;&#x627;&#x641;&#x62a;&#x631;&#x627;&#x636;&#x64a;&#x629; (&#x623;&#x64a;&#x627;&#x645;)</value></data>
+  <data name="BaseDiscountPercent" xml:space="preserve"><value>&#x627;&#x644;&#x62e;&#x635;&#x645; &#x627;&#x644;&#x623;&#x633;&#x627;&#x633;&#x64a; (%)</value></data>
+  <data name="CreditPurchaseAllowed" xml:space="preserve"><value>&#x627;&#x644;&#x633;&#x645;&#x627;&#x62d; &#x628;&#x627;&#x644;&#x634;&#x631;&#x627;&#x621; &#x627;&#x644;&#x622;&#x62c;&#x644;</value></data>
+  <data name="PurchaseCreditLimit" xml:space="preserve"><value>&#x62d;&#x62f; &#x627;&#x626;&#x62a;&#x645;&#x627;&#x646; &#x627;&#x644;&#x634;&#x631;&#x627;&#x621;</value></data>
+  <data name="ShippingMethodId" xml:space="preserve"><value>&#x637;&#x631;&#x64a;&#x642;&#x629; &#x627;&#x644;&#x634;&#x62d;&#x646;</value></data>
+  <data name="FreightDeliveryTermId" xml:space="preserve"><value>&#x634;&#x631;&#x648;&#x637; &#x627;&#x644;&#x646;&#x642;&#x644; / &#x627;&#x644;&#x62a;&#x633;&#x644;&#x64a;&#x645;</value></data>
+  <data name="BankId" xml:space="preserve"><value>&#x627;&#x644;&#x628;&#x646;&#x643;</value></data>
+  <data name="AccountName" xml:space="preserve"><value>&#x627;&#x633;&#x645; &#x627;&#x644;&#x62d;&#x633;&#x627;&#x628;</value></data>
+  <data name="AccountTypeId" xml:space="preserve"><value>&#x646;&#x648;&#x639; &#x627;&#x644;&#x62d;&#x633;&#x627;&#x628;</value></data>
+  <data name="OwnershipType" xml:space="preserve"><value>&#x646;&#x648;&#x639; &#x627;&#x644;&#x645;&#x644;&#x643;&#x64a;&#x629;</value></data>
+  <data name="AccountHolderNames" xml:space="preserve"><value>&#x623;&#x633;&#x645;&#x627;&#x621; &#x623;&#x635;&#x62d;&#x627;&#x628; &#x627;&#x644;&#x62d;&#x633;&#x627;&#x628;</value></data>
+  <data name="AccountNumber" xml:space="preserve"><value>&#x631;&#x642;&#x645; &#x627;&#x644;&#x62d;&#x633;&#x627;&#x628; / &#x627;&#x644;&#x625;&#x64a;&#x62f;&#x627;&#x639;</value></data>
+  <data name="Iban" xml:space="preserve"><value>&#x631;&#x642;&#x645; &#x627;&#x644;&#x622;&#x64a;&#x628;&#x627;&#x646;</value></data>
+  <data name="CardNumber" xml:space="preserve"><value>&#x631;&#x642;&#x645; &#x627;&#x644;&#x628;&#x637;&#x627;&#x642;&#x629;</value></data>
+  <data name="BranchCode" xml:space="preserve"><value>&#x631;&#x645;&#x632; &#x641;&#x631;&#x639; &#x627;&#x644;&#x628;&#x646;&#x643;</value></data>
+  <data name="BranchName" xml:space="preserve"><value>&#x627;&#x633;&#x645; &#x641;&#x631;&#x639; &#x627;&#x644;&#x628;&#x646;&#x643;</value></data>
+  <data name="CurrencyCode" xml:space="preserve"><value>&#x631;&#x645;&#x632; &#x627;&#x644;&#x639;&#x645;&#x644;&#x629;</value></data>
+  <data name="NoSecrets" xml:space="preserve"><value>&#x644;&#x627; &#x62a;&#x62f;&#x62e;&#x644; &#x623;&#x631;&#x642;&#x627;&#x645; PIN &#x623;&#x648; CVV &#x623;&#x648; &#x643;&#x644;&#x645;&#x627;&#x62a; &#x627;&#x644;&#x645;&#x631;&#x648;&#x631; &#x623;&#x648; &#x627;&#x644;&#x623;&#x633;&#x631;&#x627;&#x631; &#x627;&#x644;&#x623;&#x645;&#x646;&#x64a;&#x629;.</value></data>
+  <data name="DefaultRule" xml:space="preserve"><value>&#x64a;&#x633;&#x645;&#x62d; &#x628;&#x627;&#x641;&#x62a;&#x631;&#x627;&#x636;&#x64a; &#x646;&#x634;&#x637; &#x648;&#x627;&#x62d;&#x62f;. &#x64a;&#x624;&#x62f;&#x64a; &#x62d;&#x630;&#x641;&#x647; &#x623;&#x648; &#x62a;&#x639;&#x637;&#x64a;&#x644;&#x647; &#x625;&#x644;&#x649; &#x639;&#x62f;&#x645; &#x648;&#x62c;&#x648;&#x62f; &#x627;&#x641;&#x62a;&#x631;&#x627;&#x636;&#x64a; &#x62d;&#x62a;&#x649; &#x627;&#x62e;&#x62a;&#x64a;&#x627;&#x631; &#x622;&#x62e;&#x631;.</value></data>
+  <data name="PrimaryRule" xml:space="preserve"><value>&#x64a;&#x633;&#x645;&#x62d; &#x628;&#x62c;&#x647;&#x629; &#x627;&#x62a;&#x635;&#x627;&#x644; &#x631;&#x626;&#x64a;&#x633;&#x64a;&#x629; &#x646;&#x634;&#x637;&#x629; &#x648;&#x627;&#x62d;&#x62f;&#x629;. &#x64a;&#x624;&#x62f;&#x64a; &#x62d;&#x630;&#x641;&#x647;&#x627; &#x623;&#x648; &#x62a;&#x639;&#x637;&#x64a;&#x644;&#x647;&#x627; &#x625;&#x644;&#x649; &#x645;&#x633;&#x62d; &#x627;&#x644;&#x627;&#x62e;&#x62a;&#x64a;&#x627;&#x631; &#x627;&#x644;&#x631;&#x626;&#x64a;&#x633;&#x64a;.</value></data>
+  <data name="Add" xml:space="preserve"><value>&#x625;&#x636;&#x627;&#x641;&#x629;</value></data>
+  <data name="View" xml:space="preserve"><value>&#x639;&#x631;&#x636;</value></data>
+  <data name="Edit" xml:space="preserve"><value>&#x62a;&#x639;&#x62f;&#x64a;&#x644;</value></data>
+  <data name="Save" xml:space="preserve"><value>&#x62d;&#x641;&#x638;</value></data>
+  <data name="Cancel" xml:space="preserve"><value>&#x625;&#x644;&#x63a;&#x627;&#x621;</value></data>
+  <data name="Delete" xml:space="preserve"><value>&#x62d;&#x630;&#x641;</value></data>
+  <data name="Activate" xml:space="preserve"><value>&#x62a;&#x641;&#x639;&#x64a;&#x644;</value></data>
+  <data name="Deactivate" xml:space="preserve"><value>&#x62a;&#x639;&#x637;&#x64a;&#x644;</value></data>
+  <data name="Block" xml:space="preserve"><value>&#x62d;&#x638;&#x631; / &#x62a;&#x639;&#x644;&#x64a;&#x642;</value></data>
+  <data name="Unblock" xml:space="preserve"><value>&#x625;&#x644;&#x63a;&#x627;&#x621; &#x627;&#x644;&#x62d;&#x638;&#x631;</value></data>
+  <data name="Refresh" xml:space="preserve"><value>&#x62a;&#x62d;&#x62f;&#x64a;&#x62b;</value></data>
+  <data name="Actions" xml:space="preserve"><value>&#x627;&#x644;&#x625;&#x62c;&#x631;&#x627;&#x621;&#x627;&#x62a;</value></data>
+  <data name="Previous" xml:space="preserve"><value>&#x627;&#x644;&#x633;&#x627;&#x628;&#x642;</value></data>
+  <data name="Next" xml:space="preserve"><value>&#x627;&#x644;&#x62a;&#x627;&#x644;&#x64a;</value></data>
+  <data name="Search" xml:space="preserve"><value>&#x628;&#x62d;&#x62b;</value></data>
+  <data name="SearchHint" xml:space="preserve"><value>&#x628;&#x62d;&#x62b; &#x628;&#x627;&#x644;&#x631;&#x642;&#x645; &#x623;&#x648; &#x627;&#x644;&#x631;&#x645;&#x632; &#x623;&#x648; &#x627;&#x644;&#x627;&#x633;&#x645; &#x623;&#x648; &#x627;&#x644;&#x645;&#x639;&#x631;&#x641; &#x627;&#x644;&#x648;&#x637;&#x646;&#x64a; &#x623;&#x648; &#x627;&#x644;&#x62c;&#x648;&#x627;&#x644; &#x623;&#x648; &#x627;&#x644;&#x628;&#x631;&#x64a;&#x62f;</value></data>
+  <data name="AllTypes" xml:space="preserve"><value>&#x643;&#x644; &#x627;&#x644;&#x623;&#x646;&#x648;&#x627;&#x639;</value></data>
+  <data name="AllStatuses" xml:space="preserve"><value>&#x643;&#x644; &#x627;&#x644;&#x62d;&#x627;&#x644;&#x627;&#x62a;</value></data>
+  <data name="Loading" xml:space="preserve"><value>&#x62c;&#x627;&#x631; &#x627;&#x644;&#x62a;&#x62d;&#x645;&#x64a;&#x644;...</value></data>
+  <data name="NoRows" xml:space="preserve"><value>&#x644;&#x645; &#x64a;&#x62a;&#x645; &#x627;&#x644;&#x639;&#x62b;&#x648;&#x631; &#x639;&#x644;&#x649; &#x633;&#x62c;&#x644;&#x627;&#x62a;.</value></data>
+  <data name="NoSuppliers" xml:space="preserve"><value>&#x644;&#x645; &#x64a;&#x62a;&#x645; &#x627;&#x644;&#x639;&#x62b;&#x648;&#x631; &#x639;&#x644;&#x649; &#x645;&#x648;&#x631;&#x62f;&#x64a;&#x646;.</value></data>
+  <data name="AllocatedOnSave" xml:space="preserve"><value>&#x64a;&#x62e;&#x635;&#x635; &#x62a;&#x644;&#x642;&#x627;&#x626;&#x64a;&#x627; &#x639;&#x646;&#x62f; &#x627;&#x644;&#x62d;&#x641;&#x638;</value></data>
+  <data name="NotSpecified" xml:space="preserve"><value>&#x63a;&#x64a;&#x631; &#x645;&#x62d;&#x62f;&#x62f;</value></data>
+  <data name="Yes" xml:space="preserve"><value>&#x646;&#x639;&#x645;</value></data>
+  <data name="No" xml:space="preserve"><value>&#x644;&#x627;</value></data>
+  <data name="Saved" xml:space="preserve"><value>&#x62a;&#x645; &#x62d;&#x641;&#x638; &#x627;&#x644;&#x62a;&#x63a;&#x64a;&#x64a;&#x631;&#x627;&#x62a;.</value></data>
+  <data name="Deleted" xml:space="preserve"><value>&#x62a;&#x645; &#x62d;&#x630;&#x641; &#x627;&#x644;&#x633;&#x62c;&#x644;.</value></data>
+  <data name="ConfirmDelete" xml:space="preserve"><value>&#x647;&#x644; &#x62a;&#x631;&#x64a;&#x62f; &#x62d;&#x630;&#x641; &#x647;&#x630;&#x627; &#x627;&#x644;&#x633;&#x62c;&#x644; &#x646;&#x647;&#x627;&#x626;&#x64a;&#x627;&#x61f; &#x644;&#x627; &#x64a;&#x645;&#x643;&#x646; &#x62d;&#x630;&#x641; &#x627;&#x644;&#x633;&#x62c;&#x644; &#x627;&#x644;&#x62a;&#x62c;&#x627;&#x631;&#x64a; &#x627;&#x644;&#x645;&#x62d;&#x645;&#x64a;.</value></data>
+  <data name="DiscardTitle" xml:space="preserve"><value>&#x647;&#x644; &#x62a;&#x631;&#x64a;&#x62f; &#x62a;&#x62c;&#x627;&#x647;&#x644; &#x627;&#x644;&#x62a;&#x63a;&#x64a;&#x64a;&#x631;&#x627;&#x62a; &#x63a;&#x64a;&#x631; &#x627;&#x644;&#x645;&#x62d;&#x641;&#x648;&#x638;&#x629;&#x61f;</value></data>
+  <data name="DiscardText" xml:space="preserve"><value>&#x633;&#x62a;&#x641;&#x642;&#x62f; &#x62a;&#x63a;&#x64a;&#x64a;&#x631;&#x627;&#x62a; &#x627;&#x644;&#x645;&#x62d;&#x631;&#x631; &#x63a;&#x64a;&#x631; &#x627;&#x644;&#x645;&#x62d;&#x641;&#x648;&#x638;&#x629;. &#x62a;&#x628;&#x642;&#x649; &#x627;&#x644;&#x633;&#x62c;&#x644;&#x627;&#x62a; &#x627;&#x644;&#x62a;&#x627;&#x628;&#x639;&#x629; &#x627;&#x644;&#x645;&#x62d;&#x641;&#x648;&#x638;&#x629; &#x628;&#x634;&#x643;&#x644; &#x645;&#x633;&#x62a;&#x642;&#x644;.</value></data>
+  <data name="Discard" xml:space="preserve"><value>&#x62a;&#x62c;&#x627;&#x647;&#x644; &#x627;&#x644;&#x62a;&#x63a;&#x64a;&#x64a;&#x631;&#x627;&#x62a;</value></data>
+  <data name="KeepEditing" xml:space="preserve"><value>&#x645;&#x62a;&#x627;&#x628;&#x639;&#x629; &#x627;&#x644;&#x62a;&#x639;&#x62f;&#x64a;&#x644;</value></data>
+  <data name="Forbidden" xml:space="preserve"><value>&#x644;&#x64a;&#x633;&#x62a; &#x644;&#x62f;&#x64a;&#x643; &#x635;&#x644;&#x627;&#x62d;&#x64a;&#x629; &#x644;&#x647;&#x630;&#x647; &#x627;&#x644;&#x639;&#x645;&#x644;&#x64a;&#x629; &#x641;&#x64a; &#x627;&#x644;&#x634;&#x631;&#x643;&#x629; &#x627;&#x644;&#x62d;&#x627;&#x644;&#x64a;&#x629;.</value></data>
+  <data name="Conflict" xml:space="preserve"><value>&#x62a;&#x63a;&#x64a;&#x631; &#x647;&#x630;&#x627; &#x627;&#x644;&#x633;&#x62c;&#x644;. &#x62d;&#x62f;&#x62b; &#x627;&#x644;&#x628;&#x64a;&#x627;&#x646;&#x627;&#x62a; &#x648;&#x62d;&#x627;&#x648;&#x644; &#x645;&#x62c;&#x62f;&#x62f;&#x627;.</value></data>
+  <data name="Duplicate" xml:space="preserve"><value>&#x627;&#x644;&#x631;&#x645;&#x632; &#x623;&#x648; &#x627;&#x644;&#x62d;&#x633;&#x627;&#x628; &#x627;&#x644;&#x628;&#x646;&#x643;&#x64a; &#x645;&#x633;&#x62c;&#x644; &#x628;&#x627;&#x644;&#x641;&#x639;&#x644; &#x636;&#x645;&#x646; &#x647;&#x630;&#x627; &#x627;&#x644;&#x646;&#x637;&#x627;&#x642;.</value></data>
+  <data name="ValidationError" xml:space="preserve"><value>&#x62a;&#x62d;&#x642;&#x642; &#x645;&#x646; &#x627;&#x644;&#x62d;&#x642;&#x648;&#x644; &#x627;&#x644;&#x645;&#x637;&#x644;&#x648;&#x628;&#x629; &#x648;&#x635;&#x64a;&#x63a; &#x627;&#x644;&#x642;&#x64a;&#x645;.</value></data>
+  <data name="InvalidReference" xml:space="preserve"><value>&#x627;&#x62e;&#x62a;&#x631; &#x645;&#x631;&#x62c;&#x639;&#x627; &#x646;&#x634;&#x637;&#x627; &#x645;&#x646; &#x627;&#x644;&#x641;&#x647;&#x631;&#x633; &#x648;&#x627;&#x644;&#x634;&#x631;&#x643;&#x629; &#x627;&#x644;&#x635;&#x62d;&#x64a;&#x62d;&#x64a;&#x646;. &#x64a;&#x645;&#x643;&#x646; &#x627;&#x644;&#x627;&#x62d;&#x62a;&#x641;&#x627;&#x638; &#x628;&#x642;&#x64a;&#x645;&#x629; &#x62a;&#x627;&#x631;&#x64a;&#x62e;&#x64a;&#x629; &#x62f;&#x648;&#x646; &#x62a;&#x63a;&#x64a;&#x64a;&#x631;.</value></data>
+  <data name="InactiveDefault" xml:space="preserve"><value>&#x644;&#x627; &#x64a;&#x645;&#x643;&#x646; &#x623;&#x646; &#x64a;&#x643;&#x648;&#x646; &#x627;&#x644;&#x633;&#x62c;&#x644; &#x63a;&#x64a;&#x631; &#x627;&#x644;&#x646;&#x634;&#x637; &#x627;&#x641;&#x62a;&#x631;&#x627;&#x636;&#x64a;&#x627; &#x623;&#x648; &#x631;&#x626;&#x64a;&#x633;&#x64a;&#x627;.</value></data>
+  <data name="DeleteProtected" xml:space="preserve"><value>&#x644;&#x644;&#x633;&#x62c;&#x644; &#x645;&#x631;&#x627;&#x62c;&#x639; &#x645;&#x62d;&#x645;&#x64a;&#x629; &#x623;&#x648; &#x633;&#x62c;&#x644;&#x627;&#x62a; &#x62a;&#x627;&#x628;&#x639;&#x629;. &#x627;&#x62d;&#x630;&#x641; &#x627;&#x644;&#x62a;&#x648;&#x627;&#x628;&#x639; &#x63a;&#x64a;&#x631; &#x627;&#x644;&#x645;&#x631;&#x62a;&#x628;&#x637;&#x629; &#x623;&#x648;&#x644;&#x627; &#x623;&#x648; &#x639;&#x637;&#x644; &#x627;&#x644;&#x645;&#x648;&#x631;&#x62f; &#x623;&#x648; &#x627;&#x62d;&#x638;&#x631;&#x647;&#x61b; &#x64a;&#x62d;&#x62a;&#x641;&#x638; &#x628;&#x627;&#x644;&#x633;&#x62c;&#x644; &#x627;&#x644;&#x62a;&#x62c;&#x627;&#x631;&#x64a;.</value></data>
+  <data name="BlockedReason" xml:space="preserve"><value>&#x627;&#x644;&#x645;&#x648;&#x631;&#x62f; &#x645;&#x62d;&#x638;&#x648;&#x631;. &#x627;&#x633;&#x62a;&#x62e;&#x62f;&#x645; &#x625;&#x644;&#x63a;&#x627;&#x621; &#x627;&#x644;&#x62d;&#x638;&#x631; &#x635;&#x631;&#x627;&#x62d;&#x629; &#x642;&#x628;&#x644; &#x627;&#x644;&#x62a;&#x641;&#x639;&#x64a;&#x644;.</value></data>
+  <data name="CategoryRequired" xml:space="preserve"><value>&#x627;&#x62e;&#x62a;&#x631; &#x641;&#x626;&#x629; &#x645;&#x648;&#x631;&#x62f; &#x648;&#x627;&#x62d;&#x62f;&#x629; &#x639;&#x644;&#x649; &#x627;&#x644;&#x623;&#x642;&#x644;.</value></data>
+  <data name="ReferenceUnavailable" xml:space="preserve"><value>&#x62a;&#x639;&#x630;&#x631; &#x62a;&#x62d;&#x645;&#x64a;&#x644; &#x627;&#x644;&#x642;&#x64a;&#x645; &#x627;&#x644;&#x645;&#x631;&#x62c;&#x639;&#x64a;&#x629;. &#x62d;&#x62f;&#x62b; &#x627;&#x644;&#x628;&#x64a;&#x627;&#x646;&#x627;&#x62a; &#x648;&#x62d;&#x627;&#x648;&#x644; &#x645;&#x62c;&#x62f;&#x62f;&#x627;.</value></data>
+  <data name="InactiveHistorical" xml:space="preserve"><value>&#x642;&#x64a;&#x645;&#x629; &#x62a;&#x627;&#x631;&#x64a;&#x62e;&#x64a;&#x629; &#x63a;&#x64a;&#x631; &#x646;&#x634;&#x637;&#x629;</value></data>
+  <data name="RemoveCategory" xml:space="preserve"><value>&#x625;&#x632;&#x627;&#x644;&#x629; &#x627;&#x644;&#x641;&#x626;&#x629;</value></data>
+  <data name="LoadError" xml:space="preserve"><value>&#x62a;&#x639;&#x630;&#x631; &#x62a;&#x62d;&#x645;&#x64a;&#x644; &#x627;&#x644;&#x628;&#x64a;&#x627;&#x646;&#x627;&#x62a; &#x627;&#x644;&#x645;&#x639;&#x62a;&#x645;&#x62f;&#x629;. &#x62d;&#x62f;&#x62b; &#x627;&#x644;&#x628;&#x64a;&#x627;&#x646;&#x627;&#x62a; &#x648;&#x62d;&#x627;&#x648;&#x644; &#x645;&#x62c;&#x62f;&#x62f;&#x627;.</value></data>
+  <data name="Evaluation" xml:space="preserve"><value>تقييم المورد</value></data><data name="Quality" xml:space="preserve"><value>الجودة</value></data><data name="QualityIncidents" xml:space="preserve"><value>حوادث الجودة</value></data><data name="Contracts" xml:space="preserve"><value>العقود</value></data><data name="Documents" xml:space="preserve"><value>المستندات والشهادات</value></data><data name="ApprovalStatus" xml:space="preserve"><value>حالة الاعتماد</value></data><data name="QcLevel" xml:space="preserve"><value>مستوى الجودة</value></data><data name="QualityScore" xml:space="preserve"><value>درجة الجودة</value></data><data name="HoldReason" xml:space="preserve"><value>سبب الإيقاف</value></data><data name="Release" xml:space="preserve"><value>رفع الإيقاف</value></data><data name="Hold" xml:space="preserve"><value>إيقاف</value></data><data name="EvaluationDate" xml:space="preserve"><value>تاريخ التقييم</value></data><data name="EvaluationPeriod" xml:space="preserve"><value>فترة التقييم</value></data><data name="OverallScore" xml:space="preserve"><value>الدرجة الإجمالية</value></data><data name="EvaluationResult" xml:space="preserve"><value>نتيجة التقييم</value></data><data name="AddEvaluation" xml:space="preserve"><value>إضافة تقييم</value></data><data name="AddIncident" xml:space="preserve"><value>إضافة حادث</value></data><data name="AddContract" xml:space="preserve"><value>إضافة عقد</value></data><data name="AddDocument" xml:space="preserve"><value>إضافة مستند</value></data><data name="IncidentType" xml:space="preserve"><value>نوع الحادث</value></data><data name="IncidentDate" xml:space="preserve"><value>تاريخ الحادث</value></data><data name="Quantity" xml:space="preserve"><value>الكمية</value></data><data name="Resolve" xml:space="preserve"><value>معالجة</value></data><data name="ContractNumber" xml:space="preserve"><value>رقم العقد</value></data><data name="ContractType" xml:space="preserve"><value>نوع العقد</value></data><data name="StartDate" xml:space="preserve"><value>تاريخ البدء</value></data><data name="EndDate" xml:space="preserve"><value>تاريخ الانتهاء</value></data><data name="Expiry" xml:space="preserve"><value>الانتهاء</value></data><data name="ExpiringSoon" xml:space="preserve"><value>ينتهي قريبا</value></data><data name="Expired" xml:space="preserve"><value>منتهي</value></data><data name="DocumentType" xml:space="preserve"><value>نوع المستند</value></data><data name="DocumentNumber" xml:space="preserve"><value>رقم المستند</value></data><data name="IssueDate" xml:space="preserve"><value>تاريخ الإصدار</value></data><data name="ExpiryDate" xml:space="preserve"><value>تاريخ الانتهاء</value></data><data name="ConfiguredReference" xml:space="preserve"><value>مرجع مهيأ</value></data>
+</root>

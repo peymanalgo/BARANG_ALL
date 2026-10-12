@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Incomplete"><value>معلومات الطباعة غير مكتملة</value></data>
+  <data name="MissingMethod"><value>اختر طريقة الطباعة.</value></data>
+  <data name="SaveBeforeNext"><value>احفظ معلومات طباعة الصنف المحدد باستخدام «إضافة» قبل المتابعة.</value></data>
+  <data name="MissingArtwork"><value>اختر تصميماً من بنك التصاميم أو ارفع ملفاً لهذا الصنف.</value></data>
+  <data name="BothArtworkSources"><value>اختر مصدراً واحداً فقط للتصميم في كل مرة.</value></data>
+  <data name="Saving"><value>جارٍ الحفظ...</value></data>
+  <data name="SaveFailed"><value>تعذر حفظ عملية الطباعة. تم الاحتفاظ بالقيم المدخلة.</value></data>
+  <data name="DeleteFailed"><value>تعذر حذف عملية الطباعة.</value></data>
+  <data name="SourceLinkFailed"><value>تعذر ربط الملف بعملية الطباعة.</value></data>
+<data name="PrintOperationValidationTitle"><value>تعذر إضافة عملية الطباعة</value></data><data name="SaveFailedWithReason"><value>تعذر حفظ عملية الطباعة: {0}</value></data><data name="SaveFailedWithReference"><value>تعذر حفظ عملية الطباعة. الرمز المرجعي: {0}</value></data><data name="InvalidOperationData"><value>بيانات عملية الطباعة غير صالحة. تحقق من الطريقة والموقع والأبعاد ومصدر التصميم.</value></data><data name="InvalidPrintMethod"><value>طريقة الطباعة المحددة غير صالحة.</value></data><data name="InvalidLocation"><value>رمز موقع الطباعة المحدد غير صالح.</value></data><data name="InvalidArtworkSource"><value>التصميم المحدد غير صالح لهذه الشركة.</value></data><data name="InvalidFileSource"><value>الملف المحدد غير صالح لهذه الشركة.</value></data><data name="PrintItemNotOwned"><value>صنف الطلب غير صالح أو لا ينتمي إلى هذا الطلب والشركة.</value></data><data name="DuplicateOperation"><value>توجد عملية طباعة مسجلة مسبقاً لهذا الصنف.</value></data></root>

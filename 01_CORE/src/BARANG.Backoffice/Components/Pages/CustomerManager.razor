@@ -1,0 +1,142 @@
+@page "/manage/customers"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@inject IStringLocalizer<CustomerStrings> C
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<PageTitle>@C["Title"] · BARANG</PageTitle>
+
+<header class="crud-header customer-page-header"><div><h1>@C["Title"]</h1><p>@C["Subtitle"]</p></div>@if (CanCreate) { <button type="button" class="btn btn-primary" @onclick="New"><BarangIcon Name="plus" /> @C["NewCustomer"]</button> }</header>
+@if (Message is not null) { <div class="@(Success ? "inline-success" : "inline-error")" role="@(Success ? "status" : "alert")">@C[Message]</div> }
+
+<section class="crud-card customer-directory">
+    <BarangToolbar AriaLabel="@C["Title"]" Class="customer-toolbar">
+        <label class="search-box customer-search"><input aria-label="@C["SearchHint"]" placeholder="@C["SearchHint"]" value="@Search" @oninput="SearchChanged" /></label>
+        <select aria-label="@C["CustomerType"]" value="@TypeFilter" @onchange="TypeChanged"><option value="">@C["AllTypes"]</option><option value="Individual">@C["Individual"]</option><option value="LegalEntity">@C["LegalEntity"]</option></select>
+        <select aria-label="@C["Status"]" value="@StatusFilter" @onchange="StatusChanged"><option value="">@C["AllStatuses"]</option><option value="Active">@C["Active"]</option><option value="Inactive">@C["Inactive"]</option><option value="Blocked">@C["Blocked"]</option></select>
+        <button type="button" class="btn btn-secondary" @onclick="Load"><BarangIcon Name="refresh" /> @C["Refresh"]</button>
+    </BarangToolbar>
+    @if (Loading) { <BarangLoadingState Text="@C["Loading"]" /> }
+    else if (LoadFailed) { <div class="crud-error-state"><p>@C["LoadError"]</p><button type="button" class="btn btn-secondary" @onclick="Load">@C["Refresh"]</button></div> }
+    else if (Rows.Count == 0) { <CrudEmptyState Title="@C["NoCustomers"]" Description="@C["Subtitle"]" /> }
+    else
+    {
+        <div class="table-scroll"><table class="data-grid customer-grid"><thead><tr>
+            <th><BarangSortHeader Label="@C["CustomerNumber"]" Active="@(SortBy == "customerCode")" Descending="@Descending" Clicked="SortCode" /></th>
+            <th><BarangSortHeader Label="@C["CustomerName"]" Active="@(SortBy == "name")" Descending="@Descending" Clicked="SortName" /></th>
+            <th><BarangSortHeader Label="@C["CustomerType"]" Active="@(SortBy == "type")" Descending="@Descending" Clicked="SortType" /></th>
+            <th><BarangSortHeader Label="@C["Mobile"]" Active="@(SortBy == "mobile")" Descending="@Descending" Clicked="SortMobile" /></th>
+            <th>@C["CustomerGroup"]</th><th>@C["SalesRepresentative"]</th>
+            <th><BarangSortHeader Label="@C["Status"]" Active="@(SortBy == "status")" Descending="@Descending" Clicked="SortStatus" /></th><th>@C["Actions"]</th>
+        </tr></thead><tbody>
+        @foreach (CustomerRow customer in Rows)
+        {
+            <tr data-customer-id="@customer.Id"><td><strong class="entity-code">@customer.Code</strong></td><td><button type="button" class="entity-link" @onclick="() => OpenView(customer.Id)">@customer.Name</button></td><td>@TypeLabel(customer.Type)</td><td dir="ltr">@customer.Mobile</td><td>@DisplayCode(customer.Group)</td><td>@customer.SalesRepresentative</td><td><span class="customer-status status-@customer.Status.ToLowerInvariant()">@StatusLabel(customer.Status)</span></td><td><div class="row-actions">
+                <BarangIconButton Icon="eye" Label="@C["View"]" Semantic="info" Clicked="() => OpenView(customer.Id)" />
+                @if (CanEdit) { <BarangIconButton Icon="edit" Label="@C["Edit"]" Semantic="edit" Clicked="() => OpenEdit(customer.Id)" /><BarangIconButton Icon="trash" Label="@C["Delete"]" Semantic="danger" Clicked="() => AskDelete(customer)" /> }
+                @if (CanStatus)
+                {
+                    @if (customer.Status == "Active") { <BarangIconButton Icon="power" Label="@C["Deactivate"]" Semantic="warning" Clicked='@(() => SetStatus(customer, "Inactive"))' /><BarangIconButton Icon="unlink" Label="@C["Block"]" Semantic="danger" Clicked='@(() => SetStatus(customer, "Blocked"))' /> }
+                    else if (customer.Status == "Inactive") { <BarangIconButton Icon="power" Label="@C["Activate"]" Semantic="success" Clicked='@(() => SetStatus(customer, "Active"))' /><BarangIconButton Icon="unlink" Label="@C["Block"]" Semantic="danger" Clicked='@(() => SetStatus(customer, "Blocked"))' /> }
+                    else { <BarangIconButton Icon="restore" Label="@C["Unblock"]" Semantic="success" Clicked='@(() => SetStatus(customer, "Active"))' /> }
+                }
+            </div></td></tr>
+        }
+        </tbody></table></div>
+        <footer class="grid-pagination"><button type="button" class="btn btn-secondary btn-small" disabled="@(Page <= 1)" @onclick="Previous">@C["Previous"]</button><span>@string.Format(CultureInfo.CurrentCulture, C["PageOf"], Page, TotalPages)</span><button type="button" class="btn btn-secondary btn-small" disabled="@(Page >= TotalPages)" @onclick="Next">@C["Next"]</button></footer>
+    }
+</section>
+
+<BarangModal Open="@EditorOpen" Title="@EditorTitle" Description="@C["GeneralHelp"]" CloseLabel="@C["Cancel"]" CloseRequested="CloseEditor" ShowCloseButton="false" Size="large">
+    <ChildContent><CustomerEditor @key="EditorKey" CustomerId="@EditingId" ReadOnly="@ReadOnlyEditor" Closed="CloseEditor" Saved="EditorSaved" /></ChildContent>
+</BarangModal>
+
+<BarangConfirmDialog Open="@DeleteOpen" Title="@C["DeleteConfirmTitle"]" CancelText="@C["Cancel"]" ConfirmText="@C["Delete"]" Busy="@Deleting" Cancel="CancelDelete" Confirm="DeleteCustomer">
+    @(PendingDelete is null ? "" : string.Format(CultureInfo.CurrentCulture, C["DeleteConfirmMessage"], PendingDelete.Name))
+</BarangConfirmDialog>
+
+@code {
+    private List<CustomerRow> Rows = [];
+    private bool Loading, LoadFailed, EditorOpen, ReadOnlyEditor, DeleteOpen, Deleting, Success, CanCreate, CanEdit, CanStatus;
+    private Guid? EditingId;
+    private CustomerRow? PendingDelete;
+    private string Search = "", TypeFilter = "", StatusFilter = "", SortBy = "customerCode";
+    private bool Descending;
+    private int Page = 1, EditorRevision;
+    private const int PageSize = 20;
+    private long Total;
+    private string? Message;
+    private CancellationTokenSource? SearchDelay;
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(Total / (double)PageSize));
+    private string EditorTitle => EditingId is null ? C["NewCustomer"] : ReadOnlyEditor ? C["View"] : C["Edit"];
+    private string EditorKey => $"{EditingId}-{ReadOnlyEditor}-{EditorRevision}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User; bool system = user.HasClaim(AuthClaimTypes.SystemAdministrator, "true");
+        CanCreate = system || user.HasClaim(AuthClaimTypes.Permission, "customer.create"); CanEdit = system || user.HasClaim(AuthClaimTypes.Permission, "customer.edit"); CanStatus = system || user.HasClaim(AuthClaimTypes.Permission, "customer.status.manage");
+        await Load();
+    }
+
+    private void New() { EditingId = null; ReadOnlyEditor = false; EditorRevision++; EditorOpen = true; }
+    private void OpenView(Guid id) { EditingId = id; ReadOnlyEditor = true; EditorRevision++; EditorOpen = true; }
+    private void OpenEdit(Guid id) { EditingId = id; ReadOnlyEditor = false; EditorRevision++; EditorOpen = true; }
+    private Task CloseEditor() { EditorOpen = false; return Task.CompletedTask; }
+    private async Task EditorSaved() { Success = true; Message = EditingId is null ? "Created" : "Saved"; await Load(); EditorOpen = false; }
+
+    private async Task SearchChanged(ChangeEventArgs args) { Search = args.Value?.ToString() ?? ""; SearchDelay?.Cancel(); SearchDelay = new(); try { await Task.Delay(300, SearchDelay.Token); Page = 1; await Load(); } catch (OperationCanceledException) { } }
+    private async Task TypeChanged(ChangeEventArgs args) { TypeFilter = args.Value?.ToString() ?? ""; Page = 1; await Load(); }
+    private async Task StatusChanged(ChangeEventArgs args) { StatusFilter = args.Value?.ToString() ?? ""; Page = 1; await Load(); }
+    private Task SortCode() => Sort("customerCode"); private Task SortName() => Sort("name"); private Task SortType() => Sort("type"); private Task SortMobile() => Sort("mobile"); private Task SortStatus() => Sort("status");
+    private async Task Sort(string key) { if (SortBy == key) Descending = !Descending; else { SortBy = key; Descending = false; } Page = 1; await Load(); }
+    private async Task Previous() { if (Page > 1) { Page--; await Load(); } }
+    private async Task Next() { if (Page < TotalPages) { Page++; await Load(); } }
+
+    private async Task Load()
+    {
+        SessionInfo? session = await Session(); if (session is null) return; Loading = true; LoadFailed = false;
+        string url = $"api/v1/customers?search={Uri.EscapeDataString(Search)}&pageNumber={Page}&pageSize={PageSize}&sortBy={SortBy}&sortDescending={Descending.ToString().ToLowerInvariant()}";
+        if (TypeFilter.Length > 0) url += $"&customerType={TypeFilter}"; if (StatusFilter.Length > 0) url += $"&status={StatusFilter}";
+        ApiResult<JsonElement> result = await Core.GetAsync(url, session.Token, session.Company, default); Rows = [];
+        if (result.IsSuccess) { Rows = result.Value.GetProperty("items").EnumerateArray().Select(Parse).ToList(); Total = result.Value.GetProperty("totalCount").GetInt64(); if (Page > TotalPages) { Page = TotalPages; await Load(); return; } }
+        else { LoadFailed = true; Message = result.Failure == ApiFailure.Forbidden ? "Forbidden" : "LoadError"; }
+        Loading = false;
+    }
+
+    private async Task SetStatus(CustomerRow customer, string status)
+    {
+        SessionInfo? session = await Session(); if (session is null) return;
+        ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Post, $"api/v1/customers/{customer.Id}/status", new { status, version = customer.Version }, session.Token, session.Company, default);
+        if (result.IsSuccess) { Success = true; Message = "Saved"; await Load(); } else Show(result);
+    }
+
+    private void AskDelete(CustomerRow customer) { PendingDelete = customer; DeleteOpen = true; }
+    private void CancelDelete() { PendingDelete = null; DeleteOpen = false; }
+    private async Task DeleteCustomer()
+    {
+        if (PendingDelete is null) return; Deleting = true; SessionInfo? session = await Session();
+        if (session is not null)
+        {
+            ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Delete, $"api/v1/customers/{PendingDelete.Id}?version={PendingDelete.Version}", null, session.Token, session.Company, default);
+            DeleteOpen = false;
+            if (result.IsSuccess) { Success = true; Message = "Deleted"; await Load(); }
+            else if (result.ProblemCode == "customer.referenced") { Success = false; Message = "DeleteProtected"; }
+            else Show(result);
+        }
+        PendingDelete = null; Deleting = false;
+    }
+
+    private void Show(ApiResult<JsonElement> result) { Success = false; Message = result.Failure switch { ApiFailure.Forbidden => "Forbidden", ApiFailure.Conflict => "Conflict", _ => "ValidationError" }; }
+    private string TypeLabel(string value) => C[value == "Individual" ? "Individual" : "LegalEntity"];
+    private string StatusLabel(string value) => C[value];
+    private static string DisplayCode(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
+    private static CustomerRow Parse(JsonElement value) => new(value.GetProperty("id").GetGuid(), Text(value, "customerCode"), Text(value, "displayName"), Text(value, "customerType"), Text(value, "primaryMobile"), NullableText(value, "customerGroupCode"), NullableText(value, "salesRepresentativeName"), Text(value, "status"), value.GetProperty("version").GetInt64());
+    private async Task<SessionInfo?> Session() { var user = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid company) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? new(token, company) : null; }
+    private static string Text(JsonElement value, string name) => value.TryGetProperty(name, out JsonElement property) && property.ValueKind != JsonValueKind.Null ? property.ToString() : "";
+    private static string? NullableText(JsonElement value, string name) { string result = Text(value, name); return result.Length == 0 ? null : result; }
+    private sealed record SessionInfo(string Token, Guid Company);
+    private sealed record CustomerRow(Guid Id, string Code, string Name, string Type, string Mobile, string? Group, string? SalesRepresentative, string Status, long Version);
+}

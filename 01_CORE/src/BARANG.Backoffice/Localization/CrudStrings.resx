@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Companies">
+    <value>شرکت‌ها</value>
+  </data>
+  <data name="Branches">
+    <value>شعب</value>
+  </data>
+  <data name="Products">
+    <value>محصولات و گونه‌ها</value>
+  </data>
+  <data name="Customers">
+    <value>مشتریان</value>
+  </data>
+  <data name="Add">
+    <value>افزودن</value>
+  </data>
+  <data name="AddCompany">
+    <value>شرکت جدید</value>
+  </data>
+  <data name="AddBranch">
+    <value>شعبه جدید</value>
+  </data>
+  <data name="AddProduct">
+    <value>محصول جدید</value>
+  </data>
+  <data name="AddCustomer">
+    <value>مشتری جدید</value>
+  </data>
+  <data name="Edit">
+    <value>ویرایش</value>
+  </data>
+  <data name="View">
+    <value>مشاهده</value>
+  </data>
+  <data name="Save">
+    <value>ذخیره تغییرات</value>
+  </data>
+  <data name="Cancel">
+    <value>انصراف</value>
+  </data>
+  <data name="Search">
+    <value>جستجو</value>
+  </data>
+  <data name="SearchHint">
+    <value>جستجو با کد، نام یا شناسه</value>
+  </data>
+  <data name="Refresh">
+    <value>به‌روزرسانی</value>
+  </data>
+  <data name="Reset"><value>بازنشانی</value></data>
+  <data name="Code">
+    <value>کد</value>
+  </data>
+  <data name="Name">
+    <value>نام</value>
+  </data>
+  <data name="Type">
+    <value>نوع</value>
+  </data>
+  <data name="Unit">
+    <value>واحد</value>
+  </data>
+  <data name="Status">
+    <value>وضعیت</value>
+  </data>
+  <data name="Actions">
+    <value>عملیات</value>
+  </data>
+  <data name="Active">
+    <value>فعال</value>
+  </data>
+  <data name="Inactive">
+    <value>غیرفعال</value>
+  </data>
+  <data name="Activate">
+    <value>فعال‌سازی</value>
+  </data>
+  <data name="Deactivate">
+    <value>غیرفعال‌سازی</value>
+  </data>
+  <data name="NoRecords">
+    <value>رکوردی یافت نشد</value>
+  </data>
+  <data name="NoRecordsHelp">
+    <value>فیلتر را تغییر دهید یا نخستین رکورد را اضافه کنید.</value>
+  </data>
+  <data name="Loading">
+    <value>در حال دریافت اطلاعات…</value>
+  </data>
+  <data name="Description">
+    <value>توضیحات</value>
+  </data>
+  <data name="ProductType">
+    <value>نوع محصول</value>
+  </data>
+  <data name="Uom">
+    <value>واحد اندازه‌گیری</value>
+  </data>
+  <data name="Variants">
+    <value>گونه‌ها و SKU</value>
+  </data>
+  <data name="AddVariant">
+    <value>گونه جدید</value>
+  </data>
+  <data name="Sku">
+    <value>SKU</value>
+  </data>
+  <data name="Barcode">
+    <value>بارکد</value>
+  </data>
+  <data name="Size">
+    <value>سایز</value>
+  </data>
+  <data name="Color">
+    <value>رنگ</value>
+  </data>
+  <data name="Details">
+    <value>جزئیات</value>
+  </data>
+  <data name="Person">
+    <value>شخص حقیقی</value>
+  </data>
+  <data name="Organization">
+    <value>شخص حقوقی</value>
+  </data>
+  <data name="CustomerNumber">
+    <value>شماره مشتری</value>
+  </data>
+  <data name="DisplayName">
+    <value>نام نمایشی</value>
+  </data>
+  <data name="FirstName">
+    <value>نام</value>
+  </data>
+  <data name="LastName">
+    <value>نام خانوادگی</value>
+  </data>
+  <data name="LegalName">
+    <value>نام رسمی سازمان</value>
+  </data>
+  <data name="NationalId">
+    <value>شناسه ملی</value>
+  </data>
+  <data name="RegistrationNo">
+    <value>شماره ثبت</value>
+  </data>
+  <data name="TaxId">
+    <value>شناسه اقتصادی / مالیاتی</value>
+  </data>
+  <data name="Mobile">
+    <value>تلفن همراه</value>
+  </data>
+  <data name="Phone">
+    <value>تلفن</value>
+  </data>
+  <data name="Email">
+    <value>ایمیل</value>
+  </data>
+  <data name="Notes">
+    <value>یادداشت</value>
+  </data>
+  <data name="ContactsAddresses">
+    <value>مخاطبان و نشانی‌ها</value>
+  </data>
+  <data name="BusinessProfile">
+    <value>پروفایل مالی و کسب‌وکار</value>
+  </data>
+  <data name="Contact">
+    <value>مخاطب</value>
+  </data>
+  <data name="Address">
+    <value>نشانی</value>
+  </data>
+  <data name="AddContact">
+    <value>مخاطب جدید</value>
+  </data>
+  <data name="AddAddress">
+    <value>نشانی جدید</value>
+  </data>
+  <data name="ContactType">
+    <value>نوع مخاطب</value>
+  </data>
+  <data name="AddressType">
+    <value>نوع نشانی</value>
+  </data>
+  <data name="Title">
+    <value>عنوان</value>
+  </data>
+  <data name="Country">
+    <value>کشور</value>
+  </data>
+  <data name="City">
+    <value>شهر</value>
+  </data>
+  <data name="AddressLine">
+    <value>نشانی کامل</value>
+  </data>
+  <data name="OperationSucceeded">
+    <value>تغییرات با موفقیت ذخیره شد.</value>
+  </data>
+  <data name="ValidationError">
+    <value>فیلدهای کسب‌وکاری را بررسی کنید.</value>
+  </data>
+  <data name="ConcurrencyConflict">
+    <value>رکورد توسط کاربر دیگری تغییر کرده است؛ تازه‌سازی کنید.</value>
+  </data>
+  <data name="Forbidden">
+    <value>مجوز انجام این عملیات را ندارید.</value>
+  </data>
+  <data name="LastActiveCompanyRequired"><value>حداقل یک شرکت باید فعال باقی بماند.</value></data>
+  <data name="NoOptions"><value>گزینه‌ای یافت نشد.</value></data>
+  <data name="SearchOptions"><value>برای جستجوی گزینه تایپ کنید</value></data>
+  <data name="Previous"><value>قبلی</value></data>
+  <data name="Next"><value>بعدی</value></data>
+  <data name="PageOf"><value>صفحه {0} از {1}</value></data>
+  <data name="Close"><value>بستن</value></data>
+  <data name="Saving"><value>در حال ذخیره…</value></data>
+  <data name="PrimaryContact"><value>مخاطب اصلی</value></data>
+  <data name="FinanceContact"><value>مخاطب مالی</value></data>
+  <data name="ShippingAddress"><value>نشانی ارسال</value></data>
+  <data name="BillingAddress"><value>نشانی صورتحساب</value></data>
+  <data name="Pricing"><value>قیمت‌گذاری</value></data>
+  <data name="NewPrice"><value>قیمت جدید</value></data>
+  <data name="CurrentPrice"><value>قیمت فعلی</value></data>
+  <data name="FuturePrice"><value>قیمت آینده</value></data>
+  <data name="PriceHistory"><value>تاریخچه قیمت</value></data>
+  <data name="RawProductSalesPriceSubtitle"><value>قیمت فروش مشتری برای محصول خام؛ هزینه تأمین‌کننده جداست.</value></data>
+  <data name="ProductLevel"><value>سطح محصول</value></data>
+  <data name="Amount"><value>مبلغ</value></data>
+  <data name="Currency"><value>ارز</value></data>
+  <data name="ValidFrom"><value>تاریخ شروع</value></data>
+  <data name="ValidTo"><value>تاریخ پایان</value></data>
+  <data name="NoPricing"><value>قیمت فروشی ثبت نشده است.</value></data>
+  <data name="SaveSuccess"><value>قیمت با موفقیت ذخیره شد.</value></data>
+  <data name="SaveFailed"><value>ذخیره قیمت انجام نشد.</value></data>
+  <data name="DeleteConfirm"><value>آیا از حذف این قیمت مطمئن هستید؟</value></data>
+  <data name="DeleteSuccess"><value>قیمت با موفقیت حذف شد.</value></data>
+  <data name="DeleteBlocked"><value>این قیمت به سابقه یا وابستگی محافظت‌شده متصل است و حذف آن ممکن نیست.</value></data>
+  <data name="ActivateConfirm"><value>آیا قیمت فعال شود؟</value></data>
+  <data name="DeactivateConfirm"><value>آیا قیمت غیرفعال شود؟</value></data>
+  <data name="DisplayOrder"><value>ترتیب نمایش</value></data>
+</root>

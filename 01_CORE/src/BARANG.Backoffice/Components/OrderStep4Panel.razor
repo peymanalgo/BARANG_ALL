@@ -1,0 +1,277 @@
+@using System.Text.Json
+@inject IStringLocalizer<AppStrings> L
+@inject IStringLocalizer<OrderStep4Strings> S
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+
+<section class="panel order-services-step" aria-labelledby="order-step4-title">
+    <h2 id="order-step4-title">@S["AdditionalServicesPackaging"]</h2>
+    <p class="form-help">@S["OrderStep4Description"]</p>
+    @if (Errors.Count > 0)
+    {
+        <div class="validation-summary" role="alert" aria-live="assertive">
+            <strong>@L["ValidationError"]</strong>
+            <ul>@foreach (string error in Errors) { <li>@error</li> }</ul>
+        </div>
+    }
+    @if (Loading)
+    {
+        <div class="loading-state" role="status">@L["Loading"]</div>
+    }
+    else
+    {
+        <section class="form-section" aria-labelledby="order-step4-services-title">
+            <h3 id="order-step4-services-title">@S["AdditionalServices"]</h3>
+            <p class="form-help">@S["SelectedServicesOnly"]</p>
+            <div class="form-grid">
+                <label>
+                    <span>@S["AdditionalServices"]</span>
+                    <SearchableSelect Name="order-step4-service" Options="ServiceOptions" Value="ServiceCode" ValueChanged="ServiceChanged" Placeholder="@L["Choose"]" />
+                </label>
+                <label>
+                    <span>@L["OrderItem"]</span>
+                    <select name="order-step4-item" @bind="ServiceItemId" disabled="@(!ItemServiceSelected)">
+                        <option value="">@L["OrderLevel"]</option>
+                        @foreach (ItemOption item in Items)
+                        {
+                            <option value="@item.Id">@item.Line · @item.Label</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    <span>@L["Quantity"]</span>
+                    <input name="order-step4-service-quantity" type="number" min="0.01" step="0.01" @bind="ServiceQuantity" />
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="primary-link" @onclick="AddService" disabled="@(Saving || string.IsNullOrWhiteSpace(ServiceCode))">@L["Add"]</button>
+            </div>
+            @if (SelectedServices.Count == 0)
+            {
+                <div class="empty-state">@S["NoSelectedAdditionalServices"]</div>
+            }
+            else
+            {
+                <div class="data-grid-wrap">
+                    <table class="data-grid">
+                        <thead><tr><th>@S["AdditionalServices"]</th><th>@S["Scope"]</th><th>@L["OrderItem"]</th><th>@L["Quantity"]</th><th class="actions-column">@L["Actions"]</th></tr></thead>
+                        <tbody>
+                            @foreach (SelectionRow row in SelectedServices)
+                            {
+                                <tr>
+                                    <td dir="ltr">@ServiceCaption(row.ServiceCode)</td>
+                                    <td>@(row.OrderItemId is null ? L["OrderLevel"] : S["ItemLevel"])</td>
+                                    <td>@ItemCaption(row.OrderItemId)</td>
+                                    <td>@row.Quantity</td>
+                                    <td class="row-actions"><BarangIconButton Icon="delete" Semantic="danger" Label="@L["Delete"]" Clicked="@(() => RemoveService(row))" /></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        <section class="form-section" aria-labelledby="order-step4-packaging-title">
+            <h3 id="order-step4-packaging-title">@S["Packaging"]</h3>
+            <div class="form-grid">
+                <label>
+                    <span>@S["Packaging"]</span>
+                    <ReferenceSelect Name="order-step4-packaging" TypeCode="packaging.type" UseCode="true" Value="PackagingCode" ValueChanged="PackagingChanged" Placeholder="@L["Choose"]" />
+                </label>
+                <label class="check-field">
+                    <input type="checkbox" name="order-step4-invoice" @bind="IncludeInvoice" />
+                    <span>@S["IncludeInvoice"]</span>
+                </label>
+            </div>
+            <div class="form-actions"><button type="button" class="secondary-action" @onclick="SavePackaging" disabled="@Saving">@L["Save"]</button></div>
+        </section>
+    }
+    <div class="form-actions">
+        <button type="button" class="secondary-action" @onclick="Back" disabled="@Saving">@BackLabel</button>
+        <button type="button" class="secondary-action" @onclick="SaveDraft" disabled="@Saving">@L["SaveDraft"]</button>
+        <button type="button" class="primary-link" @onclick="Next" disabled="@Saving">@L["Next"]</button>
+    </div>
+</section>
+
+@code {
+    [Parameter] public Guid? OrderId { get; set; }
+    [Parameter] public EventCallback NextRequested { get; set; }
+    [Parameter] public EventCallback BackRequested { get; set; }
+
+    private bool Loading = true, Saving;
+    private string ServiceCode = "", ServiceItemId = "", PackagingCode = "";
+    private string ShippingMethodCode = "", OrderTypeCode = "", ProfileNotes = "";
+    private DateOnly EffectiveDate = DateOnly.FromDateTime(DateTime.Today);
+    private decimal ServiceQuantity = 1;
+    private bool IncludeInvoice;
+    private long ProfileVersion;
+    private List<string> Errors = [];
+    private List<ServiceOption> Services = [];
+    private List<ItemOption> Items = [];
+    private List<SelectionRow> SelectedServices = [];
+    private IReadOnlyList<SearchableSelectOption> ServiceOptions => Services.Select(x => new SearchableSelectOption(x.Code, x.Name)).ToArray();
+    private bool ItemServiceSelected => Services.FirstOrDefault(x => x.Code == ServiceCode)?.Scope.Equals("Item", StringComparison.OrdinalIgnoreCase) == true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (OrderId is not Guid order) return;
+        Loading = true;
+        Errors = [];
+        var session = await Session();
+        if (session is null) { Errors = [L["SessionExpired"]]; Loading = false; return; }
+        await LoadOrder(order, session.Value);
+        await LoadServices(session.Value);
+        await LoadProfile(order, session.Value);
+        await LoadSelections(order, session.Value);
+        Loading = false;
+    }
+
+    private async Task LoadOrder(Guid order, (string Token, Guid Company) session)
+    {
+        ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/orders/{order}", session.Token, session.Company, default);
+        if (!result.IsSuccess) { AddError(result, "GenericError"); return; }
+        if (result.Value.TryGetProperty("orderDate", out JsonElement orderDate) && Dates.TryParseCanonical(orderDate.ToString(), out DateOnly parsedDate)) EffectiveDate = parsedDate;
+        Items = [];
+        if (result.Value.TryGetProperty("items", out JsonElement lines) && lines.ValueKind == JsonValueKind.Array)
+            foreach (JsonElement line in lines.EnumerateArray())
+                Items.Add(new(line.GetProperty("id").GetGuid(), line.TryGetProperty("lineNumber", out JsonElement number) ? number.GetInt32() : 0, ItemText(line)));
+    }
+
+    private async Task LoadServices((string Token, Guid Company) session)
+    {
+        ApiResult<JsonElement> result = await Core.GetAsync("api/v1/pricing/tariffs/search?type=AdditionalService&includeInactive=false&pageNumber=1&pageSize=100", session.Token, session.Company, default);
+        if (!result.IsSuccess) { AddError(result, "GenericError"); return; }
+        JsonElement root = result.Value;
+        if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("items", out JsonElement items)) root = items;
+        Services = root.ValueKind == JsonValueKind.Array
+            ? root.EnumerateArray().Select(x => new ServiceOption(G(x, "code"), string.IsNullOrWhiteSpace(G(x, "name")) ? G(x, "code") : G(x, "name"), G(x, "additionalServiceScope"), Dates.TryParseCanonical(G(x, "validFrom"), out DateOnly from) ? from : DateOnly.MinValue, Dates.TryParseCanonical(G(x, "validTo"), out DateOnly to) ? to : null)).Where(x => !string.IsNullOrWhiteSpace(x.Code) && x.ValidFrom <= EffectiveDate && (x.ValidTo is null || x.ValidTo >= EffectiveDate)).GroupBy(x => x.Code, StringComparer.OrdinalIgnoreCase).Select(x => x.First()).ToList()
+            : [];
+    }
+
+    private async Task LoadProfile(Guid order, (string Token, Guid Company) session)
+    {
+        ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/orders/{order}/business-profile", session.Token, session.Company, default);
+        if (!result.IsSuccess) return;
+        PackagingCode = G(result.Value, "packagingTypeCode");
+        ShippingMethodCode = G(result.Value, "shippingMethodCode");
+        OrderTypeCode = G(result.Value, "orderTypeCode");
+        ProfileNotes = G(result.Value, "notes");
+        IncludeInvoice = result.Value.TryGetProperty("includeInvoiceInPackage", out JsonElement invoice) && invoice.GetBoolean();
+        ProfileVersion = N(result.Value, "version");
+    }
+
+    private async Task LoadSelections(Guid order, (string Token, Guid Company) session)
+    {
+        ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/orders/{order}/services", session.Token, session.Company, default);
+        if (!result.IsSuccess || result.Value.ValueKind != JsonValueKind.Array) return;
+        SelectedServices = result.Value.EnumerateArray().Select(x => new SelectionRow(x.GetProperty("id").GetGuid(), G(x, "serviceCode"), GN(G(x, "orderItemId")), D(x, "quantity"), N(x, "version"))).ToList();
+    }
+
+    private Task ServiceChanged(string value)
+    {
+        ServiceCode = value;
+        if (!ItemServiceSelected) ServiceItemId = "";
+        Errors = [];
+        return Task.CompletedTask;
+    }
+
+    private async Task PackagingChanged(string value)
+    {
+        PackagingCode = value;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task AddService()
+    {
+        Errors = [];
+        if (OrderId is not Guid order || string.IsNullOrWhiteSpace(ServiceCode)) { Errors = [S["AdditionalServiceRequired"]]; return; }
+        if (ServiceQuantity <= 0) { Errors = [S["AdditionalServiceQuantityInvalid"]]; return; }
+        if (ItemServiceSelected && !Guid.TryParse(ServiceItemId, out _)) { Errors = [S["AdditionalServiceItemRequired"]]; return; }
+        var session = await Session(); if (session is null) return;
+        Saving = true;
+        string path = $"api/v1/orders/{order}/services" + (Guid.TryParse(ServiceItemId, out Guid item) && ItemServiceSelected ? $"?itemId={item}" : "");
+        ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Post, path, new { serviceCode = ServiceCode, quantity = ServiceQuantity }, session.Value.Token, session.Value.Company, default);
+        if (!result.IsSuccess) AddError(result, "ServiceSelectionFailed"); else { ServiceCode = ServiceItemId = ""; ServiceQuantity = 1; await LoadSelections(order, session.Value); }
+        Saving = false;
+    }
+
+    private async Task RemoveService(SelectionRow row)
+    {
+        if (OrderId is not Guid order) return;
+        var session = await Session(); if (session is null) return;
+        Saving = true;
+        ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Post, $"api/v1/orders/{order}/services/{row.Id}/remove", new { version = row.Version }, session.Value.Token, session.Value.Company, default);
+        if (!result.IsSuccess) AddError(result, "ServiceRemovalFailed"); else await LoadSelections(order, session.Value);
+        Saving = false;
+    }
+
+    private async Task SavePackaging()
+    {
+        Errors = [];
+        if (OrderId is not Guid order) return;
+        var session = await Session(); if (session is null) return;
+        Saving = true;
+        ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Put, $"api/v1/orders/{order}/business-profile", new { shippingMethodCode = string.IsNullOrWhiteSpace(ShippingMethodCode) ? null : ShippingMethodCode, packagingTypeCode = string.IsNullOrWhiteSpace(PackagingCode) ? null : PackagingCode, includeInvoiceInPackage = IncludeInvoice, orderTypeCode = string.IsNullOrWhiteSpace(OrderTypeCode) ? null : OrderTypeCode, notes = string.IsNullOrWhiteSpace(ProfileNotes) ? null : ProfileNotes, version = ProfileVersion }, session.Value.Token, session.Value.Company, default);
+        if (!result.IsSuccess) AddError(result, "PackagingSaveFailed"); else ProfileVersion = N(result.Value, "version");
+        Saving = false;
+    }
+
+    private async Task SaveDraft() => await SavePackaging();
+
+    private async Task Next()
+    {
+        Errors = [];
+        await SavePackaging();
+        if (Errors.Count > 0) return;
+        await NextRequested.InvokeAsync();
+    }
+
+    private string BackLabel => L["Back"].Value;
+    private Task Back() => BackRequested.InvokeAsync();
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid company) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? (token, company) : null;
+    }
+
+    private void AddError(ApiResult<JsonElement> result, string fallback)
+    {
+        string key = result.ProblemCode switch
+        {
+            "pricing.service.duplicate" => "AdditionalServiceDuplicate",
+            "pricing.service.invalid_scope" => "AdditionalServiceInvalidScope",
+            "pricing.service.invalid" => "AdditionalServiceInvalid",
+            "pricing.tariff.missing" => "AdditionalServiceInvalid",
+            "order.service.invalid" => "AdditionalServiceQuantityInvalid",
+            "order.service.concurrency" => "ConcurrencyConflict",
+            "business_profile.invalid" => "PackagingInvalid",
+            "business_profile.parent_invalid" => "ProtectedOrder",
+            _ => fallback
+        };
+        Errors.Add(key is "AdditionalServiceDuplicate" or "AdditionalServiceInvalidScope" or "AdditionalServiceQuantityInvalid" ? S[key] : key is "PackagingInvalid" or "ProtectedOrder" ? S[key] : L[key]);
+    }
+
+    private string ServiceCaption(string code) => Services.FirstOrDefault(x => x.Code.Equals(code, StringComparison.OrdinalIgnoreCase))?.Name ?? code;
+    private string ItemCaption(Guid? id) => id is Guid item ? Items.FirstOrDefault(x => x.Id == item)?.Label ?? item.ToString() : L["OrderLevel"];
+    private static string ItemText(JsonElement line)
+    {
+        if (line.TryGetProperty("snapshot", out JsonElement snapshot) && snapshot.ValueKind == JsonValueKind.Object)
+        {
+            string product = G(snapshot, "productName");
+            string sku = G(snapshot, "variantSku");
+            return string.Join(" · ", new[] { product, sku }.Where(x => !string.IsNullOrWhiteSpace(x)));
+        }
+
+        return G(line, "productVariantId");
+    }
+    private static string G(JsonElement x, string name) => x.TryGetProperty(name, out JsonElement value) && value.ValueKind != JsonValueKind.Null ? value.ToString() : "";
+    private static decimal D(JsonElement x, string name) => x.TryGetProperty(name, out JsonElement value) && value.ValueKind != JsonValueKind.Null ? value.GetDecimal() : 0;
+    private static long N(JsonElement x, string name) => x.TryGetProperty(name, out JsonElement value) && value.ValueKind != JsonValueKind.Null ? value.GetInt64() : 0;
+    private static Guid? GN(string value) => Guid.TryParse(value, out Guid id) ? id : null;
+    private sealed record ServiceOption(string Code, string Name, string Scope, DateOnly ValidFrom, DateOnly? ValidTo);
+    private sealed record ItemOption(Guid Id, int Line, string Label);
+    private sealed record SelectionRow(Guid Id, string ServiceCode, Guid? OrderItemId, decimal Quantity, long Version);
+}

@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Nav_Foundation">
+    <value>الأساس التنظيمي</value>
+  </data>
+  <data name="Nav_Companies">
+    <value>الشركات</value>
+  </data>
+  <data name="Nav_CompanySettings">
+    <value>إعدادات الشركة</value>
+  </data>
+  <data name="Nav_Branches">
+    <value>الفروع</value>
+  </data>
+  <data name="Nav_Units">
+    <value>الوحدات التنظيمية</value>
+  </data>
+  <data name="Nav_Warehouses">
+    <value>المستودعات</value>
+  </data>
+  <data name="Nav_UserAccessManagement">
+    <value>إدارة المستخدمين والصلاحيات</value>
+  </data>
+  <data name="Nav_Users">
+    <value>المستخدمون ووصول الشركات</value>
+  </data>
+  <data name="Nav_Roles">
+    <value>الأدوار والصلاحيات</value>
+  </data>
+  <data name="Nav_Audit">
+    <value>سجل التدقيق</value>
+  </data>
+  <data name="Nav_MasterData">
+    <value>البيانات الرئيسية</value>
+  </data>
+  <data name="Nav_Lookups">
+    <value>القوائم والترجمات</value>
+  </data>
+  <data name="Nav_Products">
+    <value>المنتجات</value>
+  </data>
+  <data name="Nav_Variants">
+    <value>المتغيرات وSKU</value>
+  </data>
+  <data name="Nav_Suppliers">
+    <value>الموردون</value>
+  </data>
+  <data name="Nav_Equipment">
+    <value>معدات الشركة</value>
+  </data>
+  <data name="Nav_Customers">
+    <value>العملاء</value>
+  </data>
+  <data name="Nav_ArtworkFiles">
+    <value>بنك التصاميم</value>
+  </data>
+  <data name="Nav_ArtworkBank">
+    <value>بنك التصاميم</value>
+  </data>
+  <data name="Nav_ArtworkTags">
+    <value>التصنيفات والوسوم</value>
+  </data>
+  <data name="Nav_FileHistory">
+    <value>الإصدارات والمعالجة والسجل</value>
+  </data>
+  <data name="Nav_Orders">
+    <value>الطلبات</value>
+  </data>
+  <data name="Nav_NewOrder">
+    <value>طلب جديد</value>
+  </data>
+  <data name="Nav_OrderSearch">
+    <value>البحث وعرض الطلب 360</value>
+  </data>
+  <data name="Nav_InventoryPurchasing">
+    <value>المخزون والمشتريات</value>
+  </data>
+  <data name="Nav_Inventory">
+    <value>الأرصدة والحركات والحجوزات</value>
+  </data>
+  <data name="Nav_Shortages">
+    <value>النواقص</value>
+  </data>
+  <data name="Nav_Purchasing">
+    <value>الطلبات وأوامر الشراء</value>
+  </data>
+  <data name="Nav_Production">
+    <value>الإنتاج والتصميم والطباعة والكبس</value>
+  </data>
+  <data name="Nav_Quality">
+    <value>الجودة وإعادة الإنتاج</value>
+  </data>
+  <data name="Nav_QualityCatalogs">
+    <value>القوالب ودليل العيوب</value>
+  </data>
+  <data name="Nav_Logistics">
+    <value>التعبئة والشحن والتسليم</value>
+  </data>
+  <data name="Nav_Workflow">
+    <value>سير العمل</value>
+  </data>
+  <data name="Nav_Notifications">
+    <value>الإشعارات</value>
+  </data>
+  <data name="Nav_ManagementDashboard">
+    <value>لوحة الإدارة</value>
+  </data>
+  <data name="Nav_OrganizationalChart">
+    <value>الهيكل التنظيمي</value>
+  </data>
+  <data name="Nav_Persons">
+    <value>الأشخاص</value>
+  </data>
+<data name="Nav_Reference_customers" xml:space="preserve"><value>البيانات المرجعية للعملاء</value></data>
+<data name="Nav_Reference_shared" xml:space="preserve"><value>البيانات الأساسية المشتركة</value></data>
+<data name="Nav_Reference_products" xml:space="preserve"><value>البيانات المرجعية للمنتجات</value></data>
+<data name="Nav_Reference_artwork" xml:space="preserve"><value>البيانات المرجعية لبنك التصاميم</value></data>
+<data name="Nav_DesignCategories" xml:space="preserve"><value>فئات التصاميم</value></data>
+<data name="Nav_Reference_orders" xml:space="preserve"><value>البيانات المرجعية للطلبات</value></data>
+<data name="Nav_Reference_pricing" xml:space="preserve"><value>البيانات المرجعية للتسعير</value></data>
+<data name="Nav_Reference_inventory" xml:space="preserve"><value>البيانات المرجعية للمخزون والمشتريات</value></data>
+<data name="Nav_Reference_production" xml:space="preserve"><value>البيانات المرجعية للتصميم والطباعة والكبس الحراري</value></data>
+<data name="Nav_Reference_quality" xml:space="preserve"><value>البيانات المرجعية للجودة وإعادة الإنتاج</value></data>
+<data name="Nav_Reference_logistics" xml:space="preserve"><value>البيانات المرجعية للتغليف والشحن والتسليم</value></data>
+<data name="Nav_Reference_workflow" xml:space="preserve"><value>البيانات المرجعية للمهام وسير العمل</value></data>
+<data name="Nav_SystemManagement" xml:space="preserve"><value>إدارة النظام</value></data>
+<data name="Nav_Reference_suppliers" xml:space="preserve"><value>البيانات المرجعية للموردين</value></data>
+<data name="Nav_Reference_equipment" xml:space="preserve"><value>البيانات المرجعية للمعدات</value></data>
+<data name="Nav_Pricing" xml:space="preserve"><value>التسعير</value></data>
+<data name="Nav_Cartable" xml:space="preserve"><value>صندوق المهام</value></data>
+</root>

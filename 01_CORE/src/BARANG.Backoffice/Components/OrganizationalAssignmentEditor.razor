@@ -1,0 +1,95 @@
+@inject IStringLocalizer<OrganizationStrings> O
+@inject IStringLocalizer<CrudStrings> T
+
+<div class="structure-form" data-chart-form="assignment">
+    @if (Mode == FormMode.Create)
+    {
+        <label>
+            <span>@O["SelectPerson"] *</span>
+            <SearchableSelect
+                Name="assignment-person-search"
+                Options="PersonOptions"
+                Value="@SelectedPerson"
+                ValueChanged="PersonChanged"
+                SearchChanged="SearchPeople"
+                Disabled="false"
+                Placeholder="@O["SearchPerson"]" />
+        </label>
+    }
+
+    <div class="person-summary" data-selected-person-id="@Model.PersonId">
+        <div>
+            <span>@O["Person"]</span>
+            <strong>@Model.PersonDisplayName</strong>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.PersonPersonnelCode))
+        {
+            <div><span>@O["PersonnelCode"]</span><strong>@Model.PersonPersonnelCode</strong></div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.PersonMobile))
+        {
+            <div><span>@O["Mobile"]</span><strong>@Model.PersonMobile</strong></div>
+        }
+        <div><span>@T["Status"]</span><StatusBadge Active="Model.Active" /></div>
+    </div>
+
+    <section>
+        <h3>@O["OrganizationalChart"]</h3>
+        <div class="form-grid">
+            <label>
+                <span>@O["Unit"] *</span>
+                <SearchableSelect
+                    Name="assignment-unit"
+                    Options="UnitOptions"
+                    Value="@Model.UnitId.ToString()"
+                    ValueChanged="UnitChanged"
+                    Disabled="@(Mode != FormMode.Edit)"
+                    Placeholder="@T["SearchOptions"]" />
+            </label>
+            <Field Name="assignment-position-title" Label="@($"{O["Position"]} *")" @bind-Value="Model.PositionTitle" Disabled="@(Mode == FormMode.View)" />
+            <Field Name="assignment-position-code" Label="@($"{T["Code"]} *")" @bind-Value="Model.PositionCode" Disabled="@(Mode == FormMode.View)" />
+            <label>
+                <span>@O["Manager"]</span>
+                <SearchableSelect
+                    Name="assignment-manager"
+                    Options="ManagerOptions"
+                    Value="@ManagerValue"
+                    ValueChanged="ManagerChanged"
+                    Disabled="@(Mode == FormMode.View || LockManager)"
+                    Placeholder="@T["SearchOptions"]" />
+            </label>
+            <label>
+                <span>@O["StartDate"]</span>
+                <LocaleDateInput Name="assignment-start-date" @bind-Value="Model.StartDate" Disabled="@(Mode == FormMode.View)" />
+            </label>
+            <label>
+                <span>@O["EndDate"]</span>
+                <LocaleDateInput Name="assignment-end-date" @bind-Value="Model.EndDate" Disabled="@(Mode == FormMode.View)" />
+            </label>
+            <label class="checkbox-field">
+                <input name="assignment-primary" type="checkbox" @bind="Model.Primary" disabled="@(Mode == FormMode.View)" />
+                <span>@O["PrimaryAssignment"]</span>
+            </label>
+            <label class="form-wide">
+                <span>@O["Notes"]</span>
+                <textarea name="assignment-notes" @bind="Model.Notes" disabled="@(Mode == FormMode.View)"></textarea>
+            </label>
+        </div>
+    </section>
+</div>
+
+@code
+{
+    [Parameter, EditorRequired] public AssignmentFormModel Model { get; set; } = null!;
+    [Parameter, EditorRequired] public FormMode Mode { get; set; }
+    [Parameter] public string SelectedPerson { get; set; } = "";
+    [Parameter] public IReadOnlyList<SearchableSelectOption> PersonOptions { get; set; } = [];
+    [Parameter] public IReadOnlyList<SearchableSelectOption> UnitOptions { get; set; } = [];
+    [Parameter] public IReadOnlyList<SearchableSelectOption> ManagerOptions { get; set; } = [];
+    [Parameter] public bool LockManager { get; set; }
+    [Parameter] public EventCallback<string> PersonChanged { get; set; }
+    [Parameter] public EventCallback<string> SearchPeople { get; set; }
+    [Parameter] public EventCallback<string> UnitChanged { get; set; }
+    [Parameter] public EventCallback<string> ManagerChanged { get; set; }
+    private string ManagerValue => Model.ManagerId?.ToString() ?? "";
+}

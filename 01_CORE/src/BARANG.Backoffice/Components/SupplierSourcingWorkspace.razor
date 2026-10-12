@@ -1,0 +1,250 @@
+@using System.Globalization
+@using System.Text.Json
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject IStringLocalizer<SupplierSourcingStrings> S
+@inject IStringLocalizer<SupplierStrings> C
+@inject LocaleDateService Dates
+
+<section class="customer-editor-panel customer-child-grid" data-sourcing-grid="@Mode">
+    @if(Kind=="prices"){
+        <BarangTabs AriaLabel="@S["PricesAndLists"]">
+            @foreach(string section in new[]{"prices","price-lists"}){<button type="button" role="tab" aria-selected="@(Mode==section?"true":"false")" class="@(Mode==section?"active":null)" data-sourcing-switch="@section" @onclick="()=>ChangeMode(section)">@S[section=="prices"?"PriceHistory":"PriceLists"]</button>}
+        </BarangTabs>
+    }
+    <div class="child-header"><h3>@S[TitleKey]</h3>@if(CanEdit){<button type="button" class="btn btn-primary btn-small" data-sourcing-add="@Mode" disabled="@Busy" @onclick="New"><BarangIcon Name="plus" />@C["Add"]</button>}</div>
+    <p class="reference-scope-note">@S[Mode=="products"?"PreferredRule":"PublishedRule"]</p>
+    @if(Message is not null&&!Dialog&&!Deleting){<p class="@(Success?"inline-success":"inline-error")" role="@(Success?"status":"alert")">@Text(Message)</p>}
+    <BarangToolbar AriaLabel="@S[TitleKey]">
+        <label class="search-box"><BarangIcon Name="search" /><input name="sourcingSearch" value="@Search" @oninput="SearchChanged" placeholder="@C["Search"]" aria-label="@C["Search"]" /></label>
+        @if(Mode is "products" or "prices" or "price-lists"){<select name="sourcingActiveFilter" value="@ActiveFilter" @onchange="ActiveChanged" aria-label="@C["Status"]"><option value="">@C["AllStatuses"]</option><option value="true">@C["Active"]</option></select>}
+        @if(Mode=="prices"){<SupplierSourcingSelect Kind="link" Name="sourcingItemFilter" SupplierId="@SupplierId" Value="@ItemFilter" ValueChanged="FilterItem" Placeholder="@S["ProductSku"]" />}
+        <button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="Load"><BarangIcon Name="refresh" />@C["Refresh"]</button>
+    </BarangToolbar>
+    @if(Loading){<BarangLoadingState Text="@C["Loading"]" />}
+    else if(Rows.Count==0){<CrudEmptyState Title="@C["NoRows"]" Description="" />}
+    else{
+        <div class="data-grid-wrap"><table class="data-grid"><thead><tr>
+            <th><BarangSortHeader Label="@S[Mode=="price-lists"?"PriceListCode":"ProductSku"]" Active="@(Sort==(Mode=="price-lists"?"code":"name"))" Descending="@Descending" Clicked='()=>SortChanged(Mode=="price-lists"?"code":"name")' /></th>
+            @if(Mode=="products"){
+                <th><BarangSortHeader Label="@S["SupplierItemCode"]" Active="@(Sort=="code")" Descending="@Descending" Clicked='()=>SortChanged("code")' /></th>
+                <th>@S["PurchaseUnit"]</th><th><BarangSortHeader Label="@S["MOQ"]" Active="@(Sort=="moq")" Descending="@Descending" Clicked='()=>SortChanged("moq")' /></th>
+                <th><BarangSortHeader Label="@S["LeadTimeDays"]" Active="@(Sort=="lead")" Descending="@Descending" Clicked='()=>SortChanged("lead")' /></th>
+                <th>@S["CurrentPrice"]</th>
+            }else if(Mode=="price-lists"){
+                <th>@S["PriceListTitle"]</th><th>@S["Currency"]</th><th><BarangSortHeader Label="@S["EffectiveFrom"]" Active="@(Sort=="date")" Descending="@Descending" Clicked='()=>SortChanged("date")' /></th><th>@S["EffectiveTo"]</th><th>@S["Lines"]</th>
+            }else{
+                <th>@S["PurchaseUnit"]</th><th><BarangSortHeader Label="@S["UnitPrice"]" Active="@(Sort=="price")" Descending="@Descending" Clicked='()=>SortChanged("price")' /></th><th>@S["MinimumQuantity"]</th>
+                @if(Mode=="prices"){<th><BarangSortHeader Label="@S["EffectiveFrom"]" Active="@(Sort=="date")" Descending="@Descending" Clicked='()=>SortChanged("date")' /></th><th>@S["EffectiveTo"]</th>}
+                else{<th>@S["DiscountPercent"]</th><th>@S["NetUnitCost"]</th>}
+            }
+            <th>@C["Status"]</th><th>@C["Actions"]</th>
+        </tr></thead><tbody>
+        @foreach(var item in Rows){
+            var row=Record(item);
+            <tr data-id="@Value(row,"id")">
+                <td>@if(Mode=="price-lists"){@Value(row,"code")}else{<span class="entity-cell">@Value(item,"productName")<small>@(Value(item,"sku") is string sku&&sku.Length>0?sku:Value(item,"productCode"))</small></span>}</td>
+                @if(Mode=="products"){
+                    <td>@Value(row,"supplierItemCode")</td><td>@Unit(row)</td><td>@Number(row,"minimumOrderQuantity")</td><td>@Value(row,"leadTimeDays")</td><td>@CurrentPrice(item)</td>
+                }else if(Mode=="price-lists"){
+                    <td>@Value(row,"title")</td><td>@Value(row,"currencyCode")</td><td>@Date(row,"effectiveFrom")</td><td>@Date(row,"effectiveTo")</td><td>@Value(item,"lineCount")</td>
+                }else{
+                    <td>@Unit(row)</td><td>@Number(row,"unitPrice") @(Mode=="prices"?Value(row,"currencyCode"):ParentCurrency)</td><td>@Number(row,"minimumQuantity")</td>
+                    @if(Mode=="prices"){<td>@Date(row,"effectiveFrom")</td><td>@Date(row,"effectiveTo")</td>}
+                    else{<td>@Number(row,"discountPercent")%</td><td>@Number(item,"netUnitCost") @ParentCurrency</td>}
+                }
+                <td>
+                    @if(Mode=="products"){<StatusBadge Active="@Active(row)" /><span>@S[Value(row,"availability")]</span>@if(Active(row)&&Bool(row,"isPreferred")){<span class="status-badge">@S["Preferred"]</span>}}
+                    else if(Mode=="lines"){<span class="status-badge">@S[Published(row)?"Published":"Draft"]</span>}
+                    else{<span class="customer-status status-@Value(row,"status").ToLowerInvariant()">@Text(Value(row,"status"))</span>@if(Mode=="prices"&&Bool(item,"isCurrent")){<span class="status-badge">@S["Current"]</span>}}
+                </td>
+                <td><div class="row-actions">
+                    <BarangIconButton Icon="eye" Label="@C["View"]" Semantic="info" Clicked="()=>Show(item,true)" />
+                    @if(Mode=="price-lists"){<BarangIconButton Icon="orders" Label="@S["Lines"]" Semantic="info" Clicked="()=>OpenLines(item)" />}
+                    @if(CanEdit){
+                        @if(!Published(row)){<BarangIconButton Icon="edit" Label="@C["Edit"]" Semantic="edit" Clicked="()=>Show(item,false)" />}
+                        @if(Mode!="lines"&&(Mode!="prices"||Value(row,"priceListId").Length==0)){<BarangIconButton Icon="power" Label="@C[Active(row)?"Deactivate":"Activate"]" Semantic="@(Active(row)?"warning":"success")" Clicked="()=>Activate(item)" />}
+                        @if(Mode=="products"&&Active(row)){<BarangIconButton Icon="check" Label="@S[Bool(row,"isPreferred")?"UnsetPreferred":"SetPreferred"]" Semantic="success" Clicked="()=>Preferred(item)" />}
+                        @if(Mode=="prices"&&Published(row)&&Value(row,"priceListId").Length==0){<BarangIconButton Icon="calendar" Label="@S["EndPrice"]" Semantic="info" Clicked="()=>EndPrice(item)" />}
+                        <BarangIconButton Icon="trash" Label="@C["Delete"]" Semantic="danger" Clicked="()=>AskDelete(item)" />
+                    }
+                </div></td>
+            </tr>
+        }
+        </tbody></table></div>
+    }
+    <BarangPagination Page="@Page" HasNext="@(Total>Page*PageSize)" PreviousText="@C["Previous"]" NextText="@C["Next"]" Previous="Previous" Next="Next" />
+</section>
+<BarangModal Open="@Dialog" Title="@Text(Ending?"EndPrice":Viewing?"View":Id is null?"Add":"Edit")" Description="@S[TitleKey]" Size="xl" ReserveSelectorSpace="true" ShowCloseButton="false" Busy="@Busy" CloseLabel="@C["Cancel"]" CloseRequested="Close" data-sourcing-editor="@Mode">
+<ChildContent>
+    @if(Message is not null&&!Success){<p class="inline-error" role="alert">@Text(Message)</p>}
+    <section class="form-section">
+    @if(Ending){<label><span>@S["EffectiveTo"]</span><LocaleDateInput Name="effectiveTo" Value="@Canonical("effectiveTo")" ValueChanged='date=>SetDate("effectiveTo",date)' Disabled="@Busy" /></label>}
+    else{
+        <div class="form-grid">
+        @if(Mode=="products"){
+            <label><span>@S["Product"] *</span><SupplierSourcingSelect Kind="product" Name="productId" Value="@Data["productId"]" ValueChanged="ProductChanged" Disabled="@(Viewing||Busy||Id is not null)" Placeholder="@S["Product"]" /></label>
+            <label><span>@S["Sku"]</span><SupplierSourcingSelect Kind="sku" Name="productVariantId" ProductId="@Data["productId"]" Value="@Data["productVariantId"]" ValueChanged='v=>Set("productVariantId",v)' Disabled="@(Viewing||Busy||Id is not null||Data["productId"].Length==0)" Placeholder="@S["Sku"]" /></label>
+            <label><span>@S["Availability"]</span><select name="availability" value="@Data["availability"]" disabled="@(Viewing||Busy)" @onchange='e=>Set("availability",e.Value?.ToString()??"Available")'>@foreach(string option in new[]{"Available","OnRequest","Unavailable"}){<option value="@option">@S[option]</option>}</select></label>
+        }else if(Mode!="price-lists"){
+            <label class="span-2"><span>@S["ProductSku"] *</span><SupplierSourcingSelect Kind="link" Name="supplierProductId" SupplierId="@SupplierId" Value="@Data["supplierProductId"]" ValueChanged="LinkChanged" Disabled="@(Viewing||Busy||Id is not null)" Placeholder="@S["ProductSku"]" /></label>
+        }
+        @if(Mode is "prices" or "price-lists"){<label><span>@S["Currency"] *</span><SupplierSourcingSelect Kind="currency" Name="currencyCode" Value="@Data["currencyCode"]" ValueChanged='v=>Set("currencyCode",v)' Disabled="@(Viewing||Busy)" Placeholder="@S["Currency"]" /></label>}
+        @if(Mode=="price-lists"&&Id is not null){<label><span>@S["PriceListCode"]</span><input name="code" value="@Data["code"]" disabled /></label>}
+        </div>
+        <SupplierFields Fields="@EditorFields" Values="@Data" Labels="@S" Disabled="@(Viewing||Busy||!CanEdit)" />
+        @if(Mode is "prices" or "lines"){<p class="read-only-note">@S["CostRule"]</p>}
+    }
+    </section>
+</ChildContent>
+<Footer><button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="Close">@C["Cancel"]</button>@if(!Viewing&&CanEdit){<button type="button" class="btn btn-primary" disabled="@Busy" @onclick="Save">@C["Save"]</button>}</Footer>
+</BarangModal>
+<BarangModal Open="@Deleting" Title="@C["Delete"]" ShowCloseButton="false" Busy="@Busy" CloseRequested="CloseDelete" data-sourcing-delete="@Mode">
+<ChildContent><p>@C["ConfirmDelete"]</p>@if(Message is not null&&!Success){<p class="inline-error" role="alert">@Text(Message)</p>}</ChildContent>
+<Footer><button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="CloseDelete">@C["Cancel"]</button><button type="button" class="btn btn-danger" disabled="@Busy" @onclick="Delete">@C["Delete"]</button></Footer>
+</BarangModal>
+<BarangModal Open="@LinesOpen" Title="@S["Lines"]" Description="@LinesTitle" Size="xl" ReserveSelectorSpace="true" ShowCloseButton="false" CloseLabel="@C["Cancel"]" CloseRequested="CloseLines" data-sourcing-lines="true">
+<ChildContent>@if(LinesId is Guid list){<SupplierSourcingWorkspace SupplierId="@SupplierId" Kind="lines" PriceListId="@list" ReadOnly="@(ReadOnly||!CanManage)" Changed="ChildChanged" />}</ChildContent>
+<Footer><button type="button" class="btn btn-secondary" @onclick="CloseLines">@C["Cancel"]</button></Footer>
+</BarangModal>
+<BarangConfirmDialog Open="@DiscardOpen" Title="@C["DiscardTitle"]" CancelText="@C["KeepEditing"]" ConfirmText="@C["Discard"]" Cancel="KeepEditing" Confirm="Discard">@C["DiscardText"]</BarangConfirmDialog>
+
+@code{
+    [Parameter]public Guid SupplierId{get;set;}
+    [Parameter]public string Kind{get;set;}="products";
+    [Parameter]public Guid?PriceListId{get;set;}
+    [Parameter]public bool ReadOnly{get;set;}
+    [Parameter]public EventCallback Changed{get;set;}
+    private const int PageSize=10;
+    private string Mode="products",LoadedKey="",Search="",Sort="",ActiveFilter="",ItemFilter="",Snapshot="",DefaultCurrency="IRR",ParentCurrency="",LinesTitle="";
+    private string?Token,Message;
+    private Guid Company;
+    private Guid?Id,LinesId;
+    private long Version,ParentVersion,Total;
+    private int Page=1,LoadRevision;
+    private bool Loading,Busy,CanManage,ParentLocked,Dialog,Viewing,Ending,Deleting,Success,DiscardOpen,LinesOpen,Descending;
+    private List<JsonElement>Rows=[];
+    private Dictionary<string,string>Data=[],Captions=[];
+    private bool CanEdit=>!ReadOnly&&CanManage&&!ParentLocked;
+    private string Prefix=>$"api/v1/suppliers/{SupplierId}/sourcing/"+(Mode=="lines"?$"price-lists/{PriceListId}/lines":Mode);
+    private string TitleKey=>Mode switch{"products"=>"ProductsServices","prices"=>"PriceHistory","price-lists"=>"PriceLists",_=>"Lines"};
+    private SupplierUiField[]EditorFields=>SupplierSourcingUiSchema.Fields(Mode).Where(x=>!(Mode=="price-lists"&&Id is not null&&x.Key=="code")).ToArray();
+    private LocalizedString Text(string key){var value=S[key];return value.ResourceNotFound?C[key]:value;}
+    private static string Value(JsonElement row,string key)=>SupplierUiSchema.Text(row,key);
+    private static bool Bool(JsonElement row,string key)=>row.TryGetProperty(key,out var value)&&value.ValueKind==JsonValueKind.True;
+    private static bool Active(JsonElement row)=>Bool(row,"isActive");
+    private JsonElement Record(JsonElement item)=>item.GetProperty(Mode switch{"products"=>"relationship","prices"=>"price","price-lists"=>"priceList",_=>"line"});
+    private bool Published(JsonElement row)=>Mode!="products"&&(Value(row,"publishedAtUtc").Length>0||Value(row,"publishedPriceId").Length>0);
+    private string Unit(JsonElement row)=>Captions.GetValueOrDefault(Value(row,"purchaseUnitId"),C["NotSpecified"]);
+    private static string Number(JsonElement row,string key)=>row.TryGetProperty(key,out var value)&&value.ValueKind==JsonValueKind.Number?value.GetDecimal().ToString("0.####",CultureInfo.CurrentCulture):"";
+    private string Date(JsonElement row,string key)=>DateOnly.TryParseExact(Value(row,key),"yyyy-MM-dd",CultureInfo.InvariantCulture,DateTimeStyles.None,out var date)?Dates.Format(date,CultureInfo.CurrentUICulture.TwoLetterISOLanguageName):"";
+    private string CurrentPrice(JsonElement item){
+        var quotes=item.GetProperty("currentPrices").EnumerateArray().ToArray();
+        return quotes.Length==0?S["NoCurrentPrice"]:string.Join(" / ",quotes.Select(x=>Number(x.GetProperty("price"),"unitPrice")+" "+Value(x.GetProperty("price"),"currencyCode")));
+    }
+    protected override async Task OnParametersSetAsync(){
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;CanManage=user.HasClaim(AuthClaimTypes.Permission,"supplier.manage");
+        if(user.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string token||!Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var scope)){Message="Forbidden";return;}
+        string key=$"{scope}:{SupplierId}:{Kind}:{PriceListId}:{CultureInfo.CurrentUICulture.Name}";
+        if(key==LoadedKey)return;
+        if(LoadedKey.Length==0){Mode=Kind;Sort=Mode=="products"?"name":Mode=="prices"?"date":"price";}
+        if(Company!=scope){Rows=[];Dialog=Deleting=LinesOpen=false;Page=1;Search=ItemFilter=ActiveFilter="";}
+        Company=scope;Token=token;LoadedKey=key;await LoadCaptions();await Load();
+    }
+    private async Task LoadCaptions(){
+        var response=await Core.GetAsync($"api/v1/lookups/unit.of.measure/options?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}&activeOnly=false",Token!,Company,default);
+        if(response.IsSuccess)Captions=response.Value.EnumerateArray().ToDictionary(x=>Value(x,"id"),x=>Value(x,"displayName"));
+        else{Captions=[];Message="ReferenceUnavailable";}
+        var owner=await Core.GetAsync($"api/v1/suppliers/core/{SupplierId}",Token!,Company,default);
+        if(owner.IsSuccess&&owner.Value.TryGetProperty("financial",out var financial)&&financial.ValueKind==JsonValueKind.Object)DefaultCurrency=Value(financial,"defaultCurrencyCode");
+    }
+    private async Task Load(){
+        if(Token is null)return;
+        int revision=++LoadRevision;Loading=true;
+        if(Mode=="lines"){
+            var header=await Core.GetAsync($"api/v1/suppliers/{SupplierId}/sourcing/price-lists/{PriceListId}",Token,Company,default);
+            if(revision!=LoadRevision)return;
+            if(!header.IsSuccess){Message=SupplierSourcingUiSchema.Error(header);Loading=false;return;}
+            var row=header.Value.GetProperty("priceList");ParentVersion=row.GetProperty("version").GetInt64();ParentLocked=Value(row,"publishedAtUtc").Length>0;ParentCurrency=Value(row,"currencyCode");
+        }
+        string query=$"?pageNumber={Page}&pageSize={PageSize}&search={Uri.EscapeDataString(Search)}&sortBy={Sort}&sortDescending={Descending.ToString().ToLowerInvariant()}&activeOnly={(ActiveFilter=="true"?"true":"false")}";
+        if(ItemFilter.Length>0)query+="&supplierProductId="+Uri.EscapeDataString(ItemFilter);
+        var result=await Core.GetAsync(Prefix+query,Token,Company,default);
+        if(revision!=LoadRevision)return;
+        Rows=[];
+        if(result.IsSuccess){Rows=result.Value.GetProperty("items").EnumerateArray().ToList();Total=result.Value.GetProperty("totalCount").GetInt64();
+            if(Page>1&&Rows.Count==0){Page--;await Load();return;}}
+        else{Total=0;Success=false;Message=SupplierSourcingUiSchema.Error(result);}
+        Loading=false;
+    }
+    private async Task ChangeMode(string mode){if(Busy)return;Mode=mode;Page=1;Sort=mode=="price-lists"?"code":"date";Search=ActiveFilter=ItemFilter="";ParentLocked=false;Message=null;await Load();}
+    private async Task SearchChanged(ChangeEventArgs e){Search=e.Value?.ToString()??"";Page=1;await Load();}
+    private async Task ActiveChanged(ChangeEventArgs e){ActiveFilter=e.Value?.ToString()??"";Page=1;await Load();}
+    private async Task FilterItem(string value){ItemFilter=value;Page=1;await Load();}
+    private async Task SortChanged(string value){Descending=Sort==value&&!Descending;Sort=value;Page=1;await Load();}
+    private async Task Previous(){if(Page>1){Page--;await Load();}}
+    private async Task Next(){if(Total>Page*PageSize){Page++;await Load();}}
+    private void New(){if(!CanEdit||Busy)return;Id=null;Version=0;Viewing=Ending=false;Message=null;Success=false;Data=SupplierSourcingUiSchema.Empty(Mode,DefaultCurrency);Snapshot=State();Dialog=true;}
+    private async Task Show(JsonElement item,bool readOnly){
+        if(Busy||Token is null)return;Busy=true;Message=null;
+        try{var current=await Core.GetAsync(Prefix+"/"+Value(Record(item),"id"),Token,Company,default);
+            if(!current.IsSuccess){Success=false;Message=SupplierSourcingUiSchema.Error(current);return;}
+            var row=Record(current.Value);Id=row.GetProperty("id").GetGuid();Version=row.GetProperty("version").GetInt64();
+            Viewing=readOnly||!CanEdit||Published(row);Ending=false;Data=SupplierSourcingUiSchema.Read(Mode,row);Snapshot=State();Dialog=true;
+        }finally{Busy=false;}
+    }
+    private void Set(string key,string value)=>Data[key]=value;
+    private DateOnly?Canonical(string key)=>DateOnly.TryParseExact(Data.GetValueOrDefault(key,""),"yyyy-MM-dd",CultureInfo.InvariantCulture,DateTimeStyles.None,out var date)?date:null;
+    private void SetDate(string key,DateOnly?date)=>Set(key,date?.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture)??"");
+    private async Task ProductChanged(string value){
+        Set("productId",value);Set("productVariantId","");
+        if(value.Length==0||Token is null)return;
+        var product=await Core.GetAsync("api/v1/products/"+value,Token,Company,default);
+        if(product.IsSuccess){
+            var units=await Core.GetAsync("api/v1/lookups/unit.of.measure/options?culture=en&activeOnly=true",Token,Company,default);
+            if(units.IsSuccess){string code=Value(product.Value,"unitOfMeasureCode");var selected=units.Value.EnumerateArray().FirstOrDefault(x=>string.Equals(Value(x,"code"),code,StringComparison.OrdinalIgnoreCase));
+                if(selected.ValueKind==JsonValueKind.Object)Set("purchaseUnitId",Value(selected,"id"));}
+        }
+    }
+    private async Task LinkChanged(string value){
+        Set("supplierProductId",value);if(value.Length==0||Token is null)return;
+        var link=await Core.GetAsync($"api/v1/suppliers/{SupplierId}/sourcing/products/{value}",Token,Company,default);
+        if(link.IsSuccess)Set("purchaseUnitId",Value(link.Value.GetProperty("relationship"),"purchaseUnitId"));else Message=SupplierSourcingUiSchema.Error(link);
+    }
+    private string State()=>JsonSerializer.Serialize(Data);
+    private void Close(){if(Busy)return;if(!Viewing&&State()!=Snapshot)DiscardOpen=true;else Dialog=false;}
+    private void KeepEditing()=>DiscardOpen=false;
+    private void Discard(){DiscardOpen=false;Dialog=false;}
+    private async Task Save(){
+        if(Busy||Viewing||!CanEdit||Token is null)return;Busy=true;Success=false;Message=null;
+        try{
+            object body=Ending?new{effectiveTo=Data["effectiveTo"],version=Version}:new{data=SupplierSourcingUiSchema.Body(Mode,Data),version=Version,parentVersion=ParentVersion};
+            string path=Prefix+(Id is Guid id?$"/{id}":"")+(Ending?"/end-date":"");
+            var result=await Core.SendAsync(Ending||Id is null?HttpMethod.Post:HttpMethod.Put,path,body,Token,Company,default);
+            if(result.IsSuccess){Dialog=false;Success=true;Message="Saved";await Load();await Changed.InvokeAsync();}
+            else Message=SupplierSourcingUiSchema.Error(result);
+        }catch(FormatException){Message="ValidationError";}catch(OverflowException){Message="ValidationError";}
+        finally{Busy=false;}
+    }
+    private async Task Mutate(JsonElement item,string action,object body){
+        if(Busy||!CanEdit||Token is null)return;Busy=true;Message=null;
+        try{var result=await Core.SendAsync(HttpMethod.Post,Prefix+"/"+Value(Record(item),"id")+"/"+action,body,Token,Company,default);
+            Success=result.IsSuccess;Message=Success?"Saved":SupplierSourcingUiSchema.Error(result);if(Success){await Load();await Changed.InvokeAsync();}}
+        finally{Busy=false;}
+    }
+    private Task Activate(JsonElement item){var row=Record(item);return Mutate(item,"activation",new{isActive=!Active(row),version=row.GetProperty("version").GetInt64()});}
+    private Task Preferred(JsonElement item){var row=Record(item);return Mutate(item,"preferred",new{isPreferred=!Bool(row,"isPreferred"),version=row.GetProperty("version").GetInt64()});}
+    private void EndPrice(JsonElement item){if(!CanEdit||Busy)return;var row=Record(item);Id=row.GetProperty("id").GetGuid();Version=row.GetProperty("version").GetInt64();
+        Data=new(){{"effectiveTo",DateTime.UtcNow.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture)}};Viewing=false;Ending=true;Message=null;Snapshot=State();Dialog=true;}
+    private void AskDelete(JsonElement item){if(!CanEdit||Busy)return;var row=Record(item);Id=row.GetProperty("id").GetGuid();Version=row.GetProperty("version").GetInt64();Message=null;Success=false;Deleting=true;}
+    private void CloseDelete(){if(!Busy)Deleting=false;}
+    private async Task Delete(){
+        if(Busy||!CanEdit||Token is null)return;Busy=true;Message=null;
+        try{var result=await Core.SendAsync(HttpMethod.Delete,Prefix+$"/{Id}?version={Version}&parentVersion={ParentVersion}",null,Token,Company,default);
+            Success=result.IsSuccess;if(Success){Deleting=false;Message="Deleted";await Load();await Changed.InvokeAsync();}else Message=SupplierSourcingUiSchema.Error(result);}
+        finally{Busy=false;}
+    }
+    private void OpenLines(JsonElement item){var row=Record(item);LinesId=row.GetProperty("id").GetGuid();LinesTitle=Value(row,"code")+" - "+Value(row,"title");LinesOpen=true;}
+    private async Task CloseLines(){LinesOpen=false;await Load();}
+    private Task ChildChanged()=>Load();
+}

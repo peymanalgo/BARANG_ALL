@@ -1,0 +1,21 @@
+@implements IDisposable
+@inject UiCultureState Culture
+
+<CascadingValue Value="@Culture" IsFixed="true">
+    <CascadingValue Name="BarangCulture" Value="@Culture.Code">
+        <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+            <Found Context="routeData">
+                <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                    <NotAuthorized><RedirectToLogin /></NotAuthorized>
+                </AuthorizeRouteView>
+                <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            </Found>
+        </Router>
+    </CascadingValue>
+</CascadingValue>
+
+@code {
+    protected override void OnInitialized() => Culture.Changed += RefreshCulture;
+    private Task RefreshCulture() => InvokeAsync(() => { Culture.Apply(); StateHasChanged(); });
+    public void Dispose() => Culture.Changed -= RefreshCulture;
+}

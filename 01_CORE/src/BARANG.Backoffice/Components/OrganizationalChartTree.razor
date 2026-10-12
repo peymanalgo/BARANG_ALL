@@ -1,0 +1,573 @@
+@inject IStringLocalizer<OrganizationStrings> O
+
+<section class="org-tree" data-chart="organizational-chart">
+    @if (HasSearch && SearchResult.Matches.Count == 0)
+    {
+        <div class="crud-empty" role="status" data-chart-search-empty>@O["SearchChartNoResults", SearchQuery]</div>
+    }
+    else if (SourceCompanies.Count == 0)
+    {
+        <CrudEmptyState Title="@O["EmptyChart"]" Description="" />
+    }
+    else
+    {
+        @foreach (CompanyRow company in SourceCompanies.Where(row => IsSearchVisible(row.Id)))
+        {
+            <article @key="NodeKey(company.Id, company.Version)" class="org-node company-node @(IsCompanyHighlighted(company.Id) ? "path-highlight" : "") @SearchMatchClass(company.Id)" data-chart-node="company" data-chart-node-id="@company.Id" data-chart-search-match="@SearchResult.Matches.Contains(company.Id).ToString().ToLowerInvariant()" data-chart-active="@company.Active.ToString().ToLowerInvariant()" @onclick="() => TryToggle(OrganizationChartNodeType.Company, company.Id)">
+                @if (HasBranchChildren(company.Id) && !PrintMode)
+                {
+                    <button
+                        type="button"
+                        class="org-expander"
+                        title="@(IsExpanded(company.Id) ? O["Collapse"] : O["Expand"])"
+                        aria-label="@(IsExpanded(company.Id) ? O["Collapse"] : O["Expand"])"
+                        aria-expanded="@IsExpanded(company.Id).ToString().ToLowerInvariant()"
+                        @onclick:stopPropagation
+                        @onclick="() => TryToggle(OrganizationChartNodeType.Company, company.Id)">
+                        <BarangIcon Name="@(IsExpanded(company.Id) ? "chevron-down" : "chevron-right")" Class="org-disclosure-icon" />
+                    </button>
+                }
+                else
+                {
+                    <span class="org-expander">•</span>
+                }
+
+                <OrganizationTreeIcon EntityType="OrganizationTreeEntityType.Company" />
+                <span class="org-title"><strong>@company.DisplayName</strong><small>@company.Code</small></span>
+                <StatusBadge Active="company.Active" />
+
+                <div class="node-actions">
+                    @if (Editable && CanManageCompanies)
+                    {
+                        <BarangIconButton Icon="eye" Label="@O["View"]" Semantic="info" StopPropagation="true"
+                            data-chart-action="company-view"
+                            data-chart-node-id="@company.Id"
+                            Clicked="() => EmitAction(OrganizationChartActionType.ViewCompany, OrganizationChartNodeType.Company, company.Id)" />
+                        <BarangIconButton Icon="edit" Label="@O["Edit"]" Semantic="edit" StopPropagation="true"
+                            data-chart-action="company-edit"
+                            data-chart-node-id="@company.Id"
+                            Clicked="() => EmitAction(OrganizationChartActionType.EditCompany, OrganizationChartNodeType.Company, company.Id)" />
+                    }
+                    @if (Editable && CanManageBranches && company.Active && CanManageCompany(company.Id))
+                    {
+                        <BarangIconButton Icon="plus" Label="@O["AddBranch"]" Semantic="success" StopPropagation="true"
+                            data-chart-action="branch-create"
+                            data-chart-node-id="@company.Id"
+                            Clicked="() => EmitAction(OrganizationChartActionType.AddBranch, OrganizationChartNodeType.Company, company.Id)" />
+                    }
+                    @if (Editable && CanManageCompanies)
+                    {
+                        <BarangIconButton Icon="power" Label="@(company.Active ? O["Deactivate"] : O["Activate"])" Semantic="@(company.Active ? "warning" : "success")" StopPropagation="true"
+                            data-chart-action="company-toggle-status"
+                            data-chart-node-id="@company.Id"
+                            Clicked="() => EmitAction(company.Active ? OrganizationChartActionType.DeactivateCompany : OrganizationChartActionType.ActivateCompany, OrganizationChartNodeType.Company, company.Id)" />
+                        <details class="chart-action-menu" @onclick:stopPropagation>
+                            <summary class="barang-icon-button barang-action-neutral" title="@O["More"]" aria-label="@O["More"]" data-chart-action="company-more" data-chart-node-id="@company.Id"><BarangIcon Name="more" /></summary>
+                            <div class="chart-action-menu-panel">
+                                <button
+                                    type="button"
+                                    class="chart-menu-action danger"
+                                    title="@(HasBranchChildren(company.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
+                                    aria-label="@(HasBranchChildren(company.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
+                                    disabled="@HasBranchChildren(company.Id)"
+                                    data-chart-action="company-delete"
+                                    data-chart-node-id="@company.Id"
+                                    @onclick="() => EmitAction(OrganizationChartActionType.DeleteCompany, OrganizationChartNodeType.Company, company.Id)">
+                                    @O["Delete"]
+                                </button>
+                                @if (HasBranchChildren(company.Id))
+                                {
+                                    <span class="chart-action-reason">@O["DeleteBlockedChildren"]</span>
+                                }
+                            </div>
+                        </details>
+                    }
+                </div>
+            </article>
+
+            @if (IsExpanded(company.Id))
+            {
+                <div class="org-children">
+                    @foreach (BranchRow branch in SourceBranches.Where(x => x.CompanyId == company.Id && IsSearchVisible(x.Id)).OrderBy(x => x.DisplayName))
+                    {
+                        <article @key="NodeKey(branch.Id, branch.Version)" class="org-node branch-node @(IsBranchHighlighted(branch.Id) ? "path-highlight" : "") @SearchMatchClass(branch.Id)" data-chart-node="branch" data-chart-node-id="@branch.Id" data-chart-search-match="@SearchResult.Matches.Contains(branch.Id).ToString().ToLowerInvariant()" data-chart-active="@branch.Active.ToString().ToLowerInvariant()" @onclick="() => TryToggle(OrganizationChartNodeType.Branch, branch.Id, company.Id)">
+                            @if (HasUnitChildrenForBranch(branch.Id) && !PrintMode)
+                            {
+                                <button
+                                    type="button"
+                                    class="org-expander"
+                                    title="@(IsExpanded(branch.Id) ? O["Collapse"] : O["Expand"])"
+                                    aria-label="@(IsExpanded(branch.Id) ? O["Collapse"] : O["Expand"])"
+                                    aria-expanded="@IsExpanded(branch.Id).ToString().ToLowerInvariant()"
+                                    @onclick:stopPropagation
+                                    @onclick="() => TryToggle(OrganizationChartNodeType.Branch, branch.Id, company.Id)">
+                                    <BarangIcon Name="@(IsExpanded(branch.Id) ? "chevron-down" : "chevron-right")" Class="org-disclosure-icon" />
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="org-expander">•</span>
+                            }
+
+                            <OrganizationTreeIcon EntityType="OrganizationTreeEntityType.OrganizationalUnit" UnitType="Branch" />
+                            <span class="org-title"><strong>@branch.DisplayName</strong><small>@branch.Code</small></span>
+                            <StatusBadge Active="branch.Active" />
+
+                            <div class="node-actions">
+                                @if (Editable && CanManageBranches)
+                                {
+                                    <BarangIconButton Icon="eye" Label="@O["View"]" Semantic="info" StopPropagation="true"
+                                        data-chart-action="branch-view"
+                                        data-chart-node-id="@branch.Id"
+                                        Clicked="() => EmitAction(OrganizationChartActionType.ViewBranch, OrganizationChartNodeType.Branch, branch.Id)" />
+                                    <BarangIconButton Icon="edit" Label="@O["Edit"]" Semantic="edit" StopPropagation="true"
+                                        data-chart-action="branch-edit"
+                                        data-chart-node-id="@branch.Id"
+                                        Clicked="() => EmitAction(OrganizationChartActionType.EditBranch, OrganizationChartNodeType.Branch, branch.Id)" />
+                                }
+                                @if (Editable && CanManageUnits && branch.Active)
+                                {
+                                    <BarangIconButton Icon="plus" Label="@O["AddUnit"]" Semantic="success" StopPropagation="true"
+                                        data-chart-action="unit-create"
+                                        data-chart-node-id="@branch.Id"
+                                        Clicked="() => EmitAction(OrganizationChartActionType.AddUnit, OrganizationChartNodeType.Branch, branch.Id)" />
+                                }
+                                @if (Editable && CanManageBranches)
+                                {
+                                    <BarangIconButton Icon="power" Label="@(branch.Active ? O["Deactivate"] : O["Activate"])" Semantic="@(branch.Active ? "warning" : "success")" StopPropagation="true"
+                                        data-chart-action="branch-toggle-status"
+                                        data-chart-node-id="@branch.Id"
+                                        Clicked="() => EmitAction(branch.Active ? OrganizationChartActionType.DeactivateBranch : OrganizationChartActionType.ActivateBranch, OrganizationChartNodeType.Branch, branch.Id)" />
+                                    <details class="chart-action-menu" @onclick:stopPropagation>
+                                        <summary class="barang-icon-button barang-action-neutral" title="@O["More"]" aria-label="@O["More"]" data-chart-action="branch-more" data-chart-node-id="@branch.Id"><BarangIcon Name="more" /></summary>
+                                        <div class="chart-action-menu-panel">
+                                            <button
+                                                type="button"
+                                                class="chart-menu-action danger"
+                                                title="@(HasUnitChildrenForBranch(branch.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
+                                                aria-label="@(HasUnitChildrenForBranch(branch.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
+                                                disabled="@HasUnitChildrenForBranch(branch.Id)"
+                                                data-chart-action="branch-delete"
+                                                data-chart-node-id="@branch.Id"
+                                                @onclick="() => EmitAction(OrganizationChartActionType.DeleteBranch, OrganizationChartNodeType.Branch, branch.Id, company.Id)">
+                                                @O["Delete"]
+                                            </button>
+                                            @if (HasUnitChildrenForBranch(branch.Id))
+                                            {
+                                                <span class="chart-action-reason">@O["DeleteBlockedChildren"]</span>
+                                            }
+                                        </div>
+                                    </details>
+                                }
+                            </div>
+                        </article>
+
+                        @if (IsExpanded(branch.Id))
+                        {
+                            <div class="org-children">
+                            @foreach (UnitRow root in SourceUnits.Where(x => x.BranchId == branch.Id && x.ParentId is null && IsSearchVisible(x.Id)).OrderBy(x => x.DisplayOrder).ThenBy(x => x.Code).ThenBy(x => x.Id))
+                                {
+                                    @RenderUnitTree(root, 0)
+                                }
+                            </div>
+                        }
+                    }
+                        @foreach (UnitRow root in SourceUnits.Where(x => x.CompanyId == company.Id && x.BranchId is null && x.ParentId is null && IsSearchVisible(x.Id)).OrderBy(x => x.DisplayOrder).ThenBy(x => x.Code).ThenBy(x => x.Id))
+                    {
+                        @RenderUnitTree(root, 0)
+                    }
+                </div>
+            }
+        }
+    }
+</section>
+
+@code
+{
+    [Parameter] public IReadOnlyList<CompanyRow> Companies { get; set; } = [];
+    [Parameter] public IReadOnlyList<BranchRow> Branches { get; set; } = [];
+    [Parameter] public IReadOnlyList<UnitRow> Units { get; set; } = [];
+    [Parameter] public IReadOnlyList<AssignmentRow> Assignments { get; set; } = [];
+    [Parameter] public IReadOnlyList<PositionRow>? Positions { get; set; }
+    [Parameter] public HashSet<Guid> Expanded { get; set; } = [];
+    [Parameter] public Guid? HighlightPersonId { get; set; }
+    [Parameter] public Guid CurrentCompanyId { get; set; }
+    [Parameter] public IReadOnlySet<Guid>? ManageableCompanyIds { get; set; }
+    [Parameter] public bool Editable { get; set; } = true;
+    [Parameter] public bool PrintMode { get; set; }
+    [Parameter] public string SearchQuery { get; set; } = "";
+    [Parameter] public bool CanManageCompanies { get; set; } = true;
+    [Parameter] public bool CanManageBranches { get; set; } = true;
+    [Parameter] public bool CanManageUnits { get; set; } = true;
+    [Parameter] public EventCallback<OrganizationChartAction> ActionRequested { get; set; }
+
+    private HashSet<Guid> _highlightUnits = [];
+    private HashSet<Guid> _highlightBranches = [];
+    private HashSet<Guid> _highlightAssignments = [];
+    private HashSet<Guid> _highlightCompanies = [];
+    private OrganizationChartSearch SearchResult = new();
+    private bool HasSearch => !string.IsNullOrWhiteSpace(SearchQuery);
+    private bool IsSearchVisible(Guid id) => !HasSearch || SearchResult.Visible.Contains(id);
+    private string SearchMatchClass(Guid id) => SearchResult.Matches.Contains(id) ? "search-match" : "";
+
+    private IReadOnlyList<CompanyRow> SourceCompanies => Companies;
+    private IReadOnlyList<BranchRow> SourceBranches => Branches;
+    private IReadOnlyList<UnitRow> SourceUnits => Units;
+    private IReadOnlyList<AssignmentRow> SourceAssignments => Assignments;
+    private IReadOnlyList<PositionRow> SourcePositions => Positions ?? [];
+    private bool CanManageCompany(Guid companyId) => ManageableCompanyIds?.Contains(companyId) ?? (CurrentCompanyId == Guid.Empty || CurrentCompanyId == companyId);
+
+    protected override void OnParametersSet()
+    {
+        BuildPersonHighlight();
+        SearchResult = OrganizationChartSearch.Build(new(Companies, Branches, Units, Assignments), SearchQuery);
+    }
+
+    private void BuildPersonHighlight()
+    {
+        _highlightUnits.Clear();
+        _highlightBranches.Clear();
+        _highlightAssignments.Clear();
+        _highlightCompanies.Clear();
+
+        if (HighlightPersonId is not Guid personId)
+        {
+            return;
+        }
+
+        foreach (AssignmentRow assignment in SourceAssignments.Where(x => x.PersonId == personId))
+        {
+            _highlightAssignments.Add(assignment.Id);
+            HashSet<Guid> chain = [];
+            Guid? current = assignment.Id;
+            while (current is Guid currentAssignment)
+            {
+                if (!chain.Add(currentAssignment))
+                {
+                    break;
+                }
+
+                AssignmentRow? row = SourceAssignments.FirstOrDefault(x => x.Id == currentAssignment);
+                if (row is null)
+                {
+                    break;
+                }
+
+                UnitRow? unit = GetUnit(row.UnitId);
+                if (unit is not null)
+                {
+                    _highlightUnits.Add(unit.Id);
+                    if (unit.BranchId is Guid branchId)
+                    {
+                        _highlightBranches.Add(branchId);
+                    }
+                }
+
+                current = row.ManagerId;
+            }
+        }
+
+        foreach (Guid unitId in _highlightUnits.ToArray())
+        {
+            for (Guid? cursor = GetUnit(unitId)?.ParentId; cursor is Guid parentId; )
+            {
+                UnitRow? parent = GetUnit(parentId);
+                if (parent is null)
+                {
+                    break;
+                }
+
+                _highlightUnits.Add(parent.Id);
+                cursor = parent.ParentId;
+            }
+        }
+
+        foreach (CompanyRow company in SourceCompanies)
+        {
+            if (_highlightBranches.Any(branchId => SourceBranches.Any(x => x.Id == branchId && x.CompanyId == company.Id)))
+            {
+                _highlightCompanies.Add(company.Id);
+            }
+        }
+    }
+
+    private RenderFragment RenderUnitTree(UnitRow unit, int depth) => __builder =>
+    {
+        bool hasChildren = SourceUnits.Any(x => x.ParentId == unit.Id);
+        bool hasAssignments = SourceAssignments.Any(x => x.UnitId == unit.Id);
+        bool hasPositions = SourcePositions.Any(x => x.UnitId == unit.Id);
+
+        <article @key="NodeKey(unit.Id, unit.Version)" class="org-node unit-node @(IsUnitHighlighted(unit.Id) ? "path-highlight" : "") @SearchMatchClass(unit.Id)" style="margin-inline-start:@(depth * 1.4)rem" data-chart-node="unit" data-chart-node-id="@unit.Id" data-chart-search-match="@SearchResult.Matches.Contains(unit.Id).ToString().ToLowerInvariant()" data-chart-active="@unit.Active.ToString().ToLowerInvariant()" @onclick="() => TryToggle(OrganizationChartNodeType.Unit, unit.Id, unit.BranchId)">
+            @if ((hasChildren || hasAssignments || hasPositions) && !PrintMode)
+            {
+                <button
+                    type="button"
+                    class="org-expander"
+                    title="@(IsExpanded(unit.Id) ? O["Collapse"] : O["Expand"])"
+                    aria-label="@(IsExpanded(unit.Id) ? O["Collapse"] : O["Expand"])"
+                    aria-expanded="@IsExpanded(unit.Id).ToString().ToLowerInvariant()"
+                    @onclick:stopPropagation
+                    @onclick="() => TryToggle(OrganizationChartNodeType.Unit, unit.Id, unit.BranchId)">
+                    <BarangIcon Name="@(IsExpanded(unit.Id) ? "chevron-down" : "chevron-right")" Class="org-disclosure-icon" />
+                </button>
+            }
+            else
+            {
+                <span class="org-expander">•</span>
+            }
+
+            <OrganizationTreeIcon EntityType="OrganizationTreeEntityType.OrganizationalUnit" UnitType="@unit.UnitType" />
+            <span class="org-title"><strong>@unit.DisplayName</strong><small>@unit.Code</small></span>
+            <StatusBadge Active="unit.Active" />
+
+            <div class="node-actions">
+                @if (Editable && CanManageUnits)
+                {
+                    <BarangIconButton Icon="eye" Label="@O["View"]" Semantic="info" StopPropagation="true"
+                        data-chart-action="unit-view"
+                        data-chart-node-id="@unit.Id"
+                        Clicked="() => EmitAction(OrganizationChartActionType.ViewUnit, OrganizationChartNodeType.Unit, unit.Id)" />
+                    <BarangIconButton Icon="edit" Label="@O["Edit"]" Semantic="edit" StopPropagation="true"
+                        data-chart-action="unit-edit"
+                        data-chart-node-id="@unit.Id"
+                        Clicked="() => EmitAction(OrganizationChartActionType.EditUnit, OrganizationChartNodeType.Unit, unit.Id)" />
+                    @if (unit.Active)
+                    {
+                        <BarangIconButton Icon="plus" Label="@O["AddChildUnit"]" Semantic="success" StopPropagation="true"
+                            data-chart-action="unit-create"
+                            data-chart-node-id="@unit.Id"
+                            Clicked="() => EmitAction(OrganizationChartActionType.AddUnit, OrganizationChartNodeType.Unit, unit.Id, unit.BranchId)" />
+                        <BarangIconButton Icon="user-plus" Label="@O["AddPerson"]" Semantic="success" StopPropagation="true"
+                            data-chart-action="assignment-create"
+                            data-chart-node-id="@unit.Id"
+                            Clicked="() => EmitAction(OrganizationChartActionType.AddPerson, OrganizationChartNodeType.Unit, unit.Id)" />
+                        <BarangIconButton Icon="plus" Label="@O["AddPosition"]" Semantic="success" StopPropagation="true"
+                            data-chart-action="position-create" data-chart-node-id="@unit.Id"
+                            Clicked="() => EmitAction(OrganizationChartActionType.AddPosition, OrganizationChartNodeType.Unit, unit.Id)" />
+                    }
+                    <BarangIconButton Icon="power" Label="@(unit.Active ? O["Deactivate"] : O["Activate"])" Semantic="@(unit.Active ? "warning" : "success")" StopPropagation="true"
+                        data-chart-action="unit-toggle-status"
+                        data-chart-node-id="@unit.Id"
+                        Clicked="() => EmitAction(unit.Active ? OrganizationChartActionType.DeactivateUnit : OrganizationChartActionType.ActivateUnit, OrganizationChartNodeType.Unit, unit.Id)" />
+                    <details class="chart-action-menu" @onclick:stopPropagation>
+                        <summary class="barang-icon-button barang-action-neutral" title="@O["More"]" aria-label="@O["More"]" data-chart-action="unit-more" data-chart-node-id="@unit.Id"><BarangIcon Name="more" /></summary>
+                        <div class="chart-action-menu-panel">
+                            <button
+                                type="button"
+                                class="chart-menu-action danger"
+                                title="@(UnitHasOrganizationalChildren(unit.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
+                                aria-label="@(UnitHasOrganizationalChildren(unit.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
+                                disabled="@UnitHasOrganizationalChildren(unit.Id)"
+                                data-chart-action="unit-delete"
+                                data-chart-node-id="@unit.Id"
+                                @onclick="() => EmitAction(OrganizationChartActionType.DeleteUnit, OrganizationChartNodeType.Unit, unit.Id, unit.ParentId ?? unit.BranchId)">
+                                @O["Delete"]
+                            </button>
+                            @if (UnitHasOrganizationalChildren(unit.Id))
+                            {
+                                <span class="chart-action-reason">@O["DeleteBlockedChildren"]</span>
+                            }
+                        </div>
+                    </details>
+                }
+            </div>
+        </article>
+
+        if (IsExpanded(unit.Id))
+        {
+            <div class="org-children">
+                @foreach (UnitRow child in SourceUnits.Where(x => x.ParentId == unit.Id && IsSearchVisible(x.Id)).OrderBy(x => x.DisplayOrder).ThenBy(x => x.Code).ThenBy(x => x.Id))
+                {
+                    @RenderUnitTree(child, depth + 1)
+                }
+
+                @foreach (PositionRow position in PositionRoots(unit.Id))
+                {
+                    @RenderPositionTree(position, 0)
+                }
+                @* Legacy assignments are rendered only when no authoritative Position exists for the unit. *@
+                @if (!SourcePositions.Any(row => row.UnitId == unit.Id))
+                {
+                    @foreach (AssignmentRow assignment in AssignmentRoots(unit.Id).Where(row => IsSearchVisible(row.Id)))
+                    {
+                        @RenderAssignmentTree(assignment, 0)
+                    }
+                }
+            </div>
+        }
+    };
+
+    private RenderFragment RenderPositionTree(PositionRow position, int depth) => __builder =>
+    {
+        IReadOnlyList<PositionRow> reports = DirectPositionReports(position).ToArray();
+        bool vacant = position.Active && position.Incumbents.Count == 0;
+        <div @key="NodeKey(position.Id, position.Version)" class="org-position-branch" data-chart-position-depth="@depth">
+            <article class="org-node position-node @(vacant ? "vacant-position" : "")" data-chart-node="position" data-chart-node-id="@position.Id" data-chart-active="@position.Active.ToString().ToLowerInvariant()">
+                <span class="org-expander">@(reports.Count > 0 ? "↳" : "•")</span>
+                <OrganizationTreeIcon EntityType="OrganizationTreeEntityType.Position" />
+                <span class="org-title"><strong>@position.Title</strong><small>@position.Code@(vacant ? $" · {O["Vacant"]}" : "")</small></span>
+                <StatusBadge Active="position.Active" />
+                @if (position.Incumbents.Count > 0)
+                {
+                    <div class="position-incumbents">
+                        @foreach (PositionIncumbentRow incumbent in position.Incumbents)
+                        {
+                            <span class="position-incumbent" data-chart-assignment-id="@incumbent.AssignmentId"><OrganizationTreeIcon EntityType="OrganizationTreeEntityType.Person" />@incumbent.PersonName</span>
+                        }
+                    </div>
+                }
+                <div class="node-actions">
+                    <BarangIconButton Icon="eye" Label="@O["View"]" Semantic="info" StopPropagation="true" data-chart-action="position-view" data-chart-node-id="@position.Id" Clicked="() => EmitAction(OrganizationChartActionType.ViewPosition, OrganizationChartNodeType.Position, position.Id, position.UnitId)" />
+                    @if (position.Active)
+                    {
+                        <BarangIconButton Icon="edit" Label="@O["Edit"]" Semantic="edit" StopPropagation="true" data-chart-action="position-edit" data-chart-node-id="@position.Id" Clicked="() => EmitAction(OrganizationChartActionType.EditPosition, OrganizationChartNodeType.Position, position.Id, position.UnitId)" />
+                    }
+                    <BarangIconButton Icon="power" Label="@(position.Active ? O["Deactivate"] : O["Activate"])" Semantic="@(position.Active ? "warning" : "success")" StopPropagation="true" data-chart-action="position-toggle-status" data-chart-node-id="@position.Id" Clicked="() => EmitAction(position.Active ? OrganizationChartActionType.DeactivatePosition : OrganizationChartActionType.ActivatePosition, OrganizationChartNodeType.Position, position.Id, position.UnitId)" />
+                    <BarangIconButton Icon="trash" Label="@O["Delete"]" Semantic="danger" StopPropagation="true" data-chart-action="position-delete" data-chart-node-id="@position.Id" Clicked="() => EmitAction(OrganizationChartActionType.DeletePosition, OrganizationChartNodeType.Position, position.Id, position.UnitId)" />
+                </div>
+            </article>
+            @if (reports.Count > 0)
+            {
+                <div class="org-position-children">
+                    @foreach (PositionRow report in reports)
+                    {
+                        @RenderPositionTree(report, depth + 1)
+                    }
+                </div>
+            }
+        </div>
+    };
+
+    private IEnumerable<PositionRow> PositionRoots(Guid unitId) =>
+        SourcePositions.Where(position => position.UnitId == unitId &&
+            (position.ReportsToPositionId is null || !SourcePositions.Any(parent => parent.Id == position.ReportsToPositionId && parent.UnitId == unitId)))
+            .OrderBy(position => position.Title).ThenBy(position => position.Code);
+
+    private IEnumerable<PositionRow> DirectPositionReports(PositionRow manager) =>
+        SourcePositions.Where(position => position.ReportsToPositionId == manager.Id).OrderBy(position => position.Title).ThenBy(position => position.Code);
+
+    private RenderFragment RenderVacantPosition(PositionRow position) => __builder =>
+    {
+        <article class="org-node position-node vacant-position" data-chart-node="position" data-chart-node-id="@position.Id" data-chart-active="true">
+            <span class="org-expander">•</span>
+            <OrganizationTreeIcon EntityType="OrganizationTreeEntityType.Position" />
+            <span class="org-title"><strong>@position.Title</strong><small>@position.Code · @O["Vacant"]</small></span>
+            <StatusBadge Active="false" />
+        </article>
+    };
+
+    private RenderFragment RenderAssignmentTree(AssignmentRow assignment, int depth) => __builder =>
+    {
+        IReadOnlyList<AssignmentRow> reports = DirectReports(assignment).ToArray();
+        <div @key="NodeKey(assignment.Id, assignment.Version)" class="org-assignment-branch" data-chart-assignment-depth="@depth">
+            <article class="org-node person-node @(IsAssignmentHighlighted(assignment.Id) ? "path-highlight" : "") @SearchMatchClass(assignment.Id)" data-chart-node="assignment" data-chart-node-id="@assignment.Id" data-chart-search-match="@SearchResult.Matches.Contains(assignment.Id).ToString().ToLowerInvariant()" data-chart-parent-node-id="@assignment.UnitId" data-manager-assignment-id="@assignment.ManagerId" data-chart-active="@assignment.Active.ToString().ToLowerInvariant()">
+                <span class="org-expander">@(reports.Count > 0 ? "↳" : "•")</span>
+                <OrganizationTreeIcon EntityType="OrganizationTreeEntityType.Person" />
+                <span class="org-title">
+                    @if (PrintMode)
+                    {
+                        <strong>@assignment.PersonName</strong>
+                    }
+                    else
+                    {
+                        <a href="@($"/master/persons/{assignment.PersonId}")" title="@O["ViewPerson"]" aria-label="@O["ViewPerson"]" data-chart-action="person-view" data-chart-node-id="@assignment.PersonId" @onclick:stopPropagation>
+                            @assignment.PersonName
+                        </a>
+                    }
+                    <small>@assignment.PositionTitle</small>
+                    @if (PrintMode && SourceAssignments.FirstOrDefault(row => row.Id == assignment.ManagerId) is AssignmentRow externalManager && externalManager.UnitId != assignment.UnitId)
+                    {
+                        <small class="chart-print-manager">@O["Manager"]: @externalManager.PersonName · @GetUnit(externalManager.UnitId)?.DisplayName</small>
+                    }
+                </span>
+                <StatusBadge Active="assignment.Active" />
+
+                @if (Editable && CanManageUnits)
+                {
+                    <div class="node-actions">
+                        <BarangIconButton Icon="eye" Label="@O["View"]" Semantic="info" StopPropagation="true" data-chart-action="assignment-view" data-chart-node-id="@assignment.Id" Clicked="() => EmitAction(OrganizationChartActionType.ViewAssignment, OrganizationChartNodeType.Assignment, assignment.Id)" />
+                        @if (assignment.Active)
+                        {
+                            <BarangIconButton Icon="edit" Label="@O["Edit"]" Semantic="edit" StopPropagation="true" data-chart-action="assignment-edit" data-chart-node-id="@assignment.Id" Clicked="() => EmitAction(OrganizationChartActionType.EditAssignment, OrganizationChartNodeType.Assignment, assignment.Id)" />
+                            <BarangIconButton Icon="user-plus" Label="@O["AddSubordinate"]" Semantic="success" StopPropagation="true" data-chart-action="assignment-create-child" data-chart-node-id="@assignment.Id" Clicked="() => EmitAction(OrganizationChartActionType.AddSubordinate, OrganizationChartNodeType.Assignment, assignment.Id)" />
+                            <BarangIconButton Icon="user-manager" Label="@O["ChangeManager"]" Semantic="info" StopPropagation="true" data-chart-action="assignment-change-manager" data-chart-node-id="@assignment.Id" Clicked="() => EmitAction(OrganizationChartActionType.ChangeManager, OrganizationChartNodeType.Assignment, assignment.Id)" />
+                            <BarangIconButton Icon="move" Label="@O["Move"]" Semantic="info" StopPropagation="true" data-chart-action="assignment-move-unit" data-chart-node-id="@assignment.Id" Clicked="() => EmitAction(OrganizationChartActionType.MoveUnit, OrganizationChartNodeType.Assignment, assignment.Id)" />
+                            <BarangIconButton Icon="power" Label="@O["Deactivate"]" Semantic="warning" StopPropagation="true" data-chart-action="assignment-toggle-status" data-chart-node-id="@assignment.Id" Clicked="() => EmitAction(OrganizationChartActionType.DeactivateAssignment, OrganizationChartNodeType.Assignment, assignment.Id)" />
+                        }
+                        else
+                        {
+                            <BarangIconButton Icon="power" Label="@O["Activate"]" Semantic="success" StopPropagation="true" data-chart-action="assignment-toggle-status" data-chart-node-id="@assignment.Id" Clicked="() => EmitAction(OrganizationChartActionType.ActivateAssignment, OrganizationChartNodeType.Assignment, assignment.Id)" />
+                        }
+                        <details class="chart-action-menu" @onclick:stopPropagation>
+                            <summary class="barang-icon-button barang-action-neutral" title="@O["More"]" aria-label="@O["More"]" data-chart-action="assignment-more" data-chart-node-id="@assignment.Id"><BarangIcon Name="more" /></summary>
+                            <div class="chart-action-menu-panel">
+                                <button
+                                    type="button"
+                                    class="chart-menu-action danger"
+                                    title="@(reports.Count > 0 ? O["DeleteBlockedChildren"] : O["RemoveAssignment"])"
+                                    aria-label="@(reports.Count > 0 ? O["DeleteBlockedChildren"] : O["RemoveAssignment"])"
+                                    disabled="@(reports.Count > 0)"
+                                    data-chart-action="assignment-delete"
+                                    data-chart-node-id="@assignment.Id"
+                                    @onclick="() => EmitAction(OrganizationChartActionType.DeleteAssignment, OrganizationChartNodeType.Assignment, assignment.Id, assignment.UnitId)">
+                                    @O["RemoveAssignment"]
+                                </button>
+                                @if (reports.Count > 0)
+                                {
+                                    <span class="chart-action-reason">@O["DeleteBlockedChildren"]</span>
+                                }
+                            </div>
+                        </details>
+                    </div>
+                }
+            </article>
+            @if (reports.Count > 0)
+            {
+                <div class="org-assignment-children">
+                    @foreach (AssignmentRow report in reports.Where(row => IsSearchVisible(row.Id)))
+                    {
+                        @RenderAssignmentTree(report, depth + 1)
+                    }
+                </div>
+            }
+        </div>
+    };
+
+    private IEnumerable<AssignmentRow> AssignmentRoots(Guid unitId) =>
+        SourceAssignments
+            .Where(assignment => assignment.UnitId == unitId &&
+                (assignment.ManagerId is null || !SourceAssignments.Any(manager => manager.Id == assignment.ManagerId && manager.UnitId == unitId)))
+            .OrderBy(assignment => assignment.PersonName);
+
+    private IEnumerable<AssignmentRow> DirectReports(AssignmentRow manager) =>
+        SourceAssignments
+            .Where(assignment => assignment.UnitId == manager.UnitId && assignment.ManagerId == manager.Id)
+            .OrderBy(assignment => assignment.PersonName);
+
+    private bool IsExpanded(Guid nodeId) => HasSearch ? SearchResult.Visible.Contains(nodeId) : Expanded.Contains(nodeId) || _highlightCompanies.Contains(nodeId) || _highlightBranches.Contains(nodeId) || _highlightUnits.Contains(nodeId);
+
+    private async Task EmitAction(OrganizationChartActionType action, OrganizationChartNodeType nodeType, Guid nodeId, Guid? parentId = null)
+    {
+        if (ActionRequested.HasDelegate)
+        {
+            await ActionRequested.InvokeAsync(new OrganizationChartAction(action, nodeType, nodeId, parentId));
+        }
+    }
+
+    private Task TryToggle(OrganizationChartNodeType nodeType, Guid nodeId, Guid? parentId = null) =>
+        EmitAction(OrganizationChartActionType.ToggleNode, nodeType, nodeId, parentId);
+
+    private bool HasBranchChildren(Guid companyId) => SourceBranches.Any(x => x.CompanyId == companyId);
+    private bool HasUnitChildrenForBranch(Guid branchId) => SourceUnits.Any(x => x.BranchId == branchId);
+    private bool UnitHasOrganizationalChildren(Guid unitId) => SourceUnits.Any(x => x.ParentId == unitId) || SourceAssignments.Any(x => x.UnitId == unitId) || SourcePositions.Any(x => x.UnitId == unitId);
+    private static string NodeKey(Guid id, long version) => $"{id:N}:{version}";
+    private bool IsCompanyHighlighted(Guid companyId) => _highlightCompanies.Contains(companyId);
+    private bool IsBranchHighlighted(Guid branchId) => _highlightBranches.Contains(branchId);
+    private bool IsUnitHighlighted(Guid unitId) => _highlightUnits.Contains(unitId);
+    private bool IsAssignmentHighlighted(Guid assignmentId) => _highlightAssignments.Contains(assignmentId);
+
+    private UnitRow? GetUnit(Guid id) => SourceUnits.FirstOrDefault(x => x.Id == id);
+
+    private UnitRow? GetUnit(Guid? id) => id is Guid unitId ? SourceUnits.FirstOrDefault(x => x.Id == unitId) : null;
+
+}

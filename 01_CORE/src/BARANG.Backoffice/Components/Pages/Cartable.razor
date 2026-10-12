@@ -1,0 +1,606 @@
+@page "/cartable"
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@using System.Security.Claims
+@using Microsoft.AspNetCore.WebUtilities
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Localization
+@using BARANG.Core.Application.Workflow
+@using BARANG.Core.Application.Orders
+
+@inject IStringLocalizer<CartableStrings> CartableText
+@inject IStringLocalizer<AppStrings> A
+@inject IStringLocalizer<CartableGridStrings> G
+@inject IStringLocalizer<EffectiveStatusStrings> E
+@inject IStringLocalizer<CartablePriorityStrings> P
+@inject IStringLocalizer<CartableSavedViewStrings> V
+@inject IStringLocalizer<CartableFollowUpStrings> F
+@inject IStringLocalizer<CartableDecisionStrings> D
+@inject IStringLocalizer<CartableDelegationStrings> H
+@inject IStringLocalizer<CartableKeyboardStrings> K
+@inject IStringLocalizer<CartableAccordionStrings> SA
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject ILogger<Cartable> Logger
+
+<PageTitle>@C["MyCartable"]</PageTitle>
+<link rel="stylesheet" href="/cartable.css" />
+<link rel="stylesheet" href="/cartable-grid.css" />
+<link rel="stylesheet" href="/cartable-v2.css" />
+<link rel="stylesheet" href="/cartable-filters-v3.css" />
+<link rel="stylesheet" href="/cartable-detail-tabs.css" />
+<link rel="stylesheet" href="/cartable-actions-v5.css" />
+<link rel="stylesheet" href="/cartable-layout-final.css" />
+<div class="cartable-context"><div class="cartable-context-copy"><span class="cartable-title-mark" aria-hidden="true"><BarangIcon Name="inbox" /></span><div><h1>@C["MyCartable"]</h1><small>@C["Subtitle"]</small></div></div><div class="cartable-print-art" aria-hidden="true"><svg viewBox="0 0 120 96"><path d="M40 14 21 25 10 53l18 9 8-14v34c0 6 5 10 11 10h26c6 0 11-4 11-10V48l8 14 18-9-11-28-19-11-10 7H50z"/><path d="M49 14c1 10 21 10 22 0"/></svg><i></i><b></b></div></div>
+<section class="cartable-tabs" role="tablist" aria-label='@C["MyCartable"]'><button type="button" class="@(Tab == "received" ? "active" : "")" role="tab" aria-selected="@(Tab == "received")" @onclick='() => SwitchTab("received")'>@C["Received"] <span>@ReceivedTotal</span></button><button type="button" class="@(Tab == "referrals" ? "active" : "")" role="tab" aria-selected="@(Tab == "referrals")" @onclick='() => SwitchTab("referrals")'>@C["MyReferrals"] <span>@ReferralTotal</span></button></section>
+@if (Workload is not null && Tab == "received")
+{
+    <section class="cartable-workload-strip" aria-label='@Ui("WorkloadSummary")'>
+        <div class="cartable-workload-title"><BarangIcon Name="briefcase" /><span>@Ui("WorkloadSummary")</span></div>
+        <div class="cartable-workload-metric"><span>@Ui("TotalReceived")</span><strong>@Workload.TotalReceived</strong></div>
+        <div class="cartable-workload-metric workload-urgent"><span>@Ui("Urgent")</span><strong>@Workload.Urgent</strong></div>
+        <div class="cartable-workload-metric workload-attention"><span>@Ui("NeedsAttention")</span><strong>@Workload.NeedsAttention</strong></div>
+        <div class="cartable-workload-metric workload-followup"><span>@Ui("FollowUpReached")</span><strong>@Workload.FollowUpReached</strong></div>
+    </section>
+}
+
+<section class="cartable-grid-page cartable-v2-page">
+<section class="cartable-search-accordion" aria-labelledby="cartable-search-panel-title">
+    <button type="button" class="cartable-search-accordion-header" aria-expanded="@SearchPanelOpen" aria-controls="cartable-search-panel-content" @onclick="ToggleSearchPanel">
+        <span class="cartable-search-accordion-title" id="cartable-search-panel-title"><BarangIcon Name="search" />@SA["Title"]</span>
+        @if (ActiveFilterCount > 0) { <span class="cartable-search-filter-count" aria-label='@SA["ActiveFilters"]'>@ActiveFilterCount</span> }
+        <span class="cartable-search-chevron @(SearchPanelOpen ? "open" : "")" aria-hidden="true">⌄</span>
+    </button>
+    @if (SearchPanelOpen)
+    {
+<div class="cartable-v2-toolbar" id="cartable-search-panel-content">
+        <label class="cartable-v2-search"><BarangIcon Name="search" /><span class="cartable-control-label">@C["Search"]</span><input value="@State.Search" @oninput="SearchInput" placeholder='@C["SearchPlaceholder"]' aria-label='@C["Search"]' /></label>
+        <div class="cartable-v2-filters">
+            <div class="cartable-filter-row">
+                <label class="cartable-filter"><span>@G["StageFilter"]</span><select value="@State.StageKey" @onchange="StageChanged"><option value="">@G["AllStages"]</option>@foreach (StageOption stage in Stages) { <option value="@stage.Key">@Localized(stage.Title)</option> }</select></label>
+                <label class="cartable-filter cartable-customer-filter"><span>@G["CustomerFilter"]</span><SearchableSelect Value="@State.CustomerId" ValueChanged="CustomerChanged" SearchChanged="CustomerSearch" Options="@CustomerOptions" Placeholder='@G["CustomerPlaceholder"]' AriaLabel='@G["CustomerFilter"]' /></label>
+                @if (Tab == "received") { <label class="cartable-filter"><span>@AgingText("Filter")</span><select value="@State.Aging" @onchange="AgingChanged"><option value="">@AgingText("All")</option><option value="Normal">@AgingText("Normal")</option><option value="Attention">@AgingText("Attention")</option><option value="LongWaiting">@AgingText("LongWaiting")</option></select></label> }
+                @if (Tab == "referrals") { <label class="cartable-filter"><span>@G["OutcomeFilter"]</span><select value="@State.Outcome" @onchange="OutcomeChanged"><option value="">@G["AllOutcomes"]</option>@foreach (string outcome in Outcomes) { <option value="@outcome">@Outcome(outcome)</option> }</select></label> }
+            </div>
+            <div class="cartable-filter-row">
+                <label class="cartable-filter"><span>@G["FromDate"]</span><LocaleDateInput Value="@State.FromDate" ValueChanged="FromDateChanged" Name="cartable-from" /></label>
+                <label class="cartable-filter"><span>@G["ToDate"]</span><LocaleDateInput Value="@State.ToDate" ValueChanged="ToDateChanged" Name="cartable-to" /></label>
+                <label class="cartable-personal-filter"><input type="checkbox" checked="@State.StarredOnly" @onchange="StarredOnlyChanged" /> <span>@G["StarredOnly"]</span></label>
+            </div>
+            @if (MoreFiltersOpen)
+            {
+            <div class="cartable-filter-row cartable-filter-row-secondary cartable-more-filters-panel" aria-label='@Ui("MoreFilters")'>
+                @if (Tab == "referrals") { <label class="cartable-filter"><span>@G["StatusFilter"]</span><select value="@State.Status" @onchange="StatusChanged"><option value="">@G["AllStatuses"]</option><option value="Registered">@E["Registered"]</option><option value="InWorkflow">@E["InCartable"]</option><option value="WorkflowCompleted">@E["WorkflowCompleted"]</option><option value="AuditRejected">@E["AuditRejected"]</option></select></label> }
+                @if (Tab == "received") { <label class="cartable-filter"><span>@F["FollowUpFilter"]</span><select value="@State.FollowUp" @onchange="FollowUpChanged"><option value="">@F["AllFollowUps"]</option><option value="HasFollowUp">@F["HasFollowUp"]</option><option value="Reached">@F["ReachedFilter"]</option><option value="Future">@F["FutureFilter"]</option></select></label> }
+                <label class="cartable-filter"><span>@P["Priority"]</span><select value="@State.Priority" @onchange="PriorityChanged"><option value="">@P["All"]</option><option value="Normal">@P["Normal"]</option><option value="Important">@P["Important"]</option><option value="Urgent">@P["Urgent"]</option></select></label>
+                <label class="cartable-filter cartable-sort"><span>@G["Sort"]</span><select value="@SortValue" @onchange="SortChanged"><option value="created:desc">@G["Newest"]</option><option value="created:asc">@G["Oldest"]</option><option value="order:asc">@G["OrderNumberSort"]</option><option value="customer:asc">@G["CustomerSort"]</option><option value="stage:asc">@G["StageSort"]</option><option value="priority:desc">@P["Highest"]</option><option value="priority:asc">@P["Lowest"]</option>@if (Tab == "received") { <option value="age:desc">@AgingText("Longest")</option><option value="age:asc">@AgingText("Shortest")</option><option value="followup:asc">@F["NearestFollowUp"]</option><option value="followup:desc">@F["LatestFollowUp"]</option> }@if (Tab == "referrals") { <option value="outcome:asc">@G["OutcomeSort"]</option> }</select></label>
+            </div>
+            }
+        </div>
+        <div class="cartable-saved-views" aria-label='@V["MyViews"]'><span class="cartable-saved-views-label">@V["MyViews"]</span><select value="@SelectedViewId" @onchange="SavedViewChanged"><option value="">—</option>@foreach (SavedView view in SavedViews) { <option value="@view.Id">@view.Name</option> }</select>@if (SavedViewModified) { <span class="cartable-saved-views-modified">@Ui("Modified")</span> }<button type="button" class="cartable-view-action" @onclick="OpenSaveView">@V["Save"]</button>@if (SelectedViewId is not null) { <button type="button" class="cartable-view-action" @onclick="UpdateSavedView">@V["Update"]</button><button type="button" class="cartable-view-action danger" @onclick="DeleteSavedView">@V["Delete"]</button> }@if (SavedViewsMessage is not null) { <span class="cartable-saved-views-error" role="alert">@SavedViewsMessage</span> }</div>
+        <div class="cartable-v2-actions">@if (MoreFilterCount > 0 || MoreFiltersOpen) { <button type="button" class="cartable-more-filters @(MoreFiltersOpen ? "active" : "")" @onclick='() => MoreFiltersOpen = !MoreFiltersOpen' aria-expanded="@MoreFiltersOpen"><BarangIcon Name="filter" /> <span>@Ui(MoreFiltersOpen ? "HideFilters" : "MoreFilters")</span>@if (MoreFilterCount > 0) { <b>@MoreFilterCount</b> }</button> } else { <button type="button" class="cartable-more-filters" @onclick='() => MoreFiltersOpen = !MoreFiltersOpen' aria-expanded="@MoreFiltersOpen"><BarangIcon Name="filter" /> <span>@Ui("MoreFilters")</span></button> }@if (HasFilters) { <button type="button" class="cartable-clear" @onclick="ClearFilters">@G["ClearFilters"]</button> }<button type="button" class="cartable-keyboard-help" @onclick='() => KeyboardHelpOpen = true' aria-label='@K["KeyboardShortcuts"]'><BarangIcon Name="keyboard" /> <span>@K["KeyboardShortcuts"]</span></button><BarangButton Variant="secondary" Icon="refresh" Text='@C["Reload"]' Disabled="@Loading" Clicked="Reload" /></div>
+    </div>
+    }
+</section>
+    <div class="cartable-workbench @(Tab == "referrals" ? "cartable-workbench-history" : "")">
+        <section class="cartable-workbench-grid" aria-label='@C["MyCartable"]'>
+            @if (Loading) { <BarangLoadingState Text='@C["Loading"]' /> }
+            else if (Rows.Count == 0) { <CrudEmptyState Title='@(HasFilters ? G["NoFilteredResults"] : (Tab == "received" ? C["Empty"] : C["ReferralEmpty"]))' Description="" /> }
+            else
+            {
+                <div class="data-grid-wrap cartable-standard-grid cartable-v2-grid"><table class="data-grid"><thead><tr><th class="personal-column">@Personal("PersonalState")</th><th>@C["OrderNumber"]</th><th>@C["Customer"]</th><th>@C["OrderDate"]</th><th>@C["Stage"]</th><th>@C["CurrentStatus"]</th><th>@P["Priority"]</th>@if (Tab == "received") { <th>@AgingText("TimeInStage")</th><th>@F["FollowUp"]</th> }@if (Tab == "received") { <th>@G["PreviousAction"]</th><th>@G["ReceivedAt"]</th><th>@G["Position"]</th> } else { <th>@G["MyAction"]</th><th>@G["Destination"]</th><th>@G["ActionDate"]</th> }<th class="actions-column">@C["Actions"]</th></tr></thead><tbody>@foreach (Row row in Rows) { <tr tabindex="0" aria-selected="@(SelectedRow?.Id == row.Id)" class="@(SelectedRow?.Id == row.Id ? "cartable-row-selected" : row.IsSeen ? "cartable-row-seen" : "cartable-row-new")" @onclick='@(() => SelectRow(row))' @onkeydown='@(e => RowKeyDown(e, row))'><td class="personal-cell"><BarangIconButton Icon="@(row.IsStarred ? "star-filled" : "star")" Semantic="@(row.IsStarred ? "warning" : "neutral")" Label='@(row.IsStarred ? Personal("Unstar") : Personal("Star"))' Class="cartable-star-button" Clicked='@(() => ToggleStar(row))' />@if (!row.IsSeen) { <span class="cartable-new-badge">@Personal("New")</span> }</td><td dir="ltr"><span class="code-pill">@(row.OrderNumber ?? "—")</span></td><td>@row.Customer</td><td>@Date(row.OrderDate)</td><td><span class="stage-chip">@Stage(row)</span></td><td><span class="status-pill cartable-status-chip">@CurrentStatus(row)</span></td><td><PriorityIndicator Priority="@row.Priority" /></td>@if (Tab == "received") { <td><span class="aging-indicator aging-@AgingCategory(row)" title="@AgingTooltip(row)"><BarangIcon Name="history" /> <span>@Age(row)</span><small>@AgingText(AgingCategory(row))</small></span></td><td>@FollowUp(row)</td> }@if (Tab == "received") { <td><span class="context-action">@PreviousAction(row)</span></td><td>@DateTime(row.ActionDate)</td><td>@(row.Position ?? "—")</td> } else { <td><span class="outcome-pill outcome-@row.Outcome.ToLowerInvariant()">@Outcome(row.Outcome)</span></td><td><span class="context-action">@Destination(row)</span></td><td>@DateTime(row.ActionDate)</td> }<td class="row-actions" @onclick:stopPropagation="true"><BarangIconButton Icon="preview" Semantic="info" Label='@G["QuickPreview"]' Class="cartable-preview-trigger" Clicked='@(() => OpenPreview(row))' /><BarangIconButton Icon="eye" Semantic="info" Label='@C["View"]' Clicked='@(() => Open(row))' /></td></tr> }</tbody></table></div><BarangPagination Page="@State.Page" HasNext="@(State.Page * PageSize < CurrentTotal)" Disabled="@Loading" PageLabel='@C["Page"]' PreviousText='@C["Previous"]' NextText='@C["Next"]' Previous="Previous" Next="Next" />
+            }
+        </section>
+        <aside class="cartable-workbench-detail" aria-live="polite">
+            @if (SelectedRow is null)
+            {
+                <div class="cartable-workbench-empty"><span class="cartable-workbench-empty-icon"><BarangIcon Name="inbox" /></span><h2>@Ui("SelectOrder")</h2><p>@Ui("SelectOrderHint")</p></div>
+            }
+            else if (SelectedDetailLoading)
+            {
+                <div class="cartable-workbench-detail-loading"><span class="cartable-detail-skeleton skeleton-wide"></span><span class="cartable-detail-skeleton"></span><span class="cartable-detail-skeleton"></span><span class="cartable-detail-skeleton skeleton-short"></span></div>
+            }
+            else if (SelectedDetailError is not null)
+            {
+                <div class="cartable-workbench-error" role="alert"><BarangIcon Name="circle" /><p>@SelectedDetailError</p><button type="button" class="btn btn-secondary btn-small" @onclick="RetrySelectedDetail">@C["Reload"]</button></div>
+            }
+            else if (SelectedDetail is not null)
+            {
+                <header class="cartable-workbench-detail-header"><div><span class="eyebrow">@Ui("SelectedOrder")</span><h2 dir="ltr">@(SelectedDetail.Summary.OrderNumber ?? SelectedRow.OrderNumber ?? "—")</h2><p>@(SelectedDetail.Summary.CustomerName ?? SelectedRow.Customer)</p></div><div class="cartable-detail-header-meta"><span class="status-pill cartable-status-chip">@WorkbenchStatus(SelectedDetail.Summary.EffectiveStatusCode, SelectedDetail.Summary.CurrentStages)</span><PriorityIndicator Priority="@SelectedDetail.Summary.Priority.ToString()" /><BarangIconButton Icon="eye" Semantic="info" Label='@C["View"]' Clicked='@(() => Open(SelectedRow))' /></div></header>
+                @if (Tab == "received")
+                {
+                    <section class="cartable-v5-operations" aria-label='@Ui("OperationalWorkspace")'>
+                        @if (SelectedDetail.WorkflowContext is not null)
+                        {
+                            <div class="cartable-v5-stepper" aria-label='@Ui("WorkflowStepper")'>
+                                <div class="cartable-v5-step completed"><span class="cartable-v5-step-node">✓</span><div class="cartable-v5-step-body"><small class="cartable-v5-step-label">@Ui("PreviousContext")</small><strong class="cartable-v5-step-stage">@(SelectedDetail.WorkflowContext.PreviousStage is null ? "—" : Localized(SelectedDetail.WorkflowContext.PreviousStage))</strong><em class="cartable-v5-step-position">@SelectedDetail.WorkflowContext.PreviousOutcome</em></div></div>
+                                <div class="cartable-v5-step current"><span class="cartable-v5-step-node">●</span><div class="cartable-v5-step-body"><small class="cartable-v5-step-label">@Ui("CurrentContext")</small><strong class="cartable-v5-step-stage">@Localized(SelectedDetail.WorkflowContext.CurrentStage)</strong><em class="cartable-v5-step-position">@(SelectedDetail.WorkflowContext.CurrentPositionTitle ?? "—")</em></div></div>
+                                <div class="cartable-v5-step future"><span class="cartable-v5-step-node">→</span><div class="cartable-v5-step-body"><small class="cartable-v5-step-label">@Ui("PossibleNextContext")</small>@if (SelectedDetail.WorkflowContext.NextDependsOnDecision) { <strong class="cartable-v5-step-stage">@Ui("DependsOnDecision")</strong> } else if (SelectedDetail.WorkflowContext.PossibleNext.Count == 0) { <strong class="cartable-v5-step-stage">@Ui("NoNext")</strong> } else { @foreach (var next in SelectedDetail.WorkflowContext.PossibleNext) { <strong class="cartable-v5-step-stage">@NextDestination(next)</strong> } }</div></div>
+                            </div>
+                        }
+                        <div class="cartable-v5-context-line"><div><small>@Ui("Priority")</small><strong><PriorityIndicator Priority="@SelectedRow.Priority" /></strong></div><div><small>@Ui("Ownership")</small><strong>@OwnershipLabel(SelectedRow)</strong></div>@if (!string.IsNullOrWhiteSpace(SelectedRow.OnBehalfOfName)) { <div class="cartable-v5-substitute"><small>@H["Principal"]</small><strong>@H["Principal"] @SelectedRow.OnBehalfOfName</strong></div> }</div>
+                        @if (ActionMessage is not null) { <div class="cartable-v5-error" role="alert">@ActionMessage</div> }
+                        <div class="cartable-v5-action-groups">
+                            <section class="cartable-v5-action-group"><h3>@Ui("OperationalWorkspace")</h3><div class="cartable-v5-buttons">@if (SelectedRow.ClaimedByUserId is null) { <BarangButton Variant="primary" Icon="user-plus" Text='@C["Claim"]' Busy="@ActionBusy" Clicked="OpenOperationalPopup" /> } else if (IsCurrentClaimant(SelectedRow)) { <BarangButton Variant="primary" Icon="check" Text='@C["Actions"]' Busy="@ActionBusy" Clicked="OpenOperationalPopup" /> } else { <span class="cartable-v5-claimed-note"><BarangIcon Name="lock" />@OwnershipLabel(SelectedRow)</span> }</div></section>
+                        </div>
+                    </section>
+                }
+<div class="cartable-workbench-detail-tabs" role="tablist" aria-label='@Ui("DetailTabs")'><button type="button" class="@(ActiveDetailTab == "details" ? "active" : "")" role="tab" aria-selected="@(ActiveDetailTab == "details")" @onclick='@(() => OpenDetailTab("details"))'><BarangIcon Name="document" />@Ui("Details")</button><button type="button" class="@(ActiveDetailTab == "files" ? "active" : "")" role="tab" aria-selected="@(ActiveDetailTab == "files")" @onclick='@(() => OpenDetailTab("files"))'><BarangIcon Name="paperclip" />@Ui("Files")</button><button type="button" class="@(ActiveDetailTab == "history" ? "active" : "")" role="tab" aria-selected="@(ActiveDetailTab == "history")" @onclick='@(() => OpenDetailTab("history"))'><BarangIcon Name="history" />@Ui("History")@(SelectedWorkflowHistory.Length > 0 ? $" ({SelectedWorkflowHistory.Length})" : "")</button></div>
+                @if (ActiveDetailTab == "details")
+                {
+                    <div class="cartable-detail-visual-summary"><div class="cartable-detail-visual" aria-hidden="true"><div class="cartable-shirt-placeholder"><span></span></div></div><div class="cartable-detail-summary-copy"><strong>@(SelectedDetail.Summary.OrderNumber ?? "—")</strong><span>@(SelectedDetail.Summary.CustomerName ?? SelectedRow.Customer)</span><small>@Ui("Items"): @SelectedDetail.Summary.ItemCount · @SelectedDetail.Summary.TotalQuantity</small></div></div><div class="cartable-workbench-summary"><div class="cartable-detail-fact"><small>@C["Customer"]</small><strong>@(SelectedDetail.Summary.CustomerName ?? "—")</strong></div><div class="cartable-detail-fact"><small>@C["OrderDate"]</small><strong>@Date(SelectedDetail.Summary.OrderDate)</strong></div><div class="cartable-detail-fact"><small>@C["Stage"]</small><strong>@(SelectedDetail.Summary.CurrentStage is null ? "—" : Localized(SelectedDetail.Summary.CurrentStage))</strong></div><div class="cartable-detail-fact"><small>@C["CurrentStatus"]</small><strong>@WorkbenchStatus(SelectedDetail.Summary.EffectiveStatusCode, SelectedDetail.Summary.CurrentStages)</strong></div><div class="cartable-detail-fact"><small>@P["Priority"]</small><strong><PriorityIndicator Priority="@SelectedDetail.Summary.Priority.ToString()" /></strong></div><div class="cartable-detail-fact"><small>@Ui("Items")</small><strong>@SelectedDetail.Summary.ItemCount · @SelectedDetail.Summary.TotalQuantity</strong></div>@if (SelectedDetail.Summary.GrandTotal is decimal total) { <div class="cartable-detail-fact"><small>@Ui("Total")</small><strong>@total.ToString("N2", CultureInfo.CurrentCulture) @(SelectedDetail.Summary.CurrencyCode ?? "")</strong></div> }</div>
+                }
+                else if (DetailTabLoading)
+                {
+                    <div class="cartable-workbench-detail-loading"><span class="cartable-detail-skeleton skeleton-wide"></span><span class="cartable-detail-skeleton"></span><span class="cartable-detail-skeleton skeleton-short"></span></div>
+                }
+                else if (DetailTabError is not null)
+                {
+                    <div class="cartable-workbench-error" role="alert"><BarangIcon Name="circle" /><p>@DetailTabError</p><button type="button" class="btn btn-secondary btn-small" @onclick='@(() => OpenDetailTab(ActiveDetailTab))'>@C["Reload"]</button></div>
+                }
+                else if (ActiveDetailTab == "files")
+                {
+                    <div class="cartable-detail-tab-content"><h3><BarangIcon Name="paperclip" />@Ui("Files")</h3>@if (SelectedAttachments is null || SelectedAttachments.Count == 0) { <p class="cartable-tab-empty">@Ui("NoFiles")</p> } else { <ul class="cartable-file-list">@foreach (DecisionAttachmentView file in SelectedAttachments) { <li><BarangIcon Name="document" /><span title="@file.FileName">@file.FileName</span><small>@file.MediaType · @file.SizeBytes bytes<br />@DateTime(file.CreatedAtUtc)</small><button type="button" class="cartable-file-open" @onclick='@(() => DownloadAttachment(file))'>@Ui("Open")</button></li> }</ul> }</div>
+                }
+                else if (ActiveDetailTab == "history")
+                {
+                    <div class="cartable-detail-tab-content"><h3><BarangIcon Name="history" />@Ui("History")</h3>@if (SelectedWorkflowHistory.Length == 0) { <p class="cartable-tab-empty">@Ui("NoHistory")</p> } else { <ol class="cartable-history-list">@foreach (JsonElement item in SelectedWorkflowHistory) { <li><span class="cartable-history-dot"></span><div><strong>@HistoryStage(item)</strong><small>@HistoryDate(item)</small><p>@Outcome(Text(item, "outcome", "Active"))@(string.IsNullOrWhiteSpace(Text(item, "positionTitle")) ? "" : $" · {Text(item, "positionTitle")}")</p>@if (!string.IsNullOrWhiteSpace(Text(item, "note"))) { <p>@Text(item, "note")</p> }@if (item.TryGetProperty("attachments", out var files) && files.ValueKind == JsonValueKind.Array) { @foreach (var file in files.EnumerateArray()) { <small class="cartable-history-attachment">@Text(file, "fileName")</small> } }</div></li> }</ol> }</div>
+                }
+            }
+        </aside>
+    </div>
+</section>
+@if (OperationalPopupOpen && SelectedRow is not null)
+{
+    <CartableDecisionPopup Visible="true" OrderNumber="@(SelectedRow.OrderNumber ?? "—")" Stage="@Localized(SelectedRow.Stage)" Note="@DecisionNote" NoteChanged="@(value => DecisionNote = value)" Outcomes="@SelectedRow.Outcomes" Busy="@ActionBusy" Decision="ExecuteOperationalDecision" Cancel="CloseOperationalPopup" />
+}
+@if (ReleaseConfirm)
+{
+    <div class="dialog-backdrop"><section class="dialog-card cartable-v5-dialog" role="dialog" aria-modal="true"><h2>@F["ReleaseTask"]</h2><p>@F["ReleasePrompt"]</p><div class="form-actions"><BarangButton Variant="primary" Text='@F["ReleaseTask"]' Busy="@ActionBusy" Clicked="ReleaseSelected" /><BarangButton Variant="secondary" Text='@C["Cancel"]' Disabled="@ActionBusy" Clicked='@(() => ReleaseConfirm = false)' /></div></section></div>
+}
+@if (ForwardOpen)
+{
+    <div class="dialog-backdrop"><section class="dialog-card cartable-v5-dialog" role="dialog" aria-modal="true" aria-labelledby="cartable-forward-title"><h2 id="cartable-forward-title">@H["Forward"]</h2><p>@H["ForwardPrompt"]</p><label for="cartable-forward-search">@H["TargetSearch"]</label><div class="form-actions"><input id="cartable-forward-search" @bind="ForwardSearch" @bind:event="oninput" /><BarangButton Variant="secondary" Icon="search" Text='@C["Search"]' Clicked="LoadForwardTargets" /></div>@if (ForwardTargets.Count == 0) { <p class="muted">@H["NoTargets"]</p> } else { <label for="cartable-forward-target">@H["ForwardTo"]</label><select id="cartable-forward-target" @bind="ForwardTargetUserId"><option value="">—</option>@foreach (var target in ForwardTargets) { <option value="@target.Id">@target.Name · @target.Position</option> }</select>}<label for="cartable-forward-reason">@H["ForwardReason"]</label><textarea id="cartable-forward-reason" @bind="ForwardReason"></textarea><div class="form-actions"><BarangButton Variant="primary" Text='@H["Forward"]' Busy="@ActionBusy" Clicked="ForwardSelected" /><BarangButton Variant="secondary" Text='@C["Cancel"]' Disabled="@ActionBusy" Clicked='@(() => ForwardOpen = false)' /></div></section></div>
+}
+@if (SaveViewOpen)
+{
+    <div class="cartable-save-view-backdrop" @onclick="CloseSaveView"><section class="cartable-save-view-dialog" role="dialog" aria-modal="true" @onclick:stopPropagation><h2>@V["Save"]</h2><label><span>@V["Name"]</span><input @bind="SaveViewName" placeholder='@V["NamePlaceholder"]' maxlength="120" /></label><div class="cartable-save-view-actions"><button type="button" class="btn btn-secondary" @onclick="CloseSaveView">@V["Cancel"]</button><button type="button" class="btn btn-primary" @onclick="SaveCurrentView">@V["Save"]</button></div></section></div>
+}
+@if (PreviewOpen)
+{
+    <div class="cartable-preview-backdrop" @onclick="ClosePreview">
+        <aside class="cartable-quick-preview" role="dialog" aria-modal="true" aria-label='@G["QuickPreview"]' tabindex="-1" autofocus @onclick:stopPropagation @onkeydown="PreviewKeyDown">
+            <header class="cartable-preview-header"><div class="cartable-preview-title"><span class="cartable-preview-icon"><BarangIcon Name="preview" /></span><div><span class="eyebrow">@G["QuickPreview"]</span><h2>@(Preview?.OrderNumber ?? PreviewRow?.OrderNumber ?? "—")</h2></div></div><BarangIconButton Icon="close" Label='@C["Close"]' Clicked="ClosePreview" /></header>
+            @if (PreviewLoading) { <div class="cartable-preview-loading"><BarangIcon Name="history" /> @G["PreviewLoading"]</div> }
+            else if (PreviewError is not null) { <div class="cartable-preview-error" role="alert"><BarangIcon Name="circle" /><span>@PreviewError</span><button type="button" class="btn btn-secondary btn-small" @onclick="ReloadPreview">@C["Reload"]</button></div> }
+            else if (Preview is not null)
+            {
+                <div class="cartable-preview-body">
+                    <div class="cartable-preview-identity"><strong>@Preview.CustomerName</strong><span>@Preview.BranchName</span><small>@Date(Preview.OrderDate)</small></div>
+                    <div class="cartable-preview-chips"><span class="stage-chip">@Localized(Preview.Stage)</span><span class="status-pill cartable-status-chip">@CurrentStatus(Preview.EffectiveStatusCode, Preview.CurrentStages)</span><PriorityIndicator Priority="@Preview.Priority" /></div>
+                    @if (PreviewContext is not null)
+                    {
+                        <div class="cartable-context-mini" aria-label='@Ui("WorkflowContext")'><div><span>@Ui("PreviousContext")</span><strong>@(PreviewContext.PreviousStage is null ? "—" : Localized(PreviewContext.PreviousStage))</strong><small>@(PreviewContext.PreviousOutcome ?? "")</small></div><div class="context-current"><span>@Ui("CurrentContext")</span><strong>@Localized(PreviewContext.CurrentStage)</strong><small>@(PreviewContext.CurrentPositionTitle ?? "—")</small></div><div><span>@Ui("PossibleNextContext")</span>@if (PreviewContext.NextDependsOnDecision) { <strong>@Ui("DependsOnDecision")</strong> } else if ((PreviewContext.PossibleNext ?? []).Count == 0) { <strong>@Ui("NoNext")</strong> } else { @foreach (var next in PreviewContext.PossibleNext ?? []) { <strong>@(next.DestinationStage is null ? Ui("Terminal") : Localized(next.DestinationStage))</strong> } }</div></div>
+                    }
+                    @if (Tab == "referrals")
+                    {
+                        <div class="cartable-referral-flow" aria-label='@G["MyAction"]'><span class="flow-node">@Localized(Preview.Stage)</span><span class="flow-arrow" aria-hidden="true">→</span><span class="outcome-pill outcome-@Preview.Outcome.ToLowerInvariant()">@Outcome(Preview.Outcome)</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">@(Preview.DestinationStage is null ? G["NoDestination"] : Localized(Preview.DestinationStage))</span></div>
+                        <dl class="cartable-preview-facts"><dt>@G["MyAction"]</dt><dd>@Outcome(Preview.Outcome)</dd><dt>@G["Destination"]</dt><dd>@(Preview.DestinationStage is null ? G["NoDestination"] : Localized(Preview.DestinationStage))</dd><dt>@G["CurrentState"]</dt><dd>@CurrentStatus(Preview.EffectiveStatusCode, Preview.CurrentStages)</dd><dt>@G["TimeSinceAction"]</dt><dd>@TimeSince(Preview.OccurredAtUtc)</dd></dl>
+                    }
+                    else
+                    {
+                        <dl class="cartable-preview-facts"><dt>@G["Position"]</dt><dd>@(Preview.PositionTitle ?? "—")</dd><dt>@G["PreviousAction"]</dt><dd>@(Preview.PreviousStage is null ? "—" : $"{Localized(Preview.PreviousStage)} · {Outcome(Preview.PreviousOutcome ?? "Approve")}")</dd><dt>@G["ReceivedAt"]</dt><dd>@DateTime(Preview.OccurredAtUtc)</dd>@if (Preview.FollowUpAtUtc is DateTimeOffset followUp) { <dt>@F["FollowUp"]</dt><dd>@DateTime(followUp)</dd> }</dl>
+                    }
+                    <div class="cartable-preview-metrics"><div><strong>@Preview.ItemCount</strong><span>@G["ItemCount"]</span></div><div><strong>@Preview.TotalQuantity.ToString("N2", CultureInfo.CurrentCulture)</strong><span>@G["Quantity"]</span></div>@if (Preview.GrandTotal is decimal total) { <div><strong>@total.ToString("N2", CultureInfo.CurrentCulture) @(Preview.CurrencyCode ?? "")</strong><span>@G["GrandTotal"]</span></div> }</div>
+                </div>
+            }
+        </aside>
+    </div>
+}
+@if (KeyboardHelpOpen)
+{
+    <div class="cartable-keyboard-backdrop" @onclick="() => KeyboardHelpOpen = false">
+        <section class="cartable-keyboard-dialog" role="dialog" aria-modal="true" aria-labelledby="cartable-keyboard-title" @onclick:stopPropagation>
+            <header><h2 id="cartable-keyboard-title">@K["KeyboardShortcuts"]</h2><BarangIconButton Icon="close" Label='@Ui("Close")' Clicked='() => KeyboardHelpOpen = false' /></header>
+            <dl><dt>/</dt><dd>@K["ShortcutFocusSearch"]</dd><dt>R</dt><dd>@K["ShortcutReload"]</dd><dt>P</dt><dd>@K["ShortcutPreview"]</dd><dt>Enter</dt><dd>@K["ShortcutView"]</dd><dt>Esc</dt><dd>@K["ShortcutEscape"]</dd></dl>
+        </section>
+    </div>
+}
+@if (Message is not null) { <div class="inline-error" role="alert">@Message</div> }
+
+@code {
+    private CartableTextProxy C => new(CartableText, A);
+    private sealed class CartableTextProxy(IStringLocalizer<CartableStrings> cartable, IStringLocalizer<AppStrings> app)
+    {
+        public Microsoft.Extensions.Localization.LocalizedString this[string key] => key == "View" ? app[key] : cartable[key];
+    }
+    private bool PreviewOpen, PreviewLoading, KeyboardHelpOpen, MoreFiltersOpen, OperationalPopupOpen, SearchPanelOpen;
+    private Row? SelectedRow;
+    private CartableWorkbenchDetailView? SelectedDetail;
+    private Guid? CurrentUserId;
+    private bool ActionBusy, ReleaseConfirm, ForwardOpen;
+    private string? ActionMessage;
+    private string DecisionNote = "";
+    private DateOnly? FollowUpDate;
+    private string FollowUpTime = "09:00";
+    private string ForwardSearch = "", ForwardTargetUserId = "", ForwardReason = "";
+    private List<(Guid Id, string Name, string Position)> ForwardTargets = [];
+    private List<PendingAttachment> Attachments = [];
+    private string? AttachmentMessage;
+    private string? ConfirmedOutcome;
+    private bool SelectedDetailLoading;
+    private string? SelectedDetailError;
+    private CancellationTokenSource? SelectedDetailCancel;
+    private string ActiveDetailTab = "details";
+    private bool DetailTabLoading;
+    private string? DetailTabError;
+    private IReadOnlyList<DecisionAttachmentView>? SelectedAttachments;
+    private JsonElement[] SelectedWorkflowHistory = [];
+    private CancellationTokenSource? DetailTabCancel;
+    private string? PreviewError;
+    private Row? PreviewRow;
+    private PreviewData? Preview;
+    private CartableWorkflowContextView? PreviewContext;
+    private CartableWorkloadSummary? Workload;
+    private DotNetObjectReference<Cartable>? ShortcutReference;
+    private CancellationTokenSource? PreviewCancel;
+    private int PreviewGeneration;
+    private bool _disposed;
+    private string Tab = "received"; private const int PageSize = 20; private int ReceivedTotal, ReferralTotal, Generation; private bool Loading; private string? Message; private string? SavedViewsMessage; private List<Row> Rows = []; private List<StageOption> Stages = []; private List<SearchableSelectOption> CustomerOptions = []; private readonly string[] Outcomes = ["Approve", "Reject", "AuditReject"]; private CancellationTokenSource? SearchCancel; private CancellationTokenSource? AgingRefreshCancel; private List<SavedView> SavedViews = []; private string? SelectedViewId; private bool SaveViewOpen; private string SaveViewName = "";
+    private GridState ReceivedState = new(), ReferralState = new(); private GridState State => Tab == "received" ? ReceivedState : ReferralState; private int CurrentTotal => Tab == "received" ? ReceivedTotal : ReferralTotal; private int MoreFilterCount => (string.IsNullOrWhiteSpace(State.Priority) ? 0 : 1) + (Tab == "received" && !string.IsNullOrWhiteSpace(State.FollowUp) ? 1 : 0) + (Tab == "referrals" && !string.IsNullOrWhiteSpace(State.Status) ? 1 : 0) + (State.Sort != "created" || !State.Descending ? 1 : 0); private bool HasFilters => !string.IsNullOrWhiteSpace(State.Search) || !string.IsNullOrWhiteSpace(State.StageKey) || !string.IsNullOrWhiteSpace(State.CustomerId) || State.FromDate is not null || State.ToDate is not null || !string.IsNullOrWhiteSpace(State.Outcome) || !string.IsNullOrWhiteSpace(State.Status) || State.StarredOnly || !string.IsNullOrWhiteSpace(State.Aging) || !string.IsNullOrWhiteSpace(State.Priority) || !string.IsNullOrWhiteSpace(State.FollowUp) || State.Sort != "created" || !State.Descending; private int ActiveFilterCount => (SelectedViewId is null ? 0 : 1) + (string.IsNullOrWhiteSpace(State.Search) ? 0 : 1) + (string.IsNullOrWhiteSpace(State.StageKey) ? 0 : 1) + (string.IsNullOrWhiteSpace(State.CustomerId) ? 0 : 1) + (State.FromDate is null ? 0 : 1) + (State.ToDate is null ? 0 : 1) + (string.IsNullOrWhiteSpace(State.Outcome) ? 0 : 1) + (string.IsNullOrWhiteSpace(State.Status) ? 0 : 1) + (State.StarredOnly ? 1 : 0) + (string.IsNullOrWhiteSpace(State.Aging) ? 0 : 1) + (string.IsNullOrWhiteSpace(State.Priority) ? 0 : 1) + (string.IsNullOrWhiteSpace(State.FollowUp) ? 0 : 1) + (State.Sort != "created" || !State.Descending ? 1 : 0);
+    private string SortValue { get => $"{State.Sort}:{(State.Descending ? "desc" : "asc")}"; set { string[] parts = value.Split(':'); State.Sort = parts[0]; State.Descending = parts.Length < 2 || parts[1] == "desc"; } }
+    private IReadOnlyList<SearchableSelectOption> CustomerOptionsView => CustomerOptions;
+    protected override async Task OnInitializedAsync() { var user = (await AuthState.GetAuthenticationStateAsync()).User; if (Guid.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id)) CurrentUserId = id; RestoreQueryState(); await LoadStages(); await LoadSavedViews(); await Load(); AgingRefreshCancel = new(); _ = RefreshAgingAsync(AgingRefreshCancel.Token); }
+    private void ToggleSearchPanel() => SearchPanelOpen = !SearchPanelOpen;
+    private async Task SwitchTab(string tab) { if (Tab == tab) return; await DiscardCurrentAttachments(); Tab = tab; SearchPanelOpen = false; SelectedViewId = null; SelectedDetailCancel?.Cancel(); DetailTabCancel?.Cancel(); SelectedRow = null; SelectedDetail = null; SelectedDetailError = null; SelectedAttachments = null; SelectedWorkflowHistory = []; Rows = []; DecisionNote = ""; await LoadSavedViews(); await Load(); }
+    private async Task Load() { int generation = ++Generation; Loading = true; Message = null; var s = await Session(); if (s is null) { Loading = false; Message = C["LoadFailed"]; return; } string receivedPath = BuildPath("eligible", new GridState(), false, 1); string referralPath = BuildPath("referrals", new GridState(), true, 1); var receivedTask = Core.GetAsync(receivedPath, s.Value.Token, s.Value.Company, default); var referralTask = Core.GetAsync(referralPath, s.Value.Token, s.Value.Company, default); var currentPath = BuildPath(Tab == "received" ? "eligible" : "referrals", State, Tab == "referrals", State.Page); var currentTask = Core.GetAsync(currentPath, s.Value.Token, s.Value.Company, default); var workloadTask = Core.GetAsync("api/v1/workflows/definition/runtime/workload-summary", s.Value.Token, s.Value.Company, default); await Task.WhenAll(receivedTask, referralTask, currentTask, workloadTask); if (generation != Generation) return; if (!receivedTask.Result.IsSuccess || !referralTask.Result.IsSuccess || !currentTask.Result.IsSuccess) { Rows = []; Workload = null; Message = C["LoadFailed"]; Loading = false; return; } ReceivedTotal = Total(receivedTask.Result.Value); ReferralTotal = Total(referralTask.Result.Value); Rows = Items(currentTask.Result.Value).Select(Parse).ToList(); Workload = workloadTask.Result.IsSuccess ? ParseWorkload(workloadTask.Result.Value) : null; Loading = false; if (SelectedRow is not null && Rows.All(x => x.Id != SelectedRow.Id)) { DetailTabCancel?.Cancel(); SelectedRow = null; SelectedDetail = null; SelectedDetailError = null; SelectedAttachments = null; SelectedWorkflowHistory = []; } }
+    private string BuildPath(string endpoint, GridState state, bool referrals, int page) { List<string> q = [$"search={Uri.EscapeDataString(state.Search.Trim())}", $"page={page}", $"pageSize={PageSize}", $"descending={state.Descending.ToString().ToLowerInvariant()}", $"starredOnly={state.StarredOnly.ToString().ToLowerInvariant()}"]; if (!string.IsNullOrWhiteSpace(state.FollowUp)) q.Add($"followUp={Uri.EscapeDataString(state.FollowUp)}"); if (!string.IsNullOrWhiteSpace(state.Priority)) q.Add($"priority={Uri.EscapeDataString(state.Priority)}"); if (!string.IsNullOrWhiteSpace(state.StageKey)) q.Add($"stageKey={Uri.EscapeDataString(state.StageKey)}"); if (Guid.TryParse(state.CustomerId, out Guid customer)) q.Add($"customerId={customer}"); if (state.FromDate is DateOnly from) q.Add($"fromDate={from:yyyy-MM-dd}"); if (state.ToDate is DateOnly to) q.Add($"toDate={to:yyyy-MM-dd}"); if (referrals && !string.IsNullOrWhiteSpace(state.Outcome)) q.Add($"outcome={Uri.EscapeDataString(state.Outcome)}"); if (referrals && !string.IsNullOrWhiteSpace(state.Status)) q.Add($"status={Uri.EscapeDataString(state.Status)}"); if (!referrals && !string.IsNullOrWhiteSpace(state.Aging)) q.Add($"aging={Uri.EscapeDataString(state.Aging)}"); if (!string.IsNullOrWhiteSpace(state.Sort)) q.Add($"sort={Uri.EscapeDataString(state.Sort)}"); return $"api/v1/workflows/definition/runtime/tasks/{endpoint}?{string.Join("&", q)}"; }
+    private async Task SearchInput(ChangeEventArgs e) { State.Search = e.Value?.ToString() ?? ""; State.Page = 1; await DebouncedLoad(); } private async Task DebouncedLoad() { SearchCancel?.Cancel(); SearchCancel?.Dispose(); SearchCancel = new(); try { await Task.Delay(280, SearchCancel.Token); await Load(); } catch (OperationCanceledException) { } }
+    private async Task AgingChanged(ChangeEventArgs e) { State.Aging = e.Value?.ToString() ?? ""; State.Page = 1; await Load(); } private async Task FollowUpChanged(ChangeEventArgs e) { State.FollowUp = e.Value?.ToString() ?? ""; State.Page = 1; await Load(); }
+    private async Task StarredOnlyChanged(ChangeEventArgs e) { State.StarredOnly = e.Value is bool b ? b : string.Equals(e.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase); State.Page = 1; await Load(); }
+    private async Task ToggleStar(Row row) { var s = await Session(); if (s is null) return; var next = !row.IsStarred; var r = await Core.SendAsync(HttpMethod.Post, $"api/v1/workflows/definition/runtime/tasks/{row.Id}/personal-state", new { isStarred = next, seen = false }, s.Value.Token, s.Value.Company, default); if (r.IsSuccess) { int index = Rows.FindIndex(x => x.Id == row.Id); if (index >= 0) Rows[index] = row with { IsStarred = next }; } }
+    private Task Reload(MouseEventArgs _) => Load(); private async Task PriorityChanged(ChangeEventArgs e) { State.Priority = e.Value?.ToString() ?? ""; State.Page = 1; await Load(); } private async Task StageChanged(ChangeEventArgs e) { State.StageKey = e.Value?.ToString() ?? ""; State.Page = 1; await Load(); } private async Task OutcomeChanged(ChangeEventArgs e) { State.Outcome = e.Value?.ToString() ?? ""; State.Page = 1; await Load(); } private async Task StatusChanged(ChangeEventArgs e) { State.Status = e.Value?.ToString() ?? ""; State.Page = 1; await Load(); } private async Task SortChanged(ChangeEventArgs e) { SortValue = e.Value?.ToString() ?? "created:desc"; State.Page = 1; await Load(); } private async Task FromDateChanged(DateOnly? value) { State.FromDate = value; State.Page = 1; await Load(); } private async Task ToDateChanged(DateOnly? value) { State.ToDate = value; State.Page = 1; await Load(); } private async Task CustomerChanged(string value) { State.CustomerId = value; State.Page = 1; await Load(); }
+    private async Task CustomerSearch(string value) { var s = await Session(); if (s is null || string.IsNullOrWhiteSpace(value)) return; var r = await Core.GetAsync($"api/v1/customers/options?search={Uri.EscapeDataString(value)}&activeOnly=true&limit=12", s.Value.Token, s.Value.Company, default); if (r.IsSuccess) CustomerOptions = (r.Value.ValueKind == JsonValueKind.Array ? r.Value.EnumerateArray() : r.Value.TryGetProperty("items", out var items) ? items.EnumerateArray() : []).Select(x => new SearchableSelectOption(Text(x, "id"), Text(x, "displayName") ?? Text(x, "name") ?? Text(x, "customerCode"))).ToList(); }
+    private async Task SelectRow(Row row)
+    {
+        if (SelectedRow?.Id == row.Id && (SelectedDetailLoading || SelectedDetail is not null)) return;
+        SelectedDetailCancel?.Cancel();
+        SelectedDetailCancel?.Dispose();
+        SelectedDetailCancel = new();
+        if (SelectedRow?.Id != row.Id && Attachments.Count > 0) await DiscardCurrentAttachments();
+        SelectedRow = row;
+        SetFollowUpInputs(row.FollowUpAtUtc);
+        ActionMessage = null;
+        AttachmentMessage = null;
+        SelectedDetail = null;
+        SelectedDetailError = null;
+        ActiveDetailTab = "details";
+        DetailTabCancel?.Cancel();
+        SelectedAttachments = null;
+        SelectedWorkflowHistory = [];
+        DetailTabError = null;
+        SelectedDetailLoading = true;
+        await InvokeAsync(StateHasChanged);
+        var session = await Session();
+        if (session is null) { SelectedDetailLoading = false; SelectedDetailError = C["LoadFailed"].Value; return; }
+        try
+        {
+            var response = await Core.GetAsync($"api/v1/workflows/definition/runtime/workbench/{row.Id}?historical={(Tab == "referrals").ToString().ToLowerInvariant()}", session.Value.Token, session.Value.Company, SelectedDetailCancel.Token);
+            if (SelectedRow?.Id != row.Id) return;
+            if (response.IsSuccess) SelectedDetail = response.Value.Deserialize<CartableWorkbenchDetailView>(new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            else SelectedDetailError = C["LoadFailed"].Value;
+        }
+        catch (OperationCanceledException) { return; }
+        catch (JsonException) { SelectedDetailError = C["LoadFailed"].Value; }
+        finally
+        {
+            if (SelectedRow?.Id == row.Id) { SelectedDetailLoading = false; await InvokeAsync(StateHasChanged); }
+        }
+    }
+    private Task RetrySelectedDetail() => SelectedRow is null ? Task.CompletedTask : SelectRow(SelectedRow with { });
+    private void RowKeyDown(KeyboardEventArgs e, Row row) { if (e.Key is "Enter" or " ") _ = SelectRow(row); }
+    private async Task DownloadAttachment(DecisionAttachmentView file)
+    {
+        var session = await Session();
+        if (session is null) return;
+        var result = await Core.DownloadAsync($"api/v1/files/{file.FileId}/versions/{file.FileVersionId}/download", session.Value.Token, session.Value.Company, DetailTabCancel?.Token ?? default);
+        if (result.IsSuccess) await JS.InvokeVoidAsync("barangDownloadFile", result.Value.FileName, result.Value.ContentType, Convert.ToBase64String(result.Value.Content));
+    }
+    private async Task OpenDetailTab(string tab)
+    {
+        if (SelectedRow is null || SelectedDetail is null) return;
+        ActiveDetailTab = tab;
+        DetailTabError = null;
+        if (tab == "details") { await InvokeAsync(StateHasChanged); return; }
+        if (tab == "files" && SelectedAttachments is not null || tab == "history" && SelectedWorkflowHistory.Length > 0) { await InvokeAsync(StateHasChanged); return; }
+        DetailTabCancel?.Cancel();
+        DetailTabCancel?.Dispose();
+        DetailTabCancel = new();
+        DetailTabLoading = true;
+        await InvokeAsync(StateHasChanged);
+        var rowId = SelectedRow.Id;
+        var orderId = SelectedDetail.OrderId;
+        var session = await Session();
+        if (session is null) { DetailTabLoading = false; DetailTabError = C["LoadFailed"].Value; return; }
+        try
+        {
+            string path = tab switch
+            {
+                "files" => $"api/v1/orders/{orderId}/360/files",
+                "history" => $"api/v1/orders/{orderId}/360",
+                _ => ""
+            };
+            var response = await Core.GetAsync(path, session.Value.Token, session.Value.Company, DetailTabCancel.Token);
+            if (SelectedRow?.Id != rowId) return;
+            if (!response.IsSuccess) { DetailTabError = C["LoadFailed"].Value; return; }
+            var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+            if (tab == "files") SelectedAttachments = response.Value.Deserialize<IReadOnlyList<DecisionAttachmentView>>(options);
+            else if (tab == "history") SelectedWorkflowHistory = response.Value.TryGetProperty("workflowTimeline", out var timeline) && timeline.ValueKind == JsonValueKind.Array ? timeline.EnumerateArray().ToArray() : [];
+        }
+        catch (OperationCanceledException) { return; }
+        catch (JsonException) { DetailTabError = C["LoadFailed"].Value; }
+        finally
+        {
+            if (SelectedRow?.Id == rowId) { DetailTabLoading = false; await InvokeAsync(StateHasChanged); }
+        }
+    }
+    private async Task ClearFilters() { if (Tab == "received") ReceivedState = new(); else ReferralState = new(); MoreFiltersOpen = false; Rows = []; await Load(); }
+    private object CurrentDefinition() => new { search = State.Search, stageKey = State.StageKey, customerId = Guid.TryParse(State.CustomerId, out var customer) ? customer : (Guid?)null, fromDate = State.FromDate, toDate = State.ToDate, outcome = State.Outcome, status = State.Status, sort = State.Sort, descending = State.Descending, starredOnly = State.StarredOnly, aging = State.Aging, priority = string.IsNullOrWhiteSpace(State.Priority) ? null : State.Priority, followUp = string.IsNullOrWhiteSpace(State.FollowUp) ? null : State.FollowUp };
+    private bool SavedViewModified => SelectedViewId is not null && SavedViews.FirstOrDefault(x => x.Id.ToString() == SelectedViewId) is SavedView view && JsonSerializer.Serialize(CurrentDefinition(), new JsonSerializerOptions(JsonSerializerDefaults.Web)) != JsonSerializer.Serialize(view.Definition, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    private async Task LoadSavedViews() { SavedViewsMessage = null; var session = await Session(); if (session is null) return; var response = await Core.GetAsync($"api/v1/workflows/definition/runtime/saved-filters?tab={(Tab == "received" ? "Received" : "MyReferrals")}", session.Value.Token, session.Value.Company, default); if (!response.IsSuccess) { SavedViews = []; SavedViewsMessage = C["LoadFailed"].Value; return; } if (response.Value.ValueKind != JsonValueKind.Array) { SavedViews = []; SavedViewsMessage = C["LoadFailed"].Value; return; } try { List<CartableSavedFilterView> views = JsonSerializer.Deserialize<List<CartableSavedFilterView>>(response.Value.GetRawText(), new JsonSerializerOptions(JsonSerializerDefaults.Web)) ?? []; SavedViews = views.Select(x => new SavedView(x.Id, x.Name, x.Version, x.Definition)).ToList(); } catch (JsonException) { SavedViews = []; SavedViewsMessage = C["LoadFailed"].Value; } }
+    private void OpenSaveView() { SaveViewName = ""; SaveViewOpen = true; }
+    private void CloseSaveView() => SaveViewOpen = false;
+    private async Task SaveCurrentView() { var name = SaveViewName.Trim(); if (name.Length == 0 || name.Length > 120) return; var session = await Session(); if (session is null) return; var response = await Core.SendAsync(HttpMethod.Post, "api/v1/workflows/definition/runtime/saved-filters", new { tab = Tab == "received" ? "Received" : "MyReferrals", name, definition = CurrentDefinition() }, session.Value.Token, session.Value.Company, default); if (response.IsSuccess) { SaveViewOpen = false; await LoadSavedViews(); } }
+    private async Task SavedViewChanged(ChangeEventArgs e) { SelectedViewId = e.Value?.ToString(); SavedView? view = SavedViews.FirstOrDefault(x => x.Id.ToString() == SelectedViewId); if (view is null) return; ApplyDefinition(view.Definition); State.Page = 1; await Load(); }
+    private void ApplyDefinition(CartableSavedFilterDefinition definition) { State.Search = definition.Search ?? ""; State.StageKey = definition.StageKey ?? ""; State.CustomerId = definition.CustomerId?.ToString() ?? ""; State.Outcome = definition.Outcome ?? ""; State.Status = definition.Status ?? ""; State.Sort = definition.Sort ?? "created"; State.Priority = definition.Priority?.ToString() ?? ""; State.FollowUp = definition.FollowUp ?? ""; State.Aging = definition.Aging ?? ""; State.Descending = definition.Descending; State.StarredOnly = definition.StarredOnly; State.FromDate = definition.FromDate; State.ToDate = definition.ToDate; }
+    private async Task UpdateSavedView() { SavedView? view = SavedViews.FirstOrDefault(x => x.Id.ToString() == SelectedViewId); var session = await Session(); if (view is null || session is null) return; var response = await Core.SendAsync(HttpMethod.Put, $"api/v1/workflows/definition/runtime/saved-filters/{view.Id}", new { name = view.Name, definition = CurrentDefinition(), version = view.Version }, session.Value.Token, session.Value.Company, default); if (response.IsSuccess) await LoadSavedViews(); }
+    private async Task DeleteSavedView() { SavedView? view = SavedViews.FirstOrDefault(x => x.Id.ToString() == SelectedViewId); var session = await Session(); if (view is null || session is null || !await JS.InvokeAsync<bool>("confirm", V["Delete"].Value)) return; var response = await Core.SendAsync(HttpMethod.Delete, $"api/v1/workflows/definition/runtime/saved-filters/{view.Id}?version={view.Version}", null, session.Value.Token, session.Value.Company, default); if (response.IsSuccess) { SelectedViewId = null; await LoadSavedViews(); } }
+    private async Task Previous() { if (State.Page > 1) { State.Page--; await Load(); } } private async Task Next() { if (State.Page * PageSize < CurrentTotal) { State.Page++; await Load(); } }
+    private void Open(Row row) { string returnUrl = BuildReturnUrl(); Navigation.NavigateTo($"/cartable/task/{row.Id}?mode={Tab}&returnUrl={Uri.EscapeDataString(returnUrl)}"); } private string BuildReturnUrl() => $"/cartable?tab={Tab}&search={Uri.EscapeDataString(State.Search)}&page={State.Page}&stageKey={Uri.EscapeDataString(State.StageKey)}&customerId={Uri.EscapeDataString(State.CustomerId)}&fromDate={(State.FromDate is null ? "" : Dates.Canonical(State.FromDate.Value))}&toDate={(State.ToDate is null ? "" : Dates.Canonical(State.ToDate.Value))}&outcome={Uri.EscapeDataString(State.Outcome)}&status={Uri.EscapeDataString(State.Status)}&sort={State.Sort}&descending={State.Descending.ToString().ToLowerInvariant()}&starredOnly={State.StarredOnly.ToString().ToLowerInvariant()}&aging={Uri.EscapeDataString(State.Aging)}&followUp={Uri.EscapeDataString(State.FollowUp)}";
+    private async Task LoadStages() { var s = await Session(); if (s is null) return; var r = await Core.GetAsync("api/v1/workflows/definition", s.Value.Token, s.Value.Company, default); if (!r.IsSuccess || !r.Value.TryGetProperty("current", out var current) || !current.TryGetProperty("nodes", out var nodes)) return; Stages = nodes.EnumerateArray().Where(IsHumanStage).Select(x => new StageOption(Text(x, "key"), new LocalizedText(LocalizedValue(x, "title", "fa"), LocalizedValue(x, "title", "en"), LocalizedValue(x, "title", "ar")))).Where(x => !string.IsNullOrWhiteSpace(x.Key) && !string.IsNullOrWhiteSpace(x.Title.Fa + x.Title.En + x.Title.Ar)).DistinctBy(x => x.Key, StringComparer.OrdinalIgnoreCase).ToList(); }
+    private static bool IsHumanStage(JsonElement node) => Text(node, "type").Equals("UserTask", StringComparison.OrdinalIgnoreCase) || Text(node, "nodeType").Equals("UserTask", StringComparison.OrdinalIgnoreCase);
+    private void RestoreQueryState() { var query = QueryHelpers.ParseQuery(Navigation.ToAbsoluteUri(Navigation.Uri).Query); Tab = query.TryGetValue("tab", out var tab) && tab == "referrals" ? "referrals" : "received"; GridState state = State; state.Search = Value(query, "search"); state.Priority = Value(query, "priority"); state.StageKey = Value(query, "stageKey"); state.CustomerId = Value(query, "customerId"); state.Outcome = Value(query, "outcome"); state.Status = Value(query, "status"); state.Sort = Value(query, "sort"); state.StarredOnly = string.Equals(Value(query, "starredOnly"), "true", StringComparison.OrdinalIgnoreCase); state.Aging = Value(query, "aging"); state.FollowUp = Value(query, "followUp"); state.Descending = !query.TryGetValue("descending", out var desc) || desc != "false"; if (int.TryParse(Value(query, "page"), out int page)) state.Page = Math.Max(1, page); if (Dates.TryParseCanonical(Value(query, "fromDate"), out var from)) state.FromDate = from; if (Dates.TryParseCanonical(Value(query, "toDate"), out var to)) state.ToDate = to; }
+    private static string Value(Dictionary<string, Microsoft.Extensions.Primitives.StringValues> q, string key) => q.TryGetValue(key, out var value) ? value.ToString() : "";
+    private string Age(Row row)
+    {
+        TimeSpan age = DateTimeOffset.UtcNow - row.ActionDate;
+        if (age.TotalDays >= 1) return $"{(int)age.TotalDays} {AgingText("DaysUnit")}";
+        if (age.TotalHours >= 1) return $"{(int)age.TotalHours} {AgingText("HoursUnit")}";
+        return $"{Math.Max(0, (int)age.TotalMinutes)} {AgingText("MinutesUnit")}";
+    }
+
+    private string AgingCategory(Row row) => CartableAgingPolicy.Category(row.ActionDate, DateTimeOffset.UtcNow);
+
+    private string AgingTooltip(Row row) => $"{AgingText("Entered")}: {DateTime(row.ActionDate)} · {Age(row)}";
+
+    private string AgingText(string key) => G[key switch
+    {
+        "Filter" => "WaitingTime", "All" => "AllWaiting", "Normal" => "NormalWaiting", "Attention" => "AttentionWaiting", "LongWaiting" => "LongWaiting", "Longest" => "LongestWaiting", "Shortest" => "ShortestWaiting", "Entered" => "StageEntered", _ => key
+    }].Value;
+   private string Personal(string key) => (CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, key) switch { ("en", "PersonalState") => "Personal state", ("en", "Star") => "Star", ("en", "Unstar") => "Unstar", ("en", "New") => "New", ("ar", "PersonalState") => "الحالة الشخصية", ("ar", "Star") => "تمييز", ("ar", "Unstar") => "إزالة التمييز", ("ar", "New") => "جديد", ("fa", "PersonalState") => "وضعیت شخصی", ("fa", "Star") => "نشان کردن", ("fa", "Unstar") => "برداشتن نشان", ("fa", "New") => "جدید", _ => key };
+   private string PriorityText(string value) => P[string.IsNullOrWhiteSpace(value) ? "Normal" : value].Value; private string Stage(Row r) => Localized(r.Stage); private string PreviousAction(Row r) => r.PreviousStage is null ? "—" : $"{Localized(r.PreviousStage)} · {Outcome(r.PreviousOutcome ?? "Approve")}"; private string Destination(Row r) => r.DestinationStage is null ? "—" : Localized(r.DestinationStage); private string CurrentStatus(Row r) => r.CurrentStatusCode switch { "AuditRejected" => E["AuditRejected"].Value, "WorkflowCompleted" => E["WorkflowCompleted"].Value, "InWorkflow" => CartableStatus(r.CurrentStages.Count > 0 ? r.CurrentStages : r.CurrentStage.Fa.Length > 0 ? [r.CurrentStage] : [r.Stage]), "Registered" => E["Registered"].Value, "Draft" => E["Draft"].Value, "Cancelled" => E["Cancelled"].Value, _ => E["Registered"].Value }; private string CartableStatus(IReadOnlyList<LocalizedText> stages) => string.Concat(E["InCartable"].Value, " ", string.Join(" / ", stages.Select(Localized).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.Ordinal))); private string Outcome(string value) => value.Equals("Reject", StringComparison.OrdinalIgnoreCase) ? C["Reject"].Value : value.Equals("AuditReject", StringComparison.OrdinalIgnoreCase) ? C["AuditReject"].Value : C["Approve"].Value; private string Localized(LocalizedText t) => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => t.En, "ar" => t.Ar, _ => t.Fa }; private string Date(DateOnly? value) => value is null ? "—" : Dates.Format(value.Value, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName); private string DateTime(DateTimeOffset? value) => value is null ? "—" : Dates.Format(value.Value, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+    private static int Total(JsonElement root) => root.TryGetProperty("totalCount", out var total) && total.TryGetInt32(out int value) ? value : 0; private static IEnumerable<JsonElement> Items(JsonElement root) => root.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array ? items.EnumerateArray() : [];
+    private Row Parse(JsonElement x) { bool referral = x.TryGetProperty("outcome", out _); LocalizedText[] currentStages = x.TryGetProperty("currentStages", out var stages) && stages.ValueKind == JsonValueKind.Array ? stages.EnumerateArray().Select(v => new LocalizedText(Text(v, "fa"), Text(v, "en"), Text(v, "ar"))).ToArray() : []; IReadOnlyList<string> outcomes = x.TryGetProperty("availableOutcomes", out var available) && available.ValueKind == JsonValueKind.Array ? available.EnumerateArray().Select(v => v.ToString()).ToArray() : []; Guid? claimed = x.TryGetProperty("claimantUserId", out var claimant) && claimant.ValueKind != JsonValueKind.Null ? claimant.GetGuid() : x.TryGetProperty("claimedByUserId", out var claimedBy) && claimedBy.ValueKind != JsonValueKind.Null ? claimedBy.GetGuid() : null; return new(x.GetProperty("id").GetGuid(), x.GetProperty("orderId").GetGuid(), Text(x, "orderNumber"), Text(x, "customerName") ?? "—", GetText(x, "stage"), Text(x, "positionTitle"), Dates.TryParseCanonical(Text(x, "orderDate"), out var od) ? od : null, Text(x, "currentStatusCode") ?? Text(x, "effectiveStatusCode") ?? (referral ? "Registered" : "InWorkflow"), GetText(x, "currentStage"), currentStages, Text(x, "outcome") ?? "", x.TryGetProperty("completedAtUtc", out var completed) && completed.ValueKind != JsonValueKind.Null ? completed.GetDateTimeOffset() : x.GetProperty("createdAtUtc").GetDateTimeOffset(), GetText(x, "previousStage"), Text(x, "previousPositionTitle"), Text(x, "previousOutcome"), x.TryGetProperty("previousActionAtUtc", out var previousAt) && previousAt.ValueKind != JsonValueKind.Null ? previousAt.GetDateTimeOffset() : null, GetText(x, "destinationStage"), Text(x, "destinationPositionTitle"), x.TryGetProperty("isStarred", out var starred) && starred.GetBoolean(), x.TryGetProperty("isSeen", out var seen) && seen.GetBoolean(), Text(x, "priority", "Normal"), NullableDateTime(x, "followUpAtUtc"), x.TryGetProperty("version", out var version) ? version.GetInt64() : 0, claimed, Text(x, "claimantName"), outcomes, Text(x, "onBehalfOfName")); }
+    private static LocalizedText GetText(JsonElement x, string n) => x.TryGetProperty(n, out var v) ? new(LocalizedValue(v, "fa"), LocalizedValue(v, "en"), LocalizedValue(v, "ar")) : new("", "", ""); private static string Text(JsonElement x, string n, string fallback = "") => x.ValueKind == JsonValueKind.Object && x.TryGetProperty(n, out var v) && v.ValueKind != JsonValueKind.Null ? v.ToString() : fallback; private static string LocalizedValue(JsonElement x, string parent, string child) => x.TryGetProperty(parent, out var p) && p.ValueKind == JsonValueKind.Object ? Text(p, child) : ""; private static string LocalizedValue(JsonElement x, string child) => Text(x, child);
+    private static CartableWorkloadSummary ParseWorkload(JsonElement x) => new(TextInt(x, "totalReceived"), TextInt(x, "urgent"), TextInt(x, "needsAttention"), TextInt(x, "followUpReached"));
+    private static int TextInt(JsonElement x, string name) => x.TryGetProperty(name, out var v) && v.TryGetInt32(out int n) ? n : 0;
+    private string Localized(WorkflowLocalizedText t) => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => t.En, "ar" => t.Ar, _ => t.Fa };
+    private string HistoryEvent(string value) { if (value.Contains(':')) { string outcome = value[(value.LastIndexOf(':') + 1)..]; return Ui("Decision") + ": " + Outcome(outcome); } return value switch { "WorkflowStarted" => Ui("WorkflowStarted"), "TaskClaimed" => Ui("TaskClaimed"), "TaskReleased" => Ui("TaskReleased"), _ => Ui("WorkflowEvent") }; }
+    private string HistoryStage(JsonElement item) => item.TryGetProperty("stageTitle", out var stage) ? stage.ValueKind == JsonValueKind.Object ? Localized(new LocalizedText(Text(stage, "fa"), Text(stage, "en"), Text(stage, "ar"))) : stage.ToString() : Ui("WorkflowEvent");
+    private string HistoryDate(JsonElement item) => item.TryGetProperty("occurredAtUtc", out var value) && value.ValueKind != JsonValueKind.Null && value.TryGetDateTimeOffset(out var date) ? DateTime(date) : "—";
+    private bool IsCurrentClaimant(Row row) => CurrentUserId is Guid actor && row.ClaimedByUserId == actor;
+    private string OwnershipLabel(Row row) => row.ClaimedByUserId is null ? Ui("Unclaimed") : IsCurrentClaimant(row) ? Ui("ClaimedByMe") : (row.ClaimantName ?? Ui("ClaimedByOther"));
+    private string NextDestination(CartablePossibleNextView next) => next.DestinationStage is null ? (next.IsTerminal ? Ui("Terminal") : Ui("NoNext")) : $"{(string.IsNullOrWhiteSpace(next.Outcome) ? "" : Outcome(next.Outcome) + " → ")}{Localized(next.DestinationStage)}";
+    private string OutcomeVariant(string outcome) => outcome.Equals("Reject", StringComparison.OrdinalIgnoreCase) || outcome.Equals("AuditReject", StringComparison.OrdinalIgnoreCase) ? "danger" : "primary";
+    private string OutcomeIcon(string outcome) => outcome.Equals("Reject", StringComparison.OrdinalIgnoreCase) || outcome.Equals("AuditReject", StringComparison.OrdinalIgnoreCase) ? "close" : "check";
+    private Task FollowUpDateChanged(DateOnly? value) { FollowUpDate = value; return Task.CompletedTask; }
+    private void SetFollowUpInputs(DateTimeOffset? value) { if (value is DateTimeOffset at) { var local = at.ToLocalTime(); FollowUpDate = DateOnly.FromDateTime(local.DateTime); FollowUpTime = local.ToString("HH:mm", CultureInfo.InvariantCulture); } else { FollowUpDate = null; FollowUpTime = "09:00"; } }
+    private DateTimeOffset? FollowUpUtc() { if (FollowUpDate is not DateOnly date || !TimeSpan.TryParseExact(FollowUpTime, "hh\\:mm", CultureInfo.InvariantCulture, out var time)) return null; var local = date.ToDateTime(TimeOnly.FromTimeSpan(time), DateTimeKind.Unspecified); return new DateTimeOffset(local, TimeZoneInfo.Local.GetUtcOffset(local)).ToUniversalTime(); }
+    private async Task SaveFollowUpSelected() { var value = FollowUpUtc(); if (value is null || value <= DateTimeOffset.UtcNow) { ActionMessage = F["FutureRequired"].Value; return; } await SendFollowUpSelected(new { followUpAtUtc = value }); }
+    private Task ClearFollowUpSelected() => SendFollowUpSelected(new { clearFollowUp = true });
+    private async Task SendFollowUpSelected(object command) { if (SelectedRow is null || ActionBusy) return; ActionBusy = true; ActionMessage = null; var s = await Session(); if (s is not null) { var result = await Core.SendAsync(HttpMethod.Post, $"api/v1/workflows/definition/runtime/tasks/{SelectedRow.Id}/personal-state", command, s.Value.Token, s.Value.Company, default); if (result.IsSuccess) { var at = result.Value.TryGetProperty("followUpAtUtc", out var p) && p.ValueKind != JsonValueKind.Null ? p.GetDateTimeOffset() : (DateTimeOffset?)null; SetFollowUpInputs(at); await RefreshSelected(SelectedRow.Id); } else ActionMessage = F["SaveFailed"].Value; } ActionBusy = false; }
+    private async Task ClaimSelected() { if (SelectedRow is null || ActionBusy) return; await SendTaskCommand("claim", new { version = SelectedRow.Version }, C["ClaimConflict"].Value); }
+    private void OpenOperationalPopup() { if (SelectedRow is not null && (SelectedRow.ClaimedByUserId is null || IsCurrentClaimant(SelectedRow))) { DecisionNote = ""; OperationalPopupOpen = true; } }
+    private void CloseOperationalPopup() { if (!ActionBusy) OperationalPopupOpen = false; }
+    private async Task ExecuteOperationalDecision(string outcome)
+    {
+        if (SelectedRow is null || ActionBusy) return;
+        OperationalPopupOpen = false;
+        if (SelectedRow.ClaimedByUserId is null)
+        {
+            ActionBusy = true;
+            var s = await Session();
+            if (s is null) { ActionBusy = false; return; }
+            var claim = await Core.SendAsync(HttpMethod.Post, $"api/v1/workflows/definition/runtime/tasks/{SelectedRow.Id}/claim", new { version = SelectedRow.Version }, s.Value.Token, s.Value.Company, default);
+            ActionBusy = false;
+            if (!claim.IsSuccess) { ActionMessage = C["ClaimConflict"].Value; await RefreshSelected(SelectedRow.Id); return; }
+            await RefreshSelected(SelectedRow.Id);
+        }
+        if (SelectedRow is not null && IsCurrentClaimant(SelectedRow)) { ConfirmedOutcome = outcome; await CompleteSelected(); }
+    }
+    private async Task ReleaseSelected() { if (SelectedRow is null || ActionBusy) return; ReleaseConfirm = false; await SendTaskCommand("release", new { version = SelectedRow.Version }, F["ReleaseFailed"].Value, discardPending: true); }
+    private async Task SendTaskCommand(string command, object body, string error, bool discardPending = false) { if (SelectedRow is null) return; ActionBusy = true; ActionMessage = null; var id = SelectedRow.Id; var s = await Session(); if (s is not null) { var result = await Core.SendAsync(HttpMethod.Post, $"api/v1/workflows/definition/runtime/tasks/{id}/{command}", body, s.Value.Token, s.Value.Company, default); if (result.IsSuccess) { if (discardPending) await DiscardWorkbenchAttachments(s.Value.Token, s.Value.Company); await RefreshSelected(id); } else ActionMessage = error; } ActionBusy = false; }
+    private async Task OpenForwardSelected() { ForwardOpen = true; ForwardSearch = ""; ForwardReason = ""; ForwardTargetUserId = ""; await LoadForwardTargets(); }
+    private async Task LoadForwardTargets() { var s = await Session(); if (s is null || SelectedRow is null) return; var result = await Core.GetAsync($"api/v1/workflows/definition/runtime/tasks/{SelectedRow.Id}/forward-targets?search={Uri.EscapeDataString(ForwardSearch)}", s.Value.Token, s.Value.Company, default); if (result.IsSuccess && result.Value.ValueKind == JsonValueKind.Array) ForwardTargets = result.Value.EnumerateArray().Select(x => (x.GetProperty("userId").GetGuid(), x.GetProperty("personName").GetString() ?? "—", x.GetProperty("positionTitle").GetString() ?? "—")).ToList(); }
+    private async Task ForwardSelected() { if (SelectedRow is null || ActionBusy || !Guid.TryParse(ForwardTargetUserId, out var target) || string.IsNullOrWhiteSpace(ForwardReason)) return; ActionBusy = true; ActionMessage = null; var id = SelectedRow.Id; var s = await Session(); if (s is not null) { var result = await Core.SendAsync(HttpMethod.Post, $"api/v1/workflows/definition/runtime/tasks/{id}/forward", new { targetUserId = target, reason = ForwardReason, version = SelectedRow.Version }, s.Value.Token, s.Value.Company, default); if (result.IsSuccess) { ForwardOpen = false; await DiscardWorkbenchAttachments(s.Value.Token, s.Value.Company); await RefreshSelected(id); } else ActionMessage = H["ForwardFailed"].Value; } ActionBusy = false; }
+    private void ConfirmDecision(string outcome) { ConfirmedOutcome = outcome; }
+    private async Task CompleteSelected() { if (SelectedRow is null || ConfirmedOutcome is null || ActionBusy) return; ActionBusy = true; ActionMessage = null; var id = SelectedRow.Id; var s = await Session(); if (s is not null) { var result = await Core.SendAsync(HttpMethod.Post, $"api/v1/workflows/definition/runtime/tasks/{id}/complete", new { resultJson = JsonSerializer.Serialize(new { outcome = ConfirmedOutcome, note = DecisionNote.Trim() }), attachments = Attachments.Select(x => new { fileId = x.FileId, fileVersionId = x.FileVersionId }).ToArray(), version = SelectedRow.Version }, s.Value.Token, s.Value.Company, default); if (result.IsSuccess) { ConfirmedOutcome = null; DecisionNote = ""; Attachments.Clear(); await RefreshSelected(id); } else ActionMessage = result.ProblemCode switch { "workflow.decision_attachment.invalid_file" => D["FileTypeNotAllowed"].Value, _ => C["StateChanged"].Value }; } ActionBusy = false; }
+    private async Task SelectWorkbenchAttachments(InputFileChangeEventArgs args) { AttachmentMessage = null; var s = await Session(); if (s is null) return; int available = DecisionAttachmentPolicy.MaximumCount - Attachments.Count; foreach (var file in args.GetMultipleFiles(Math.Max(0, available))) { try { await using var stream = file.OpenReadStream(25 * 1024 * 1024); var result = await Core.UploadAsync("api/v1/files/upload", file.Name, file.ContentType, stream, file.Size, s.Value.Token, s.Value.Company, default); if (!result.IsSuccess) { AttachmentMessage = result.Failure == ApiFailure.Validation ? D["FileTypeNotAllowed"].Value : D["UploadFailed"].Value; continue; } var value = result.Value; Attachments.Add(new PendingAttachment(value.GetProperty("fileId").GetGuid(), value.GetProperty("fileVersionId").GetGuid(), value.GetProperty("originalFileName").GetString() ?? file.Name)); } catch { AttachmentMessage = D["UploadFailed"].Value; } } }
+    private async Task RemoveWorkbenchAttachment(PendingAttachment file) { var s = await Session(); if (s is not null) await Core.SendAsync(HttpMethod.Delete, $"api/v1/files/{file.FileId}/versions/{file.FileVersionId}/discard", null, s.Value.Token, s.Value.Company, default); Attachments.Remove(file); }
+    private async Task DiscardWorkbenchAttachments(string token, Guid company) { foreach (var file in Attachments) await Core.SendAsync(HttpMethod.Delete, $"api/v1/files/{file.FileId}/versions/{file.FileVersionId}/discard", null, token, company, default); Attachments.Clear(); }
+    private async Task DiscardCurrentAttachments() { if (Attachments.Count == 0) return; var s = await Session(); if (s is not null) await DiscardWorkbenchAttachments(s.Value.Token, s.Value.Company); else Attachments.Clear(); DecisionNote = ""; }
+    private async Task RefreshSelected(Guid id) { SelectedDetail = null; SelectedDetailError = null; await Load(); var row = Rows.FirstOrDefault(x => x.Id == id); if (row is not null) await SelectRow(row); else { SelectedRow = null; SelectedDetail = null; } }
+    private string Ui(string key) => (CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, key) switch
+    {
+        ("en", "WorkloadSummary") => "Workload summary", ("ar", "WorkloadSummary") => "ملخص العمل", _ when key == "WorkloadSummary" => "خلاصه کارتابل",
+        ("en", "TotalReceived") => "Received", ("ar", "TotalReceived") => "الواردة", _ when key == "TotalReceived" => "دریافتی",
+        ("en", "Urgent") => "Urgent", ("ar", "Urgent") => "عاجل", _ when key == "Urgent" => "فوری",
+        ("en", "NeedsAttention") => "Needs attention", ("ar", "NeedsAttention") => "تحتاج انتباهاً", _ when key == "NeedsAttention" => "نیازمند توجه",
+        ("en", "FollowUpReached") => "Follow-up reached", ("ar", "FollowUpReached") => "حان موعد المتابعة", _ when key == "FollowUpReached" => "زمان پیگیری رسیده",
+        ("en", "ShortcutFocusSearch") => "Focus search", ("ar", "ShortcutFocusSearch") => "التركيز على البحث", _ when key == "ShortcutFocusSearch" => "تمرکز روی جست‌وجو",
+        ("en", "ShortcutReload") => "Reload Cartable", ("ar", "ShortcutReload") => "إعادة تحميل الكارتابل", _ when key == "ShortcutReload" => "بازخوانی کارتابل",
+        ("en", "ShortcutPreview") => "Quick Preview", ("ar", "ShortcutPreview") => "معاينة سريعة", _ when key == "ShortcutPreview" => "پیش‌نمایش سریع",
+        ("en", "ShortcutView") => "Open details", ("ar", "ShortcutView") => "فتح التفاصيل", _ when key == "ShortcutView" => "باز کردن جزئیات",
+        ("en", "ShortcutEscape") => "Close open window", ("ar", "ShortcutEscape") => "إغلاق النافذة المفتوحة", _ when key == "ShortcutEscape" => "بستن پنجره باز",
+        ("en", "WorkflowContext") => "Workflow context", ("ar", "WorkflowContext") => "سياق سير العمل", _ when key == "WorkflowContext" => "زمینه گردش کار",
+        ("en", "WorkflowStepper") => "Workflow progress", ("ar", "WorkflowStepper") => "تقدم سير العمل", _ when key == "WorkflowStepper" => "پیشرفت گردش کار",
+        ("en", "OperationalWorkspace") => "Operational actions", ("ar", "OperationalWorkspace") => "إجراءات التشغيل", _ when key == "OperationalWorkspace" => "فضای عملیات",
+        ("en", "Ownership") => "Ownership", ("ar", "Ownership") => "الملكية", _ when key == "Ownership" => "مالکیت کار",
+        ("en", "Personal") => "Personal", ("ar", "Personal") => "شخصي", _ when key == "Personal" => "شخصی",
+        ("en", "Priority") => "Priority", ("ar", "Priority") => "الأولوية", _ when key == "Priority" => "اولویت",
+        ("en", "Unclaimed") => "Unclaimed", ("ar", "Unclaimed") => "غير مستلمة", _ when key == "Unclaimed" => "بدون متصدی",
+        ("en", "ClaimedByMe") => "Claimed by you", ("ar", "ClaimedByMe") => "مستلمة بواسطتك", _ when key == "ClaimedByMe" => "دریافت‌شده توسط شما",
+        ("en", "ClaimedByOther") => "Claimed by another user", ("ar", "ClaimedByOther") => "مستلمة بواسطة مستخدم آخر", _ when key == "ClaimedByOther" => "در اختیار کاربر دیگر",
+        ("en", "SelectOrder") => "Selected order", ("ar", "SelectOrder") => "الطلب المحدد", _ when key == "SelectOrder" => "سفارش انتخاب‌شده",
+        ("en", "MoreFilters") => "More filters", ("ar", "MoreFilters") => "المزيد من الفلاتر", _ when key == "MoreFilters" => "فیلترهای بیشتر",
+        ("en", "HideFilters") => "Hide filters", ("ar", "HideFilters") => "إخفاء الفلاتر", _ when key == "HideFilters" => "پنهان کردن فیلترها",
+        ("en", "Modified") => "Modified", ("ar", "Modified") => "معدّل", _ when key == "Modified" => "ویرایش‌شده",
+        ("en", "SelectOrderHint") => "Select an order to view its summary.", ("ar", "SelectOrderHint") => "اختر طلباً لعرض ملخصه.", _ when key == "SelectOrderHint" => "برای مشاهده خلاصه، یک سفارش را انتخاب کنید.",
+        ("en", "SelectedOrder") => "Selected order", ("ar", "SelectedOrder") => "الطلب المحدد", _ when key == "SelectedOrder" => "سفارش انتخاب‌شده",
+        ("en", "Details") => "Details", ("ar", "Details") => "التفاصيل", _ when key == "Details" => "جزئیات",
+        ("en", "Files") => "Files", ("ar", "Files") => "الملفات", _ when key == "Files" => "فایل‌ها",
+        ("en", "History") => "History", ("ar", "History") => "السجل", _ when key == "History" => "سوابق",
+        ("en", "Messages") => "Messages", ("ar", "Messages") => "الرسائل", _ when key == "Messages" => "پیام‌ها",
+        ("en", "DetailTabs") => "Order detail sections", ("ar", "DetailTabs") => "أقسام تفاصيل الطلب", _ when key == "DetailTabs" => "بخش‌های جزئیات سفارش",
+        ("en", "Decision") => "Decision", ("ar", "Decision") => "القرار", _ when key == "Decision" => "تصمیم",
+        ("en", "WorkflowStarted") => "Workflow started", ("ar", "WorkflowStarted") => "بدأ سير العمل", _ when key == "WorkflowStarted" => "شروع گردش کار",
+        ("en", "TaskClaimed") => "Task claimed", ("ar", "TaskClaimed") => "تم استلام المهمة", _ when key == "TaskClaimed" => "دریافت کار",
+        ("en", "TaskReleased") => "Task released", ("ar", "TaskReleased") => "تم تحرير المهمة", _ when key == "TaskReleased" => "رهاسازی کار",
+        ("en", "WorkflowEvent") => "Workflow event", ("ar", "WorkflowEvent") => "حدث في سير العمل", _ when key == "WorkflowEvent" => "رویداد گردش کار",
+        ("en", "DecisionAttachments") => "Decision attachments", ("ar", "DecisionAttachments") => "مرفقات القرار", _ when key == "DecisionAttachments" => "پیوست‌های تصمیم",
+        ("en", "NoFiles") => "No files available.", ("ar", "NoFiles") => "لا توجد ملفات.", _ when key == "NoFiles" => "فایلی موجود نیست.",
+        ("en", "NoHistory") => "No workflow history available.", ("ar", "NoHistory") => "لا يوجد سجل لسير العمل.", _ when key == "NoHistory" => "سابقه‌ای از گردش کار موجود نیست.",
+        ("en", "NoMessages") => "No decision messages available.", ("ar", "NoMessages") => "لا توجد رسائل قرار.", _ when key == "NoMessages" => "پیامی برای تصمیم موجود نیست.",
+        ("en", "Open") => "Open", ("ar", "Open") => "فتح", _ when key == "Open" => "باز کردن",
+        ("en", "Items") => "Items", ("ar", "Items") => "العناصر", _ when key == "Items" => "اقلام",
+        ("en", "Total") => "Total", ("ar", "Total") => "الإجمالي", _ when key == "Total" => "مجموع",
+        ("en", "PreviousContext") => "Previous", ("ar", "PreviousContext") => "السابق", _ when key == "PreviousContext" => "قبلی",
+        ("en", "CurrentContext") => "Current", ("ar", "CurrentContext") => "الحالي", _ when key == "CurrentContext" => "فعلی",
+        ("en", "PossibleNextContext") => "Possible next", ("ar", "PossibleNextContext") => "المسارات التالية المحتملة", _ when key == "PossibleNextContext" => "گام‌های ممکن بعدی",
+        ("en", "DependsOnDecision") => "Depends on decision", ("ar", "DependsOnDecision") => "حسب نتيجة القرار", _ when key == "DependsOnDecision" => "بر اساس نتیجه تصمیم",
+        ("en", "NoNext") => "No next destination", ("ar", "NoNext") => "لا توجد وجهة تالية محددة", _ when key == "NoNext" => "مقصد بعدی مشخصی ندارد",
+        ("en", "Terminal") => "Workflow completed", ("ar", "Terminal") => "اكتمل سير العمل", _ when key == "Terminal" => "پایان گردش کار",
+        ("en", "Close") => "Close", ("ar", "Close") => "إغلاق", _ => "بستن"
+    };
+    private async Task OpenPreview(Row row)
+    {
+        try { PreviewCancel?.Cancel(); } catch (ObjectDisposedException) { }
+        CancellationTokenSource requestCancellation = new();
+        PreviewCancel = requestCancellation;
+        int generation = ++PreviewGeneration;
+        DetailTabCancel?.Cancel();
+        DetailTabCancel?.Dispose();
+        PreviewRow = row;
+        Preview = null;
+        PreviewContext = null;
+        PreviewError = null;
+        PreviewLoading = true;
+        PreviewOpen = true;
+        var session = await Session();
+        if (session is null) { PreviewLoading = false; PreviewError = G["PreviewFailed"].Value; if (ReferenceEquals(PreviewCancel, requestCancellation)) PreviewCancel = null; requestCancellation.Dispose(); return; }
+        try
+        {
+            var response = await Core.GetAsync($"api/v1/workflows/definition/runtime/tasks/{row.Id}/quick-preview", session.Value.Token, session.Value.Company, requestCancellation.Token);
+            if (!IsCurrentPreview(row.Id, generation)) return;
+            if (response.IsSuccess)
+            {
+                Preview = ParsePreview(response.Value);
+                if (Tab == "received")
+                {
+                    var context = await Core.GetAsync($"api/v1/workflows/definition/runtime/tasks/{row.Id}/context", session.Value.Token, session.Value.Company, requestCancellation.Token);
+                    if (IsCurrentPreview(row.Id, generation) && context.IsSuccess) PreviewContext = context.Value.Deserialize<CartableWorkflowContextView>();
+                }
+            }
+            else PreviewError = G["PreviewFailed"].Value;
+        }
+        catch (OperationCanceledException) when (requestCancellation.IsCancellationRequested) { }
+        catch (JsonException exception) { Logger.LogWarning(exception, "Quick Preview JSON failed for task {TaskId}", row.Id); if (IsCurrentPreview(row.Id, generation)) PreviewError = G["PreviewFailed"].Value; }
+        catch (HttpRequestException exception) { Logger.LogWarning(exception, "Quick Preview HTTP failed for task {TaskId}", row.Id); if (IsCurrentPreview(row.Id, generation)) PreviewError = G["PreviewFailed"].Value; }
+        catch (ObjectDisposedException exception) { Logger.LogDebug(exception, "Quick Preview request was disposed for task {TaskId}", row.Id); }
+        catch (InvalidOperationException exception) { Logger.LogWarning(exception, "Quick Preview client/render preparation failed for task {TaskId}", row.Id); if (IsCurrentPreview(row.Id, generation)) PreviewError = G["PreviewFailed"].Value; }
+        catch (FormatException exception) { Logger.LogWarning(exception, "Quick Preview payload format failed for task {TaskId}", row.Id); if (IsCurrentPreview(row.Id, generation)) PreviewError = G["PreviewFailed"].Value; }
+        catch (Exception exception) { Logger.LogError(exception, "Quick Preview failed for task {TaskId}", row.Id); if (IsCurrentPreview(row.Id, generation)) PreviewError = G["PreviewFailed"].Value; }
+        finally
+        {
+            if (IsCurrentPreview(row.Id, generation))
+            {
+                PreviewLoading = false;
+                if (!_disposed) await InvokeAsync(StateHasChanged);
+            }
+            if (ReferenceEquals(PreviewCancel, requestCancellation)) PreviewCancel = null;
+            requestCancellation.Dispose();
+        }
+    }
+
+    private bool IsCurrentPreview(Guid rowId, int generation) => !_disposed && PreviewOpen && PreviewRow?.Id == rowId && PreviewGeneration == generation;
+
+    private Task ReloadPreview() => PreviewRow is null ? Task.CompletedTask : OpenPreview(PreviewRow);
+    private void ClosePreview() { try { PreviewCancel?.Cancel(); } catch (ObjectDisposedException) { } PreviewCancel = null; PreviewOpen = false; PreviewLoading = false; PreviewError = null; Preview = null; PreviewContext = null; PreviewRow = null; }
+    private void PreviewKeyDown(KeyboardEventArgs e) { if (e.Key == "Escape") ClosePreview(); }
+    private string TimeSince(DateTimeOffset occurredAtUtc)
+    {
+        TimeSpan elapsed = DateTimeOffset.UtcNow - occurredAtUtc;
+        if (elapsed.TotalDays >= 1) return $"{(int)elapsed.TotalDays} {AgingText("DaysUnit")}";
+        if (elapsed.TotalHours >= 1) return $"{(int)elapsed.TotalHours} {AgingText("HoursUnit")}";
+        return $"{Math.Max(0, (int)elapsed.TotalMinutes)} {AgingText("MinutesUnit")}";
+    }
+    private string CurrentStatus(string code, IReadOnlyList<LocalizedText>? currentStages) => code switch { "AuditRejected" => E["AuditRejected"].Value, "WorkflowCompleted" => E["WorkflowCompleted"].Value, "InWorkflow" => CartableStatus(currentStages ?? []), "Registered" => E["Registered"].Value, "Draft" => E["Draft"].Value, "Cancelled" => E["Cancelled"].Value, _ => E["Registered"].Value };
+    private string WorkbenchStatus(string code, IReadOnlyList<WorkflowLocalizedText>? currentStages) => code switch { "AuditRejected" => E["AuditRejected"].Value, "WorkflowCompleted" => E["WorkflowCompleted"].Value, "InWorkflow" => currentStages is null || currentStages.Count == 0 ? E["InCartable"].Value : $"{E["InCartable"].Value} {string.Join(" / ", currentStages.Select(Localized))}", "Registered" => E["Registered"].Value, "Draft" => E["Draft"].Value, "Cancelled" => E["Cancelled"].Value, _ => E["Registered"].Value };
+
+    private PreviewData ParsePreview(JsonElement x)
+    {
+        LocalizedText[] currentStages = x.TryGetProperty("currentStages", out var stages) && stages.ValueKind == JsonValueKind.Array ? stages.EnumerateArray().Select(v => new LocalizedText(Text(v, "fa"), Text(v, "en"), Text(v, "ar"))).ToArray() : [];
+        return new(
+            Text(x, "runtimeTaskId").Length == 0 ? Guid.Empty : Guid.Parse(Text(x, "runtimeTaskId")),
+            Text(x, "orderNumber"), GetText(x, "stage"), Text(x, "positionTitle"), Text(x, "customerName") ?? "—", Text(x, "branchName") ?? "—",
+            Dates.TryParseCanonical(Text(x, "orderDate"), out var date) ? date : default,
+            x.TryGetProperty("itemCount", out var count) ? count.GetInt32() : 0,
+            x.TryGetProperty("totalQuantity", out var quantity) ? quantity.GetDecimal() : 0m,
+            Text(x, "currencyCode"), x.TryGetProperty("grandTotal", out var total) && total.ValueKind != JsonValueKind.Null ? total.GetDecimal() : null,
+            Text(x, "effectiveStatusCode") ?? "Registered", GetText(x, "currentStage"), currentStages,
+            GetText(x, "previousStage"), Text(x, "previousPositionTitle"), Text(x, "previousOutcome"), NullableDateTime(x, "previousActionAtUtc"),
+            GetText(x, "destinationStage"), Text(x, "destinationPositionTitle"), Text(x, "outcome") ?? "", x.GetProperty("occurredAtUtc").GetDateTimeOffset(), NullableDateTime(x, "completedAtUtc"), Text(x, "priority", "Normal"), NullableDateTime(x, "followUpAtUtc"));
+    }
+    private static DateTimeOffset? NullableDateTime(JsonElement x, string name) => x.TryGetProperty(name, out var value) && value.ValueKind != JsonValueKind.Null ? value.GetDateTimeOffset() : null;
+
+    private async Task RefreshAgingAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            using PeriodicTimer timer = new(TimeSpan.FromMinutes(1));
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+                await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) { ShortcutReference = DotNetObjectReference.Create(this); await JS.InvokeVoidAsync("barangCartableShortcuts.init", ShortcutReference); } }
+    [JSInvokable] public async Task HandleShortcut(string shortcut) { if (shortcut == "focus-search") { await JS.InvokeVoidAsync("barangCartableShortcuts.focusSearch"); return; } if (shortcut == "escape") { if (PreviewOpen) ClosePreview(); KeyboardHelpOpen = false; StateHasChanged(); return; } Row? row = SelectedRow ?? Rows.FirstOrDefault(); if (shortcut == "reload") await Load(); else if (shortcut == "preview" && row is not null) await OpenPreview(row); else if (shortcut == "view" && row is not null) Open(row); }
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        AgingRefreshCancel?.Cancel();
+        AgingRefreshCancel?.Dispose();
+        PreviewCancel?.Cancel();
+        PreviewCancel?.Dispose();
+        SelectedDetailCancel?.Cancel();
+        SelectedDetailCancel?.Dispose();
+        SearchCancel?.Cancel();
+        SearchCancel?.Dispose();
+        try { await JS.InvokeVoidAsync("barangCartableShortcuts.dispose"); } catch (JSDisconnectedException) { }
+        ShortcutReference?.Dispose();
+    }
+   private async Task<(string Token, Guid Company)?> Session() { var u = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null; }
+    private string FollowUp(Row row) => row.FollowUpAtUtc is not DateTimeOffset at ? "—" : $"{F[at <= DateTimeOffset.UtcNow ? "FollowUpReached" : "FutureFollowUp"]}: {Dates.Format(at, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)}";
+    private sealed class GridState { public string Search = "", StageKey = "", CustomerId = "", Outcome = "", Status = "", Aging = "", Priority = "", FollowUp = "", Sort = "created"; public bool Descending = true, StarredOnly; public int Page = 1; public DateOnly? FromDate, ToDate; }
+    private sealed record SavedView(Guid Id, string Name, long Version, CartableSavedFilterDefinition Definition);
+    private sealed record StageOption(string Key, LocalizedText Title); private sealed record LocalizedText(string Fa, string En, string Ar); private sealed record PendingAttachment(Guid FileId, Guid FileVersionId, string FileName); private sealed record PreviewData(Guid RuntimeTaskId, string? OrderNumber, LocalizedText Stage, string? PositionTitle, string CustomerName, string BranchName, DateOnly OrderDate, int ItemCount, decimal TotalQuantity, string? CurrencyCode, decimal? GrandTotal, string EffectiveStatusCode, LocalizedText CurrentStage, IReadOnlyList<LocalizedText> CurrentStages, LocalizedText? PreviousStage, string? PreviousPositionTitle, string? PreviousOutcome, DateTimeOffset? PreviousActionAtUtc, LocalizedText? DestinationStage, string? DestinationPositionTitle, string Outcome, DateTimeOffset OccurredAtUtc, DateTimeOffset? CompletedAtUtc, string Priority, DateTimeOffset? FollowUpAtUtc = null); private sealed record Row(Guid Id, Guid OrderId, string? OrderNumber, string Customer, LocalizedText Stage, string? Position, DateOnly? OrderDate, string CurrentStatusCode, LocalizedText CurrentStage, IReadOnlyList<LocalizedText> CurrentStages, string Outcome, DateTimeOffset ActionDate, LocalizedText? PreviousStage, string? PreviousPosition, string? PreviousOutcome, DateTimeOffset? PreviousActionAtUtc, LocalizedText? DestinationStage, string? DestinationPositionTitle, bool IsStarred, bool IsSeen, string Priority, DateTimeOffset? FollowUpAtUtc, long Version, Guid? ClaimedByUserId, string? ClaimantName, IReadOnlyList<string> Outcomes, string? OnBehalfOfName);
+}

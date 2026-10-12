@@ -1,0 +1,228 @@
+using Microsoft.Playwright;
+using Xunit;
+
+namespace BARANG.Backoffice.E2ETests;
+
+public sealed class OrdersE2ETests : IAsyncLifetime
+{
+    private IPlaywright playwright = null!; private IBrowser browser = null!; private IBrowserContext context = null!; private IPage page = null!;
+    private readonly string baseUrl = Environment.GetEnvironmentVariable("BARANG_E2E_BASE_URL") ?? "http://localhost:5100";
+    public async ValueTask InitializeAsync(){playwright=await Playwright.CreateAsync();browser=await playwright.Chromium.LaunchAsync(new(){Headless=true,ExecutablePath=Environment.GetEnvironmentVariable("BARANG_E2E_BROWSER_PATH")??@"C:\Program Files\Google\Chrome\Application\chrome.exe"});context=await browser.NewContextAsync(new(){Locale="en-US",ViewportSize=new(){Width=1440,Height=1000}});page=await context.NewPageAsync();await page.GotoAsync(baseUrl+"/login",new(){WaitUntil=WaitUntilState.NetworkIdle});await page.Locator("#username").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_USERNAME")??"admin");await page.Locator("#password").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_PASSWORD")??"BarangDev@2026");await page.Locator("button[type=submit]").ClickAsync();await page.WaitForLoadStateAsync(LoadState.NetworkIdle);if(new Uri(page.Url).AbsolutePath=="/company"){await page.Locator(".company-list form:has(input[name=companyId][value='42f0e459-6095-45bb-aa13-f38126d91d9c']) button[type=submit]").ClickAsync();await page.WaitForURLAsync(url=>new Uri(url).AbsolutePath!="/company");}}
+    [Fact]
+    public async Task Orders_workspace_is_canonical_and_exposes_operational_actions(){
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Fworkspace%2Forders",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/workspace/orders",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        var grid=page.Locator("[data-orders-grid]"); await Assertions.Expect(grid).ToBeVisibleAsync();
+        await Assertions.Expect(grid.Locator(".crud-search input")).ToHaveCountAsync(1); await Assertions.Expect(grid.Locator(".crud-toolbar button")).ToHaveCountAsync(1); await Assertions.Expect(grid).Not.ToContainTextAsync("Refresh");
+        await Assertions.Expect(page.GetByRole(AriaRole.Link,new(){Name="New order",Exact=true})).ToBeVisibleAsync();
+        var first=grid.Locator("tbody tr").First; await Assertions.Expect(first.GetByRole(AriaRole.Button,new(){Name="Order 360",Exact=true})).ToBeVisibleAsync(); await Assertions.Expect(first.GetByRole(AriaRole.Button,new(){Name="View",Exact=true})).ToHaveCountAsync(0);
+        await first.GetByRole(AriaRole.Button,new(){Name="Order 360",Exact=true}).ClickAsync(); await page.WaitForURLAsync("**/360", new(){WaitUntil=WaitUntilState.Commit}); await Assertions.Expect(page.Locator(".order360-shell")).ToBeVisibleAsync(); await Assertions.Expect(page.Locator(".order360-head .eyebrow")).ToBeVisibleAsync(); await Assertions.Expect(page.GetByRole(AriaRole.Button,new(){Name="Edit",Exact=true})).ToHaveCountAsync(0); await page.GetByRole(AriaRole.Button,new(){Name="Customer",Exact=true}).First.ClickAsync(); await Assertions.Expect(page.Locator(".order360-detail h2")).ToContainTextAsync("Customer"); await page.GetByRole(AriaRole.Button,new(){Name="Print operations",Exact=true}).First.ClickAsync(); await Assertions.Expect(page.Locator(".order360-detail h2")).ToContainTextAsync("Print operations"); await page.GetByRole(AriaRole.Button,new(){Name="Historical price snapshot",Exact=true}).First.ClickAsync(); await Assertions.Expect(page.Locator(".order360-detail h2")).ToContainTextAsync("Historical price snapshot"); await page.GetByRole(AriaRole.Button,new(){Name="Close",Exact=true}).ClickAsync(); await Assertions.Expect(page.Locator("[data-orders-grid]")).ToBeVisibleAsync();
+    }
+    [Fact]
+    public async Task Order_step_one_renders_header_wizard_and_localized_date_control(){
+        await page.GotoAsync(baseUrl+"/culture?culture=fa&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await Assertions.Expect(page.Locator(".wizard-stepper")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator(".wizard-stepper button")).ToHaveCountAsync(7);
+        await Assertions.Expect(page.Locator("input[type=date]")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.GetByText("ذخیره پیش‌نویس",new(){Exact=true})).ToBeVisibleAsync();
+        await page.GetByText("ذخیره پیش‌نویس",new(){Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator("[role=alert]")).ToContainTextAsync("شعبه");
+    }
+    [Fact]
+    public async Task Order_step_two_supports_multi_item_draft_editing_in_one_wizard_session(){
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.Locator("input[name='order-branch']").ClickAsync();
+        await page.Locator("[role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-customer']").ClickAsync();
+        await page.Locator("[role=option]").First.ClickAsync();
+        await page.GetByText("Next",new(){Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-items-step")).ToBeVisibleAsync();
+        await page.Locator("input[name='order-item-product']").ClickAsync();
+        await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-sku']").ClickAsync();
+        await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-quantity']").FillAsync("2");
+        await page.GetByText("Add item",new(){Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-items-step tbody tr")).ToHaveCountAsync(1);
+        await page.Locator("input[name='order-item-product']").ClickAsync();
+        await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-sku']").ClickAsync();
+        await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-quantity']").FillAsync("3");
+        await page.GetByText("Add item",new(){Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-items-step tbody tr")).ToHaveCountAsync(2);
+        await Assertions.Expect(page.Locator(".order-items-step tbody tr").First.GetByRole(AriaRole.Button,new(){Name="View",Exact=true})).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator(".order-items-step tbody tr").First.GetByRole(AriaRole.Button,new(){Name="Edit",Exact=true})).ToBeVisibleAsync();
+        await page.GetByText("Back",new(){Exact=true}).Last.ClickAsync();
+        await Assertions.Expect(page.Locator("input[name='order-branch']")).ToBeVisibleAsync();
+        await page.GetByText("Next",new(){Exact=true}).First.ClickAsync();
+        await Assertions.Expect(page.Locator(".order-items-step tbody tr")).ToHaveCountAsync(2);
+    }
+
+    [Fact]
+    public async Task Order_step_three_supports_print_operation_crud_in_same_wizard_session(){
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.Locator("input[name='order-branch']").ClickAsync();
+        await page.Locator("[role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-customer']").ClickAsync();
+        await page.Locator("[role=option]").First.ClickAsync();
+        await page.GetByText("Next",new(){Exact=true}).ClickAsync();
+        await page.Locator("input[name='order-item-product']").ClickAsync();
+        await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-sku']").ClickAsync();
+        await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-quantity']").FillAsync("2");
+        await page.GetByText("Add item",new(){Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-items-step tbody tr")).ToHaveCountAsync(1);
+        await page.Locator(".order-items-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-print-step")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator(".order-item-context")).ToHaveCountAsync(1);
+        await page.Locator("input[name='print-width']").FillAsync("10");
+        await page.Locator("input[name='print-height']").FillAsync("12");
+        await page.Locator(".print-operation-editor .primary-link").ClickAsync();
+        await Assertions.Expect(page.Locator(".order-print-step tbody tr")).ToHaveCountAsync(1);
+        await Assertions.Expect(page.Locator(".order-print-step tbody tr").First.GetByRole(AriaRole.Button,new(){Name="View",Exact=true})).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator(".order-print-step tbody tr").First.GetByRole(AriaRole.Button,new(){Name="Edit",Exact=true})).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator(".order-print-step tbody tr").First.GetByRole(AriaRole.Button,new(){Name="Delete",Exact=true})).ToBeVisibleAsync();
+        await page.Locator(".order-print-step tbody tr").First.GetByRole(AriaRole.Button,new(){Name="Edit",Exact=true}).ClickAsync();
+        await page.Locator("input[type=file]").SetInputFilesAsync(new FilePayload
+        {
+            Name = "customer-artwork.pdf",
+            MimeType = "application/pdf",
+            Buffer = System.Text.Encoding.ASCII.GetBytes($"%PDF-1.4\n% BARANG {Guid.NewGuid():N}\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n")
+        });
+        await Assertions.Expect(page.Locator("input[name='print-file-version']")).Not.ToHaveValueAsync("");
+        await page.Locator(".print-operation-editor .primary-link").ClickAsync();
+        await Assertions.Expect(page.Locator(".order-print-step tbody tr")).ToHaveCountAsync(1);
+        await page.Locator(".order-print-step tbody tr").First.GetByRole(AriaRole.Button,new(){Name="View",Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator("input[name='print-width']")).ToBeDisabledAsync();
+        await page.GetByRole(AriaRole.Button,new(){Name="Edit",Exact=true}).Last.ClickAsync();
+        await Assertions.Expect(page.Locator("input[name='print-width']")).ToBeEnabledAsync();
+        await page.Locator(".print-operation-editor .secondary-action").ClickAsync();
+        await page.Locator("input[name='print-width']").FillAsync("0");
+        await page.Locator("input[name='print-height']").FillAsync("0");
+        await page.Locator(".print-operation-editor .primary-link").ClickAsync();
+        await Assertions.Expect(page.Locator(".order-print-step [role=alert]")).ToContainTextAsync("Print width");
+        await page.GetByText("Back",new(){Exact=true}).Last.ClickAsync();
+        await Assertions.Expect(page.Locator(".order-items-step tbody tr")).ToHaveCountAsync(1);
+        await page.Locator(".order-items-step > .form-actions .primary-link").Last.ClickAsync();
+        await Assertions.Expect(page.Locator(".order-print-step tbody tr")).ToHaveCountAsync(1);
+    }
+    [Fact]
+    public async Task Order_step_four_persists_selected_services_and_packaging_in_same_wizard_session(){
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.Locator("input[name='order-branch']").ClickAsync();
+        await page.Locator("[role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-customer']").ClickAsync();
+        await page.Locator("[role=option]").First.ClickAsync();
+        await page.GetByText("Next",new(){Exact=true}).ClickAsync();
+        await page.Locator("input[name='order-item-product']").ClickAsync();
+        await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-sku']").ClickAsync();
+        await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-quantity']").FillAsync("2");
+        await page.GetByText("Add item",new(){Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-items-step tbody tr")).ToHaveCountAsync(1);
+        await page.Locator(".order-items-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-print-step")).ToBeVisibleAsync();
+        await page.Locator(".order-print-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-services-step")).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByRole(AriaRole.Heading,new(){Name="Additional Services & Packaging",Exact=true})).ToBeVisibleAsync();
+
+        ILocator serviceInput=page.Locator("input[name='order-step4-service']");
+        await serviceInput.ClickAsync();
+        ILocator serviceOptions=page.Locator(".order-services-step [role=listbox] [role=option]");
+        if(await serviceOptions.CountAsync()>0){
+            await serviceOptions.First.ClickAsync();
+            ILocator itemSelect=page.Locator("select[name='order-step4-item']");
+            if(!await itemSelect.IsDisabledAsync()) await itemSelect.SelectOptionAsync(new SelectOptionValue{Index=1});
+            await page.GetByRole(AriaRole.Button,new(){Name="Add",Exact=true}).ClickAsync();
+            await Assertions.Expect(page.Locator(".order-services-step tbody tr")).ToHaveCountAsync(1);
+            await page.GetByRole(AriaRole.Button,new(){Name="Delete",Exact=true}).ClickAsync();
+            await Assertions.Expect(page.Locator(".order-services-step tbody tr")).ToHaveCountAsync(0);
+        }else{
+            await Assertions.Expect(page.GetByText("No additional services selected.",new(){Exact=true})).ToBeVisibleAsync();
+        }
+
+        ILocator packaging=page.Locator("input[name='order-step4-packaging']");
+        await packaging.ClickAsync();
+        ILocator packagingOptions=page.Locator(".order-services-step [role=listbox] [role=option]");
+        if(await packagingOptions.CountAsync()>1) await packagingOptions.Nth(1).ClickAsync();
+        await page.Locator(".order-services-step").GetByRole(AriaRole.Button,new(){Name="Save draft",Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-services-step")).ToBeVisibleAsync();
+        await page.GetByText("Back",new(){Exact=true}).ClickAsync();
+        await page.Locator(".order-print-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-services-step")).ToBeVisibleAsync();
+    }
+    [Fact]
+    public async Task Order_step_five_persists_delivery_snapshot_and_shipping_method(){
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.Locator("input[name='order-branch']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-customer']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync();
+        await page.GetByText("Next",new(){Exact=true}).ClickAsync();
+        await page.Locator("input[name='order-item-product']").ClickAsync(); await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-sku']").ClickAsync(); await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-quantity']").FillAsync("1"); await page.GetByText("Add item",new(){Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-items-step tbody tr")).ToHaveCountAsync(1);
+        await page.Locator(".order-items-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-print-step")).ToBeVisibleAsync();
+        await page.Locator(".order-print-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        await page.Locator(".order-services-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        ILocator step=page.Locator(".order-shipping-step"); await Assertions.Expect(step).ToBeVisibleAsync();
+        await Assertions.Expect(step.GetByRole(AriaRole.Heading,new(){Name="Delivery & Shipping",Exact=true})).ToBeVisibleAsync();
+        ILocator addresses=step.Locator("button[name='order-step5-address']");
+        if(await addresses.CountAsync()>0) await addresses.First.ClickAsync();
+        else { await step.Locator("button[name='order-step5-specific-address']").ClickAsync(); await step.Locator("input[name='order-step5-recipient']").FillAsync("Chrome Receiver"); await step.Locator("input[name='order-step5-country']").FillAsync("IR"); await step.Locator("textarea[name='order-step5-address']").FillAsync("Deployed acceptance address"); }
+        ILocator method=step.Locator("input[name='order-step5-shipping-method']"); await method.ClickAsync();
+        ILocator methodOptions=step.Locator("[role=listbox] [role=option]"); await Assertions.Expect(methodOptions).Not.ToHaveCountAsync(0); await methodOptions.First.ClickAsync();
+        await step.GetByRole(AriaRole.Button,new(){Name="Save draft",Exact=true}).ClickAsync();
+        await Assertions.Expect(step).ToBeVisibleAsync(); await Assertions.Expect(step.Locator("input[name='order-step5-recipient']")).Not.ToHaveValueAsync("");
+        await step.GetByRole(AriaRole.Button,new(){Name="Back",Exact=true}).ClickAsync(); await Assertions.Expect(page.Locator(".order-services-step")).ToBeVisibleAsync();
+        await page.Locator(".order-services-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync(); await Assertions.Expect(step).ToBeVisibleAsync();
+        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await Assertions.Expect(page.Locator(".order-shipping-step")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator(".wizard-stepper")).ToBeVisibleAsync();
+    }
+    [Fact]
+    public async Task Order_step_six_calculates_authoritative_pricing_and_supports_recalculation(){
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.Locator("input[name='order-branch']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-customer']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync();
+        await page.GetByText("Next",new(){Exact=true}).ClickAsync();
+        await page.Locator("input[name='order-item-product']").ClickAsync(); await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-sku']").ClickAsync(); await page.Locator(".order-items-step [role=option]").First.ClickAsync();
+        await page.Locator("input[name='order-item-quantity']").FillAsync("2"); await page.GetByText("Add item",new(){Exact=true}).ClickAsync();
+        await page.Locator(".order-items-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        await page.Locator(".order-print-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-services-step")).ToBeVisibleAsync();
+        await page.Locator(".order-services-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        ILocator step=page.Locator(".order-shipping-step"); await Assertions.Expect(step).ToBeVisibleAsync();
+        ILocator addresses=step.Locator("button[name='order-step5-address']");
+        if(await addresses.CountAsync()>0) await addresses.First.ClickAsync();
+        else { await step.Locator("button[name='order-step5-specific-address']").ClickAsync(); await step.Locator("input[name='order-step5-recipient']").FillAsync("Pricing Receiver"); await step.Locator("input[name='order-step5-country']").FillAsync("IR"); await step.Locator("textarea[name='order-step5-address']").FillAsync("Pricing acceptance address"); }
+        ILocator method=step.GetByRole(AriaRole.Combobox,new(){Name="Shipping method *",Exact=true}); await method.FillAsync("standard"); ILocator options=step.Locator(".searchable-select-list [role=option]"); await Assertions.Expect(step.Locator(".searchable-select-list")).ToBeVisibleAsync(); Assert.True(await options.CountAsync()>0); await options.First.ClickAsync();
+        await step.GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        ILocator pricing=page.Locator(".order-pricing-step"); await Assertions.Expect(pricing).ToBeVisibleAsync(); await Assertions.Expect(pricing.GetByRole(AriaRole.Heading,new(){Name="Order Pricing",Exact=true})).ToBeVisibleAsync();
+        await Assertions.Expect(pricing.Locator(".pricing-final")).ToBeVisibleAsync(); await Assertions.Expect(pricing.GetByRole(AriaRole.Button,new(){Name="Recalculate",Exact=true})).ToBeVisibleAsync();
+        await pricing.GetByRole(AriaRole.Button,new(){Name="Recalculate",Exact=true}).ClickAsync(); await Assertions.Expect(pricing.Locator(".loading-state")).ToHaveCountAsync(0); await Assertions.Expect(pricing.Locator(".pricing-summary-grid")).ToBeVisibleAsync();
+    }
+    [Fact]
+    public async Task Order_step_seven_reviews_and_finalizes_without_starting_workflow(){
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle}); await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.Locator("input[name='order-branch']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync(); await page.Locator("input[name='order-customer']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync(); await page.GetByText("Next",new(){Exact=true}).ClickAsync();
+        await page.Locator("input[name='order-item-product']").ClickAsync(); await page.Locator(".order-items-step [role=option]").First.ClickAsync(); await page.Locator("input[name='order-item-sku']").ClickAsync(); await page.Locator(".order-items-step [role=option]").First.ClickAsync(); await page.Locator("input[name='order-item-quantity']").FillAsync("1"); await page.GetByText("Add item",new(){Exact=true}).ClickAsync(); await page.Locator(".order-items-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        await page.Locator(".order-print-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync(); await page.Locator(".order-services-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync(); ILocator shipping=page.Locator(".order-shipping-step");
+        ILocator addresses=shipping.Locator("button[name='order-step5-address']"); if(await addresses.CountAsync()>0) await addresses.First.ClickAsync(); else { await shipping.Locator("button[name='order-step5-specific-address']").ClickAsync(); await shipping.Locator("input[name='order-step5-recipient']").FillAsync("Final Receiver"); await shipping.Locator("input[name='order-step5-country']").FillAsync("IR"); await shipping.Locator("textarea[name='order-step5-address']").FillAsync("Finalization acceptance address"); }
+        ILocator method=shipping.GetByRole(AriaRole.Combobox,new(){Name="Shipping method *",Exact=true}); await method.FillAsync("standard"); ILocator options=shipping.Locator(".searchable-select-list [role=option]"); await Assertions.Expect(options).Not.ToHaveCountAsync(0); await options.First.ClickAsync(); await shipping.GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        ILocator pricing=page.Locator(".order-pricing-step"); await Assertions.Expect(pricing.Locator(".pricing-summary-grid")).ToBeVisibleAsync(); await pricing.GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
+        ILocator review=page.Locator(".order-review-step"); await Assertions.Expect(review).ToBeVisibleAsync(); await Assertions.Expect(review.GetByRole(AriaRole.Heading,new(){Name="Review & Finalize",Exact=true})).ToBeVisibleAsync(); await Assertions.Expect(review.GetByText("This draft does not have a final order number yet.",new(){Exact=true})).ToBeVisibleAsync();
+        await review.GetByRole(AriaRole.Button,new(){Name="Finalize order",Exact=true}).ClickAsync(); await Assertions.Expect(review.GetByRole(AriaRole.Button,new(){Name="Confirm finalization",Exact=true})).ToBeVisibleAsync(); await review.GetByRole(AriaRole.Button,new(){Name="Confirm finalization",Exact=true}).ClickAsync(); await page.WaitForURLAsync(url=>url.Contains("/360")); await Assertions.Expect(page.GetByText("ORD-",new(){Exact=false}).First).ToBeVisibleAsync();
+    }
+    public async ValueTask DisposeAsync(){await context.DisposeAsync();await browser.DisposeAsync();playwright.Dispose();}
+}

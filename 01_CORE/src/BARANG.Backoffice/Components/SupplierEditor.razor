@@ -1,0 +1,98 @@
+@using System.Text.Json
+@inject IStringLocalizer<SupplierStrings> S
+@inject IStringLocalizer<SupplierSourcingStrings> Sourcing
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<BarangModal Open="@Open" Title="@(ReadOnly?S["ViewSupplier"]:SupplierId is null?S["NewSupplier"]:S["EditSupplier"])" Description="@S["EditorHelp"]" Size="xl" ReserveSelectorSpace="true" ShowCloseButton="false" Busy="@Busy" CloseLabel="@S["Cancel"]" CloseRequested="AskClose" data-supplier-editor="true">
+<ChildContent>
+    @if(Loading){<BarangLoadingState Text="@S["Loading"]" />}
+    else if(LoadFailed){<p class="inline-error" role="alert">@S[Message??"LoadError"]</p><button type="button" class="btn btn-secondary" @onclick="Load">@S["Refresh"]</button>}
+    else{
+        @if(Message is not null){<p class="inline-error" role="alert">@S[Message]</p>}
+        <div class="supplier-editor-layout">
+        <BarangTabs AriaLabel="@S["Title"]" Class="is-vertical supplier-tabs" Orientation="vertical">
+            @foreach(string name in Tabs){<button type="button" role="tab" aria-selected="@(Tab==name?"true":"false")" class="@(Tab==name?"active":null)" data-supplier-tab="@name" @onclick="()=>ChangeTab(name)">@(name is "products" or "prices"?Sourcing[TabLabel(name)]:S[TabLabel(name)])</button>}
+        </BarangTabs>
+        <div class="supplier-tab-content">
+        @if(Tab=="general"){
+            <section class="form-section" data-supplier-panel="general">
+                <h3>@S["General"]</h3>
+                <div class="form-grid"><label><span>@S["SupplierNumber"]</span><input name="supplierNumber" value="@(SupplierId is null?S["AllocatedOnSave"]:Number)" disabled /></label></div>
+                <SupplierFields Fields="@GeneralFields" Values="@Identity" Existing="@(SupplierId is not null)" Disabled="@(ReadOnly||Busy||!CanManage)" />
+                <label><span>@S["Categories"] *</span><ReferenceMultiSelect TypeCode="supplier.category" Name="supplierCategories" @bind-Values="@Categories" Disabled="@(ReadOnly||Busy||!CanManage)" Placeholder="@S["Categories"]" /></label>
+            </section>
+        }
+        else if(Tab=="financial"){
+            <section class="form-section" data-supplier-panel="financial"><h3>@S["Financial"]</h3>
+                <SupplierFields Fields="@SupplierUiSchema.Financial" Values="@Financial" Disabled="@(ReadOnly||Busy||!CanManage)" />
+                <SupplierFields Fields="@PreferredFields" Values="@Identity" Disabled="@(ReadOnly||Busy||!CanManage)" />
+            </section>
+        }
+        else if(Tab is "products" or "prices"&&SupplierId is Guid sourcingOwner){<SupplierSourcingWorkspace @key="Tab" SupplierId="@sourcingOwner" Kind="@Tab" ReadOnly="@(ReadOnly||!CanManage)" />}
+        else if(Tab is "evaluation" or "quality" or "quality-incidents" or "contracts" or "documents"&&SupplierId is Guid lifecycleOwner){<SupplierLifecycleWorkspace @key="Tab" SupplierId="@lifecycleOwner" Kind="@Tab" ReadOnly="@(ReadOnly||!CanManage)" />}
+        else if(SupplierId is Guid owner){<SupplierChildWorkspace @key="Tab" SupplierId="@owner" Kind="@Tab" ReadOnly="@(ReadOnly||!CanManage)" />}
+        </div>
+        </div>
+    }
+</ChildContent>
+<Footer>
+    <button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="AskClose">@S["Cancel"]</button>
+    @if(!ReadOnly&&CanManage&&!LoadFailed&&Tab is "general" or "financial"){<button type="button" class="btn btn-primary" disabled="@(Busy||Loading)" @onclick="Save">@S["Save"]</button>}
+</Footer>
+</BarangModal>
+<BarangConfirmDialog Open="@DiscardOpen" Title="@S["DiscardTitle"]" CancelText="@S["KeepEditing"]" ConfirmText="@S["Discard"]" Cancel="KeepEditing" Confirm="Discard">@S["DiscardText"]</BarangConfirmDialog>
+
+@code{
+    [Parameter]public bool Open{get;set;}
+    [Parameter]public Guid?SupplierId{get;set;}
+    [Parameter]public bool ReadOnly{get;set;}
+    [Parameter]public string?InitialStatus{get;set;}
+    [Parameter]public EventCallback Closed{get;set;}
+    [Parameter]public EventCallback Saved{get;set;}
+    private string Tab="general",Number="",Snapshot="";
+    private string?Message,Token;
+    private Guid Company;
+    private bool Loading=true,LoadFailed,Busy,CanManage,DiscardOpen,Initialized;
+    private long Version,FinancialVersion;
+    private Dictionary<string,string>Identity=SupplierUiSchema.Empty(SupplierUiSchema.Identity),Financial=SupplierUiSchema.Empty(SupplierUiSchema.Financial);
+    private string[]Categories=[];
+    private static readonly SupplierUiField[]GeneralFields=SupplierUiSchema.Identity.Where(x=>x.Key!="isPreferred").ToArray();
+    private static readonly SupplierUiField[]PreferredFields=SupplierUiSchema.Identity.Where(x=>x.Key=="isPreferred").ToArray();
+    private string[]Tabs=>SupplierId is null?["general","financial"]:["general","addresses","contacts","financial","bank-accounts","products","prices","evaluation","quality","quality-incidents","contracts","documents"];
+    private static string TabLabel(string tab)=>tab switch{"general"=>"General","addresses"=>"Addresses","contacts"=>"Contacts","financial"=>"Financial","products"=>"ProductsServices","prices"=>"PricesAndLists","evaluation"=>"Evaluation","quality"=>"Quality","quality-incidents"=>"QualityIncidents","contracts"=>"Contracts","documents"=>"Documents",_=>"BankAccounts"};
+    protected override async Task OnParametersSetAsync(){if(Open&&!Initialized){Initialized=true;await Load();}}
+    private async Task Load(){
+        Loading=true;LoadFailed=false;Message=null;
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;
+        CanManage=user.HasClaim(AuthClaimTypes.Permission,"supplier.manage");
+        if(user.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string token||!Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company)){LoadFailed=true;Message="Forbidden";Loading=false;return;}
+        Token=token;
+        if(SupplierId is Guid id){
+            var result=await Core.GetAsync($"api/v1/suppliers/core/{id}",Token,Company,default);
+            if(!result.IsSuccess){LoadFailed=true;Message=SupplierUiSchema.Error(result);}
+            else{
+                var root=result.Value.GetProperty("supplier");Identity=SupplierUiSchema.Read(root,SupplierUiSchema.Identity);Number=SupplierUiSchema.Text(root,"supplierNumber");Version=root.GetProperty("version").GetInt64();
+                Categories=result.Value.GetProperty("categoryIds").EnumerateArray().Select(x=>x.GetString()!).ToArray();
+                if(result.Value.TryGetProperty("financial",out var profile)&&profile.ValueKind==JsonValueKind.Object){Financial=SupplierUiSchema.Read(profile,SupplierUiSchema.Financial);FinancialVersion=profile.GetProperty("version").GetInt64();}
+            }
+        }
+        Snapshot=State();if(InitialStatus is not null)Identity["status"]=InitialStatus;Loading=false;
+    }
+    private void ChangeTab(string tab){if(!Busy)Tab=tab;}
+    private string State()=>JsonSerializer.Serialize(new{Identity,Financial,Categories});
+    private async Task AskClose(){if(Busy)return;if(!ReadOnly&&State()!=Snapshot)DiscardOpen=true;else await Closed.InvokeAsync();}
+    private void KeepEditing()=>DiscardOpen=false;
+    private async Task Discard(){DiscardOpen=false;await Closed.InvokeAsync();}
+    private async Task Save(){
+        if(Busy||ReadOnly||!CanManage||Token is null||LoadFailed)return;
+        if(Categories.Length==0){Message="CategoryRequired";return;}
+        Busy=true;Message=null;
+        try{
+            var body=new{identity=SupplierUiSchema.Body(Identity,SupplierUiSchema.Identity),categoryIds=Categories.Select(Guid.Parse).ToArray(),financial=SupplierUiSchema.Body(Financial,SupplierUiSchema.Financial),version=Version,financialVersion=FinancialVersion};
+            var result=await Core.SendAsync(SupplierId is null?HttpMethod.Post:HttpMethod.Put,"api/v1/suppliers/core"+(SupplierId is Guid id?$"/{id}":""),body,Token,Company,default);
+            if(result.IsSuccess){Snapshot=State();await Saved.InvokeAsync();}else Message=SupplierUiSchema.Error(result);
+        }catch(FormatException){Message="ValidationError";}catch(OverflowException){Message="ValidationError";}
+        finally{Busy=false;}
+    }
+}

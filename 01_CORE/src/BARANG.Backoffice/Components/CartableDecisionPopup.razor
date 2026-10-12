@@ -1,0 +1,38 @@
+@using BARANG.Backoffice.Localization
+@inject IStringLocalizer<CartableStrings> C
+@inject IStringLocalizer<CartableDecisionPopupStrings> P
+
+@if (Visible)
+{
+    <div class="dialog-backdrop" role="presentation">
+        <section class="dialog-card cartable-v5-dialog cartable-operational-popup" role="dialog" aria-modal="true" aria-labelledby="cartable-decision-title" @onclick:stopPropagation>
+            <h2 id="cartable-decision-title">@C["Claim"]</h2>
+            <p>@OrderNumber · @Stage</p>
+            <label for="cartable-decision-note">@P["Note"]</label>
+            <textarea id="cartable-decision-note" value="@Note" @oninput="NoteInput" placeholder='@P["Placeholder"]'></textarea>
+            <div class="cartable-v5-outcomes">
+                @foreach (var outcome in Outcomes)
+                {
+                    <button type="button" class="btn btn-@(OutcomeClass(outcome))" disabled="@Busy" @onclick="() => Decision.InvokeAsync(outcome)">@OutcomeText(outcome)</button>
+                }
+            </div>
+            <button type="button" class="secondary-action" disabled="@Busy" @onclick="() => Cancel.InvokeAsync()">@C["Cancel"]</button>
+        </section>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string OrderNumber { get; set; } = "—";
+    [Parameter] public string Stage { get; set; } = "—";
+    [Parameter] public string Note { get; set; } = "";
+    [Parameter] public EventCallback<string> NoteChanged { get; set; }
+    [Parameter] public IReadOnlyList<string> Outcomes { get; set; } = [];
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<string> Decision { get; set; }
+    [Parameter] public EventCallback Cancel { get; set; }
+
+    private Task NoteInput(ChangeEventArgs args) => NoteChanged.InvokeAsync(args.Value?.ToString() ?? "");
+    private string OutcomeText(string outcome) => outcome.Equals("Reject", StringComparison.OrdinalIgnoreCase) ? C["Reject"].Value : outcome.Equals("AuditReject", StringComparison.OrdinalIgnoreCase) ? C["AuditReject"].Value : C["Approve"].Value;
+    private string OutcomeClass(string outcome) => outcome.Equals("Reject", StringComparison.OrdinalIgnoreCase) || outcome.Equals("AuditReject", StringComparison.OrdinalIgnoreCase) ? "danger" : "primary";
+}
