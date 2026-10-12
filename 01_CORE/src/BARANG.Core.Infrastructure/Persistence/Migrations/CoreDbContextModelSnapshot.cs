@@ -5383,6 +5383,20 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<Guid>("LogicalTariffId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("logical_tariff_id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Name")
+                        .ValueGeneratedOnAdd()
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasDefaultValue("")
+                        .HasColumnName("name");
+
                     b.Property<string>("PrintMethodCode")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
@@ -5419,6 +5433,12 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("bigint")
                         .HasColumnName("version");
+
+                    b.Property<int>("VersionNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("version_number");
 
                     b.HasKey("Id");
 

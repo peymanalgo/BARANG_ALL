@@ -30,6 +30,30 @@
 | ۱۴ | audit/reporting؛ وابسته به همه eventها | Order 360/Management/Audit show reservation, approval, production, QC, logistics correlation | standardized event names/change sets; read models query owner tables | indexes/read projections, retention, RLS; no credentials in payload | retention/report dimensions | audit completeness, correlation, tenant isolation, history immutability | migrate only with isolated upgrade test; acceptance: one order reconstructable end-to-end |
 | ۱۵ | end-to-end acceptance؛ وابسته به ۲–۱۴ | browser journey all wizard steps, Cartable, Order 360, fa/en/ar | no new business code beyond prior accepted steps; verify permissions/retries | isolated PostgreSQL from zero + deployed API/Backoffice evidence | approve final lifecycle and exception matrix | Draft→Completed, shortage, cancel before/after consume, reject/reproduction, return, retry | release build/tests, deploy affected services, live browser and DB evidence; no claim from HTTP 200 only |
 
+## الحاقیه عملیاتی فعلی STEP 2 — Customer و Pricing
+
+این الحاقیه نتیجه‌ی اجرای واقعی روی branch `codex/step2-inventory-unit-contracts` است؛ گزارش‌های قبلیِ همین سند به‌عنوان شاهد کافی تلقی نشده‌اند.
+
+### علت‌ها و اصلاحات تأییدشده
+
+- خطای HTTP 500 در `POST /api/v1/pricing/tariffs` از `PricingAdministration` یا lookup چاپ نبود. جدول `barang.tariffs` به‌وسیله‌ی `20260919102002_SyncPhase3Model` ستون‌های سازگاری `logical_tariff_id`، `name` و `version_number` را `NOT NULL` داشت، ولی aggregate فعلی `Tariff` آن‌ها را map نمی‌کرد. درج خام با PostgreSQL خطای `null value in column "logical_tariff_id" of relation "tariffs" violates not-null constraint` می‌داد.
+- `TariffConfiguration` اکنون این ستون‌های compatibility را به‌صورت shadow property نگاشت می‌کند و migration `20261012115004_AlignTariffCompatibilityColumns` با backfill authoritative از `id/code/1`، defaultهای `gen_random_uuid()`, `''`, `1` و بدون حذف داده، fresh و drifted schema را پوشش می‌دهد. whitelist ثابت برای `print.method` اضافه نشده است؛ اعتبارسنجی همچنان lookup فعال و company-scoped را در `OrderAdministration.ValidPrintMethod` مصرف می‌کند.
+- خطای دوم در `OrderAdministration.ValidHeader` بود: query از `Customer.IsActive` استفاده می‌کرد، در حالی که در مدل نرمال‌شده این property computed و در EF عمداً unmapped است. query به `Customer.Status == CustomerStatus.Active` تغییر کرد؛ هیچ ستون `customers.first_name` یا dummy column اضافه نشد.
+- برای حفظ رفتار قراردادی قبلی، اعتبارسنجی آدرس همچنان city بدون province را می‌پذیرد؛ country دوحرفی، نوع آدرس، خط آدرس و codeهای نامعتبر همچنان validate می‌شوند.
+
+### شواهد و تست‌های جاری
+
+- fresh isolated PostgreSQL (`barang_pricing_test`) با full migration chain ساخته شد و تست‌های `CustomerNormalizedApiTests`, `BusinessProfileApiTests`, `PricingE2ETests`, `PricingFoundationTests`, `InventoryFoundationTests`, `CustomerFoundationTests`, `OrderE2ETests` و `OrderFoundationTests` در اجرای منتخب نهایی سبز شدند: ۱۲ تست integration؛ تست واحد Release نیز ۱۸۹ از ۱۸۹ موفق است.
+- `CustomerNormalizedApiTests` اکنون create/read/update فرد و شرکت، profile persistence، آدرس و re-load، ارتباط هر دو نوع مشتری با order، جداسازی شرکت و رد کردن `sourceCustomerAddressId` متعلق به مشتری دیگر را در سطح API/persistence بررسی می‌کند.
+- `PricingE2ETests` create/list/update tariff، محاسبه و finalize قیمت، print method فعال از lookup، تاریخچه immutable و company isolation را بررسی می‌کند. `BusinessProfileApiTests` نیز مسیر order/print واقعی را پوشش می‌دهد.
+- قبل از migration توسعه backup سفارشی گرفته شد: `D:\00_BARANG\barang_core_pricing_fix_predeploy.backup`؛ `pg_restore --list` دارای ۱۷۲۵ TOC entry است. migration با EF روی `barang_core` اعمال شد؛ history شامل `20261012115004_AlignTariffCompatibilityColumns` است، سه ستون موجود `NOT NULL` و دارای default صحیح هستند و رکوردهای business حذف نشدند.
+
+### وضعیت deployment و محدودیت
+
+API و Backoffice از همین checkout با Release Docker build و deploy محلی شدند؛ readiness API `200 Healthy` و Backoffice health `healthy` است. image digestها: API `sha256:7c3874122039272a729e3dc6a0a35ddee28215e236585266c13ac1d628cfbcbc` و Backoffice `sha256:639c046096edfc82e761d17eb151a326bf8050b8673864f4e4ec22d130d2b788`.
+
+این شواهد Pricing و Customer→Order را operationally تأیید می‌کند، اما STEP 2 در سطح برنامه هنوز کامل اعلام نمی‌شود: runtime کامل `WorkflowDefinitionRuntime`/Cartable و integrationهای workflow مالک‌محور همچنان blocker قبلی هستند و reservation/consumption عمداً خارج از این کارند. browser verification در این اجرا در دسترس نبود؛ API/persistence و health تأیید شده‌اند، نه رفتار بصری browser.
+
 ## ترتیب اجرایی و gates
 
 ### Gate A — قرارداد و مالکیت

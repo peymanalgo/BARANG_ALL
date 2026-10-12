@@ -244,6 +244,16 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 
 ### الحاقیه عملیاتی STEP 2
 
+### به‌روزرسانی راستی‌آزمایی Customer/Pricing
+
+در اجرای فعلی branch `codex/step2-inventory-unit-contracts`، دو blocker قبلی با evidence واقعی اصلاح شدند. `POST /api/v1/pricing/tariffs` به‌علت سه ستون اجباری نسل قدیمی در جدول `tariffs` که در مدل `Tariff` map نشده بودند، با `NOT NULL logical_tariff_id` شکست می‌خورد؛ shadow mapping و migration سازگار `20261012115004_AlignTariffCompatibilityColumns` این drift را بدون حذف ستون/داده و بدون whitelist چاپ برطرف کردند. مسیر print همچنان lookup فعال `print.method` را با scope شرکت مرجع می‌گیرد.
+
+در مسیر سفارش، `Customer.IsActive` یک property computed و unmapped پس از نرمال‌سازی Customer بود؛ اصلاح `OrderAdministration.ValidHeader` به `Customer.Status == Active` انجام شد. تست نرمال‌شده اکنون association فرد و legal با order، آدرس و reload، company isolation و رد کردن آدرس مشتری دیگر را در API/persistence اثبات می‌کند. تست‌های منتخب integration ایزوله ۱۲ از ۱۲ و unit Release برابر ۱۸۹ از ۱۸۹ موفق شدند؛ Pricing create/list/update و order print نیز سبز است.
+
+backup توسعه قبل از migration در `D:\00_BARANG\barang_core_pricing_fix_predeploy.backup` با `pg_restore --list` معتبر شد. migration روی `barang_core` با EF اعمال و در history ثبت شد؛ ستون‌های compatibility دارای `NOT NULL` و defaultهای مورد انتظار هستند. API و Backoffice محلی با digestهای جدید deploy شدند و readiness/health سبز است.
+
+این نتیجه فقط Customer/Pricing و شواهد مربوط به STEP 2 را operationally تأیید می‌کند. پیاده‌سازی runtime کامل `WorkflowDefinitionRuntime` و Cartable هنوز در checkout موجود نیست/تأیید نشده، و reservation/consumption و workflow gateها عمداً به STEPهای بعد موکول‌اند. browser verification در دسترس این اجرا نبود.
+
 ### ممیزی baseline و محدودیت restore
 
 مقایسه‌ی `main`، branch STEP 2، `step2-clean` و working tree canonical نشان داد که migrationهای customer به مدل profile نرمال‌شده تعلق دارند، اما checkout تمیز هنوز مدل قدیمیِ دارای map برای `customers.first_name` را دارد. working tree اصلی مدل نرمال‌شده و profileها را دارد، ولی همان working tree نیز runtime کامل `WorkflowDefinitionRuntime` و entityهای وابسته‌ی Cartable را ندارد؛ endpoint و DI registration به‌تنهایی implementation محسوب نمی‌شوند. Probe build پس از قراردادن contractهای موجود، خطاهای missing runtime واقعی را آشکار کرد. از افزودن placeholder یا contract-only substitute خودداری شد. در نتیجه تست چاپ و رفتار کامل Cartable هنوز قابل ادعای موفقیت نیست و STEP 2 تا restore یک baseline authoritative و سازگار، ناقص باقی می‌ماند.
