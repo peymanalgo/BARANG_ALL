@@ -105,3 +105,20 @@ WorkflowDefinitionRuntime و باقی‌ماندن endpointهای advanced بر�
 dialogهای مدیریت دسترسی، مانع اعلام «بازگشت کامل functionality» است. این موارد باید
 از source canonical کامل یا artifact معتبر بازیابی شوند؛ در این مرحله placeholder،
 empty handler، permissive authorization یا rollback کور انجام نشد.
+
+## ادامهٔ recovery پس از commit 8384bbb
+
+- provenance بازبینی شد: canonical working tree نیز build کامل نداشت و به
+  `DecisionAttachmentView` و implementationهای مفقود runtime ارجاع می‌داد؛ بنابراین به‌عنوان
+  baseline کامل کپی نشد. migrationها و schema واقعی workflow در DB توسعه وجود دارند.
+- Order Submit با exception دقیق `Npgsql 42501: permission denied for sequence order_number_seq`
+  شکست می‌خورد؛ role ایزولهٔ تست با grant حداقلی sequence اصلاح شد. منطق production یا
+  مجوزهای business تغییر نکرد.
+- migration tests از عدد ثابت ۲۳ به بررسی کل migrationهای مدل، نبود pending migration
+  و وجود migrationهای workflow/inventory تغییر کردند؛ روی DB ایزوله restore‌شده
+  تست‌های مربوطه و BusinessProfile submit در مجموع **۳/۳ موفق** شدند.
+- routeهای واقعی `GET /api/v1/workflows/definition` و positions به جداول موجود و
+  RLS company context متصل شدند و `POST /definition/validate` validation پایهٔ graph
+  را انجام می‌دهد. authenticated response شامل **۲۳ node و ۱۷ version** تأیید شد.
+- save draft، Cartable runtime کامل، SupplierEditor/core CRUD و dialogهای advanced User
+  Management هنوز پیاده‌سازی/تأیید نشده‌اند؛ recovery کامل اعلام نمی‌شود.

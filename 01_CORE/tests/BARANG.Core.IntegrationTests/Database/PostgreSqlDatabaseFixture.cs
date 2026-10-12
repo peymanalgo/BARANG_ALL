@@ -176,6 +176,10 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
         {
             await configure.ExecuteNonQueryAsync();
         }
+        await using (NpgsqlCommand sequences = new("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA barang TO barang_test_app;", connection))
+        {
+            await sequences.ExecuteNonQueryAsync();
+        }
 
         NpgsqlConnectionStringBuilder application = new(administrationConnectionString)
         {
