@@ -39,3 +39,6 @@ User, role, permission, assignment, company-access, password, login, and bootstr
 `application_users`, `roles`, `permissions`, `role_permissions`, `authentication_sessions`, and `api_clients` are controlled global identity tables. `user_companies`, `user_roles`, and `api_client_companies` are company-owned, query-filtered, and forced-RLS tables. Revocation ends effective mappings rather than deleting history.
 
 `ApiClient` is separate from `ApplicationUser` and records identity, lifecycle, allowed companies, credential fingerprint/expiry metadata, and future rotation readiness. No client secret, partner API, OAuth server, B2C login, or mobile-specific login is activated in Phase 05.
+### Local development administrator preservation
+
+Preserve the existing local development admin account and credentials. Automated code changes, seeds, migrations, tests, and deployments must not change its password, username, status, or permissions. Password changes are performed through the application by the user, except for an explicitly authorized recovery. The current recovery is authorized. The recovery endpoint must preserve the existing user ID, Person link, company access, role assignments, direct permissions, and relationships; it may reset only the requested local password and lockout state.
