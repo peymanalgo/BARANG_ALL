@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
@@ -6,7 +7,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Minio" />
     <PackageReference Include="Magick.NET-Q8-AnyCPU" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
@@ -19,5 +19,8 @@
   <ItemGroup>
     <ProjectReference Include="../BARANG.Core.Application/BARANG.Core.Application.csproj" />
     <ProjectReference Include="../BARANG.Core.Domain/BARANG.Core.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Persistence/SeedData/design-categories.csv" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

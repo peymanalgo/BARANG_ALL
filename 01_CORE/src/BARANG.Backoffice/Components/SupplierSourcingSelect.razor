@@ -44,7 +44,7 @@
                 .Select(code=>new SearchableSelectOption(code,S["Currency_"+code].ResourceNotFound?code:$"{code} - {S["Currency_"+code]}")).ToList();
             return;
         }
-        if(Kind=="sku"&&!Guid.TryParse(ProductId,out _)){Options=[new("",C["NotSpecified"])];return;}
+        if(Kind=="sku"&&!Guid.TryParse(ProductId,out _)){Options=[];return;}
         var user=(await AuthState.GetAuthenticationStateAsync()).User;
         if(user.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string token||!Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var company)){Failed=true;return;}
         Loading=true;string query=Uri.EscapeDataString(search);
@@ -54,7 +54,7 @@
         if(!response.IsSuccess&&Kind=="product")
             response=await Core.GetAsync($"api/v1/products?pageNumber=1&pageSize=100&activeOnly=true&search={query}",token,company,default);
         if(!response.IsSuccess){Failed=true;Loading=false;return;}
-        List<SearchableSelectOption> options=[new("",C["NotSpecified"])];
+        List<SearchableSelectOption> options=[];
         var rows=response.Value.ValueKind==JsonValueKind.Object&&response.Value.TryGetProperty("items",out var items)
             ?items.EnumerateArray():response.Value.EnumerateArray();
         foreach(var row in rows)options.Add(Option(row));

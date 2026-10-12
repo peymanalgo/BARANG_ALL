@@ -78,6 +78,74 @@
 ### اجرای تست در این recovery
 
 - `BARANG.Core.UnitTests`: **۱۸۹/۱۸۹ موفق**.
+
+## بازیابی انتخابی Supplier و User/RBAC — ۱۴۰۵/۰۷/۲۰
+
+در reconciliation بعدی، source canonical `D:\00_BARANG\01_CORE` با target
+`D:\00_BARANG\step2-clean\01_CORE` مقایسه شد. source اصلی دست‌نخورده ماند و
+snapshot قابل‌بازگشت در `D:\00_BARANG\recovery-snapshots\20261012170107`
+ثبت شد. bundleهای واقعی و قابل‌بازیابی عبارت‌اند از Supplier Core، Supplier
+Lifecycle، Supplier Sourcing و نسل پیشرفتهٔ User/RBAC؛ Workflow Designer و
+`WorkflowDefinitionRuntime` در هیچ‌یک از دو checkout وجود نداشت و عمداً پیاده‌سازی
+یا stub نشد.
+
+### پیاده‌سازی انجام‌شده
+
+- routeهای واقعی `SupplierCoreEndpoints`، `SupplierLifecycleEndpoints` و
+  `SupplierSourcingEndpoints` به `MapCatalogEndpoints` متصل شدند؛ registrationهای
+  `ISupplierCoreAdministration`، `ISupplierLifecycleAdministration` و
+  `ISupplierSourcingAdministration` به DI افزوده شد.
+- مدل‌های domain، قراردادها، administrations، configurations، تست‌ها و workspaceهای
+  Supplier از source canonical بازیابی شدند؛ DbSet و query filterهای شرکت‌محور برای
+  childها، lifecycle و sourcing افزوده شد. Supplier migrationهای موجود target
+  دوباره اعمال نشدند.
+- User/RBAC پیشرفته، `UserPermission`، IdentityAccountService، UserStore و
+  registrationهای `UserManager` از implementation واقعی source بازیابی شدند؛
+  `IProductSalesPriceStore` نیز برای حفظ Catalog/SalesPrice contract ثبت شد.
+- مقادیر فایل‌های Supplier contract/document به `FileLinkEntityType` افزوده شد؛ این
+  تغییر enum است و migration جدیدی اجرا نشد.
+- تست‌های تاریخی Organization/Cartable که به مدل‌های Workflow مفقود متکی بودند در
+  این bundle نگه‌داری نشدند؛ حذف آن‌ها از source application انجام نشده است.
+
+### شواهد اجرای فعلی
+
+- API Release build: موفق، ۰ warning و ۰ error.
+- Backoffice Release build: موفق، ۰ warning و ۰ error.
+- تست واحد فیلترشدهٔ Supplier/User: **۲۱/۲۱ موفق**.
+- تست‌های integration روی PostgreSQL ایزوله compile شدند، اما اجرای migration chain
+  به‌صورت صحیح با خطای `PendingModelChangesWarning` متوقف شد؛ snapshot target با
+  مدل بازیابی‌شده هم‌تراز نیست و snapshot تاریخی همچنین entityهای Workflow را دارد
+  که source فعلی آن‌ها را ندارد. این هشدار نادیده گرفته نشد و migration جدید نیز
+  روی توسعه اعمال نشد.
+- تست‌های Backoffice: build موفق، اما **۱۶ شکست از ۱۸۴**؛ شکست‌ها مربوط به
+  asset/document pathهای موجود نبودن در clean checkout، assertionهای generationهای
+  متفاوت و تست‌هایی است که صریحاً `WorkflowDefinitionRuntime` و
+  `CartableSavedFilterAdministration` مفقود را می‌خوانند. این موارد هنوز completion
+  کامل recovery را ثابت نمی‌کنند.
+- پس از اصلاح DI، login واقعی local admin با status 200، `/auth/me` با company
+  مجاز، و `GET /api/v1/suppliers/core?pageNumber=1&pageSize=5` با status 200
+  تأیید شد. مسیرهای UI و dialogهای Supplier/User با browser automation بصری تست
+  نشده‌اند.
+
+### deployment و محدودیت باقی‌مانده
+
+از compose همین target، فقط API و Backoffice از نو build/up شدند. imageهای در حال
+اجرا:
+
+- API: `sha256:8e625b09dec49e1a37366be0a8330d6d2117e768e7953b21468eff45b3007d0c`
+- Backoffice: `sha256:9b1f8b5b4518e53c2d7ccf62940426e27f76fd1c53d6ee6dbffb3384474aa344`
+
+هر دو container healthy و `/health/ready` و `/login` با status 200 هستند. backup
+فشردهٔ PostgreSQL توسعه در خارج از repository در
+`D:\00_BARANG\recovery-snapshots\20261012170707\barang_core.dump` ساخته و با
+`pg_restore --list` دارای ۱۷۳۵ entry بررسی شد؛ دادهٔ توسعه، admin و migration
+history تغییر داده نشدند. restore کامل این backup در این نوبت اجرا نشده است.
+
+مانع اصلی برای ادعای recovery کامل، هم‌ترازی migration snapshot/مدل و نبود
+implementation واقعی Workflow/Designer است. مرحلهٔ بعد باید با مقایسهٔ schema
+تازه و restored، snapshot repair نسخه‌دار و بدون حذف جدول‌های تاریخی انجام شود؛
+تا آن زمان Supplier/User در سطح build و API smoke قابل مشاهده‌اند، اما end-to-end
+پایداری PostgreSQL و browser visual verification تأیید نشده است.
 - `CustomerNormalizedApiTests`: **موفق**.
 - `BusinessProfileApiTests`: یک تست موفق و یک تست ناموفق؛ submit سفارش در test host
   با `core.unexpected`/HTTP 500 شکست خورد و این مسیر هنوز recovery-complete محسوب

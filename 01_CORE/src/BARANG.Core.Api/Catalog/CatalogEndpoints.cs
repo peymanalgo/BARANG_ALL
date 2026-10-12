@@ -11,7 +11,11 @@ public static class CatalogEndpoints
 {
     public static IEndpointRouteBuilder MapCatalogEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        MapProducts(endpoints); MapSuppliers(endpoints); MapEquipment(endpoints); return endpoints;
+        MapProducts(endpoints); MapSuppliers(endpoints); MapEquipment(endpoints);
+        SupplierCoreEndpoints.MapSupplierCoreEndpoints(endpoints);
+        SupplierLifecycleEndpoints.MapSupplierLifecycleEndpoints(endpoints);
+        SupplierSourcingEndpoints.MapSupplierSourcingEndpoints(endpoints);
+        return endpoints;
     }
     private static void MapProducts(IEndpointRouteBuilder endpoints)
     {
