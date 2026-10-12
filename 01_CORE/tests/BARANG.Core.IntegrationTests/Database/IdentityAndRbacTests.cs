@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using BARANG.Core.Application.Security;
 using BARANG.Core.Domain.Organization;
+using BARANG.Core.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Xunit;
@@ -134,7 +135,33 @@ public sealed class IdentityAndRbacTests(PostgreSqlDatabaseFixture database)
         using HttpRequestMessage revoked = Request(HttpMethod.Get, "/api/v1/security/users", admin.AccessToken, companyA); Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(revoked, TestContext.Current.CancellationToken)).StatusCode);
     }
 
+    [Fact]
+    public async Task InactiveAndLockedAccountsCannotAuthenticate()
+    {
+        await database.ResetAsync(TestContext.Current.CancellationToken);
+        Guid companyId = await AddCompanyAsync("SEC_STATE");
+        await using PostgreSqlCoreApiFactory factory = new(database.ConnectionString);
+        using HttpClient client = factory.CreateClient();
+        await BootstrapAsync(client, companyId);
+
+        using HttpResponseMessage active = await client.PostAsJsonAsync("/api/v1/auth/login", new { username = "admin", password = "StrongAdminPassword123" }, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, active.StatusCode);
+
+        await SetAccountStateAsync("ADMIN", "Inactive");
+        using HttpResponseMessage inactive = await client.PostAsJsonAsync("/api/v1/auth/login", new { username = "admin", password = "StrongAdminPassword123" }, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, inactive.StatusCode);
+
+        await SetAccountStateAsync("ADMIN", "Locked");
+        using HttpResponseMessage locked = await client.PostAsJsonAsync("/api/v1/auth/login", new { username = "admin", password = "StrongAdminPassword123" }, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, locked.StatusCode);
+    }
+
     private async Task<Guid> AddCompanyAsync(string code) { await using var context = database.CreateCoreDbContext(); Company company = Company.Create(Guid.NewGuid(), code, code, DateTimeOffset.UtcNow).Value; context.Companies.Add(company); await context.SaveChangesAsync(TestContext.Current.CancellationToken); return company.Id; }
+    private async Task SetAccountStateAsync(string username, string state)
+    {
+        await using CoreDbContext context = database.CreateAdministrationCoreDbContext();
+        await context.Database.ExecuteSqlInterpolatedAsync($"UPDATE barang.application_users SET account_state = {state} WHERE username = {username};", TestContext.Current.CancellationToken);
+    }
     private static async Task BootstrapAsync(HttpClient client, Guid companyId) { using HttpRequestMessage request = new(HttpMethod.Post, "/api/v1/security/bootstrap") { Content = JsonContent.Create(new { companyId, username = "admin", displayName = "Administrator", password = "StrongAdminPassword123" }) }; request.Headers.Add("X-Bootstrap-Secret", "test-bootstrap-secret-123456789"); (await client.SendAsync(request, TestContext.Current.CancellationToken)).EnsureSuccessStatusCode(); }
     private static Task<UserView> CreateUserAsync(HttpClient client, LoginResult admin, Guid companyId, string username) => SendAsync<UserView>(client, Request(HttpMethod.Post, "/api/v1/security/users", admin.AccessToken, companyId, new { username, displayName = username, password = "StrongUserPassword123" }));
     private async Task AddCompanyAccessAsync(Guid userId, Guid companyId, DateTimeOffset? from = null, DateTimeOffset? to = null)
