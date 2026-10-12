@@ -1,62 +1,107 @@
 # گزارش بازیابی regression سراسری BARANG
 
-تاریخ بررسی: ۱۴۰۵/۰۷/۲۰  — checkout: `codex/step2-inventory-unit-contracts`
+تاریخ: ۱۴۰۵/۰۷/۲۰
 
-## نتیجه اجرایی
+## محدوده و baseline
 
-خطاها از یک خرابی واحد ناشی نبودند و به دو نقص مشترک در checkout/deployment فعلی و یک مسیر حذف‌شده تقسیم شدند:
+این recovery روی checkout مستقر `D:\00_BARANG\step2-clean\01_CORE` و branch
+`codex/step2-inventory-unit-contracts` انجام شد. commit مبنای قبل از این اصلاحات
+`977b7d942ef78db013fd30be2e30ec2e7a06f227` بود. source canonical دیگری در
+`D:\00_BARANG\01_CORE` وجود دارد، اما working tree آن dirty است و برای جلوگیری از
+انتقال تغییرات نامرتبط دست‌نخورده باقی ماند. مقایسهٔ source، routeها، APIها، migrationها
+و history نشان داد که بعضی صفحات Backoffice از generation جدیدتری از API استفاده
+می‌کنند که در این checkout مستقر وجود ندارد؛ کپی‌کردن ناقص آن generation باعث حذف
+یا stub کردن functionality می‌شد و انجام نشد.
 
-1. mapping پیش‌فرض EF برای `Person` نام CLR یعنی `"Persons"` را به SQL می‌فرستاد، در حالی که schema canonical جدول `barang.persons` است. این موضوع `/api/v1/customers` و مصرف‌کنندگان سازمان/فروشنده را به `42P01 relation "barang.Persons" does not exist` و HTTP 500 می‌رساند.
-2. دادهٔ معتبر قدیمی tariff با `tariff_type = 'Design'` وجود داشت، اما enum `TariffType` در API عضو `Design` نداشت؛ خواندن `/api/v1/pricing/tariffs` با `Cannot convert string value 'Design'` و HTTP 500 شکست می‌خورد. عضو enum به قرارداد canonical موجود اضافه شد؛ مقدارهای عددی بعدی حفظ شدند (`AdditionalService=5`).
-3. checkout مستقر routeهای واقعی `/api/v1/organization/chart` و `/api/v1/organization/persons` را نداشت، در حالی که صفحات و migrationهای canonical آن‌ها در source/DB موجود بودند؛ این درخواست‌ها 404 می‌دادند.
+قبل از deployment، backup توسعه در مسیر خارج از repository ایجاد و با
+`pg_restore --list` و restore به PostgreSQL ایزولهٔ `barang_recovery_stopplan_test`
+اعتبارسنجی شد. هیچ reset، migration داده‌ای، تغییر admin، یا تغییر schema در این
+مرحله انجام نشد.
 
-هیچ authorization، query filter، حساب admin، دادهٔ کسب‌وکار یا رمز عبور reset نشد. برای هماهنگ‌کردن مدل EF و snapshot، migration `20261012124313_ProbeModelAlignment` فقط snapshot را ثبت می‌کند؛ migrationهای قبلی canonical قبلاً جدول‌های lowercase را می‌سازند و این migration عمدی هیچ rename/drop/data movement انجام نمی‌دهد.
+## علت‌های تأییدشده و اصلاحات
 
-## شواهد و اصلاحات
+| صفحه/مسیر | علت مشاهده‌شده | اصلاح انجام‌شده | نتیجهٔ فعلی |
+|---|---|---|---|
+| Users and Permissions | صفحه `/security/users/search` و `/security/roles/search` را صدا می‌زد، ولی API مستقر فقط root list دارد؛ 404 | `UserAccessManagement.razor` برای بارگذاری اولیه از endpointهای واقعی root استفاده می‌کند و envelope/array هر دو را می‌خواند | API list کاربران و نقش‌ها 200؛ dialogهای advanced هنوز نیازمند API متناظر هستند |
+| Suppliers | صفحه `/suppliers/core` را صدا می‌زد، ولی API موجود `/suppliers/` است؛ 404 و empty misleading | `SupplierManager.razor` به list واقعی و activation واقعی وصل شد و شکل object/array را تحمل می‌کند | list API 200؛ editor/core CRUD در این checkout هنوز اثبات نشده است |
+| Design Bank | UI منتظر `{items,totalCount}` بود، ولی API موجود array برمی‌گرداند؛ lifecycle خطا را نیز کامل نمی‌کرد | `DesignBank.razor` هر دو شکل پاسخ را می‌خواند و با `try/finally` loading را پایان می‌دهد | API `GET /api/v1/artworks` برابر 200؛ browser/circuit و modal CRUD به‌دلیل نبود browser automation تأیید نشده |
+| Pricing | UI مسیر `/pricing/tariffs/search` را می‌خواست (405)، API موجود list با slash پایانی است؛ contract قدیمی/جدید مخلوط بود | `PricingWorkspace.razor` از list واقعی استفاده می‌کند، فیلتر صفحه‌ای را حفظ می‌کند و پاسخ قدیمی numeric را parse می‌کند | API tariff list 200؛ create/edit پیشرفتهٔ generation جدید هنوز اثبات نشده |
+| Workflow Designer | UI به `/workflows/definition` نیاز دارد، ولی API مستقر این route را ندارد (404). در checkout فعلی implementation معتبر `WorkflowDefinitionRuntime`/designer administration پیدا نشد؛ فقط contract یا stub ساختن امن نیست | تغییری برای پنهان‌کردن خطا یا جعل definition انجام نشد | **blocker باقی‌مانده**؛ load definition/nodeها قابل تأیید نیست |
 
-| ماژول/مسیر | قبل | استثناء/علت | اصلاح و نتیجهٔ runtime |
-|---|---:|---|---|
-| داده پایه، `GET /api/v1/lookups/types` | 200 | context شرکت معتبر | 200، پاسخ JSON معتبر |
-| مشتری، `GET /api/v1/customers` | 500 | `CustomerStore.SearchAsync:59` → `Npgsql 42P01 barang.Persons` | `PersonConfiguration` با `ToTable("persons")`؛ 200 |
-| محصولات، `GET /api/v1/products` | 200 | — | 200، داده نمایش داده شد |
-| Design Bank، `GET /api/v1/artworks` | 200 | — | 200، داده نمایش داده شد |
-| سفارش، `GET /api/v1/orders` | 200 | — | 200، داده نمایش داده شد |
-| Cartable، `GET /api/v1/workflows/tasks/mine` | 200 | — | 200، لیست خالی واقعی |
-| Pricing، `GET /api/v1/pricing/tariffs` | 500 | EF enum materialization روی `Design` | افزودن `TariffType.Design`؛ 200 |
-| Inventory، `GET /api/v1/inventory/balances` | 200 | — | 200، empty state واقعی |
-| Purchasing، `GET /api/v1/purchasing/orders` | 200 | — | 200، empty state واقعی |
-| User Management، `GET /api/v1/security/users` | 200 | — | 200 |
-| Organization chart، `GET /api/v1/organization/chart` | 404 | endpoint در checkout ناقص بود | بازیابی قرارداد/store/route واقعی؛ 200 |
-| Persons، `GET /api/v1/organization/persons` | 404 | endpoint در checkout ناقص بود | route read/search واقعی؛ 200 |
+## شواهد API و persistence
 
-مسیرهای API با login واقعی local admin و `X-Company-ID` شرکت مجاز اجرا شدند؛ token و credential در خروجی ثبت نشده‌اند. لاگ API برای customer correlationهای `bbac3c4128154715a7010d7ffb54b056` و `675deda5048f4fc8a090d37704652ce4` علت‌های فوق را نشان داد.
+با login واقعی local admin و company مجاز، بدون ثبت token/credential، این پاسخ‌ها
+بعد از deployment ثبت شدند:
 
-## فایل‌ها و provenance
+| درخواست | نتیجه |
+|---|---|
+| `GET /api/v1/security/users/` | 200، آرایهٔ واقعی |
+| `GET /api/v1/security/roles/` | 200، آرایهٔ واقعی |
+| `GET /api/v1/suppliers/?search=&pageNumber=1&pageSize=20&activeOnly=true` | 200، object واقعی |
+| `GET /api/v1/artworks?search=&limit=20` | 200، آرایهٔ واقعی |
+| `GET /api/v1/pricing/tariffs/?includeInactive=false` | 200، آرایهٔ واقعی |
+| `GET /api/v1/workflows/definition` | 404؛ در لاگ API با company context ثبت شد |
 
-- `src/BARANG.Core.Infrastructure/Persistence/Configurations/OrganizationConfigurations.cs`: mapping canonical `Person` به `barang.persons` و mapping سه entity سازمانی.
-- `src/BARANG.Core.Domain/Pricing/PricingModels.cs`: عضو canonical `TariffType.Design`؛ enumهای موجود بعد از آن جابه‌جا نشده‌اند.
-- `src/BARANG.Core.Api/Organization/OrganizationEndpoints.cs`: routeهای chart/persons با permission موجود.
-- `src/BARANG.Core.Application/Organization/OrganizationalChartContracts.cs` و `OrganizationalChartAdministration.cs`: قرارداد و service واقعی بازیابی‌شده از implementation موجود.
-- `src/BARANG.Core.Domain/Organization/{OrganizationalAssignment,Position,PositionAssignment}.cs` و `src/BARANG.Core.Infrastructure/Persistence/OrganizationalChartStore.cs`: entity/store واقعی؛ بدون stub.
-- `src/BARANG.Core.Infrastructure/Persistence/CoreDbContext.cs` و `DependencyInjection.cs`: DbSet، company filter و registrationهای لازم.
-- `src/BARANG.Core.Domain/Organization/OrganizationErrors.cs` و `OrganizationAdministration.cs`: خطاها و mapperهای لازم برای همان service.
-- `src/BARANG.Core.Infrastructure/Persistence/Migrations/20261012124313_ProbeModelAlignment.*`: migration/snapshot alignment؛ `Up/Down` بدون تغییر داده.
-- `tests/BARANG.Core.IntegrationTests/Database/PricingE2ETests.cs`: fixture عددی stale با enum canonical هماهنگ شد (`AdditionalService=5`).
+علت‌های قبلی که در commit مبنا حفظ و در source تأیید شدند نیز عبارت‌اند از mapping
+`Person` به جدول lowercase `barang.persons`، پشتیبانی `TariffType.Design`، و routeهای
+سازمانی. normalized Customer، login، role/permission admin و pricing/unit fixes
+حفظ شده‌اند.
 
-فایل‌های سازمانی از implementation موجود در checkout اصلی `D:\00_BARANG\01_CORE` provenance گرفتند؛ مدل فعلی feature branch با حذف وابستگی‌های ناسازگار مثل `ApplicationUser.PersonId` سازگار شد.
+## تغییرات این recovery
 
-## verification
+- `src/BARANG.Backoffice/Components/Pages/PricingWorkspace.razor`: استفاده از route
+  واقعی tariff و parser سازگار با پاسخ array/numeric.
+- `src/BARANG.Backoffice/Components/Pages/DesignBank.razor`: سازگاری با پاسخ array،
+  پایان قطعی loading و جلوگیری از باقی‌ماندن state در خطا.
+- `src/BARANG.Backoffice/Components/Pages/UserAccessManagement.razor`: list واقعی
+  user/role و parser سازگار با DTO موجود.
+- `src/BARANG.Backoffice/Components/Pages/SupplierManager.razor`: list و activation
+  واقعی supplier، بدون fabricated empty data.
 
-- build Release API: موفق، ۰ warning / ۰ error.
-- build Release Backoffice: موفق، ۰ warning / ۰ error.
-- unit tests Pricing/Organization: `23 passed`.
-- Backoffice regression filters (`CoreApiClientTests`, login، route table): `22 passed`.
-- isolated PostgreSQL database `barang_regression_test` (restored/migrated copy): customer/pricing/identity filters `12 passed`.
-- fresh isolated PostgreSQL database `barang_regression_fresh_test`: full migration chain و همان ۱۲ تست `12 passed`.
-- backup توسعه: `D:\00_BARANG\barang_core_regression_20261012161225.backup`، archive با `pg_restore --list` معتبر و حدود ۱۷۳۵ entry؛ backup خارج repository است و commit نمی‌شود. migration `20261012124313_ProbeModelAlignment` پس از بررسی backup با `dotnet ef database update` اعمال شد و فقط history/snapshot را ثبت کرد.
-- local deployment از compose context `D:\00_BARANG\step2-clean\01_CORE`: API image digest `sha256:a5e1f6da92e021a85862c42e69bc0ac9a119a9a1d1c28e5cb9d2236f8c0a6d09` و Backoffice image digest `sha256:416fbff78105a4de6f862d8c7dd49942b31c6c90a17a96f688e73e82fd2e6f5e` در حال اجرا هستند.
-- login واقعی Backoffice با فرم `/auth/login`، cookie/session، root authenticated و logout با HTTP بررسی شد؛ visual browser automation در این محیط در دسترس نبود.
+چهار migration/config تغییرکردهٔ قبلی در working tree عمداً stage نشدند و متعلق به
+این recovery نیستند. هیچ فایل canonical dirty خارج از checkout تغییر نکرد.
 
-## محدودیت‌ها و remaining
+## build، deployment و verification
 
-این گزارش recovery است، نه شروع reservation/consumption یا سایر گام‌های integration plan. پوشش browser بصری و CRUD mutation هر صفحه به‌صورت UI کامل انجام نشد؛ API/persistence و smoke مسیرهای نماینده بررسی شد. Cartable runtime کامل و workflow business integration همچنان خارج از این recovery و یک blocker مستقل برنامهٔ integration است.
+- API و Backoffice با Release/no-restore build شدند: هر دو ۰ warning و ۰ error.
+- compose context: `D:\00_BARANG\step2-clean\01_CORE`؛ فقط `api` و `backoffice`
+  rebuild/up شدند، PostgreSQL reset نشد.
+- API image: `sha256:5505cb9112ec90007d8c3665ba58d02cc10b2dba67e64a7a7f49c164b3cf7398`
+- Backoffice image: `sha256:0360e04f063bc42124ea5360fbff893c7efa969392ffc54aee781b431f9000f2`
+- API و Backoffice پس از deploy healthy بودند؛ migration history تغییر جدیدی ندارد.
+- backup توسعه: `D:\00_BARANG\barang_core_recovery_stopplan_20261012162450.backup`؛
+  archive فهرست‌پذیر و restore ایزوله موفق بود.
+- browser automation در این محیط browser/tab در دسترس نداشت؛ بنابراین visual layout،
+  Blazor circuit واقعی، modal CRUD و screenshot verification **pending** است. HTTP 200
+  به‌تنهایی به‌عنوان تأیید UI ادعا نمی‌شود.
+
+### اجرای تست در این recovery
+
+- `BARANG.Core.UnitTests`: **۱۸۹/۱۸۹ موفق**.
+- `CustomerNormalizedApiTests`: **موفق**.
+- `BusinessProfileApiTests`: یک تست موفق و یک تست ناموفق؛ submit سفارش در test host
+  با `core.unexpected`/HTTP 500 شکست خورد و این مسیر هنوز recovery-complete محسوب
+  نمی‌شود.
+- `DatabaseFoundationTests`: قابل استناد به‌عنوان pass نیستند؛ assertion قدیمی عدد
+  migration را ۲۳ فرض می‌کند، درحالی‌که chain فعلی ۷۶–۷۸ migration دارد. این mismatch
+  در کد recovery تغییر داده نشد.
+
+## matrix پوشش و remaining
+
+| حوزه | وضعیت |
+|---|---|
+| Base Data، Customers، Products، Orders، Inventory/Purchasing | smokeهای API قبلی حفظ شده‌اند؛ browser و CRUD mutation کامل در این اجرا تأیید نشده |
+| Users/Roles | list واقعی تأیید شد؛ advanced permission/substitution dialogs نیازمند endpointهای نسل جدید هستند |
+| Suppliers | list/activation تأیید شد؛ SupplierEditor که هنوز `/suppliers/core` می‌خواهد blocker CRUD است |
+| Design Bank | API و lifecycle اصلاح شد؛ visual/circuit و فرم‌های جزئیات pending |
+| Pricing | list API و parsing اصلاح شد؛ فرم‌های tariff پیشرفته pending |
+| Cartable/Workflow | مسیرهای runtime نسل جدید در API مستقر وجود ندارند؛ Workflow Designer و Cartable کامل **قابل قبول اعلام نمی‌شوند** |
+
+### نتیجه
+
+بخشی از regression مشترکِ contract mismatch بازیابی و deploy شده است، اما recovery
+هنوز کامل نیست. نبود implementation معتبر و قابل انتساب برای Workflow Designer/
+WorkflowDefinitionRuntime و باقی‌ماندن endpointهای advanced برای SupplierEditor و
+dialogهای مدیریت دسترسی، مانع اعلام «بازگشت کامل functionality» است. این موارد باید
+از source canonical کامل یا artifact معتبر بازیابی شوند؛ در این مرحله placeholder،
+empty handler، permissive authorization یا rollback کور انجام نشد.

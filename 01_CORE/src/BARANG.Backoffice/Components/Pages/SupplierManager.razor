@@ -30,14 +30,14 @@
             <th>@S["GradePreferred"]</th><th><BarangSortHeader Label="@S["Status"]" Active="@(Sort=="status")" Descending="@Descending" Clicked='()=>SortChanged("status")' /></th><th>@S["Actions"]</th>
         </tr></thead><tbody>
         @foreach(var item in Rows){
-            var row=item.GetProperty("supplier");Guid id=row.GetProperty("id").GetGuid();string status=SupplierUiSchema.Text(row,"status");
+            var row=item;Guid id=row.GetProperty("id").GetGuid();string status=row.TryGetProperty("isActive",out var active)&&active.GetBoolean()?"Active":"Inactive";
             <tr data-id="@id">
-                <td>@SupplierUiSchema.Text(row,"supplierNumber")</td>
+                <td>@SupplierUiSchema.Text(row,"supplierCode")</td>
                 <td><button type="button" class="entity-link" @onclick="()=>Show(id,true)">@SupplierUiSchema.Text(row,"displayName")</button></td>
-                <td>@S[SupplierUiSchema.Text(row,"entityType")]</td>
-                <td>@string.Join(", ",item.GetProperty("categoryIds").EnumerateArray().Select(x=>Caption(x.GetString()!)))</td>
+                <td>—</td>
+                <td>—</td>
                 <td dir="ltr">@(SupplierUiSchema.Text(row,"primaryMobile") is string mobile&&mobile.Length>0?mobile:SupplierUiSchema.Text(row,"primaryPhone"))</td>
-                <td>@Caption(SupplierUiSchema.Text(row,"gradeId"))@if(row.GetProperty("isPreferred").GetBoolean()){<span class="status-badge">@S["Preferred"]</span>}</td>
+                <td>—</td>
                 <td><span class="customer-status status-@status.ToLowerInvariant()">@S[status]</span></td>
                 <td><div class="row-actions">
                     <BarangIconButton Icon="eye" Label="@S["View"]" Semantic="info" Clicked="()=>Show(id,true)" />
@@ -98,12 +98,11 @@
     private async Task Load(){
         var session=await Session();if(session is null){Message="Forbidden";return;}
         int revision=++LoadRevision;Loading=true;
-        string url=$"api/v1/suppliers/core?search={Uri.EscapeDataString(Search)}&pageNumber={Page}&pageSize={PageSize}&sortBy={Sort}&sortDescending={Descending.ToString().ToLowerInvariant()}";
-        if(Type.Length>0)url+="&entityType="+Type;if(Status.Length>0)url+="&status="+Status;if(Category.Length>0)url+="&categoryId="+Category;
+        string url=$"api/v1/suppliers/?search={Uri.EscapeDataString(Search)}&pageNumber={Page}&pageSize={PageSize}&activeOnly={(Status=="Active").ToString().ToLowerInvariant()}";
         var result=await Core.GetAsync(url,session.Value.Token,session.Value.Company,default);
         if(revision!=LoadRevision||session.Value.Company!=CurrentCompany)return;
         Rows=[];
-        if(result.IsSuccess){Rows=result.Value.GetProperty("items").EnumerateArray().ToList();Total=result.Value.GetProperty("totalCount").GetInt64();if(Page>1&&Total<=(Page-1)*PageSize){Page=Math.Max(1,(int)((Total+PageSize-1)/PageSize));await Load();return;}}
+        if(result.IsSuccess){Rows=result.Value.ValueKind==JsonValueKind.Object&&result.Value.TryGetProperty("items",out var items)?items.EnumerateArray().ToList():result.Value.ValueKind==JsonValueKind.Array?result.Value.EnumerateArray().ToList():[];Total=result.Value.ValueKind==JsonValueKind.Object&&result.Value.TryGetProperty("totalCount",out var count)?count.GetInt64():Rows.Count;if(Page>1&&Total<=(Page-1)*PageSize){Page=Math.Max(1,(int)((Total+PageSize-1)/PageSize));await Load();return;}}
         else{Success=false;Message=SupplierUiSchema.Error(result);Total=0;}
         Loading=false;
     }
@@ -115,7 +114,7 @@
     private async Task Previous(){if(Page>1){Page--;await Load();}}private async Task Next(){if(Total>Page*PageSize){Page++;await Load();}}
     private async Task ChangeStatus(JsonElement row,string status){
         if(Busy||!CanManage)return;var session=await Session();if(session is null)return;Busy=true;
-        try{var result=await Core.SendAsync(HttpMethod.Post,$"api/v1/suppliers/{SupplierUiSchema.Text(row,"id")}/status",new{status,version=row.GetProperty("version").GetInt64()},session.Value.Token,session.Value.Company,default);Success=result.IsSuccess;Message=result.IsSuccess?"Saved":SupplierUiSchema.Error(result);if(result.IsSuccess)await Load();}finally{Busy=false;}
+        try{var result=await Core.SendAsync(HttpMethod.Put,$"api/v1/suppliers/{SupplierUiSchema.Text(row,"id")}/activation",new{isActive=status=="Active",version=row.GetProperty("version").GetInt64()},session.Value.Token,session.Value.Company,default);Success=result.IsSuccess;Message=result.IsSuccess?"Saved":SupplierUiSchema.Error(result);if(result.IsSuccess)await Load();}finally{Busy=false;}
     }
     private void AskDelete(JsonElement row){PendingDelete=row;DeleteError=null;DeleteOpen=true;}
     private void CancelDelete(){if(!Busy)DeleteOpen=false;}

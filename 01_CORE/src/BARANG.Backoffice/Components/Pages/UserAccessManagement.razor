@@ -330,12 +330,10 @@ else
     {
         UsersLoading = true; UsersError = false; Notice = null;
         SessionInfo? session = await Session(); if (session is null) { UsersLoading = false; UsersError = true; return; }
-        string state = UserState.Length == 0 ? "" : $"&accountState={Uri.EscapeDataString(UserState)}";
-        string path = $"api/v1/security/users/search?search={Uri.EscapeDataString(UserSearch)}{state}&sortBy={UserSort}&descending={UserDescending.ToString().ToLowerInvariant()}&pageNumber={UserPage}&pageSize={PageSize}";
+        string path = "api/v1/security/users/";
         ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync(path, session.Token, session.Company, Lifetime.Token);
         UsersLoading = false; if (!result.IsSuccess) { UsersError = true; return; }
-        System.Text.Json.JsonElement root = result.Value; long total = Long(root, "totalCount"); UserTotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize));
-        Users = root.GetProperty("items").EnumerateArray().Select(ParseUserRow).ToList();
+        System.Text.Json.JsonElement root = result.Value; IEnumerable<System.Text.Json.JsonElement> items = root.ValueKind == System.Text.Json.JsonValueKind.Array ? root.EnumerateArray() : root.TryGetProperty("items", out var wrapped) ? wrapped.EnumerateArray() : []; List<System.Text.Json.JsonElement> all = items.ToList(); if (!string.IsNullOrWhiteSpace(UserSearch)) all = all.Where(x => Text(x,"username").Contains(UserSearch,StringComparison.OrdinalIgnoreCase) || Text(x,"displayName").Contains(UserSearch,StringComparison.OrdinalIgnoreCase)).ToList(); Users = all.Skip((UserPage-1)*PageSize).Take(PageSize).Select(ParseUserRow).ToList(); UserTotalPages = Math.Max(1, (int)Math.Ceiling(all.Count/(double)PageSize));
     }
     private async Task ChangeUserSearch(ChangeEventArgs e) { UserSearch = e.Value?.ToString() ?? ""; UserPage = 1; await LoadUsers(); }
     private async Task ChangeUserState(ChangeEventArgs e) { UserState = e.Value?.ToString() ?? ""; UserPage = 1; await LoadUsers(); }
@@ -344,9 +342,9 @@ else
     private async Task LoadRoles()
     {
         RolesLoading = true; RolesError = false; Notice = null; SessionInfo? session = await Session(); if (session is null) { RolesLoading = false; RolesError = true; return; }
-        string path = $"api/v1/security/roles/search?search={Uri.EscapeDataString(RoleSearch)}&sortBy={RoleSort}&descending={RoleDescending.ToString().ToLowerInvariant()}&pageNumber={RolePage}&pageSize={PageSize}";
+        string path = "api/v1/security/roles/";
         ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync(path, session.Token, session.Company, Lifetime.Token); RolesLoading = false; if (!result.IsSuccess) { RolesError = true; return; }
-        System.Text.Json.JsonElement root = result.Value; long total = Long(root, "totalCount"); RoleTotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize)); Roles = root.GetProperty("items").EnumerateArray().Select(ParseRole).ToList();
+        System.Text.Json.JsonElement root = result.Value; IEnumerable<System.Text.Json.JsonElement> items = root.ValueKind == System.Text.Json.JsonValueKind.Array ? root.EnumerateArray() : root.TryGetProperty("items", out var wrapped) ? wrapped.EnumerateArray() : []; List<System.Text.Json.JsonElement> all = items.ToList(); Roles = all.Skip((RolePage-1)*PageSize).Take(PageSize).Select(ParseRole).ToList(); RoleTotalPages = Math.Max(1, (int)Math.Ceiling(all.Count/(double)PageSize));
     }
     private async Task ChangeRoleSearch(ChangeEventArgs e) { RoleSearch = e.Value?.ToString() ?? ""; RolePage = 1; await LoadRoles(); }
     private async Task SortRoles(string sort) { if (RoleSort == sort) RoleDescending = !RoleDescending; else { RoleSort = sort; RoleDescending = false; } await LoadRoles(); }
@@ -519,7 +517,7 @@ else
     private static bool Bool(System.Text.Json.JsonElement x, string name) => x.TryGetProperty(name, out var p) && p.ValueKind is System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False && p.GetBoolean();
     private static long Long(System.Text.Json.JsonElement x, string name) => x.TryGetProperty(name, out var p) && p.TryGetInt64(out long n) ? n : 0;
     private static DateTimeOffset? Date(System.Text.Json.JsonElement x, string name) => x.TryGetProperty(name, out var p) && p.ValueKind != System.Text.Json.JsonValueKind.Null && p.TryGetDateTimeOffset(out DateTimeOffset value) ? value : null;
-    private static UserRow ParseUserRow(System.Text.Json.JsonElement x) { var a = x.GetProperty("account"); var p = x.GetProperty("person"); return new(a.GetProperty("id").GetGuid(), Text(a, "username"), Text(p, "fullName"), Text(p, "personnelCode"), Text(p, "mobile"), OrganizationOf(p), Text(a, "accountState"), Date(a, "lastLoginAtUtc"), x.GetProperty("assignedRoleTitles").EnumerateArray().Select(y => y.ToString()).ToList(), Long(a, "version")); }
+    private static UserRow ParseUserRow(System.Text.Json.JsonElement x) { if(x.TryGetProperty("account",out var a)&&x.TryGetProperty("person",out var p)) return new(a.GetProperty("id").GetGuid(),Text(a,"username"),Text(p,"fullName"),Text(p,"personnelCode"),Text(p,"mobile"),OrganizationOf(p),Text(a,"accountState"),Date(a,"lastLoginAtUtc"),x.TryGetProperty("assignedRoleTitles",out var roles)?roles.EnumerateArray().Select(y=>y.ToString()).ToList():[],Long(a,"version")); return new(x.GetProperty("id").GetGuid(),Text(x,"username"),Text(x,"displayName"),"","","",Text(x,"accountState"),Date(x,"lastLoginAtUtc"),[],Long(x,"version")); }
     private static RoleRow ParseRole(System.Text.Json.JsonElement x) => new(x.GetProperty("id").GetGuid(), Text(x, "code"), Text(x, "displayTitle"), Text(x, "description"), Text(x, "scope"), Bool(x, "isSystem"), Bool(x, "isActive"), Long(x, "userCount"), Long(x, "version"));
     private static PersonCandidate ParsePersonCandidate(System.Text.Json.JsonElement x) => new(ParsePerson(x.GetProperty("person")), Bool(x, "hasUserAccount"));
     private static PersonInfo ParsePerson(System.Text.Json.JsonElement p) => new(p.GetProperty("id").GetGuid(), Text(p, "personnelCode"), Text(p, "fullName"), Text(p, "mobile"), Text(p, "email"), Bool(p, "isActive"), OrganizationOf(p));
