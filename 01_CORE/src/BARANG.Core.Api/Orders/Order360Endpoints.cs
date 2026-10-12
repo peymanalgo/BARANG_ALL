@@ -75,7 +75,7 @@ public static class Order360Endpoints
             },
             inventory = new
             {
-                reservations = await db.StockReservations.AsNoTracking().Where(x => itemIds.Contains(x.OrderItemId)).Select(x => new { x.Id, x.OrderItemId, x.WarehouseId, x.ProductVariantId, x.RequestedQuantity, x.ReservedQuantity, x.RemainingQuantity, x.Status, x.ExpiresAtUtc, x.Version }).ToListAsync(ct),
+                reservations = await db.StockReservations.AsNoTracking().Where(x => itemIds.Contains(x.OrderItemId)).Select(x => new { x.Id, x.OrderItemId, x.WarehouseId, x.ProductVariantId, x.UomCode, x.RequestedQuantity, x.ReservedQuantity, x.RemainingQuantity, x.Status, x.ExpiresAtUtc, x.Version }).ToListAsync(ct),
                 shortages = await db.StockShortages.AsNoTracking().Where(x => itemIds.Contains(x.OrderItemId)).Select(x => new { x.Id, x.OrderItemId, x.WarehouseId, x.ProductVariantId, x.RequiredQuantity, x.AvailableQuantity, x.ShortageQuantity, x.IsActive }).ToListAsync(ct)
             },
             production = await db.ProductionJobs.AsNoTracking().Where(x => x.OrderId == orderId).OrderBy(x => x.CreatedAtUtc).Select(x => new { x.Id, x.OrderItemId, x.PrintOperationId, x.JobType, x.Status, x.Priority, x.AssignedOperatorUserId, x.AssignedEquipmentId, x.PlannedStartUtc, x.PlannedEndUtc, x.StartedAtUtc, x.CompletedAtUtc, x.FailureReason, x.SuspensionReason, x.ReproductionRequestId, x.Version }).ToListAsync(ct),

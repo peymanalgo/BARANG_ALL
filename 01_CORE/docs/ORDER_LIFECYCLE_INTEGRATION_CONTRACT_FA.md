@@ -218,3 +218,26 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 - تصمیم‌های ستون «تصمیم لازم» تا تأیید BA قرارداد قطعی نیستند.
 
 **وضعیت STEP 1:** قرارداد و شواهد آماده است؛ application integrations عمداً اصلاح نشده‌اند.
+
+## الحاقیه STEP 2 — قرارداد هویت و واحد موجودی
+
+### تصمیم‌های پیاده‌سازی‌شده
+
+- هویت موجودی همچنان ترکیب `CompanyId + WarehouseId + ProductVariantId` است؛ مدل موازی ایجاد نشده است.
+- ارتباط رزرو به `OrderItemId` دقیق متصل می‌ماند و دو قلم سفارش با SKU یکسان مستقل هستند.
+- واحد مرجع از `Product.UnitOfMeasureCode` خوانده می‌شود؛ `ProductVariant` واحد مستقل ندارد.
+- `uom_code` اکنون در رزرو، Purchase Request Item و Purchase Order Item ذخیره و در قراردادهای API برای رزرو و Purchase Order نمایش داده می‌شود.
+- واحد ارسالی، در صورت وجود، باید دقیقاً با واحد مرجع محصول برابر باشد؛ تبدیل عمومی یا فرض «جعبه به قطعه» اضافه نشده است. اختلاف واحد با `inventory.unit_mismatch` رد می‌شود.
+- کمیت همچنان `decimal` با precision فعلی دامنه است؛ این STEP زمان مصرف، رزرو، آزادسازی یا gateهای workflow را تغییر نمی‌دهد.
+
+### شواهد و migration
+
+کد اصلی در `src/BARANG.Core.Infrastructure/Inventory/InventoryAdministration.cs` برای Movement، Reserve، CreatePurchaseRequest و CreatePurchaseOrder مالکیت شرکت/انبار/variant و تطبیق واحد را بررسی می‌کند. مدل‌ها در `src/BARANG.Core.Domain/Inventory/InventoryModels.cs` و قراردادها در `src/BARANG.Core.Application/Inventory/InventoryContracts.cs` تغییر کرده‌اند. migration `20261012100553_Step2InventoryUnitContracts` ستون‌ها را ابتدا nullable اضافه می‌کند، فقط با joinهای Product/Variant/OrderItem backfill می‌کند، ردیف حل‌نشده را با خطای صریح متوقف می‌کند و سپس NOT NULL می‌سازد.
+
+بررسی read-only قبلی در DB توسعه برای هر سه جدول، ردیف unresolved برابر صفر نشان داد؛ با این حال migration روی `barang_core` اجرا نشد چون migration قبلی `LateWorkflowEvidenceSchema` با خطای duplicate column متوقف می‌شود. بنابراین نتیجه backfill عملیاتی در DB توسعه هنوز تأیید نشده است و هیچ رکوردی در آن تغییر نکرده است.
+
+### تست و وضعیت
+
+تست‌های واحد هویت دقیق OrderItem، استقلال قلم‌های SKU یکسان، واحد و کمیت اعشاری اضافه شده‌اند. Build لایه Core موفق است. اجرای integration موجود در DB ایزوله به یک شکست قدیمی `order.invalid_print_method` در مسیر print رسید و به تغییرات STEP 2 نسبت داده نشد. اعمال migration و deploy تا رفع drift قبلی مجاز/تأیید نشده است.
+
+وابستگی STEP 3: Reservation می‌تواند این `uom_code` و هویت دقیق را مصرف کند، اما stage رزرو و رفتار shortage هنوز طبق تصمیم کسب‌وکار STEP 1 باید نهایی شود.

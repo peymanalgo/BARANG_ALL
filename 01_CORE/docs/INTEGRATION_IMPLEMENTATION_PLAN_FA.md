@@ -70,3 +70,11 @@
 ## وضعیت برنامه
 
 این برنامه برای مراحل ۲ تا ۱۵ آماده استفاده است، اما تصمیم‌های رزرو، consume، Finance approval، shortage-to-purchasing، QC receipt hold و return accounting باید قبل از implementation تأیید شوند. هیچ‌کدام از integrationهای فعلی در این STEP اصلاح نشده‌اند.
+
+## وضعیت اجرای STEP 2 — هویت و قرارداد واحد موجودی
+
+STEP 2 از نظر تغییرات source، مدل و قرارداد API، migration قابل‌ردیابی و تست واحد در این شاخه پیاده‌سازی شده است. واحد مرجع `Product.UnitOfMeasureCode` است و تبدیل ضمنی یا generic conversion ایجاد نشده است. رزرو، Purchase Request و Purchase Order اکنون واحد را نگه می‌دارند و ورودی واحد ناسازگار را رد می‌کنند.
+
+محدودیت عملیاتی: migration روی دیتابیس توسعه به‌علت drift قبلی در `LateWorkflowEvidenceSchema` اجرا نشد (`column ... claimed_on_behalf_of_user_id already exists`). migration عمداً bypass یا mark-as-applied نشد. بنابراین STEP 2 برای deploy/runtime هنوز **مشروط/ناقص** است و تا رفع drift و اجرای migration در محیط ایزوله قابل اعلام به‌عنوان تکمیل عملیاتی نیست.
+
+تست واحد موفق است؛ integration suite موجود با شکست مستقل `order.invalid_print_method` متوقف شد. reservation، consumption، finance approval و workflow transition در STEP 2 تغییر نکرده‌اند و به‌ترتیب در STEPهای بعدی وابسته به قراردادهای این مرحله هستند.
