@@ -78,7 +78,7 @@ public sealed class CoreApiClient(HttpClient httpClient, ILogger<CoreApiClient> 
                 {
                     if (response.StatusCode == HttpStatusCode.NoContent) return new ApiResult<T>(default, ApiFailure.None, null, null, (int)response.StatusCode);
                     T? value = await response.Content.ReadFromJsonAsync<T>(JsonOptions, ct);
-                return value is null ? ApiResult<T>.Failed(ApiFailure.Unexpected, statusCode: (int)response.StatusCode) : new ApiResult<T>(value, ApiFailure.None, null, null, (int)response.StatusCode);
+                    return value is null ? ApiResult<T>.Failed(ApiFailure.ContractError, "backoffice.core.empty_response", statusCode: (int)response.StatusCode) : new ApiResult<T>(value, ApiFailure.None, null, null, (int)response.StatusCode);
                 }
                 CoreProblem? problem = null;
                 try { problem = await response.Content.ReadFromJsonAsync<CoreProblem>(JsonOptions, ct); } catch (JsonException) { }
@@ -106,6 +106,11 @@ public sealed class CoreApiClient(HttpClient httpClient, ILogger<CoreApiClient> 
         {
             logger.LogWarning("Core API timed out for {Method} {Path}", request.Method, request.RequestUri);
             return ApiResult<T>.Failed(ApiFailure.Unavailable);
+        }
+        catch (JsonException exception)
+        {
+            logger.LogError(exception, "Core API returned an invalid response contract for {Method} {Path}", request.Method, request.RequestUri);
+            return ApiResult<T>.Failed(ApiFailure.ContractError, "backoffice.core.invalid_response_contract");
         }
     }
 }
