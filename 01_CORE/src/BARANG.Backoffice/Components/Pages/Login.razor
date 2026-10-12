@@ -105,6 +105,6 @@
 @code {
     [SupplyParameterFromQuery] public string? Message { get; set; }
     [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
-    private string? ErrorText => Message switch { "invalid" => L["InvalidCredentials"].Value, "unavailable" => L["ApiUnavailable"].Value, "validation" => L["ValidationError"].Value, "unauthorized" => L["Unauthorized"].Value, "expired" => L["SessionExpired"].Value, "error" => L["GenericError"].Value, _ => null };
+    private string? ErrorText => Message switch { "invalid" => L["InvalidCredentials"].Value, "unavailable" => L["ApiUnavailable"].Value, "service" => L["ErrorMessage"].Value, "validation" => L["ValidationError"].Value, "unauthorized" => L["Unauthorized"].Value, "expired" => L["SessionExpired"].Value, "error" => L["GenericError"].Value, _ => null };
     protected override async Task OnInitializedAsync() { if ((await AuthState.GetAuthenticationStateAsync()).User.Identity?.IsAuthenticated == true) Navigation.NavigateTo("/", true); }
 }

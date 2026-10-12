@@ -113,7 +113,7 @@ public static class BackofficeAuthEndpoints
     private static async Task<IResult> ExpireAsync(HttpContext http) { await http.SignOutAsync(); return Results.LocalRedirect("/login?message=expired"); }
     private static IResult LoginFailure(string message) => Results.LocalRedirect($"/login?message={message}");
     private static string SafeReturnUrl(string? value) => !string.IsNullOrWhiteSpace(value) && value.StartsWith('/') && !value.StartsWith("//") ? value : "/";
-    private static string Message(ApiFailure failure) => failure switch { ApiFailure.InvalidCredentials => "invalid", ApiFailure.Unauthorized => "expired", ApiFailure.Forbidden => "unauthorized", ApiFailure.Validation => "validation", ApiFailure.Unavailable => "unavailable", _ => "error" };
+    private static string Message(ApiFailure failure) => failure switch { ApiFailure.InvalidCredentials => "invalid", ApiFailure.Unauthorized => "expired", ApiFailure.Forbidden => "unauthorized", ApiFailure.Validation => "validation", ApiFailure.Unavailable => "unavailable", ApiFailure.ContractError => "service", _ => "error" };
     private static string CompanySelectionMessage(ApiResult<CompanySelectionView> result) => result.ProblemCode switch
     {
         "security.company.inactive" => "inactive",

@@ -20,7 +20,7 @@ public sealed class SessionValidationMiddleware(RequestDelegate next)
         if (result.Failure == ApiFailure.Unauthorized) { await RejectAsync(context, "expired"); return; }
         if (result.Failure == ApiFailure.Forbidden) { context.Response.Redirect("/company?message=forbidden"); return; }
         if (result.Failure == ApiFailure.NotFound && companyId is not null) { context.Response.Redirect("/company?message=inactive"); return; }
-        if (!result.IsSuccess) { await RejectAsync(context, result.Failure == ApiFailure.Unavailable ? "unavailable" : "error"); return; }
+        if (!result.IsSuccess) { await RejectAsync(context, result.Failure switch { ApiFailure.Unavailable => "unavailable", ApiFailure.ContractError => "service", _ => "error" }); return; }
         if(context.Request.Path.StartsWithSegments("/recovery")&&!result.Value!.IsSystemAdministrator){context.Response.Redirect("/company");return;}
         if (context.Request.Path == "/" && companyId is null) { context.Response.Redirect(result.Value!.IsSystemAdministrator?"/recovery/companies":"/company"); return; }
         await next(context);

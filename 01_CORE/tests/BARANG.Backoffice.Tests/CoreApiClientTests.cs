@@ -48,6 +48,35 @@ public sealed class CoreApiClientTests
         Assert.Equal("Bearer", requests[1].Headers.Authorization!.Scheme);
     }
 
+    [Theory]
+    [InlineData("\"Active\"", "Active")]
+    [InlineData("0", "Active")]
+    [InlineData("\"Inactive\"", "Inactive")]
+    [InlineData("1", "Inactive")]
+    [InlineData("\"Locked\"", "Locked")]
+    [InlineData("2", "Locked")]
+    public async Task CurrentUserAcceptsCanonicalAndLegacyAccountStateWireValues(string wireValue, string expected)
+    {
+        string body = $"{{\"userId\":\"00000000-0000-0000-0000-000000000001\",\"username\":\"u\",\"displayName\":\"U\",\"accountState\":{wireValue},\"currentCompanyId\":null,\"effectiveRoleCodes\":[],\"effectivePermissionCodes\":[],\"isSystemAdministrator\":false}}";
+        var result = await Client(new StubHandler(_ => Json(HttpStatusCode.OK, body))).GetMeAsync("token", null, TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(expected, result.Value!.AccountState);
+    }
+
+    [Theory]
+    [InlineData("3")]
+    [InlineData("\"Suspended\"")]
+    [InlineData("true")]
+    public async Task CurrentUserRejectsUnknownAccountStateAsContractError(string wireValue)
+    {
+        string body = $"{{\"userId\":\"00000000-0000-0000-0000-000000000001\",\"username\":\"u\",\"displayName\":\"U\",\"accountState\":{wireValue},\"currentCompanyId\":null,\"effectiveRoleCodes\":[],\"effectivePermissionCodes\":[],\"isSystemAdministrator\":false}}";
+        var result = await Client(new StubHandler(_ => Json(HttpStatusCode.OK, body))).GetMeAsync("token", null, TestContext.Current.CancellationToken);
+
+        Assert.Equal(ApiFailure.ContractError, result.Failure);
+        Assert.Equal("backoffice.core.invalid_response_contract", result.ProblemCode);
+    }
+
     [Fact]
     public async Task LogoutCallsOfficialEndpoint()
     {
