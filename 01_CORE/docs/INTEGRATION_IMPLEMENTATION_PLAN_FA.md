@@ -201,3 +201,19 @@ fixture قابل بازتولید `tests/Acceptance/Step10QualityFixture.ps1` ا
 در اجرای نهایی، source candidate با SHA `792a3e0e3f9e8dd7af26bf9d65fe20d17baf4b85` ثبت شد. تغییر این candidate فقط lifecycle انتخاب‌گر جست‌وجویی را اصلاح می‌کند: پاسخ جست‌وجوی async دیگر DOM را با `@key` بازسازی و فهرست را بسته نمی‌کند. تست‌های تعاملی با action-menuهای استاندارد و تست readiness روی build هم‌محتوا موفق شدند.
 
 گیت‌های Unit/Backoffice/Integration و Release build موفق‌اند؛ backup و restore دیتابیس توسعه در محیط task-owned نیز بررسی شد. با این حال، اجرای نهایی browser روی image دقیق candidate به‌علت از دست رفتن fixture احراز هویت ایزوله پس از recreate محیط، 401 داد و تست pricing نیز به fixture فاقد artworkVersion معتبر و submit 422 رسید. بنابراین این سند صرفاً evidence است و STEP ۱۵ تا تکمیل بازاجرای end-to-end و fixture پایدار PASS اعلام نمی‌شود.
+
+## الحاقیه راستی‌آزمایی STEP 1
+
+ممیزی مجدد نشان داد برنامه باید با یک gate فنی آغاز شود: endpointها و DI registrationهای `WorkflowDefinitionRuntime` در source فعلی وجود دارند، اما implementation canonical و بخشی از entity/contractهای لازم در checkout قابل مشاهده نیستند. بنابراین مرحله‌های ۳ تا ۱۲ نباید بر فرض سالم‌بودن completion adapter اجرا شوند. ابتدا باید owner واقعی runtime و source canonical آن تعیین، compile و با یک task ایزوله اثبات شود؛ سپس integrationهای Inventory، Finance، Production، Quality و Logistics به همان مسیر متصل شوند.
+
+یافته‌های runtime نیز محدود به snapshot خواندنی `barang_core` است: orders=35، order_items=49، workflow_instances=14، و جدول‌های reservation، movement، shortage، purchasing، production، QC، package، shipment، notification و outbox در زمان بررسی صفر بودند. این اعداد عدم قابلیت را ثابت نمی‌کنند و هیچ test mutation یا migration در STEP 1 انجام نشد.
+
+ترتیب اصلاحی پیشنهادی برای مراحل ۲ تا ۱۵:
+
+۱. تثبیت WorkflowDefinitionRuntime و قرارداد owner completion، بدون احیای موازی مسیر legacy.
+
+۲. سپس مراحل ۲ تا ۴ برای identity/UOM/reservation/consume-release؛ Draft بدون deduction باقی بماند مگر تصمیم کسب‌وکار خلاف آن را تصویب کند.
+
+۳. مراحل ۵ تا ۱۲ فقط با owner service واقعی، event/outbox idempotency، audit و isolated PostgreSQL acceptance اجرا شوند.
+
+۴. مراحل ۱۳ تا ۱۵ پس از traceability master data، read model/audit و یک journey کامل Draft تا Delivery/Return در محیط ایزوله پذیرفته شوند.
