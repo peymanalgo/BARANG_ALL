@@ -614,22 +614,52 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AcquisitionMethodCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AssetNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AssetTag")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("AssignedPersonId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid")
                         .HasColumnName("branch_id");
+
+                    b.Property<string>("BrandCode")
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("CommissioningDate")
+                        .HasColumnType("date");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("company_id");
 
+                    b.Property<string>("ConditionCode")
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CriticalityCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CurrencyCode")
+                        .HasColumnType("text");
 
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("description");
+
+                    b.Property<string>("EquipmentCategoryCode")
+                        .HasColumnType("text");
 
                     b.Property<string>("EquipmentCode")
                         .IsRequired()
@@ -637,20 +667,32 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("equipment_code");
 
+                    b.Property<string>("EquipmentSubtypeCode")
+                        .HasColumnType("text");
+
                     b.Property<string>("EquipmentTypeCode")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("equipment_type_code");
 
+                    b.Property<int?>("ExpectedUsefulLifeMonths")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
+
+                    b.Property<string>("LifecycleStatusCode")
+                        .HasColumnType("text");
 
                     b.Property<string>("Manufacturer")
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)")
                         .HasColumnName("manufacturer");
+
+                    b.Property<string>("ManufacturerCode")
+                        .HasColumnType("text");
 
                     b.Property<string>("Model")
                         .HasMaxLength(150)
@@ -663,6 +705,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
                     b.Property<string>("OperationalStatusCode")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -673,10 +718,37 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("organizational_unit_id");
 
+                    b.Property<string>("OwnershipTypeCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhysicalLocation")
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("PurchaseDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal?>("PurchasePrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("PurchaseReference")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ResponsiblePersonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("RetirementDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("RetirementReasonCode")
+                        .HasColumnType("text");
+
                     b.Property<string>("SerialNumber")
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)")
                         .HasColumnName("serial_number");
+
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -686,6 +758,21 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("bigint")
                         .HasColumnName("version");
+
+                    b.Property<Guid?>("WarehouseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("WarrantyEnd")
+                        .HasColumnType("date");
+
+                    b.Property<string>("WarrantyNotes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WarrantyProvider")
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("WarrantyStart")
+                        .HasColumnType("date");
 
                     b.HasKey("Id")
                         .HasName("pk_equipment");
@@ -789,6 +876,84 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.ProductSalesPrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<Guid?>("MigratedFromTariffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("migrated_from_tariff_id");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<Guid?>("ProductVariantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_variant_id");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_product_sales_prices");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_product_sales_prices_company_id_id");
+
+                    b.HasIndex("CompanyId", "ProductId", "ProductVariantId", "StartDate")
+                        .HasDatabaseName("ix_product_sales_prices_resolution");
+
+                    b.ToTable("product_sales_prices", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_product_sales_prices_amount", "amount >= 0");
+
+                            t.HasCheckConstraint("ck_product_sales_prices_period", "end_date IS NULL OR end_date >= start_date");
+
+                            t.HasCheckConstraint("ck_product_sales_prices_version_positive", "version > 0");
+                        });
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Catalog.ProductVariant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -879,9 +1044,18 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("BusinessActivity")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("business_activity");
+
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("company_id");
+
+                    b.Property<DateOnly?>("CooperationStartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("cooperation_start_date");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -893,19 +1067,73 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("display_name");
 
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Individual")
+                        .HasColumnName("entity_type");
+
+                    b.Property<DateOnly?>("EstablishmentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("establishment_date");
+
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<Guid?>("GradeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("grade_id");
+
+                    b.Property<Guid?>("HoldReasonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hold_reason_id");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
+
+                    b.Property<bool>("IsBlocked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_blocked");
+
+                    b.Property<bool>("IsPreferred")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_preferred");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<Guid?>("LegalEntityTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("legal_entity_type_id");
 
                     b.Property<string>("LegalName")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("legal_name");
 
+                    b.Property<string>("NationalId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("national_id");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("notes");
+
+                    b.Property<string>("Occupation")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("occupation");
 
                     b.Property<string>("PrimaryEmail")
                         .HasMaxLength(320)
@@ -933,10 +1161,21 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("supplier_code");
 
+                    b.Property<long>("SupplierNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L)
+                        .HasColumnName("supplier_number");
+
                     b.Property<string>("TaxId")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("tax_id");
+
+                    b.Property<string>("TradeName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("trade_name");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -958,27 +1197,306 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.HasAlternateKey("CompanyId", "Id")
                         .HasName("ak_suppliers_company_id_id");
 
+                    b.HasIndex("GradeId");
+
+                    b.HasIndex("HoldReasonId");
+
+                    b.HasIndex("LegalEntityTypeId");
+
                     b.HasIndex("CompanyId", "DisplayName")
                         .HasDatabaseName("ix_suppliers_company_name");
+
+                    b.HasIndex("CompanyId", "NationalId")
+                        .HasDatabaseName("ix_suppliers_company_national_id");
 
                     b.HasIndex("CompanyId", "SupplierCode")
                         .IsUnique()
                         .HasDatabaseName("uq_suppliers_company_code");
+
+                    b.HasIndex("CompanyId", "SupplierNumber")
+                        .IsUnique()
+                        .HasDatabaseName("uq_suppliers_company_number")
+                        .HasFilter("supplier_number > 0");
 
                     b.HasIndex("CompanyId", "IsActive", "SupplierCode")
                         .HasDatabaseName("ix_suppliers_directory");
 
                     b.ToTable("suppliers", "barang", t =>
                         {
+                            t.HasCheckConstraint("ck_suppliers_core_entity_type", "entity_type IN ('Individual','LegalEntity')");
+
+                            t.HasCheckConstraint("ck_suppliers_core_status", "NOT (is_blocked AND is_active)");
+
+                            t.HasCheckConstraint("ck_suppliers_hold_reason", "NOT is_blocked OR hold_reason_id IS NOT NULL");
+
                             t.HasCheckConstraint("ck_suppliers_version_positive", "version > 0");
                         });
                 });
 
-            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierProduct", b =>
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierAddress", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("AddressName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("address_name");
+
+                    b.Property<Guid?>("AddressTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("address_type_id");
+
+                    b.Property<string>("CityCode")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("city_code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_code");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("FullAddress")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("full_address");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("Landline")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("landline");
+
+                    b.Property<string>("Mobile")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("mobile");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("postal_code");
+
+                    b.Property<string>("ProvinceCode")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("province_code");
+
+                    b.Property<string>("RecipientName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("recipient_name");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_supplier_addresses");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_supplier_addresses_company_id_id");
+
+                    b.HasIndex("AddressTypeId");
+
+                    b.HasIndex("CompanyId", "SupplierId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_supplier_addresses_default")
+                        .HasFilter("is_default");
+
+                    b.HasIndex("CompanyId", "SupplierId", "CreatedAtUtc")
+                        .HasDatabaseName("ix_supplier_addresses_directory");
+
+                    b.ToTable("supplier_addresses", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_supplier_addresses_active_default", "NOT is_default OR is_active");
+
+                            t.HasCheckConstraint("ck_supplier_addresses_version_positive", "version > 0");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierBankAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountHolderNames")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)")
+                        .HasColumnName("account_holder_names");
+
+                    b.Property<string>("AccountName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("account_name");
+
+                    b.Property<string>("AccountNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("account_number");
+
+                    b.Property<Guid?>("AccountTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_type_id");
+
+                    b.Property<Guid?>("BankId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bank_id");
+
+                    b.Property<string>("BranchCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("branch_code");
+
+                    b.Property<string>("BranchName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("branch_name");
+
+                    b.Property<string>("CardNumber")
+                        .HasMaxLength(19)
+                        .HasColumnType("character varying(19)")
+                        .HasColumnName("card_number");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency_code");
+
+                    b.Property<string>("Iban")
+                        .HasMaxLength(34)
+                        .HasColumnType("character varying(34)")
+                        .HasColumnName("iban");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("OwnershipType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("ownership_type");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_supplier_bank_accounts");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_supplier_bank_accounts_company_id_id");
+
+                    b.HasIndex("AccountTypeId");
+
+                    b.HasIndex("BankId");
+
+                    b.HasIndex("CompanyId", "SupplierId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_supplier_bank_accounts_default")
+                        .HasFilter("is_default");
+
+                    b.HasIndex("CompanyId", "SupplierId", "AccountNumber")
+                        .IsUnique()
+                        .HasDatabaseName("uq_supplier_bank_account_number")
+                        .HasFilter("account_number IS NOT NULL");
+
+                    b.HasIndex("CompanyId", "SupplierId", "CreatedAtUtc")
+                        .HasDatabaseName("ix_supplier_bank_accounts_directory");
+
+                    b.HasIndex("CompanyId", "SupplierId", "Iban")
+                        .IsUnique()
+                        .HasDatabaseName("uq_supplier_bank_iban")
+                        .HasFilter("iban IS NOT NULL");
+
+                    b.ToTable("supplier_bank_accounts", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_supplier_bank_accounts_active_default", "NOT is_default OR is_active");
+
+                            t.HasCheckConstraint("ck_supplier_bank_accounts_version_positive", "version > 0");
+
+                            t.HasCheckConstraint("ck_supplier_bank_ownership", "ownership_type IN ('Individual','Joint')");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierCategoryAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -992,6 +1510,788 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_supplier_category_assignments");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_supplier_category_assignments_company_id_id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("CompanyId", "SupplierId", "CategoryId")
+                        .IsUnique();
+
+                    b.ToTable("supplier_category_assignments", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_supplier_category_assignments_version_positive", "version > 0");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierContact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid?>("ContactRoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("contact_role_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("Extension")
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("extension");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_primary");
+
+                    b.Property<string>("Landline")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("landline");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("Mobile")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("mobile");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PositionTitle")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("position_title");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_supplier_contacts");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_supplier_contacts_company_id_id");
+
+                    b.HasIndex("ContactRoleId");
+
+                    b.HasIndex("CompanyId", "SupplierId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_supplier_contacts_default")
+                        .HasFilter("is_primary");
+
+                    b.HasIndex("CompanyId", "SupplierId", "CreatedAtUtc")
+                        .HasDatabaseName("ix_supplier_contacts_directory");
+
+                    b.ToTable("supplier_contacts", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_supplier_contacts_active_default", "NOT is_primary OR is_active");
+
+                            t.HasCheckConstraint("ck_supplier_contacts_version_positive", "version > 0");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierContract", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("ContractNumber")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("contract_number");
+
+                    b.Property<Guid>("ContractTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("contract_type_id");
+
+                    b.Property<decimal?>("ContractValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("contract_value");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency_code");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<Guid?>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.Property<Guid?>("FileVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_version_id");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "ContractNumber")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "SupplierId");
+
+                    b.ToTable("supplier_contracts", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid?>("ContractId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("contract_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DocumentNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("document_number");
+
+                    b.Property<Guid>("DocumentTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("document_type_id");
+
+                    b.Property<DateOnly?>("ExpiryDate")
+                        .HasColumnType("date")
+                        .HasColumnName("expiry_date");
+
+                    b.Property<Guid?>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.Property<Guid?>("FileVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_version_id");
+
+                    b.Property<DateOnly?>("IssueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("issue_date");
+
+                    b.Property<string>("IssuingAuthority")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("issuing_authority");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("CompanyId", "Id");
+
+                    b.HasIndex("CompanyId", "ContractId");
+
+                    b.HasIndex("CompanyId", "SupplierId", "ExpiryDate");
+
+                    b.ToTable("supplier_documents", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierEvaluation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<DateOnly>("EvaluationDate")
+                        .HasColumnType("date")
+                        .HasColumnName("evaluation_date");
+
+                    b.Property<Guid>("EvaluatorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("evaluator_user_id");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<decimal?>("OverallScore")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("overall_score");
+
+                    b.Property<DateOnly?>("PeriodEnd")
+                        .HasColumnType("date")
+                        .HasColumnName("period_end");
+
+                    b.Property<DateOnly?>("PeriodStart")
+                        .HasColumnType("date")
+                        .HasColumnName("period_start");
+
+                    b.Property<string>("ResultStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("result_status");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "SupplierId", "EvaluationDate");
+
+                    b.ToTable("supplier_evaluations", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierEvaluationCriterion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("comment");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid>("CriterionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("criterion_id");
+
+                    b.Property<Guid>("EvaluationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("evaluation_id");
+
+                    b.Property<decimal>("Score")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("score");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("CompanyId", "Id");
+
+                    b.HasIndex("CompanyId", "EvaluationId", "CriterionId")
+                        .IsUnique();
+
+                    b.ToTable("supplier_evaluation_criteria", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierFinancialProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("BaseDiscountPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("base_discount_percent");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<bool>("CreditPurchaseAllowed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("credit_purchase_allowed");
+
+                    b.Property<string>("DefaultCurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("default_currency_code");
+
+                    b.Property<int?>("DefaultLeadTimeDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("default_lead_time_days");
+
+                    b.Property<Guid?>("FreightDeliveryTermId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("freight_delivery_term_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<decimal?>("MinimumOrderAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("minimum_order_amount");
+
+                    b.Property<Guid?>("PaymentConditionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payment_condition_id");
+
+                    b.Property<Guid?>("PaymentMethodId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payment_method_id");
+
+                    b.Property<Guid?>("PaymentTermId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("payment_term_id");
+
+                    b.Property<decimal>("PurchaseCreditLimit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("purchase_credit_limit");
+
+                    b.Property<Guid?>("ShippingMethodId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shipping_method_id");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_supplier_financial_profiles");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_supplier_financial_profiles_company_id_id");
+
+                    b.HasIndex("FreightDeliveryTermId");
+
+                    b.HasIndex("PaymentConditionId");
+
+                    b.HasIndex("PaymentMethodId");
+
+                    b.HasIndex("PaymentTermId");
+
+                    b.HasIndex("ShippingMethodId");
+
+                    b.HasIndex("CompanyId", "SupplierId")
+                        .IsUnique();
+
+                    b.ToTable("supplier_financial_profiles", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_supplier_financial_amounts", "(minimum_order_amount IS NULL OR minimum_order_amount>=0) AND purchase_credit_limit>=0 AND (default_lead_time_days IS NULL OR default_lead_time_days>=0)");
+
+                            t.HasCheckConstraint("ck_supplier_financial_discount", "base_discount_percent BETWEEN 0 AND 100");
+
+                            t.HasCheckConstraint("ck_supplier_financial_profiles_version_positive", "version > 0");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierLifecycleProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("approval_status");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset?>("HeldAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("held_at_utc");
+
+                    b.Property<Guid?>("HeldByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("held_by_user_id");
+
+                    b.Property<string>("HoldNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("hold_notes");
+
+                    b.Property<string>("HoldReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("hold_reason");
+
+                    b.Property<Guid?>("QcLevelId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("qc_level_id");
+
+                    b.Property<decimal?>("QualityScore")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("quality_score");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("CompanyId", "Id");
+
+                    b.HasIndex("CompanyId", "SupplierId")
+                        .IsUnique();
+
+                    b.ToTable("supplier_lifecycle_profiles", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierPriceList", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency_code");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_to");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTimeOffset?>("PublishedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at_utc");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_supplier_price_lists");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_supplier_price_lists_company_id_id");
+
+                    b.HasAlternateKey("CompanyId", "SupplierId", "Id")
+                        .HasName("ak_supplier_price_lists_company_supplier_id");
+
+                    b.HasIndex("CompanyId", "SupplierId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("uq_supplier_price_lists_code");
+
+                    b.HasIndex("CompanyId", "SupplierId", "EffectiveFrom")
+                        .HasDatabaseName("ix_supplier_price_lists_directory");
+
+                    b.ToTable("supplier_price_lists", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_supplier_price_lists_period", "currency_code ~ '^[A-Z]{3}$' AND (effective_to IS NULL OR effective_to >= effective_from) AND (NOT is_active OR published_at_utc IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_supplier_price_lists_version_positive", "version > 0");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierPriceListLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("discount_percent");
+
+                    b.Property<decimal>("FreightPerUnit")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("freight_per_unit");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<decimal>("MinimumQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("minimum_quantity");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid>("PriceListId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("price_list_id");
+
+                    b.Property<Guid?>("PublishedPriceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("published_price_id");
+
+                    b.Property<Guid>("PurchaseUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("purchase_unit_id");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<Guid>("SupplierProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_product_id");
+
+                    b.Property<decimal>("TaxRatePercent")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("tax_rate_percent");
+
+                    b.Property<Guid?>("TaxStatusId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tax_status_id");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("unit_price");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_supplier_price_list_lines");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_supplier_price_list_lines_company_id_id");
+
+                    b.HasIndex("PurchaseUnitId");
+
+                    b.HasIndex("TaxStatusId");
+
+                    b.HasIndex("CompanyId", "SupplierId", "PriceListId");
+
+                    b.HasIndex("CompanyId", "SupplierId", "SupplierProductId", "PublishedPriceId");
+
+                    b.HasIndex("CompanyId", "PriceListId", "SupplierProductId", "PurchaseUnitId", "MinimumQuantity")
+                        .IsUnique()
+                        .HasDatabaseName("uq_supplier_price_list_lines_break");
+
+                    b.ToTable("supplier_price_list_lines", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_supplier_price_list_lines_terms", "unit_price >= 0 AND minimum_quantity >= 0 AND discount_percent BETWEEN 0 AND 100 AND tax_rate_percent BETWEEN 0 AND 100 AND freight_per_unit >= 0");
+
+                            t.HasCheckConstraint("ck_supplier_price_list_lines_version_positive", "version > 0");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierProduct", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Availability")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Brand")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
                     b.Property<bool>("IsPreferred")
                         .HasColumnType("boolean")
                         .HasColumnName("is_preferred");
@@ -1000,10 +2300,19 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("lead_time_days");
 
+                    b.Property<decimal?>("MinimumOrderAmount")
+                        .HasColumnType("numeric");
+
                     b.Property<decimal?>("MinimumOrderQuantity")
                         .HasPrecision(18, 4)
                         .HasColumnType("numeric(18,4)")
                         .HasColumnName("minimum_order_quantity");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("PackagingTypeId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid")
@@ -1013,6 +2322,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("product_variant_id");
 
+                    b.Property<Guid?>("PurchaseUnitId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("SupplierId")
                         .HasColumnType("uuid")
                         .HasColumnName("supplier_id");
@@ -1021,6 +2333,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("character varying(80)")
                         .HasColumnName("supplier_item_code");
+
+                    b.Property<string>("SupplierItemName")
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -1060,6 +2375,203 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_supplier_products_version_positive", "version > 0");
                         });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierProductPrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency_code");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("discount_percent");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_to");
+
+                    b.Property<decimal>("FreightPerUnit")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("freight_per_unit");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<decimal>("MinimumQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("minimum_quantity");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid?>("PriceListId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("price_list_id");
+
+                    b.Property<DateTimeOffset?>("PublishedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at_utc");
+
+                    b.Property<Guid>("PurchaseUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("purchase_unit_id");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<Guid>("SupplierProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_product_id");
+
+                    b.Property<decimal>("TaxRatePercent")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("tax_rate_percent");
+
+                    b.Property<Guid?>("TaxStatusId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tax_status_id");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("unit_price");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_supplier_product_prices");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_supplier_product_prices_company_id_id");
+
+                    b.HasAlternateKey("CompanyId", "SupplierId", "SupplierProductId", "Id")
+                        .HasName("ak_supplier_prices_company_supplier_product_id");
+
+                    b.HasIndex("PurchaseUnitId");
+
+                    b.HasIndex("TaxStatusId");
+
+                    b.HasIndex("CompanyId", "SupplierId", "PriceListId");
+
+                    b.HasIndex("CompanyId", "SupplierId", "SupplierProductId", "EffectiveFrom")
+                        .HasDatabaseName("ix_supplier_prices_history");
+
+                    b.HasIndex("CompanyId", "SupplierProductId", "PurchaseUnitId", "CurrencyCode", "MinimumQuantity")
+                        .HasDatabaseName("ix_supplier_prices_resolution");
+
+                    b.ToTable("supplier_product_prices", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_supplier_prices_period", "currency_code ~ '^[A-Z]{3}$' AND (effective_to IS NULL OR effective_to >= effective_from) AND (NOT is_active OR published_at_utc IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_supplier_prices_terms", "unit_price >= 0 AND minimum_quantity >= 0 AND discount_percent BETWEEN 0 AND 100 AND tax_rate_percent BETWEEN 0 AND 100 AND freight_per_unit >= 0");
+
+                            t.HasCheckConstraint("ck_supplier_product_prices_version_positive", "version > 0");
+                        });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierQualityIncident", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("CorrectiveAction")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("corrective_action");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly>("IncidentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("incident_date");
+
+                    b.Property<string>("IncidentType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("incident_type");
+
+                    b.Property<decimal?>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<DateOnly?>("ResolvedDate")
+                        .HasColumnType("date")
+                        .HasColumnName("resolved_date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("CompanyId", "Id");
+
+                    b.HasIndex("CompanyId", "SupplierId", "IncidentDate");
+
+                    b.ToTable("supplier_quality_incidents", "barang");
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Customers.Customer", b =>
@@ -1967,6 +3479,24 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
+
+                    b.Property<string>("ReferenceDescriptions")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("{}")
+                        .HasColumnName("reference_descriptions");
+
+                    b.Property<int>("ReferenceDisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("reference_display_order");
+
+                    b.Property<string>("ReferenceNames")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("{}")
+                        .HasColumnName("reference_names");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -6059,6 +7589,24 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
+                    b.Property<string>("ReferenceDescriptions")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("{}")
+                        .HasColumnName("reference_descriptions");
+
+                    b.Property<int>("ReferenceDisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("reference_display_order");
+
+                    b.Property<string>("ReferenceNames")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("{}")
+                        .HasColumnName("reference_names");
+
                     b.Property<string>("Severity")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -6703,6 +8251,10 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("access_failed_count");
+
                     b.Property<string>("AccountState")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -6724,11 +8276,29 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(320)")
                         .HasColumnName("email");
 
+                    b.Property<DateTimeOffset?>("LastLoginAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_login_at_utc");
+
+                    b.Property<DateTimeOffset?>("LockoutEndUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lockout_end_utc");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)")
                         .HasColumnName("password_hash");
+
+                    b.Property<Guid?>("PersonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("person_id");
+
+                    b.Property<string>("SecurityStamp")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("security_stamp");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -6748,12 +8318,19 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_application_users");
 
+                    b.HasIndex("PersonId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_application_users_person_id")
+                        .HasFilter("person_id IS NOT NULL");
+
                     b.HasIndex("Username")
                         .IsUnique()
                         .HasDatabaseName("uq_application_users_username");
 
                     b.ToTable("application_users", "barang", t =>
                         {
+                            t.HasCheckConstraint("ck_application_users_access_failed_nonnegative", "access_failed_count >= 0");
+
                             t.HasCheckConstraint("ck_application_users_version_positive", "version > 0");
                         });
                 });
@@ -7324,6 +8901,111 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                             Code = "tracking.read",
                             Module = "tracking",
                             TechnicalDescription = "tracking.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000071"),
+                            Code = "security.user.read",
+                            Module = "security",
+                            TechnicalDescription = "security.user.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000072"),
+                            Code = "security.user.create",
+                            Module = "security",
+                            TechnicalDescription = "security.user.create"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000073"),
+                            Code = "security.user.edit",
+                            Module = "security",
+                            TechnicalDescription = "security.user.edit"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000074"),
+                            Code = "security.user.password.reset",
+                            Module = "security",
+                            TechnicalDescription = "security.user.password.reset"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000075"),
+                            Code = "security.user.status.manage",
+                            Module = "security",
+                            TechnicalDescription = "security.user.status.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000076"),
+                            Code = "security.user.role.manage",
+                            Module = "security",
+                            TechnicalDescription = "security.user.role.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000077"),
+                            Code = "security.role.read",
+                            Module = "security",
+                            TechnicalDescription = "security.role.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000078"),
+                            Code = "security.permission.read",
+                            Module = "security",
+                            TechnicalDescription = "security.permission.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000079"),
+                            Code = "security.role.permission.manage",
+                            Module = "security",
+                            TechnicalDescription = "security.role.permission.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000080"),
+                            Code = "security.user.permission.manage",
+                            Module = "security",
+                            TechnicalDescription = "security.user.permission.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000081"),
+                            Code = "customer.create",
+                            Module = "customer",
+                            TechnicalDescription = "customer.create"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000082"),
+                            Code = "customer.edit",
+                            Module = "customer",
+                            TechnicalDescription = "customer.edit"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000083"),
+                            Code = "customer.status.manage",
+                            Module = "customer",
+                            TechnicalDescription = "customer.status.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000084"),
+                            Code = "customer.financial.read",
+                            Module = "customer",
+                            TechnicalDescription = "customer.financial.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000085"),
+                            Code = "customer.financial.manage",
+                            Module = "customer",
+                            TechnicalDescription = "customer.financial.manage"
                         });
                 });
 
@@ -7344,6 +9026,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
                     b.Property<string>("DisplayTitle")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -7357,6 +9044,12 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsSystem")
                         .HasColumnType("boolean")
                         .HasColumnName("is_system");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("scope");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -7462,6 +9155,48 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_user_companies_valid_period", "valid_to_utc IS NULL OR valid_to_utc > valid_from_utc");
                         });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Security.UserPermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("AssignedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("assigned_at_utc");
+
+                    b.Property<Guid?>("AssignedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assigned_by_user_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("permission_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_user_permissions");
+
+                    b.HasIndex("PermissionId");
+
+                    b.HasIndex("CompanyId", "UserId")
+                        .HasDatabaseName("ix_user_permissions_company_id_user_id");
+
+                    b.HasIndex("UserId", "PermissionId", "CompanyId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_user_permissions_user_id_permission_id_company_id");
+
+                    b.ToTable("user_permissions", "barang");
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Security.UserRole", b =>
@@ -7964,6 +9699,28 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.ProductSalesPrice", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Product", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ProductId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.ProductVariant", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ProductId", "ProductVariantId")
+                        .HasPrincipalKey("CompanyId", "ProductId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Catalog.ProductVariant", b =>
                 {
                     b.HasOne("BARANG.Core.Domain.Organization.Company", null)
@@ -7987,6 +9744,301 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("GradeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("HoldReasonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("LegalEntityTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierAddress", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("AddressTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierBankAccount", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("AccountTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("BankId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierCategoryAssignment", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierContact", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("ContactRoleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierContract", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierDocument", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.SupplierContract", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ContractId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierEvaluation", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierEvaluationCriterion", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.SupplierEvaluation", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "EvaluationId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierFinancialProfile", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("FreightDeliveryTermId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentConditionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentMethodId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentTermId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("ShippingMethodId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierLifecycleProfile", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierPriceList", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierPriceListLine", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("PurchaseUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("TaxStatusId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.SupplierPriceList", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId", "PriceListId")
+                        .HasPrincipalKey("CompanyId", "SupplierId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.SupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId", "SupplierProductId")
+                        .HasPrincipalKey("CompanyId", "SupplierId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.SupplierProductPrice", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId", "SupplierProductId", "PublishedPriceId")
+                        .HasPrincipalKey("CompanyId", "SupplierId", "SupplierProductId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierProduct", b =>
@@ -8016,6 +10068,62 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CompanyId", "ProductId", "ProductVariantId")
                         .HasPrincipalKey("CompanyId", "ProductId", "Id")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierProductPrice", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("PurchaseUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("TaxStatusId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.SupplierPriceList", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId", "PriceListId")
+                        .HasPrincipalKey("CompanyId", "SupplierId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.SupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId", "SupplierProductId")
+                        .HasPrincipalKey("CompanyId", "SupplierId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Catalog.SupplierQualityIncident", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Catalog.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "SupplierId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Customers.Customer", b =>
@@ -9158,6 +11266,15 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_api_client_permissions_permissions_permission_id");
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Security.ApplicationUser", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Person", null)
+                        .WithOne()
+                        .HasForeignKey("BARANG.Core.Domain.Security.ApplicationUser", "PersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_application_users_persons_person_id");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Security.AuthenticationSession", b =>
                 {
                     b.HasOne("BARANG.Core.Domain.Security.ApplicationUser", null)
@@ -9200,6 +11317,30 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_user_companies_application_users_user_id");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Security.UserPermission", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_permissions_companies_company_id");
+
+                    b.HasOne("BARANG.Core.Domain.Security.Permission", null)
+                        .WithMany()
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_permissions_permissions_permission_id");
+
+                    b.HasOne("BARANG.Core.Domain.Security.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_permissions_application_users_user_id");
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Security.UserRole", b =>

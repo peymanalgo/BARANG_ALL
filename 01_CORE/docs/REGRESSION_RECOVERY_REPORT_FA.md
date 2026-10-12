@@ -200,3 +200,39 @@ empty handler، permissive authorization یا rollback کور انجام نشد.
 Build محلی Release برای API و Backoffice با صفر warning/error موفق شد. هر دو image از همین checkout بازسازی و deploy شدند. بررسی authenticated API در محیط محلی: Workflow definition با HTTP 200 و 23 node/17 نسخه، جستجوی کاربران و نقش‌ها با HTTP 200. browser visual verification در این محیط در دسترس نبود.
 
 این اصلاحات به معنی تکمیل recovery نیستند. هنوز مسیرهای `workflow/definition/runtime/*`، ذخیره‌ی draft/publish طراح، پیاده‌سازی کامل Cartable، و قرارداد کامل `suppliers/core` در API موجود نیستند؛ بنابراین SupplierEditor پیشرفته، Cartable و چرخه‌ی Designer save/publish هنوز acceptance کامل ندارند. این مسیرها عمداً با پاسخ جعلی یا stub پوشانده نشدند.
+
+## هم‌ترازی EF مدل/اسکیما و راستی‌آزمایی Supplier/User — ۱۴۰۵/۰۷/۲۰
+
+### علت دقیق PendingModelChanges
+
+snapshot قبلی (`20261012124313_ProbeModelAlignment`) مدل runtime بازیابی‌شده را نمایندگی نمی‌کرد. مقایسهٔ object-level، ۱۱۸ جدول در مدل runtime و ۹۹ جدول قابل مشاهده در snapshot قبلی را نشان داد. اشیای غایب شامل جدول‌های Supplier child/sourcing/lifecycle، `user_permissions`، `product_sales_prices` و بخشی از Organization بودند؛ ستون‌های Supplier و Security مانند `suppliers.entity_type`, `supplier_number`, `first_name`, `last_name`, `is_blocked`, `is_preferred` و `application_users.access_failed_count`, `lockout_end_utc`, `security_stamp`, `person_id`, `last_login_at_utc` نیز در مدل runtime وجود داشتند.
+
+یک mapping واقعی هم پیدا شد: `ProductSalesPrice` بدون configuration به جدول convention یعنی `ProductSalesPrices` می‌رفت، در حالی‌که migration رسمی جدول `product_sales_prices` را ایجاد می‌کند. همچنین rename پیشنهادی `Persons` فقط اختلاف snapshot تاریخی بود؛ migration رسمی از ابتدا `persons` را می‌سازد و اجرا نشد.
+
+### اصلاح نسخه‌دار
+
+- `ProductSalesPriceConfiguration.cs` اضافه شد و نام جدول/ستون‌ها، precision، روابط Product/Variant، index resolution و check constraintها با migration رسمی هم‌تراز شد.
+- migration `20261012135357_ReconcileRecoveredSupplierUserModel` با `Up/Down` خالی اضافه شد تا snapshot فعلی را ثبت کند؛ هیچ Drop/Rename/DropColumn تولیدشده از snapshot قدیمی وارد آن نشد.
+- جدول‌های تاریخی Workflow که در schema هستند ولی entity متناظر در `CoreDbContext` فعلی ندارند حفظ شدند؛ Workflow runtime در این کار پیاده‌سازی نشده است.
+
+### پایگاه‌داده و شواهد
+
+backup توسعه در `D:\00_BARANG\recovery-snapshots\20261012170707\barang_core.dump` با `pg_restore --list` بررسی و در DB ایزوله restore شد. fresh DB کل migration chain را تا `20261012135357_ReconcileRecoveredSupplierUserModel` با موفقیت اجرا کرد و PendingModelChanges ایجاد نشد. روی restored DB نیز migration جدید بدون تغییر داده اعمال شد. نمونه شمارش دادهٔ restored: `companies=5`, `customers=1`, `suppliers=65`, `products=56`, `orders=35`, `application_users=12`.
+
+پس از migration، اختلاف fresh/restored فقط ۲۸ metadata row مربوط به defaultهای قدیمی Equipment (برای `lifecycle_status_code` و ستون‌های active/version جداول child) بود؛ این اختلاف تاریخی backup است، نه Supplier/User و نه reconciliation migration. هیچ رکورد business حذف یا backfill نشد.
+
+### تست‌ها و محدودیت‌ها
+
+- API و Backoffice Release build: هر دو ۰ warning و ۰ error.
+- Unit تست‌های Supplier/User: **۲۱/۲۱ موفق**.
+- Supplier root round-trip روی PostgreSQL تازه: **۲/۲ موفق**.
+- اجرای کامل SupplierCore: **۴/۱۰ موفق، ۶ شکست**؛ شکست‌های باقی‌مانده 422/403/500 در lookup/sourcing fixture و authorization runtime هستند، نه EF migration.
+- Backoffice: **۱۶/۱۸۴ شکست، ۱۶۸ موفق**. هفت تست مستقیماً به `WorkflowDefinitionRuntime.cs` مفقود، یک تست به `CartableSavedFilterAdministration.cs` مفقود، یک تست به asset `04_Document/1.png`، یک تست به سند UI/UX مفقود، و شش assertion نسل قدیمی Customer/Order/Cartable/Print وابسته‌اند. این تست‌ها بدون evidence تغییر یا غیرفعال نشدند.
+- login/admin و readiness محلی: `/health/ready` و `/login` هر دو HTTP 200؛ browser visual verification فرم‌های Supplier/User انجام نشد.
+
+### deployment فعلی
+
+- API: `sha256:8f37b49116c15ed1f821b4da8030276c5bfc90bcddc3cab5605a43659ab4d041`
+- Backoffice: `sha256:99726fad536f84a766395a1e17d60bf5df299b398f37977943831400aa5ec40f`
+
+هر دو image از همین checkout با Compose محلی deploy شدند؛ production deploy انجام نشد. Supplier/User به‌دلیل شکست‌های قراردادی/fixture فوق هنوز functional end-to-end verified اعلام نمی‌شوند و Workflow runtime/Designer همچنان blocker مستقل است.
