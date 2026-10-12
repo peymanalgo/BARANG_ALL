@@ -70,3 +70,19 @@
 ## وضعیت برنامه
 
 این برنامه برای مراحل ۲ تا ۱۵ آماده استفاده است، اما تصمیم‌های رزرو، consume، Finance approval، shortage-to-purchasing، QC receipt hold و return accounting باید قبل از implementation تأیید شوند. هیچ‌کدام از integrationهای فعلی در این STEP اصلاح نشده‌اند.
+
+## الحاقیه راستی‌آزمایی STEP 1
+
+ممیزی مجدد نشان داد برنامه باید با یک gate فنی آغاز شود: endpointها و DI registrationهای `WorkflowDefinitionRuntime` در source فعلی وجود دارند، اما implementation canonical و بخشی از entity/contractهای لازم در checkout قابل مشاهده نیستند. بنابراین مرحله‌های ۳ تا ۱۲ نباید بر فرض سالم‌بودن completion adapter اجرا شوند. ابتدا باید owner واقعی runtime و source canonical آن تعیین، compile و با یک task ایزوله اثبات شود؛ سپس integrationهای Inventory، Finance، Production، Quality و Logistics به همان مسیر متصل شوند.
+
+یافته‌های runtime نیز محدود به snapshot خواندنی `barang_core` است: orders=35، order_items=49، workflow_instances=14، و جدول‌های reservation، movement، shortage، purchasing، production، QC، package، shipment، notification و outbox در زمان بررسی صفر بودند. این اعداد عدم قابلیت را ثابت نمی‌کنند و هیچ test mutation یا migration در STEP 1 انجام نشد.
+
+ترتیب اصلاحی پیشنهادی برای مراحل ۲ تا ۱۵:
+
+۱. تثبیت WorkflowDefinitionRuntime و قرارداد owner completion، بدون احیای موازی مسیر legacy.
+
+۲. سپس مراحل ۲ تا ۴ برای identity/UOM/reservation/consume-release؛ Draft بدون deduction باقی بماند مگر تصمیم کسب‌وکار خلاف آن را تصویب کند.
+
+۳. مراحل ۵ تا ۱۲ فقط با owner service واقعی، event/outbox idempotency، audit و isolated PostgreSQL acceptance اجرا شوند.
+
+۴. مراحل ۱۳ تا ۱۵ پس از traceability master data، read model/audit و یک journey کامل Draft تا Delivery/Return در محیط ایزوله پذیرفته شوند.

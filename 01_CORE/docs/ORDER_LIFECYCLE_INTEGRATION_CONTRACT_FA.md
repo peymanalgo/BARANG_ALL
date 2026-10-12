@@ -218,3 +218,54 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 - تصمیم‌های ستون «تصمیم لازم» تا تأیید BA قرارداد قطعی نیستند.
 
 **وضعیت STEP 1:** قرارداد و شواهد آماده است؛ application integrations عمداً اصلاح نشده‌اند.
+
+## الحاقیه راستی‌آزمایی مجدد source و runtime — STEP 1
+
+تاریخ راستی‌آزمایی: ۲۰۲۶-۱۰-۱۲. این الحاقیه ادعاهای گزارش قبلی را از روی source فعلی و یک snapshot خواندنی از runtime دوباره بررسی می‌کند؛ متن‌های قبلی به‌عنوان evidence مستقل در نظر گرفته نشدند.
+
+### baseline و ابزار
+
+- Git root واقعی: `D:/00_BARANG`؛ application path: `D:/00_BARANG/01_CORE`.
+- شاخه‌ی checkout canonical در زمان بررسی: `main`؛ remote: `origin=https://github.com/peymanalgo/BARANG_ALL.git`.
+- working tree اصلی از قبل dirty و شامل تغییرات گسترده‌ی application، test، migration و documentation بود؛ هیچ‌یک از آن تغییرات در این STEP لمس یا stage نشد.
+- deployment محلی از قبل running بود: API، Backoffice، PostgreSQL، Redis و MinIO. ابزارهای موجود و استفاده‌شده: PowerShell، `rg`، Docker/Compose، `psql` داخل container و .NET SDK.
+- فقط SELECTهای read-only و inspection سورس انجام شد؛ build، migration، reset، write API و deploy اجرا نشد.
+
+### snapshot runtime خواندنی
+
+در `barang_core` با role محلی `barang`، schema و شمارش‌های زیر مشاهده شد:
+
+| مورد | نتیجه runtime | تفسیر |
+|---|---:|---|
+| orders | ۳۵: Draft=2، Submitted=11، Cancelled=22 | داده موجود است؛ نبود stageهای پایین‌دستی را اثبات نمی‌کند |
+| order_items | ۴۹ | سفارش‌های موجود قلم دارند |
+| workflow_instances | ۱۴: Running=11، Completed=3 | workflow runtime record موجود است |
+| human_tasks | ۰ | مسیر legacy در این snapshot task فعال نداشت |
+| stock_reservations / stock_transactions / stock_shortages | ۰ / ۰ / ۰ | reservation lifecycle در این داده‌ها runtime-observed نیست |
+| purchase_requests / purchase_orders | ۰ / ۰ | shortage-to-purchasing runtime-observed نیست |
+| production_jobs / qc_inspections | ۰ / ۰ | production/QC journey runtime-observed نیست |
+| packages / shipments | ۰ / ۰ | delivery journey runtime-observed نیست |
+| notifications / outbox_messages | ۰ / ۰ | producer business notification runtime-observed نیست |
+
+Migration history تا `20261012100553_Step2InventoryUnitContracts` موجود بود. این فقط وضعیت schema/version را نشان می‌دهد و جایگزین trace source یا acceptance journey نیست.
+
+### اصلاح نتیجه‌ی workflow runtime
+
+در source فعلی این موارد وجود دارند:
+
+- endpointهای `/api/v1/workflows/definition/runtime/...` در `src/BARANG.Core.Api/Workflow/WorkflowEndpoints.cs`؛
+- registrationهای `IWorkflowDefinitionRuntime` در `src/BARANG.Core.Infrastructure/DependencyInjection.cs`؛
+- ارجاع Order به `IWorkflowDefinitionRuntime` در `src/BARANG.Core.Infrastructure/Orders/OrderAdministration.cs`.
+
+اما فایل implementation canonical به نام `src/BARANG.Core.Infrastructure/Workflow/WorkflowDefinitionRuntime.cs` و entity/contractهای کامل لازم برای compile/runtime در checkout قابل مشاهده نیستند. بنابراین نتیجه‌ی دقیق فعلی **«registration/endpoint موجود، implementation کامل تأییدنشده و در source فعلی ناقص»** است. `WorkflowBusinessCompletionAdapter.cs` نیز وجود دارد، اما وجود adapter به‌تنهایی اثبات نمی‌کند که مسیر واقعی definition runtime آن را فراخوانی می‌کند.
+
+این موضوع یک blocker مستقل برای acceptance کامل workflow است: تا implementation واقعی و owner-callهای آن restore نشوند، نباید ادعا کرد که completion task واقعاً Inventory، Finance، Production، Quality یا Logistics را اجرا می‌کند.
+
+### وضعیت نهایی یافته‌ها
+
+- **source-confirmed:** Draft/Submit، snapshot قیمت، OrderItem/PrintOperation، APIهای مستقل Inventory، Purchasing receipt، Finance، Production، Quality، Logistics، Outbox و schedulerها.
+- **runtime-confirmed:** schema و record counts جدول snapshot بالا، order statusها و workflow instanceها.
+- **confirmed gap:** Submit به `IInventoryAdministration.ReserveAsync` متصل نیست؛ Cancel نیز release reservation ندارد؛ shortage به PR خودکار متصل نیست؛ business event producerهای lifecycle در outbox trace نشدند.
+- **uncertain:** اثر واقعی customer group/tax در final snapshot، owner-callهای workflow، providerهای notification خارجی و رفتار permission/RLS چند نقش در runtime.
+
+هیچ تصمیم undocumented به‌عنوان rule قطعی پذیرفته نشده است. گزینه‌های reserve stage، consume timing، finance gate، shortage approval، QC hold و return accounting در بخش تصمیم‌های کسب‌وکار باقی می‌مانند و باید پیش از STEP ۲ تأیید شوند.
