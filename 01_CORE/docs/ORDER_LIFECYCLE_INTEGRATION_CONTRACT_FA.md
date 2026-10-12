@@ -234,10 +234,18 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 
 کد اصلی در `src/BARANG.Core.Infrastructure/Inventory/InventoryAdministration.cs` برای Movement، Reserve، CreatePurchaseRequest و CreatePurchaseOrder مالکیت شرکت/انبار/variant و تطبیق واحد را بررسی می‌کند. مدل‌ها در `src/BARANG.Core.Domain/Inventory/InventoryModels.cs` و قراردادها در `src/BARANG.Core.Application/Inventory/InventoryContracts.cs` تغییر کرده‌اند. migration `20261012100553_Step2InventoryUnitContracts` ستون‌ها را ابتدا nullable اضافه می‌کند، فقط با joinهای Product/Variant/OrderItem backfill می‌کند، ردیف حل‌نشده را با خطای صریح متوقف می‌کند و سپس NOT NULL می‌سازد.
 
-بررسی read-only قبلی در DB توسعه برای هر سه جدول، ردیف unresolved برابر صفر نشان داد؛ با این حال migration روی `barang_core` اجرا نشد چون migration قبلی `LateWorkflowEvidenceSchema` با خطای duplicate column متوقف می‌شود. بنابراین نتیجه backfill عملیاتی در DB توسعه هنوز تأیید نشده است و هیچ رکوردی در آن تغییر نکرده است.
+بررسی read-only قبلی در DB توسعه برای هر سه جدول، ردیف unresolved برابر صفر نشان داد؛ در snapshot آن زمان migration روی `barang_core` به‌علت خطای duplicate column در `LateWorkflowEvidenceSchema` متوقف می‌شد. repair نسخه‌بندی‌شده و اجرای موفق آن روی development، همراه با حفظ شمارش رکوردها و نتیجه backfill، در الحاقیه عملیاتی STEP 2 در انتهای همین سند ثبت شده است.
 
 ### تست و وضعیت
 
-تست‌های واحد هویت دقیق OrderItem، استقلال قلم‌های SKU یکسان، واحد و کمیت اعشاری اضافه شده‌اند. Build لایه Core موفق است. اجرای integration موجود در DB ایزوله به یک شکست قدیمی `order.invalid_print_method` در مسیر print رسید و به تغییرات STEP 2 نسبت داده نشد. اعمال migration و deploy تا رفع drift قبلی مجاز/تأیید نشده است.
+تست‌های واحد هویت دقیق OrderItem، استقلال قلم‌های SKU یکسان، واحد و کمیت اعشاری اضافه شده‌اند. Build لایه Core موفق است. اصلاح lookup چاپ در source انجام شده، اما اجرای integration روی DB ایزوله پیش از رسیدن به endpoint چاپ در fixture با ناسازگاری قدیمی schema مشتری (`customers.first_name`) متوقف می‌شود؛ بنابراین رفتار endpoint و مسیر کامل چاپ هنوز runtime-تأیید نشده است. نتایج migration و deploy محلی در الحاقیه عملیاتی ثبت شده و این سند STEP 2 را به‌عنوان عملیاتیِ کامل اعلام نمی‌کند.
 
 وابستگی STEP 3: Reservation می‌تواند این `uom_code` و هویت دقیق را مصرف کند، اما stage رزرو و رفتار shortage هنوز طبق تصمیم کسب‌وکار STEP 1 باید نهایی شود.
+
+### الحاقیه عملیاتی STEP 2
+
+علت drift فقط ستون گزارش‌شده نبود: DB توسعه migrationهای 20260902 تا 20261007 را داشت که در شاخه STEP 2 جا افتاده بودند. پس از بازگردانی آن زنجیره، migrationهای `CartablePersonalFollowUp`، `AddWorkflowDecisionAttachments` و `AddWorkflowSubstitutionsAndForwardContext` مالک واقعی schema شناخته شدند؛ `LateWorkflowEvidenceSchema` قبلی همان objects را دوباره ایجاد می‌کرد. نسخه‌ی اصلاحی no-op است و migration قبلی را بدون mark دستی یا reset کنار می‌زند. در `AddWorkflowSubstitutionsAndForwardContext` نیز overload نادرست `AddColumn` که SQL نوع را `barang` تولید می‌کرد، به نوع `uuid` و schema صریح اصلاح شد.
+
+در توسعه، backup قبل از repair در `artifacts/barang_core_before_step2_repair.dump` تهیه و با `pg_restore --list` بررسی شد. شمارش‌های قبل/بعد حفظ شدند: products=56، variants=57، order_items=49، stock_balances=0، purchase_items=0، و rows unresolved برای سه ستون UOM برابر صفر بود. fresh و restored isolated DB هر دو تا STEP 2 migrate شدند.
+
+اعتبارسنجی print method دیگر whitelist ثابت دامنه را مرجع نمی‌گیرد؛ `OrderAdministration` lookup فعال `print.method` را با scope شرکت/شناسه شرکت بررسی می‌کند و خطای `order.invalid_print_method` را حفظ می‌کند. مقدار runtime توسعه `dtf/standard/standard2` بود، نه `SCREEN/DTG/...`. با این حال integration fixture فعلی هنوز با schema customer جدید سازگار نیست و پیش از endpoint چاپ روی `customers.first_name` شکست می‌خورد؛ نتیجه‌ی print endpoint تا اصلاح آن fixture **تأییدنشده** است.

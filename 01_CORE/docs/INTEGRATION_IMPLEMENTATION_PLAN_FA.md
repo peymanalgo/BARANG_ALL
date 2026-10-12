@@ -75,6 +75,15 @@
 
 STEP 2 از نظر تغییرات source، مدل و قرارداد API، migration قابل‌ردیابی و تست واحد در این شاخه پیاده‌سازی شده است. واحد مرجع `Product.UnitOfMeasureCode` است و تبدیل ضمنی یا generic conversion ایجاد نشده است. رزرو، Purchase Request و Purchase Order اکنون واحد را نگه می‌دارند و ورودی واحد ناسازگار را رد می‌کنند.
 
-محدودیت عملیاتی: migration روی دیتابیس توسعه به‌علت drift قبلی در `LateWorkflowEvidenceSchema` اجرا نشد (`column ... claimed_on_behalf_of_user_id already exists`). migration عمداً bypass یا mark-as-applied نشد. بنابراین STEP 2 برای deploy/runtime هنوز **مشروط/ناقص** است و تا رفع drift و اجرای migration در محیط ایزوله قابل اعلام به‌عنوان تکمیل عملیاتی نیست.
+در snapshot پیش از repair، migration روی دیتابیس توسعه به‌علت drift قبلی در `LateWorkflowEvidenceSchema` اجرا نمی‌شد (`column ... claimed_on_behalf_of_user_id already exists`). migration عمداً bypass یا mark-as-applied نشد؛ repair نسخه‌بندی‌شده، آزمون fresh/restored و اجرای پشتیبانی‌شده روی development در الحاقیه عملیاتی انتهای این سند ثبت شده است. با وجود آن، STEP 2 هنوز به‌علت blockerهای compilation/runtime آزمون integration، **تکمیل عملیاتی کامل محسوب نمی‌شود**.
 
-تست واحد موفق است؛ integration suite موجود با شکست مستقل `order.invalid_print_method` متوقف شد. reservation، consumption، finance approval و workflow transition در STEP 2 تغییر نکرده‌اند و به‌ترتیب در STEPهای بعدی وابسته به قراردادهای این مرحله هستند.
+تست واحد موفق است؛ migrationهای جاافتاده‌ی بین شاخه و DB به‌صورت version-controlled به زنجیره برگشتند؛ `LateWorkflowEvidenceSchema` به no-op سازگار تبدیل شد چون ستون/جدول‌های آن را migrationهای مالک قبلی ساخته‌اند، و خطای overload در `AddColumn` نیز اصلاح شد. زنجیره روی DB تازه و کپی restore‌شده از backup موفق شد و روی `barang_core` نیز migration پایانی و STEP 2 با حفظ شمارش رکوردها اعمال شد. با این حال integration test فعلی پیش از print endpoint با ناسازگاری قدیمی fixture/model مشتری متوقف می‌شود (`customers.first_name` پس از migration جدید وجود ندارد)؛ بنابراین آزمون کامل API چاپ هنوز سبز نیست.
+
+### وضعیت عملیاتی بازبینی‌شده STEP 2
+
+- backup توسعه: `artifacts/barang_core_before_step2_repair.dump`، فرمت custom، قابل فهرست‌برداری با `pg_restore --list`.
+- fresh database و restored backup هر دو تا `20261012100553_Step2InventoryUnitContracts` migrate شدند؛ restored database ابتدا migrationهای pending یعنی `20261007170000` و STEP 2 را گرفت.
+- توسعه قبل از migration دارای ۵۶ محصول، ۵۷ variant، ۴۹ قلم سفارش و صفر reservation/purchase item بود؛ پس از migration همین مقادیر حفظ شد و هر سه جدول واحدِ جدید صفر ردیف unresolved داشتند.
+- قراردادهای compile برای Cartable در `CartableWorkbenchContracts.cs` بازگردانده شد و API/Backoffice Release build سبز است؛ این کار compilation را رفع می‌کند اما runtime implementationهای Cartable که در شاخه وجود ندارند، در STEP 2 پیاده‌سازی نشده‌اند.
+- تست unit: ۱۸۹ موفق. تست integration منتخب فعلاً به علت ناسازگاری مدل/fixture مشتری قبل از print شکست می‌خورد؛ نباید آن را موفق تلقی کرد.
+- API و Backoffice به‌صورت محلی build/deploy شدند و readiness هر دو HTTP 200 است؛ imageهای جدید با digestهای API `sha256:b97f29302a61f887818edcce2fa36239f6eb93198be62fcc21bd853fb1699500` و Backoffice `sha256:89f964723b7f6b0ad7a10d29e91c667cc3944532e626df31ba8c68ed41ccd01f` در حال اجرا هستند. با این حال به‌علت شکست integration پیش از print و نبود runtime کامل Cartable در این شاخه، STEP 2 هنوز **عملیاتی کامل نیست**.

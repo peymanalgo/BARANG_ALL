@@ -86,7 +86,7 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
 
                 INSERT INTO barang.lookup_types(id,company_id,code,display_name,scope,is_system,is_active,allow_custom_values,created_at_utc,updated_at_utc,version)
                 VALUES('13000000-0000-0000-0000-000000000001',NULL,'payment.method','Payment Method','Global',TRUE,TRUE,FALSE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,1)
-                ON CONFLICT(code) DO NOTHING;
+                ON CONFLICT DO NOTHING;
                 INSERT INTO barang.lookup_values(id,lookup_type_id,company_id,code,display_order,is_active,is_system,created_at_utc,updated_at_utc,version)
                 VALUES
                     ('13000000-0000-0000-0000-000000000011','13000000-0000-0000-0000-000000000001',NULL,'cash',10,TRUE,TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,1),
@@ -94,6 +94,12 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
                     ('13000000-0000-0000-0000-000000000013','13000000-0000-0000-0000-000000000001',NULL,'card',30,TRUE,TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,1),
                     ('13000000-0000-0000-0000-000000000014','13000000-0000-0000-0000-000000000001',NULL,'online',40,TRUE,TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,1),
                     ('13000000-0000-0000-0000-000000000015','13000000-0000-0000-0000-000000000001',NULL,'other',50,TRUE,TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,1)
+                ON CONFLICT(lookup_type_id,code) DO NOTHING;
+                INSERT INTO barang.lookup_types(id,company_id,code,display_name,scope,is_system,is_active,allow_custom_values,created_at_utc,updated_at_utc,version)
+                VALUES('13000000-0000-0000-0000-000000000002',NULL,'print.method','Print method','Global',TRUE,TRUE,FALSE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,1)
+                ON CONFLICT DO NOTHING;
+                INSERT INTO barang.lookup_values(id,lookup_type_id,company_id,code,display_order,is_active,is_system,created_at_utc,updated_at_utc,version)
+                VALUES('13000000-0000-0000-0000-000000000021','13000000-0000-0000-0000-000000000002',NULL,'screen',10,TRUE,TRUE,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,1)
                 ON CONFLICT(lookup_type_id,code) DO NOTHING;
 
                 DROP SCHEMA IF EXISTS barang_test CASCADE;
@@ -165,6 +171,7 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
             await create.ExecuteNonQueryAsync();
         }
         string configureSql = $"ALTER ROLE barang_test_app PASSWORD '{password}'; GRANT USAGE ON SCHEMA barang TO barang_test_app; GRANT SELECT ON TABLE barang.__ef_migrations_history TO barang_test_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA barang TO barang_test_app; REVOKE DELETE ON barang.tariffs, barang.discount_rules, barang.tax_rules, barang.order_price_snapshots, barang.order_item_price_snapshots, barang.price_component_snapshots, barang.payments, barang.order_financial_states, barang.invoices, barang.invoice_snapshots, barang.invoice_item_snapshots, barang.finance_history, barang.stock_transactions, barang.stock_balances, barang.stock_reservations, barang.stock_transfers, barang.stock_shortages, barang.purchase_requests, barang.purchase_request_items, barang.purchase_orders, barang.purchase_order_items, barang.purchase_receipts, barang.purchasing_history, barang.production_jobs, barang.production_job_history, barang.qc_templates, barang.qc_template_criteria, barang.qc_inspections, barang.qc_criteria_results, barang.defect_types, barang.qc_defects, barang.reproduction_requests, barang.qc_history, barang.packages, barang.package_items, barang.shipping_handoffs, barang.shipments, barang.shipment_packages, barang.shipment_status_history, barang.workflow_instances, barang.human_tasks, barang.workflow_sla_policies, barang.workflow_escalations, barang.workflow_history, barang.workflow_reconciliation_issues, barang.customer_business_profiles, barang.product_technical_profiles, barang.order_business_profiles, barang.print_technical_profiles, barang.order_item_technical_snapshots FROM barang_test_app; REVOKE UPDATE ON barang.payments, barang.invoices, barang.invoice_snapshots, barang.invoice_item_snapshots, barang.finance_history, barang.stock_transactions, barang.purchase_receipts, barang.purchasing_history, barang.production_job_history, barang.qc_template_criteria, barang.qc_criteria_results, barang.qc_defects, barang.qc_history, barang.package_items, barang.shipment_packages, barang.shipment_status_history, barang.workflow_escalations, barang.workflow_history, barang.order_item_technical_snapshots FROM barang_test_app;";
+        configureSql = configureSql.Replace("barang.customer_business_profiles, ", string.Empty, StringComparison.Ordinal);
         await using (NpgsqlCommand configure = new(configureSql, connection))
         {
             await configure.ExecuteNonQueryAsync();
