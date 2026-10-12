@@ -122,3 +122,13 @@ empty handler، permissive authorization یا rollback کور انجام نشد.
   را انجام می‌دهد. authenticated response شامل **۲۳ node و ۱۷ version** تأیید شد.
 - save draft، Cartable runtime کامل، SupplierEditor/core CRUD و dialogهای advanced User
   Management هنوز پیاده‌سازی/تأیید نشده‌اند؛ recovery کامل اعلام نمی‌شود.
+## اصلاحات تکمیلی پس از استقرار recovery
+
+در checkout شاخه `codex/step2-inventory-unit-contracts` دو ناسازگاری قطعی دیگر اصلاح شد:
+
+- `SecurityEndpoints` اکنون مسیرهای واقعی `GET /api/v1/security/users/search` و `GET /api/v1/security/roles/search` را با همان سرویس‌های canonical و پاسخ envelope شامل `items` ارائه می‌کند؛ فیلتر فقط روی داده‌های واقعی انجام می‌شود و authorization قبلی حفظ شده است.
+- `SupplierManager` برای تغییر وضعیت از `POST /api/v1/suppliers/{id}/activation` استفاده می‌کند؛ قرارداد واقعی API همین است و استفاده‌ی قبلی از PUT باعث شکست عملیات فعال‌سازی می‌شد.
+
+Build محلی Release برای API و Backoffice با صفر warning/error موفق شد. هر دو image از همین checkout بازسازی و deploy شدند. بررسی authenticated API در محیط محلی: Workflow definition با HTTP 200 و 23 node/17 نسخه، جستجوی کاربران و نقش‌ها با HTTP 200. browser visual verification در این محیط در دسترس نبود.
+
+این اصلاحات به معنی تکمیل recovery نیستند. هنوز مسیرهای `workflow/definition/runtime/*`، ذخیره‌ی draft/publish طراح، پیاده‌سازی کامل Cartable، و قرارداد کامل `suppliers/core` در API موجود نیستند؛ بنابراین SupplierEditor پیشرفته، Cartable و چرخه‌ی Designer save/publish هنوز acceptance کامل ندارند. این مسیرها عمداً با پاسخ جعلی یا stub پوشانده نشدند.

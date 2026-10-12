@@ -30,6 +30,14 @@ public static class SecurityEndpoints
         RouteGroupBuilder users = endpoints.MapGroup("/api/v1/security/users").RequireAuthorization(SecurityPermissions.SecurityUserManage);
         users.MapPost("/", async (CreateUserRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.CreateUserAsync(new(r.Username, r.DisplayName, r.Email, r.Password), ct)));
         users.MapGet("/", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.ListUsersAsync(ct)));
+        users.MapGet("/search", async (string? search, ISecurityAdministration s, CancellationToken ct) =>
+        {
+            Result<IReadOnlyList<UserView>> result = await s.ListUsersAsync(ct);
+            if (result.IsFailure) return Map(result);
+            string query = search?.Trim() ?? string.Empty;
+            UserView[] items = result.Value.Where(x => query.Length == 0 || x.Username.Contains(query, StringComparison.OrdinalIgnoreCase) || x.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)).ToArray();
+            return Results.Json(new { items, totalCount = items.Length, pageNumber = 1, pageSize = items.Length });
+        });
         users.MapGet("/{id:guid}", async (Guid id, ISecurityAdministration s, CancellationToken ct) => Map(await s.GetUserAsync(id, ct)));
         users.MapPut("/{id:guid}", async (Guid id, UpdateUserRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.UpdateUserAsync(id, r.DisplayName, r.Email, r.Version, ct)));
         users.MapPut("/{id:guid}/activation", async (Guid id, SecurityActivationRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.SetUserActiveAsync(id, r.IsActive, r.Version, ct)));
@@ -44,6 +52,14 @@ public static class SecurityEndpoints
         RouteGroupBuilder roles = endpoints.MapGroup("/api/v1/security/roles").RequireAuthorization(SecurityPermissions.SecurityRoleManage);
         roles.MapPost("/", async (CreateRoleRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.CreateRoleAsync(r.Code, r.DisplayTitle, ct)));
         roles.MapGet("/", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.ListRolesAsync(ct)));
+        roles.MapGet("/search", async (string? search, ISecurityAdministration s, CancellationToken ct) =>
+        {
+            Result<IReadOnlyList<RoleView>> result = await s.ListRolesAsync(ct);
+            if (result.IsFailure) return Map(result);
+            string query = search?.Trim() ?? string.Empty;
+            RoleView[] items = result.Value.Where(x => query.Length == 0 || x.Code.Contains(query, StringComparison.OrdinalIgnoreCase) || x.DisplayTitle.Contains(query, StringComparison.OrdinalIgnoreCase)).ToArray();
+            return Results.Json(new { items, totalCount = items.Length, pageNumber = 1, pageSize = items.Length });
+        });
         roles.MapGet("/{id:guid}", async (Guid id, ISecurityAdministration s, CancellationToken ct) => Map(await s.GetRoleAsync(id, ct)));
         roles.MapPut("/{id:guid}", async (Guid id, UpdateRoleRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.UpdateRoleAsync(id, r.DisplayTitle, r.Version, ct)));
         roles.MapPut("/{id:guid}/activation", async (Guid id, SecurityActivationRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.SetRoleActiveAsync(id, r.IsActive, r.Version, ct)));
