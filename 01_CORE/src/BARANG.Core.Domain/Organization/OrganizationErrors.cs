@@ -13,4 +13,10 @@ public static class OrganizationErrors
     public static Error NotFound => Error.NotFound("organization.resource.not_found");
     public static Error DuplicateCode => Error.Conflict("organization.code.duplicate");
     public static Error Concurrency => Error.Concurrency("organization.concurrency_conflict");
+    public static Error InvalidAssignment => Error.Validation("organization.assignment.invalid");
+    public static Error ReportingCycle => Error.BusinessRule("organization.assignment.reporting_cycle");
+    public static Error DuplicateAssignment => Error.Conflict("organization.assignment.duplicate");
+    public static Error ActiveDependents => Error.BusinessRule("organization.active_dependents");
+    public static Error DeleteHasChildren => Error.BusinessRule("organization.delete.has_children");
+    public static Error ProtectedDependency => Error.BusinessRule("organization.delete.protected_dependency");
 }

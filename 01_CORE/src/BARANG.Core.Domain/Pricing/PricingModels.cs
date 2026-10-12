@@ -3,7 +3,7 @@ using BARANG.Core.Domain.Orders;
 
 namespace BARANG.Core.Domain.Pricing;
 
-public enum TariffType { RawProduct, Print, Packaging, Shipping, AdditionalService }
+public enum TariffType { RawProduct, Print, Packaging, Shipping, Design, AdditionalService }
 public enum DiscountType { FixedAmount, Percentage }
 public enum DiscountScope { General, Customer, PartnerSource, Manual }
 public enum PriceComponentType { RawProduct, Print, AdditionalService, Packaging, Shipping, Discount, Tax }

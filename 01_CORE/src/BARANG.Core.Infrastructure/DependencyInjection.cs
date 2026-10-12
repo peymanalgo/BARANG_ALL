@@ -108,6 +108,8 @@ public static class DependencyInjection
         services.AddScoped<IAuditWriter, AuditWriter>();
         services.AddScoped<IAuditReader, AuditReader>();
         services.AddScoped<IOrganizationStore, OrganizationStore>();
+        services.AddScoped<IOrganizationalChartStore, OrganizationalChartStore>();
+        services.AddScoped<IOrganizationalChartAdministration, OrganizationalChartAdministration>();
         services.AddScoped<IOrganizationAdministration, OrganizationAdministration>();
         services.AddScoped<ILookupStore, LookupStore>();
         services.AddScoped<LookupAdministration>();

@@ -37,6 +37,12 @@ public static class OrganizationEndpoints
         units.MapGet("/{unitId:guid}", async (Guid unitId, IOrganizationAdministration s, CancellationToken ct) => Map(await s.GetUnitAsync(unitId, ct)));
         units.MapPut("/{unitId:guid}", async (Guid unitId, UpdateUnitRequest r, IOrganizationAdministration s, CancellationToken ct) => Map(await s.UpdateUnitAsync(unitId, r.DisplayName, r.BranchId, r.ParentId, r.Version, ct)));
         units.MapPut("/{unitId:guid}/activation", async (Guid unitId, ActivationRequest r, IOrganizationAdministration s, CancellationToken ct) => Map(await s.SetUnitActiveAsync(unitId, r.IsActive, r.Version, ct)));
+        RouteGroupBuilder chart = group.MapGroup("/chart").RequireAuthorization(SecurityPermissions.OrganizationUnitManage);
+        chart.MapGet("/", async (Guid? highlightedPersonId, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.GetChartAsync(highlightedPersonId, ct)));
+        chart.MapGet("/companies/{companyId:guid}", async (Guid companyId, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.GetCompanyChartAsync(companyId, ct)));
+        RouteGroupBuilder persons = group.MapGroup("/persons").RequireAuthorization(SecurityPermissions.OrganizationUnitManage);
+        persons.MapGet("/", async (string? search, int? take, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.SearchPersonsAsync(search, take ?? 30, ct)));
+        persons.MapGet("/{id:guid}", async (Guid id, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.GetPersonAsync(id, ct)));
         RouteGroupBuilder warehouses = group.MapGroup("/warehouses").RequireAuthorization(SecurityPermissions.OrganizationWarehouseManage);
         warehouses.MapPost("/", async (CreateWarehouseRequest r, IOrganizationAdministration s, CancellationToken ct) => Map(await s.CreateWarehouseAsync(new(r.Code, r.Name, r.Type, r.BranchId), ct), true));
         warehouses.MapGet("/", async (IOrganizationAdministration s, CancellationToken ct) => Map(await s.ListWarehousesAsync(ct)));
