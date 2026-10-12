@@ -244,6 +244,10 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 
 ### الحاقیه عملیاتی STEP 2
 
+### ممیزی baseline و محدودیت restore
+
+مقایسه‌ی `main`، branch STEP 2، `step2-clean` و working tree canonical نشان داد که migrationهای customer به مدل profile نرمال‌شده تعلق دارند، اما checkout تمیز هنوز مدل قدیمیِ دارای map برای `customers.first_name` را دارد. working tree اصلی مدل نرمال‌شده و profileها را دارد، ولی همان working tree نیز runtime کامل `WorkflowDefinitionRuntime` و entityهای وابسته‌ی Cartable را ندارد؛ endpoint و DI registration به‌تنهایی implementation محسوب نمی‌شوند. Probe build پس از قراردادن contractهای موجود، خطاهای missing runtime واقعی را آشکار کرد. از افزودن placeholder یا contract-only substitute خودداری شد. در نتیجه تست چاپ و رفتار کامل Cartable هنوز قابل ادعای موفقیت نیست و STEP 2 تا restore یک baseline authoritative و سازگار، ناقص باقی می‌ماند.
+
 علت drift فقط ستون گزارش‌شده نبود: DB توسعه migrationهای 20260902 تا 20261007 را داشت که در شاخه STEP 2 جا افتاده بودند. پس از بازگردانی آن زنجیره، migrationهای `CartablePersonalFollowUp`، `AddWorkflowDecisionAttachments` و `AddWorkflowSubstitutionsAndForwardContext` مالک واقعی schema شناخته شدند؛ `LateWorkflowEvidenceSchema` قبلی همان objects را دوباره ایجاد می‌کرد. نسخه‌ی اصلاحی no-op است و migration قبلی را بدون mark دستی یا reset کنار می‌زند. در `AddWorkflowSubstitutionsAndForwardContext` نیز overload نادرست `AddColumn` که SQL نوع را `barang` تولید می‌کرد، به نوع `uuid` و schema صریح اصلاح شد.
 
 در توسعه، backup قبل از repair در `artifacts/barang_core_before_step2_repair.dump` تهیه و با `pg_restore --list` بررسی شد. شمارش‌های قبل/بعد حفظ شدند: products=56، variants=57، order_items=49، stock_balances=0، purchase_items=0، و rows unresolved برای سه ستون UOM برابر صفر بود. fresh و restored isolated DB هر دو تا STEP 2 migrate شدند.

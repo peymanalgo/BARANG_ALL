@@ -81,6 +81,14 @@ STEP 2 از نظر تغییرات source، مدل و قرارداد API، migrat
 
 ### وضعیت عملیاتی بازبینی‌شده STEP 2
 
+### ممیزی baseline پس از commit 943a489
+
+سه منبع با هم مقایسه شدند: `main` در `e26bf87`، branch فعلی در `943a489` و working tree canonical در `D:\00_BARANG\01_CORE`. نتیجه نشان داد checkout تمیز implementationهای جدید customer را ندارد و مدل قدیمی آن هنوز `customers.first_name` را map می‌کند، درحالی‌که migration رسمی `20260908122400_CompleteCustomerManagement` این داده را به profile نرمال‌شده منتقل و از جدول `customers` حذف می‌کند. working tree اصلی حاوی implementation نرمال‌شده‌ی customer است، اما مستقل از آن، هر دو منبع فاقد فایل/کلاس canonical `WorkflowDefinitionRuntime` و entityهای لازم runtime هستند؛ فقط endpointها و registrationهای آن وجود دارد. بنابراین contractهای صرفاً compile-time جایگزین runtime محسوب نمی‌شوند و baseline کامل هنوز قابل اعلام نیست.
+
+Probe build روی snapshot working tree اصلی پس از قراردادن contractهای موجود، به خطاهای واقعی `IWorkflowDefinitionRuntime`، `WorkflowDecisionAttachment`، `WorkflowDefinition*`، `WorkflowRuntimeTask` و `CartableSavedFilter` رسید. این موارد از منبع authoritative موجود قابل restore نیستند؛ handler خالی یا type placeholder اضافه نشد.
+
+اجرای integration نیز پیش از مسیر print با SQL مدل قدیمی به `customers.first_name` می‌رسد. اصلاح درست، انتقال کامل و هماهنگ مدل/customer store/application/API به schema profile است، نه اضافه‌کردن ستون dummy. تا زمان انتقال این implementation و بازیابی runtime واقعی Cartable، STEP 2 عملیاتی کامل نیست.
+
 - backup توسعه: `artifacts/barang_core_before_step2_repair.dump`، فرمت custom، قابل فهرست‌برداری با `pg_restore --list`.
 - fresh database و restored backup هر دو تا `20261012100553_Step2InventoryUnitContracts` migrate شدند؛ restored database ابتدا migrationهای pending یعنی `20261007170000` و STEP 2 را گرفت.
 - توسعه قبل از migration دارای ۵۶ محصول، ۵۷ variant، ۴۹ قلم سفارش و صفر reservation/purchase item بود؛ پس از migration همین مقادیر حفظ شد و هر سه جدول واحدِ جدید صفر ردیف unresolved داشتند.
