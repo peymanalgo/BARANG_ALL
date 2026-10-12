@@ -51,7 +51,8 @@ public sealed class SecurityAdministration(ISecurityStore store, IPasswordCreden
         Guid? companyId = company.CompanyId;
         IReadOnlyList<string> roles = companyId is { } selected ? await store.ListEffectiveRoleCodesAsync(userId, selected, time.GetUtcNow(), token) : [];
         IReadOnlyList<string> permissions=companyId is{} permissionCompany?await store.ListEffectivePermissionCodesAsync(userId,permissionCompany,time.GetUtcNow(),token):[];
-        return Result.Success(new CurrentUserView(user.Id, user.Username, user.DisplayName, user.AccountState, companyId, roles,permissions));
+        bool isSystemAdministrator = companyId is not null ? roles.Contains("system.administrator", StringComparer.Ordinal) : await store.IsSystemAdministratorAsync(userId, token);
+        return Result.Success(new CurrentUserView(user.Id, user.Username, user.DisplayName, user.AccountState, companyId, roles,permissions,isSystemAdministrator));
     }, ct);
     public Task<Result<IReadOnlyList<MyCompanyView>>> ListMyCompaniesAsync(CancellationToken ct) => transactions.ExecuteAsync(async token =>
     {

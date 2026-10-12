@@ -14,6 +14,8 @@ Permissions are a code-defined catalog persisted by migration. Codes are stable 
 
 The selected `X-Company-ID` is a selection request, not proof. Authenticated requests validate active `UserCompany` access before establishing `CompanyContext`; Infrastructure then sets transaction-local PostgreSQL RLS context. Anonymous header selection remains Development/Testing-only for bootstrap/test compatibility and is rejected in Production.
 
+Before company selection, role and permission lookup must explicitly retain the validated `userId` and requested company predicates even when the normal company query filter has no context yet. The development `admin` account is an existing local identity: recovery and deployment code must preserve its ID, username, password, account state, company memberships, roles, and permissions. The canonical `system.administrator` role receives every registered permission; adding a permission must not require recreating or resetting the account. Changes to role assignments are reflected in new authentication claims after logout/login; server-side authorization remains authoritative.
+
 ## Authenticated self-service context
 
 Ordinary authenticated internal users use these endpoints without administrative permissions:

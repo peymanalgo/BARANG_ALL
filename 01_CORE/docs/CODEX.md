@@ -19,4 +19,5 @@
 - Follow `DATABASE_CONVENTIONS.md` and `MIGRATION_STRATEGY.md`; never auto-migrate from every production API instance or run database tests against a database not explicitly named as a test database.
 - Follow `MULTI_COMPANY_FOUNDATION.md`; never accept a client-supplied company identifier as authorization proof, bypass company filters casually, or run the API with a PostgreSQL superuser/RLS-bypass role.
 - Follow `IDENTITY_AND_ACCESS.md`; never expose credentials, invent ad-hoc permissions, authorize by role/unit display name, or bypass authenticated company access.
+- Preserve the existing local development `admin` identity and credentials. Seeds, migrations, deployments, and recovery code must not reset its password or replace its ID, status, roles, permissions, or company relationships; use the canonical administrator role and supported authorization services.
 - Follow `GIT_WORKFLOW.md`; do not push, tag, rewrite history, or run destructive Git commands unless explicitly instructed.

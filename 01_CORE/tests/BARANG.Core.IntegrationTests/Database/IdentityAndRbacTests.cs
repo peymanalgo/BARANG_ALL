@@ -117,6 +117,10 @@ public sealed class IdentityAndRbacTests(PostgreSqlDatabaseFixture database)
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/v1/auth/login", new { username = "admin", password = "WrongPassword123" }, TestContext.Current.CancellationToken)).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/v1/auth/login", new { username = "missing", password = "WrongPassword123" }, TestContext.Current.CancellationToken)).StatusCode);
         LoginResult admin = await LoginAsync(client, "admin", "StrongAdminPassword123");
+        CompanySelectionView adminCompany = await SendAsync<CompanySelectionView>(client, Request(HttpMethod.Post, "/api/v1/auth/me/company", admin.AccessToken, null, new { companyId = companyA }));
+        Assert.Contains("customer.read", adminCompany.EffectivePermissionCodes);
+        CurrentUserView adminMe = await SendAsync<CurrentUserView>(client, Request(HttpMethod.Get, "/api/v1/auth/me", admin.AccessToken, companyA));
+        Assert.True(adminMe.IsSystemAdministrator);
         using HttpRequestMessage allowed = Request(HttpMethod.Get, "/api/v1/security/users", admin.AccessToken, companyA); using HttpResponseMessage allowedResponse = await client.SendAsync(allowed, TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.OK, allowedResponse.StatusCode); Assert.DoesNotContain("passwordHash", await allowedResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken), StringComparison.OrdinalIgnoreCase);
         using HttpRequestMessage crossCompany = Request(HttpMethod.Get, "/api/v1/security/users", admin.AccessToken, companyB); Assert.Equal(HttpStatusCode.Forbidden, (await client.SendAsync(crossCompany, TestContext.Current.CancellationToken)).StatusCode);
 
