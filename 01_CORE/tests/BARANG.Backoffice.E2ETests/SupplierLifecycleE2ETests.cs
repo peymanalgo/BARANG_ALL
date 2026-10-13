@@ -12,7 +12,7 @@ public sealed class SupplierLifecycleE2ETests : IAsyncLifetime
     private readonly string baseUrl = Environment.GetEnvironmentVariable("BARANG_E2E_BASE_URL") ?? "http://localhost:5100";
     private readonly HttpClient client = new() { BaseAddress = new Uri(Environment.GetEnvironmentVariable("BARANG_E2E_API_URL") ?? "http://localhost:8080") };
     private IPlaywright playwright = null!; private IBrowser browser = null!; private IBrowserContext context = null!; private IPage page = null!;
-    private string token = ""; private Guid supplier; private string criterionLabel = ""; private string contractTypeLabel = ""; private string documentTypeLabel = "";
+    private string token = ""; private Guid supplier; private string contractTypeLabel = ""; private string documentTypeLabel = "";
 
     public async ValueTask InitializeAsync()
     {
@@ -26,7 +26,7 @@ public sealed class SupplierLifecycleE2ETests : IAsyncLifetime
         JsonElement criterion = await SupplierReferenceScenario.Send(client, HttpMethod.Post, "/api/v1/lookups/types/supplier.evaluation.criterion/values", token, Company, new { code = "E2E_CRITERION_" + stamp, displayOrder = 1, translations = new Dictionary<string, string> { ["fa"] = "معیار آزمون", ["ar"] = "معيار الاختبار", ["en"] = "Delivery quality" } }, 201, TestContext.Current.CancellationToken);
         JsonElement contractType = await SupplierReferenceScenario.Send(client, HttpMethod.Post, "/api/v1/lookups/types/supplier.contract.type/values", token, Company, new { code = "E2E_CONTRACT_" + stamp, displayOrder = 1, translations = new Dictionary<string, string> { ["fa"] = "قرارداد آزمون", ["ar"] = "عقد الاختبار", ["en"] = "E2E contract" } }, 201, TestContext.Current.CancellationToken);
         JsonElement documentType = await SupplierReferenceScenario.Send(client, HttpMethod.Post, "/api/v1/lookups/types/supplier.document.type/values", token, Company, new { code = "E2E_DOCUMENT_" + stamp, displayOrder = 1, translations = new Dictionary<string, string> { ["fa"] = "سند آزمون", ["ar"] = "وثيقة الاختبار", ["en"] = "E2E document" } }, 201, TestContext.Current.CancellationToken);
-        criterionLabel = "Delivery quality"; contractTypeLabel = "E2E contract"; documentTypeLabel = "E2E document";
+        contractTypeLabel = "E2E contract"; documentTypeLabel = "E2E document";
         playwright = await Playwright.CreateAsync();
         browser = await playwright.Chromium.LaunchAsync(new() { Headless = true, ExecutablePath = Environment.GetEnvironmentVariable("BARANG_E2E_BROWSER_PATH") });
         context = await browser.NewContextAsync(new() { ViewportSize = new() { Width = 1440, Height = 1000 } }); page = await context.NewPageAsync();

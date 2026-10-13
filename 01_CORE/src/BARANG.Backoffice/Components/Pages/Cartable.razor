@@ -582,7 +582,8 @@
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) { ShortcutReference = DotNetObjectReference.Create(this); await JS.InvokeVoidAsync("barangCartableShortcuts.init", ShortcutReference); } }
+    private bool ShortcutsInitialized;
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) { ShortcutReference = DotNetObjectReference.Create(this); await JS.InvokeVoidAsync("barangCartableShortcuts.init", ShortcutReference); ShortcutsInitialized = true; } }
     [JSInvokable] public async Task HandleShortcut(string shortcut) { if (shortcut == "focus-search") { await JS.InvokeVoidAsync("barangCartableShortcuts.focusSearch"); return; } if (shortcut == "escape") { if (PreviewOpen) ClosePreview(); KeyboardHelpOpen = false; StateHasChanged(); return; } Row? row = SelectedRow ?? Rows.FirstOrDefault(); if (shortcut == "reload") await Load(); else if (shortcut == "preview" && row is not null) await OpenPreview(row); else if (shortcut == "view" && row is not null) Open(row); }
     public async ValueTask DisposeAsync()
     {
@@ -595,7 +596,7 @@
         SelectedDetailCancel?.Dispose();
         SearchCancel?.Cancel();
         SearchCancel?.Dispose();
-        try { await JS.InvokeVoidAsync("barangCartableShortcuts.dispose"); } catch (JSDisconnectedException) { }
+        if (ShortcutsInitialized) { try { await JS.InvokeVoidAsync("barangCartableShortcuts.dispose"); } catch (JSDisconnectedException) { } catch (InvalidOperationException) { } }
         ShortcutReference?.Dispose();
     }
    private async Task<(string Token, Guid Company)?> Session() { var u = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null; }
