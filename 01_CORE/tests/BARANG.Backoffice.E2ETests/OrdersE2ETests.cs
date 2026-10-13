@@ -25,9 +25,22 @@ public sealed class OrdersE2ETests : IAsyncLifetime
         await Assertions.Expect(page.Locator(".wizard-stepper")).ToBeVisibleAsync();
         await Assertions.Expect(page.Locator(".wizard-stepper button")).ToHaveCountAsync(7);
         await Assertions.Expect(page.Locator("input[type=date]")).ToHaveCountAsync(0);
-        await Assertions.Expect(page.GetByText("ذخیره پیش‌نویس",new(){Exact=true})).ToBeVisibleAsync();
-        await page.GetByText("ذخیره پیش‌نویس",new(){Exact=true}).ClickAsync();
-        await Assertions.Expect(page.Locator("[role=alert]")).ToContainTextAsync("شعبه");
+        await Assertions.Expect(page.GetByText("ذخیره پیش‌نویس",new(){Exact=true})).ToHaveCountAsync(0);
+        await page.Locator("input[name='order-branch']").ClickAsync();
+        await page.Locator("[role=option]").First.ClickAsync();
+        string branchCaption=await page.Locator("input[name='order-branch']").InputValueAsync();
+        await page.Locator("input[name='order-customer']").ClickAsync();
+        await page.Locator("[role=option]").First.ClickAsync();
+        string customerCaption=await page.Locator("input[name='order-customer']").InputValueAsync();
+        await page.GetByRole(AriaRole.Button,new(){Name="بعدی",Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-items-step")).ToBeVisibleAsync();
+        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await Assertions.Expect(page.Locator(".order-items-step")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator("input[name='order-branch']")).ToHaveValueAsync(branchCaption);
+        await Assertions.Expect(page.Locator("input[name='order-customer']")).ToHaveValueAsync(customerCaption);
+        await Assertions.Expect(page.GetByText("ذخیره پیش‌نویس",new(){Exact=true})).ToHaveCountAsync(0);
+        await page.GetByRole(AriaRole.Button,new(){Name="بعدی",Exact=true}).ClickAsync();
+        await Assertions.Expect(page.Locator(".order-items-step")).ToBeVisibleAsync();
     }
     [Fact]
     public async Task OrderStepTwoSupportsMultiItemDraftEditingInOneWizardSession(){

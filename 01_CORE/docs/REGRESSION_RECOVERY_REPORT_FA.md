@@ -479,3 +479,11 @@ E2E از executable رسمی xUnit v3 (نه مسیر `dotnet test` که JSON ن�
 در deployment جاری، imageهای جدید از `step2-clean/01_CORE/compose.yaml` ساخته و با `docker compose up -d --force-recreate api backoffice` اجرا شدند: API `sha256:74f7a3947267beb2218da141bcc50cc9fc61803db75f5723144e9f27fdc81808` و Backoffice `sha256:76b1d85e6c9d751129c5b202c6d45e14c5e050b59eadb419f1a9024aa4248e15`. هر دو سرویس healthy هستند. هیچ migration جدید یا تغییر در database عملیاتی انجام نشد.
 
 نتیجهٔ پذیرش باید جدا بماند: **baseline persistence/API و مسیرهای منتخب Designer/Cartable پذیرفته شدند، اما baseline browser کامل به‌دلیل SupplierCore/DomainReference طولانی و Order Step 1 assertion ناسازگار هنوز کامل نیست.** STEP 2 identity/UOM فقط بر اساس acceptanceهای API/persistence قبلی معتبر است و این task integration جدیدی اجرا نکرد؛ reservation/consumption و STEP 3 آغاز نشده‌اند.
+
+#### browser acceptance follow-up
+
+تست `OrdersE2ETests.OrderStepOneRendersHeaderWizardAndLocalizedDateControl` با قرارداد تصویب‌شده اصلاح شد: Step 1 اکنون نبودن `ذخیره پیش‌نویس` را assert می‌کند، branch و customer را انتخاب می‌کند، با `بعدی` order را ایجاد می‌کند، پس از reload مقدارهای persisted را بررسی می‌کند و دوباره به Step 2 می‌رود. این تغییر دکمهٔ Save Draft را به UI برنمی‌گرداند.
+
+در `SupplierCoreE2ETests` علت hang قبلی در helper `Ready` بود: انتظار JavaScript برای handler داخلی Blazor سقف زمانی نداشت. helper اکنون timeout پانزده‌ثانیه‌ای دارد تا به‌جای process بی‌نهایت، failure قابل گزارش تولید کند. اجرای مجدد مستقل SupplierCore/DomainReference در این محیط به‌علت processهای orphaned و قفل‌شدن apphost به summary نهایی نرسید؛ بنابراین نتایج این دو مجموعه **unverified** باقی می‌ماند و هیچ assertion یا قابلیت کاربردی برای سبزکردن مصنوعی تضعیف نشد.
+
+تست‌های قبلی Login **۶/۶**، Cartable **۴/۴**، Designer **۲/۲** و Supplier Lifecycle **۲/۲** همچنان آخرین browser evidence معتبر هستند. Order Wizard کامل از Step 2 تا pricing/submit و تمام DomainReference/SupplierCore هنوز نیازمند اجرای موفق در یک process پایدار با timeout جدید است. STEP 2 identity/UOM نیز از browser acceptance جداست و تنها شواهد API/persistence ثبت‌شده قبلی معتبر است.
