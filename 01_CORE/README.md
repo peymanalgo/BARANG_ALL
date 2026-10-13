@@ -49,3 +49,7 @@ The existing `compose.yaml` runs PostgreSQL, Core, and Backoffice together. From
 ## Tests
 
 Run `dotnet test .\BARANG.Backoffice.slnx --configuration Release`. Tests cover the centralized Core transport and status mapping, company header, authentication/logout, locale direction, Jalali/Gregorian conversion, company flow, permission navigation, and module-to-Core route invariants. Full system validation additionally runs the Core regression suite and browser E2E against the Docker stack.
+
+## Mandatory regression gate for integration steps
+
+Before and after every integration step, record the exact checkout, commit, Compose context, image pair, migration history, and a verified development backup. Keep the frontend, API, contracts, EF model, and schema on one coherent version. Run the affected module tests plus cross-module contract/smoke tests; when schema changes, validate both a fresh isolated PostgreSQL database and a representative restored copy. Deploy only a coherent Release API/Backoffice pair after required checks pass, then run authenticated post-deployment acceptance checks. Preserve local development administrator credentials, existing business data, and unrelated working-tree changes. A step is not complete while it introduces a verified regression or relies only on health/HTTP-200 checks.

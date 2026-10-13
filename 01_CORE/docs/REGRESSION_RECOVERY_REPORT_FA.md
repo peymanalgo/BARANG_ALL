@@ -290,4 +290,51 @@ backup توسعه در `D:\00_BARANG\recovery-snapshots\20261012170707\barang_co
 - authenticated runtime API پس از deploy: دامنه‌ها در fa/en/ar، unit options، `artwork.tag` و `defect.type` همگی HTTP 200 و قابل parse هستند. login admin و انتخاب company نیز موفق است.
 - imageهای جاری: API `sha256:2c09a75a487edd54ba84ec3cc9f5504221184eef51834d2f358dab1aa31c56fb` و Backoffice `sha256:71f3f1fed0d6f1715ef3b2ae4f5672a65b26db727559a939a5854c0c8361eab`؛ Compose از `step2-clean/01_CORE/compose.yaml` استفاده می‌کند.
 
+## بازیابی Workflow Designer و Cartable — اجرای فعلی
+
+### پیاده‌سازی
+
+در target checkout، قراردادهای واقعی endpointهای Designer و runtime به implementationهای پایگاه‌داده‌ای متصل شدند؛ source canonical dirty دست‌نخورده ماند. فایل‌های مرتبط عبارت‌اند از:
+
+- `src/BARANG.Core.Application/Workflow/WorkflowDesignerContracts.cs`: command/view و interfaceهای Designer، runtime و saved-filter.
+- `src/BARANG.Core.Infrastructure/Workflow/WorkflowDesignerAdministration.cs`: خواندن graph/version، ذخیرهٔ Draft با optimistic version، validation ساختاری و publish نسخهٔ Draft؛ نسخهٔ Active هنگام ویرایش mutate نمی‌شود.
+- `src/BARANG.Core.Infrastructure/Workflow/WorkflowDefinitionRuntime.cs`: شروع idempotent بر اساس company+order، اتصال instance به DefinitionVersion، ایجاد task از graph، claim/release/complete با version، مسیر outcome در gateway، history، personal state و attachment reference/download.
+- `src/BARANG.Core.Infrastructure/Workflow/CartableSavedFilterAdministration.cs`: CRUD فیلترهای شخصی با scope شرکت/کاربر و version.
+- `src/BARANG.Core.Api/Workflow/WorkflowEndpoints.cs` و `src/BARANG.Core.Infrastructure/DependencyInjection.cs`: route و DI registration واقعی.
+- `src/BARANG.Core.Infrastructure/Orders/OrderAdministration.cs`: مسیر Submit از runtime جدید استفاده می‌کند و start تکراری را idempotent نگه می‌دارد.
+- `src/BARANG.Backoffice/Components/Pages/WorkflowWorkspace.razor`: دکمهٔ Publish برای نسخهٔ Draft و مسیرهای Save/Validate موجود.
+- `tests/BARANG.Backoffice.E2ETests/WorkflowDesignerE2ETests.cs`: انتظار تعداد actionها با Publish/Undo/Redo جدید هم‌تراز شد.
+
+### علت‌های runtime که در استقرار پیدا و اصلاح شدند
+
+1. `set_config` مقدار UUID را به‌عنوان آرگومان uuid می‌فرستاد؛ PostgreSQL فقط text می‌پذیرد. هر سه implementation به `cast(@company as text)` اصلاح شدند؛ این علت 500 Cartable و شکست انتخاب context بود.
+2. query graph در join transition ستون `version` را بدون qualifier می‌خواند؛ به `tr.version` اصلاح شد.
+3. JsonElementهای nullable از `JsonDocument` پس از dispose در پاسخ نگه داشته می‌شدند؛ `Clone()` برای operator/title اضافه شد.
+4. response transition فاقد `id` بود، درحالی‌که Backoffice آن را می‌خواند؛ شناسهٔ واقعی `tr.id` اکنون برمی‌گردد.
+
+### شواهد پذیرش
+
+| عمل | نتیجهٔ فعلی | شواهد |
+|---|---|---|
+| Designer load/version | موفق | پاسخ authenticated با status `Active`، نسخهٔ 17، 23 node و 41 transition |
+| Designer validate | موفق | E2E deployed بعد از fix: validation action بدون circuit error |
+| Save Draft/reload graph | موفق | E2E deployed؛ graph و connection پس از reload باقی ماند |
+| Cartable list/detail shell | موفق در API و UI route | runtime task/referrals هر دو 200 با company context؛ E2E محلی Cartable در fa/en/ar و navigation: 4/4 موفق |
+| claim/release/complete و gateway routing | implementation موجود، acceptance با رکورد isolated | تست مستقیم mutation در test host به‌علت failure قدیمی create order اجرا نشد |
+| Order Submit → exactly-one workflow | implementation idempotent، runtime test blocked | OrderE2E و PricingE2E روی DB ایزوله در create order با core.unexpected شکست خوردند؛ این failure خارج از graph runtime است و هنوز رفع نشده |
+| attachment/saved filter | persistence path موجود | endpoint code review و schema موجود؛ browser/API mutation end-to-end هنوز pending |
+| delegation/forward/substitution | تکمیل نشده | implementation فعلاً خطای دقیق `workflow.forward.not_available`/`workflow.substitution.not_available` برمی‌گرداند و success جعلی ندارد |
+
+### تست و deployment این نوبت
+
+- API و Backoffice Release build: موفق، صفر warning/error.
+- PostgreSQL ایزولهٔ `barang_workflow_test`: full migration chain اجرا شد؛ `WorkflowFoundationTests` برابر 3/3 موفق.
+- Browser E2E با Playwright روی `http://localhost:5100` و admin محلی، با اجازهٔ صریح shared development DB: تست‌های Designer/Cartable برابر **6/6 موفق** پس از اصلاح parser و انتظار تست. این تست‌ها save draft را روی محیط توسعه اجرا کردند؛ backup قبلی حفظ شده و migration جدیدی اعمال نشد.
+- imageهای جاری از آخرین deploy این checkout: API manifest `sha256:a566d719613a95d88b1015b5faca25c0e368d7bbeb04d0183cdd2cce2d79da5a` و Backoffice manifest `sha256:43ffc4574e43bae50c98992e4ac4609c1e4e0f24ec9d76bb2572c13c1e5c35ac`. هر دو از `step2-clean/01_CORE/compose.yaml` اجرا شدند و API healthy است.
+- browser automation تصویری مستقل در سطح tool در دسترس نبود؛ Playwright headless واقعی و component loading استفاده شد. بنابراین مشاهدهٔ دستی screenshot/visual layout همچنان جداگانه pending است.
+
+### باقی‌مانده و تصمیم وضعیت
+
+این پیاده‌سازی Designer load/validate/save/reload و هستهٔ runtime/Cartable را از contract تا SQL و API متصل می‌کند، اما recovery کامل baseline هنوز قابل اعلام نیست: forward/delegation/substitution success path، workload/history/assignment filtering کامل، attachment mutation و Order Submit end-to-end نیازمند تست/کار بیشتر هستند. همچنین 3 integration test سفارش/قیمت در setup ایزوله با `POST /orders` و یک تست BusinessProfile با ستون قدیمی `equipment.AcquisitionMethodCode` شکست خوردند؛ این موارد پیش از اعلام resume امن STEP 2 باید جداگانه رفع یا با شواهد به baseline مالک خود نسبت داده شوند. هیچ Inventory/Finance/Quality/Logistics integration جدیدی در این کار فعال نشده است.
+
 Visual browser verification فرم‌های هر منو در این محیط انجام نشد؛ شواهد فعلی شامل build، persistence/API integration و authenticated deserialization-level پاسخ‌هاست. WorkflowDefinitionRuntime/Designer و Cartable کامل عمداً پیاده‌سازی نشده و این recovery آن را حل نمی‌کند.
