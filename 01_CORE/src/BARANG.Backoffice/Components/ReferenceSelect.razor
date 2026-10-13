@@ -34,13 +34,14 @@ else if(!Loading&&Options.Count==0){<span class="reference-empty" role="status">
         bool adapter=TypeCode is "artwork.tag" or "defect.type";
         try
         {
-            var r=await Core.GetAsync(adapter?$"api/v1/reference-entities/{TypeCode}/values":$"api/v1/lookups/{TypeCode}/options?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}&activeOnly=true",token,company,default);
+            var activeOnly = IncludeInactive ? "false" : "true";
+            var r=await Core.GetAsync(adapter?$"api/v1/reference-entities/{TypeCode}/values":$"api/v1/lookups/{TypeCode}/options?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}&activeOnly={activeOnly}",token,company,default);
             if(r.IsSuccess)
             {
                 Options=ParseOptions(r.Value,adapter,UseCode);
                 if(!adapter&&Options.Count==0)
                 {
-                    var values=await Core.GetAsync($"api/v1/lookups/types/{TypeCode}/values?activeOnly=true",token,company,default);
+                    var values=await Core.GetAsync($"api/v1/lookups/types/{TypeCode}/values?activeOnly={activeOnly}",token,company,default);
                     if(values.IsSuccess) Options=ParseOptions(values.Value,false,UseCode);
                     else Logger.LogWarning("Lookup fallback failed for {TypeCode}: {Failure} {ProblemCode}",TypeCode,values.Failure,values.ProblemCode);
                 }

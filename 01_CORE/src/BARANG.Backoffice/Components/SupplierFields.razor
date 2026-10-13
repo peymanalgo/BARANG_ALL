@@ -9,7 +9,7 @@
 {
     <label class="@(item.Kind=="textarea"?"span-2":item.Kind=="bool"?"check-field":null)">
         @if(item.Kind!="bool"){<span>@Caption(item.Label) @(item.Required?"*":"")</span>}
-        @if(item.Kind=="reference"){<ReferenceSelect @key="item.Key" Name="@item.Key" TypeCode="@(item.Reference!)" Value="@Value(item.Key)" ValueChanged="v=>Set(item.Key,v)" Disabled="@Disabled" Placeholder="@Caption(item.Label)" />}
+        @if(item.Kind=="reference"){<ReferenceSelect @key="item.Key" Name="@item.Key" TypeCode="@(item.Reference!)" Value="@Value(item.Key)" ValueChanged="v=>Set(item.Key,v)" IncludeInactive="true" Disabled="@Disabled" Placeholder="@Caption(item.Label)" />}
         else if(item.Kind=="date"){<LocaleDateInput Name="@item.Key" Value="@Date(item.Key)" ValueChanged="v=>SetDate(item.Key,v)" Disabled="@Disabled" />}
         else if(item.Kind=="bool"){<input name="@item.Key" type="checkbox" checked="@IsTrue(item.Key)" disabled="@(Disabled||(item.Key is "isDefault" or "isPrimary")&&!IsTrue("isActive"))" @onchange='@(e=>Set(item.Key,e.Value is true?"true":"false"))' /><span>@Caption(item.Label)</span>}
         else if(item.Kind is "entity" or "status" or "ownership"){

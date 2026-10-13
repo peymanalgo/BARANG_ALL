@@ -22,9 +22,9 @@
     {
         <div class="data-grid-wrap"><table class="data-grid">
             <thead><tr>@foreach(string column in new[]{"Code","Name","Status"}){<th><BarangSortHeader Label="@T[column]" Active="@(Sort==column)" Descending="Descending" Clicked="()=>ChangeSort(column)" /></th>}<th>@L["DisplayOrder"]</th><th>@T["Actions"]</th></tr></thead>
-            <tbody>@foreach(var row in PagedRows){<tr data-id="@row.Id">
+            <tbody>@foreach(var row in PagedRows){<tr @key="row.Id" data-id="@row.Id">
                 <td dir="ltr">@row.Code</td><td>@row.Caption(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)</td><td><StatusBadge Active="row.Active" /></td><td>@row.Order</td>
-                <td><BarangActionMenu><BarangIconButton Icon="eye" Label="@T["View"]" Semantic="info" Clicked="()=>Open(row,true)" />
+                <td><BarangActionMenu @key="row.Id.ToString()+row.Active.ToString()+row.Version.ToString()"><BarangIconButton Icon="eye" Label="@T["View"]" Semantic="info" Clicked="()=>Open(row,true)" />
                     @if(CanManage&&!row.System){<BarangIconButton Icon="edit" Label="@T["Edit"]" Semantic="edit" Clicked="()=>Open(row,false)" /><BarangIconButton Icon="power" Label="@(row.Active?T["Deactivate"]:T["Activate"])" Semantic="@(row.Active?"warning":"success")" Clicked="()=>Activate(row)" /><BarangIconButton Icon="trash" Label="@T["Delete"]" Semantic="danger" Clicked="()=>AskDelete(row)" />}
                 </BarangActionMenu></td></tr>}</tbody>
         </table></div>

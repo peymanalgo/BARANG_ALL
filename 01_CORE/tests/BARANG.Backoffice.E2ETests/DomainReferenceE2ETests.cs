@@ -92,7 +92,7 @@ public sealed class DomainReferenceE2ETests : IAsyncLifetime
         grid=page.Locator($"[data-reference-type='{type}']");
         await Assertions.Expect(grid.Locator(".search-box input")).ToBeVisibleAsync();
         await page.WaitForTimeoutAsync(500);
-        await grid.Locator(".search-box input").FillAsync(code);
+        await grid.Locator(".search-box input").FillAsync(code); await page.WaitForTimeoutAsync(500);
         await grid.Locator(".search-box input").PressAsync("End");
         ILocator row=grid.Locator("tbody tr").Filter(new(){HasText=code});
         await Assertions.Expect(row).ToContainTextAsync(name);
@@ -105,11 +105,11 @@ public sealed class DomainReferenceE2ETests : IAsyncLifetime
         await MenuAction(row,"power");await Assertions.Expect(row).ToContainTextAsync("Inactive");
         await MenuAction(row,"power");await Assertions.Expect(row.Locator(".status-badge")).ToHaveTextAsync("Active");
         await grid.Locator(".barang-sort-header").Filter(new(){HasText="Code"}).ClickAsync();
-        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.DOMContentLoaded});await grid.Locator(".search-box input").FillAsync(code);await Assertions.Expect(row).ToContainTextAsync(edited);
+        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.DOMContentLoaded});grid=page.Locator($"[data-reference-type='{type}']");await Assertions.Expect(grid.Locator(".search-box input")).ToBeVisibleAsync();await page.WaitForTimeoutAsync(750);await grid.Locator(".search-box input").FillAsync(code);await page.WaitForTimeoutAsync(500);row=grid.Locator("tbody tr").Filter(new(){HasText=code});await Assertions.Expect(row).ToContainTextAsync(edited);
         var style=await row.Locator("td").Nth(1).EvaluateAsync<string>("e=>getComputedStyle(e).boxShadow");Assert.True(style is "none" or "",$"ordinary cell must not have a box shadow, actual: {style}");
         await MenuAction(row,"trash");
         ILocator confirm=page.Locator(".barang-modal:has(> header h2:text-is(\"Delete\"))");await confirm.Locator("footer .btn-danger").ClickAsync();await Assertions.Expect(confirm).ToBeHiddenAsync();await Assertions.Expect(row).ToBeHiddenAsync();
-        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.DOMContentLoaded});await grid.Locator(".search-box input").FillAsync(code);await Assertions.Expect(row).ToBeHiddenAsync();
+        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.DOMContentLoaded});grid=page.Locator($"[data-reference-type='{type}']");await Assertions.Expect(grid.Locator(".search-box input")).ToBeVisibleAsync();await page.WaitForTimeoutAsync(750);await grid.Locator(".search-box input").FillAsync(code);await page.WaitForTimeoutAsync(500);row=grid.Locator("tbody tr").Filter(new(){HasText=code});await Assertions.Expect(row).ToBeHiddenAsync();
     }
     [Theory]
     [InlineData("fa","rtl")]

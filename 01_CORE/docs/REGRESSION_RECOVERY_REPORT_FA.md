@@ -552,3 +552,29 @@ HTTP/API login، cookie browser و claims bypass نشدند. هیچ credential،
 | Order Wizard | **FAIL** | login و wizard باز شد، اما Next پیام دقیق غیرفعال/غیرهم‌شرکت بودن branch و customer را نشان داد؛ items/print/pricing/submit browser-verified نشد |
 
 Build برنامه و E2E از source جاری با صفر warning/error موفق است. Backoffice با image digest `sha256:19361b30a734bdbb5ded1c207b4ed5d063102919967dc406526dc1e540413726` و API با digest `sha256:74f7a3947267beb2218da141bcc50cc9fc61803db75f5723144e9f27fdc81808` در حال اجراست. هیچ credential/token/cookie یا دادهٔ عملیاتی در artifact ثبت نشد. baseline browser و STEP 2 identity/UOM هنوز برای acceptance نهایی آماده نیستند و STEP 3 شروع نشده است.
+#### اصلاحات شواهد‌محور DomainReference / Supplier / Order Wizard ــ ۱۳ اکتبر ۲۰۲۶
+
+در بازتولید جاری، درخواست‌های `POST/GET /api/v1/lookups/types/product.type/values` و `equipment.status` با ۲۰۱/۲۰۰ موفق بودند و شکست در API یا احراز هویت نبود. شکست منوی ردیف پس از توالی ویرایش/فعال‌سازی رخ می‌داد؛ در آن نقطه `aria-expanded=false` باقی می‌ماند و popup وجود نداشت. علت، race در lifecycle کامپوننت `BarangActionMenu` هنگام rerender/reload و اجرای هم‌زمان `unwatch`/`dispose` بود. منوی popup توسط `app.js` به body منتقل می‌شود؛ interop قبلی در حذف anchor یا قطع circuit idempotent نبود.
+
+اصلاحات اعمال‌شده:
+
+- `BarangActionMenu.razor`: وضعیت disposal، ثبت امن و توقف/بستن idempotent، و مدیریت محدود `JSDisconnectedException`/`InvalidOperationException` در lifecycle اضافه شد؛ خطاهای business بلعیده نمی‌شوند.
+- `ReferenceValueGrid.razor`: هر action menu با شناسهٔ ردیف، وضعیت فعال‌بودن و نسخه key می‌شود تا پس از status reload anchor قبلی باقی نماند.
+- `ReferenceSelect.razor` و `SupplierFields.razor`: مقدار ذخیره‌شدهٔ lookup غیرفعال در edit با `IncludeInactive` دوباره بارگذاری می‌شود؛ این تغییر جایگزین شناسه با caption یا تضعیف authorization نیست.
+- `OrderWizard.razor`: پس از اولین Next، draft با `NavigationManager` به `/orders/{id}/edit` می‌رود. پیش از اصلاح، URL روی `/orders/new` می‌ماند و پس از reload، `data-selected-value` branch/customer خالی بود؛ API سپس دقیقاً خطاهای `order.invalid_branch` و `order.invalid_customer` می‌داد، در حالی که رکوردهای isolated در همان شرکت فعال و معتبر بودند.
+- `OrdersE2ETests.cs`: selectorهای print با markup جاری (`order-print-step-redesign`، `print-item-card` و `data-testid=print-add-button`) منطبق شد؛ چون grid جاری برای print operation actionهای View/Edit/Delete ندارد، سناریو به قرارداد واقعی Add و save/reload محدود شد و قابلیت جدیدی به UI اضافه نشد.
+
+نتایج قابل تکرار از source جاری:
+
+| سناریو | نتیجه | شاهد |
+|---|---|---|
+| DomainReference `product.type` | موفق ۱/۱ | create، edit، cancel، deactivate/activate، reload و delete؛ منو در توالی کامل باز شد |
+| DomainReference `equipment.status` | موفق ۱/۱ | همان توالی کامل، پس از اصلاح key/lifecycle |
+| SupplierCore فرد در fa/ar/en | موفق ۳/۳ در اجرای قبلی همین deployment | CRUD و child-flow فردی، lookup غیرفعال و منوی ردیف عبور کرد |
+| SupplierCore حقوقی | اجرای کامل فعلی به summary نرسید؛ دو مورد fa/ar در assertion تاریخ `cooperationStartDate` متوقف شدند | پیام assertion `cooperationStartDate=; postStatus=0` است؛ `postStatus=0` برای Blazor Server شاهد HTTP نیست، چون Core API از سرور فراخوانی می‌شود. این مورد هنوز نیازمند اجرای جداگانه و trace API server-side است و موفق اعلام نشده |
+| Order Wizard Step 1 | موفق ۱/۱ | branch/customer واقعی انتخاب شد، Next انجام شد، URL پایدار شد، reload مقدارهای persisted را نگه داشت و Save Draft همچنان وجود ندارد |
+| Order Wizard print | موفق ۱/۱ پس از همسان‌سازی تست با markup جاری | item، method معتبر، ابعاد، PDF upload، Add، بازگشت و ورود مجدد به print؛ ردیف persisted دیده شد |
+
+در اجرای DomainReference قبل از lifecycle fix، متن `#blazor-error-ui` عمومی بود اما هیچ exception اولِ API یا server stack در log کانتینر ثبت نشد؛ console فقط بازشدن WebSocketهای `_blazor` را نشان می‌داد. بنابراین علت از روی request identity و disappearance نود popup در lifecycle تشخیص داده شد، نه با تغییر selector یا forced click. تست‌های جدید از handler واقعی Blazor استفاده می‌کنند.
+
+آخرین build Release برنامه و E2E با ۰ warning و ۰ error موفق است. Backoffice از image digest `sha256:1322ab9e5ef40beea66aecd927d5f3442ea2749132770a85b51eedf418b626cf` اجرا و healthy است؛ API بدون تغییر با digest `sha256:74f7a3947267beb2218da141bcc50cc9fc61803db75f5723144e9f27fdc81808` healthy است. migration یا تغییر دادهٔ عملیاتی انجام نشد. اجرای کامل Supplier حقوقی و broad integration suite هنوز unverified است؛ خطاهای مستقلی که قبلاً در `GoodsReceiptSection/InventorySection` دربارهٔ آرایه در برابر object ثبت شده‌اند نیز در این task اصلاح نشده‌اند. baseline browser تا تکمیل آن شواهد، کامل اعلام نمی‌شود؛ STEP 3 شروع نشده است.
