@@ -17,10 +17,20 @@ window.barangPopupManager = (() => {
     const closeEntry = (entry, restoreFocus = true) => {
         if (!entry) return;
         if (active === entry) active = null;
-        const closeNotification = entry.dotnet?.invokeMethodAsync('CloseFromPopupManager');
+        const closeNotification = entry.trigger?.isConnected
+            ? entry.dotnet?.invokeMethodAsync('CloseFromPopupManager')
+            : Promise.resolve();
         Promise.resolve(closeNotification).catch(() => { }).finally(() => {
-            if (restoreFocus) requestAnimationFrame(() => entry.trigger?.focus?.());
+            if (restoreFocus && entry.trigger?.isConnected) requestAnimationFrame(() => entry.trigger.focus());
         });
+    };
+
+    const removeDetached = () => {
+        for (const [id, entry] of entries) {
+            if (entry.trigger?.isConnected && entry.popup?.isConnected) continue;
+            if (active === entry) active = null;
+            entries.delete(id);
+        }
     };
 
     document.addEventListener('pointerdown', event => {
@@ -36,6 +46,7 @@ window.barangPopupManager = (() => {
 
     return {
         register(trigger, popup, dotnet) {
+            removeDetached();
             let entry = [...entries.values()].find(item => item.dotnet === dotnet);
             if (!entry) {
                 entry = { id: `popup-${nextId++}`, trigger, popup, dotnet };
@@ -47,6 +58,7 @@ window.barangPopupManager = (() => {
             return entry.id;
         },
         open(id) {
+            removeDetached();
             const entry = entries.get(id);
             if (!entry) return;
             if (active && active !== entry) closeEntry(active, true);

@@ -37,11 +37,11 @@ else if(!Loading&&Options.Count==0){<span class="reference-empty" role="status">
             var r=await Core.GetAsync(adapter?$"api/v1/reference-entities/{TypeCode}/values":$"api/v1/lookups/{TypeCode}/options?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}&activeOnly=true",token,company,default);
             if(r.IsSuccess)
             {
-                Options=ParseOptions(r.Value,adapter);
+                Options=ParseOptions(r.Value,adapter,UseCode);
                 if(!adapter&&Options.Count==0)
                 {
                     var values=await Core.GetAsync($"api/v1/lookups/types/{TypeCode}/values?activeOnly=true",token,company,default);
-                    if(values.IsSuccess) Options=ParseOptions(values.Value,false);
+                    if(values.IsSuccess) Options=ParseOptions(values.Value,false,UseCode);
                     else Logger.LogWarning("Lookup fallback failed for {TypeCode}: {Failure} {ProblemCode}",TypeCode,values.Failure,values.ProblemCode);
                 }
                 Failed=false;
@@ -60,13 +60,14 @@ else if(!Loading&&Options.Count==0){<span class="reference-empty" role="status">
         }
         finally { Loading=false; }
     }
-    private static List<Option> ParseOptions(JsonElement root,bool adapter)
+    private static List<Option> ParseOptions(JsonElement root,bool adapter,bool useCode)
     {
         JsonElement rows=root.ValueKind==JsonValueKind.Array?root:root.ValueKind==JsonValueKind.Object&&root.TryGetProperty("items",out var items)?items:default;
         if(rows.ValueKind!=JsonValueKind.Array)return [];
         return rows.EnumerateArray().Select(x=>new Option(
-            x.TryGetProperty("code",out var code)&&code.ValueKind==JsonValueKind.String?code.GetString()!:
-                x.TryGetProperty("id",out var id)&&id.ValueKind==JsonValueKind.String?id.GetString()!:string.Empty,
+            useCode&&x.TryGetProperty("code",out var code)&&code.ValueKind==JsonValueKind.String?code.GetString()!:
+                x.TryGetProperty("id",out var id)&&id.ValueKind==JsonValueKind.String?id.GetString()!:
+                x.TryGetProperty("code",out code)&&code.ValueKind==JsonValueKind.String?code.GetString()!:string.Empty,
             adapter?Caption(x):DisplayName(x),
             !x.TryGetProperty("isActive",out var active)||active.ValueKind!=JsonValueKind.False)).Where(x=>x.Id.Length>0).ToList();
     }

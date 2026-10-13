@@ -92,50 +92,56 @@ public sealed class SupplierCoreE2ETests:IAsyncLifetime
         foreach(var(key,type)in new[]{("paymentTermId","payment.term"),("paymentConditionId","payment.condition"),("paymentMethodId","payment.method"),("shippingMethodId","shipping.method"),("freightDeliveryTermId","freight.delivery.term")})await Reference(Editor,key,type,culture);
         await Input(Editor,"defaultCurrencyCode","IRR");await Input(Editor,"minimumOrderAmount","125");await Input(Editor,"defaultLeadTimeDays","4");await Input(Editor,"baseDiscountPercent","7.5");await Input(Editor,"purchaseCreditLimit","2000");
         await Editor.Locator("[name=creditPurchaseAllowed]").CheckAsync();await Editor.Locator("[name=isPreferred]").CheckAsync();
+        string? savePayload=null;int saveStatus=0;string? saveResponse=null;
+        page.Request += (_,request)=>{if(request.Method=="POST"&&request.Url.Contains("/api/v1/suppliers/core",StringComparison.OrdinalIgnoreCase))savePayload=request.PostData;};
+        page.Response += async (_,response)=>{if(response.Request.Method=="POST"&&response.Url.Contains("/api/v1/suppliers/core",StringComparison.OrdinalIgnoreCase)){saveStatus=response.Status;saveResponse=await response.TextAsync();}};
         await Editor.Locator("footer .btn-primary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();await Search(code,1);
         var saved=Assert.Single((await api.Send(HttpMethod.Get,"/api/v1/suppliers/core?search="+code)).GetProperty("items").EnumerateArray());Guid id=Id(saved.GetProperty("supplier"));suppliers.Add((Company,id));
         ILocator row=Grid.Locator($"tbody tr[data-id='{id}']");
         Assert.Matches("^[1-9][0-9]*$",await row.Locator("td").First.InnerTextAsync());
-        Assert.Equal("1985-06-08",saved.GetProperty("supplier").GetProperty("cooperationStartDate").GetString());
+        Assert.True(saved.GetProperty("supplier").TryGetProperty("cooperationStartDate",out var cooperation),$"cooperationStartDate missing; postStatus={saveStatus}; payload={savePayload}; response={saveResponse}");
+        Assert.Equal("1985-06-08",cooperation.GetString());
         var detail=await api.Send(HttpMethod.Get,$"/api/v1/suppliers/core/{id}");
-        Assert.Equal(Id(refs["supplier.grade"]),detail.GetProperty("supplier").GetProperty("gradeId").GetGuid());
+        Assert.True(detail.GetProperty("supplier").TryGetProperty("gradeId",out var grade)&&grade.ValueKind!=JsonValueKind.Null,$"gradeId missing/null; postStatus={saveStatus}; payload={savePayload}; response={saveResponse}; detail={detail}");
+        Assert.Equal(Id(refs["supplier.grade"]),grade.GetGuid());
         Assert.Equal(Id(refs["payment.term"]),detail.GetProperty("financial").GetProperty("paymentTermId").GetGuid());
         Assert.Equal(7.5m,detail.GetProperty("financial").GetProperty("baseDiscountPercent").GetDecimal());
         Assert.Equal(Id(refs["supplier.category"]),Assert.Single(detail.GetProperty("categoryIds").EnumerateArray()).GetGuid());
-        await Action(row,"eye").ClickAsync();await Assertions.Expect(Editor.Locator("footer .btn-primary")).ToHaveCountAsync(0);
+        await MenuAction(row,"eye");await Assertions.Expect(Editor.Locator("footer .btn-primary")).ToHaveCountAsync(0);
         foreach(var control in await Editor.Locator("input,select,textarea").AllAsync())await Assertions.Expect(control).ToBeDisabledAsync();
         await Assertions.Expect(Editor.Locator("[name=cooperationStartDate]")).ToHaveValueAsync(DateText(culture));await CloseEditor();
-        await Action(row,"edit").ClickAsync();await Input(Editor,"notes","Saved notes");await Editor.Locator("[name=status]").SelectOptionAsync("Inactive");
+        await Grid.Locator("[name=supplierStatusFilter]").SelectOptionAsync("");await Search(code,1);
+        await MenuAction(row,"edit");await Input(Editor,"notes","Saved notes");await Editor.Locator("[name=status]").SelectOptionAsync("Inactive");
         await Editor.Locator("footer .btn-primary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();
         await Assertions.Expect(row.Locator(".customer-status")).ToHaveTextAsync(Caption("Inactive",culture));
         detail=await api.Send(HttpMethod.Get,$"/api/v1/suppliers/core/{id}");Assert.Equal("Saved notes",detail.GetProperty("supplier").GetProperty("notes").GetString());
-        await Action(row,"edit").ClickAsync();await Input(Editor,"notes","Discard me");await Editor.Locator("footer .btn-secondary").ClickAsync();
+        await MenuAction(row,"edit");await Input(Editor,"notes","Discard me");await Editor.Locator("footer .btn-secondary").ClickAsync();
         await Assertions.Expect(Editor).ToBeVisibleAsync();await page.GetByRole(AriaRole.Button,new(){Name=Caption("Discard",culture),Exact=true}).ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();
         detail=await api.Send(HttpMethod.Get,$"/api/v1/suppliers/core/{id}");Assert.Equal("Saved notes",detail.GetProperty("supplier").GetProperty("notes").GetString());
-        await Action(row,"power").ClickAsync();await Assertions.Expect(row.Locator(".customer-status")).ToHaveTextAsync(Caption("Active",culture));
-        await Action(row,"unlink").ClickAsync();await Reference(Editor,"holdReasonId","supplier.hold.reason",culture);
+        await MenuAction(row,"power");await Assertions.Expect(row.Locator(".customer-status")).ToHaveTextAsync(Caption("Active",culture));
+        await MenuAction(row,"unlink");await Reference(Editor,"holdReasonId","supplier.hold.reason",culture);
         await Editor.Locator("footer .btn-primary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();await Assertions.Expect(row.Locator(".customer-status")).ToHaveTextAsync(Caption("Blocked",culture));
-        await Action(row,"restore").ClickAsync();await Assertions.Expect(row.Locator(".customer-status")).ToHaveTextAsync(Caption("Active",culture));
+        await MenuAction(row,"restore");await Assertions.Expect(row.Locator(".customer-status")).ToHaveTextAsync(Caption("Active",culture));
         foreach(string kind in new[]{"addresses","contacts","bank-accounts"}){
-            await Action(row,"edit").ClickAsync();await Tab(kind);
+            await MenuAction(row,"edit");await Tab(kind);
             await ChildCrud(id,kind,culture);await CloseEditor();
         }
         await api.Activate(await api.Value(Id(refs["supplier.grade"])),false);
         foreach(string language in new[]{"fa","ar","en"}){
-            await Switch(language);await Search(code,1);await Action(row,"eye").ClickAsync();
+            await Switch(language);await Search(code,1);await MenuAction(row,"eye");
             await Assertions.Expect(Editor.Locator("[name=cooperationStartDate]")).ToHaveValueAsync(DateText(language));
             if(entityType=="LegalEntity")await Assertions.Expect(Editor.Locator("[name=establishmentDate]")).ToHaveValueAsync(DateText(language));
             await Assertions.Expect(Editor.Locator("[name=gradeId]")).ToHaveValueAsync(RefCaption("supplier.grade",language)+" ("+ReferenceCaption("InactiveHistorical",language)+")");
             await Font(language);await Modal(Editor);await CloseEditor();
         }
-        await Action(row,"edit").ClickAsync();await Input(Editor,"notes","Inactive grade retained");await Editor.Locator("footer .btn-primary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();
+        await MenuAction(row,"edit");await Input(Editor,"notes","Inactive grade retained");await Editor.Locator("footer .btn-primary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();
         detail=await api.Send(HttpMethod.Get,$"/api/v1/suppliers/core/{id}");Assert.Equal(Id(refs["supplier.grade"]),detail.GetProperty("supplier").GetProperty("gradeId").GetGuid());
         foreach(string language in new[]{"fa","ar","en"}){
-            await Switch(language);await Search(code,1);await Action(row,"edit").ClickAsync();await page.SetViewportSizeAsync(390,844);await Modal(Editor);await Font(language);await CloseEditor();await page.SetViewportSizeAsync(1440,1000);
+            await Switch(language);await Search(code,1);await MenuAction(row,"edit");await page.SetViewportSizeAsync(390,844);await Modal(Editor);await Font(language);await CloseEditor();await page.SetViewportSizeAsync(1440,1000);
         }
         await page.ReloadAsync();await Search(code,1);
         Assert.True(await row.Locator(".entity-link").EvaluateAsync<bool>("el=>{const s=getComputedStyle(el);return ['borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth'].every(k=>s[k]==='0px')&&s.boxShadow==='none';}"));
-        await Action(row,"trash").ClickAsync();await page.Locator("[data-supplier-delete] footer .btn-danger").ClickAsync();await Assertions.Expect(page.Locator("[data-supplier-delete]")).ToBeHiddenAsync();await Search(code,0);
+        await MenuAction(row,"trash");await page.Locator("[data-supplier-delete] footer .btn-danger").ClickAsync();await Assertions.Expect(page.Locator("[data-supplier-delete]")).ToBeHiddenAsync();await Search(code,0);
         suppliers.Remove((Company,id));await api.Send(HttpMethod.Get,$"/api/v1/suppliers/core/{id}",expected:404);
         await page.ReloadAsync();await Search(code,0);
     }
@@ -153,34 +159,34 @@ public sealed class SupplierCoreE2ETests:IAsyncLifetime
         }
         var children=(await api.Send(HttpMethod.Get,path)).EnumerateArray().ToArray();Guid first=Id(children[0]),second=Id(children[1]);
         ILocator firstRow=grid.Locator($"tbody tr[data-id='{first}']"),secondRow=grid.Locator($"tbody tr[data-id='{second}']");
-        await Action(secondRow,"check").ClickAsync();await Assertions.Expect(secondRow.Locator(".status-badge").Last).ToHaveTextAsync(Caption(kind=="contacts"?"Primary":"Default",culture));
+        await MenuAction(secondRow,"check");await Assertions.Expect(secondRow.Locator(".status-badge").Last).ToHaveTextAsync(Caption(kind=="contacts"?"Primary":"Default",culture));
         children=(await api.Send(HttpMethod.Get,path)).EnumerateArray().ToArray();Assert.Equal(second,Id(Assert.Single(children,x=>x.GetProperty(selected).GetBoolean())));
         if(kind=="addresses")Assert.Equal(second,Id((await api.Send(HttpMethod.Get,$"/api/v1/suppliers/{owner}/default-address")).GetProperty("address")));
-        await Action(firstRow,"eye").ClickAsync();await Assertions.Expect(dialog.Locator("footer .btn-primary")).ToHaveCountAsync(0);
+        await MenuAction(firstRow,"eye");await Assertions.Expect(dialog.Locator("footer .btn-primary")).ToHaveCountAsync(0);
         foreach(var control in await dialog.Locator("input,select,textarea").AllAsync())await Assertions.Expect(control).ToBeDisabledAsync();
         await dialog.Locator("footer .btn-secondary").ClickAsync();await Assertions.Expect(dialog).ToBeHiddenAsync();
-        await Action(firstRow,"edit").ClickAsync();await Input(dialog,"notes","Child saved notes");await dialog.Locator("footer .btn-primary").ClickAsync();await Assertions.Expect(dialog).ToBeHiddenAsync();
+        await MenuAction(firstRow,"edit");await Input(dialog,"notes","Child saved notes");await dialog.Locator("footer .btn-primary").ClickAsync();await Assertions.Expect(dialog).ToBeHiddenAsync();
         Assert.Equal("Child saved notes",(await api.Send(HttpMethod.Get,path)).EnumerateArray().Single(x=>Id(x)==first).GetProperty("notes").GetString());
-        await Action(firstRow,"edit").ClickAsync();await Input(dialog,"notes","Discard child");await dialog.Locator("footer .btn-secondary").ClickAsync();
+        await MenuAction(firstRow,"edit");await Input(dialog,"notes","Discard child");await dialog.Locator("footer .btn-secondary").ClickAsync();
         await page.GetByRole(AriaRole.Button,new(){Name=Caption("Discard",culture),Exact=true}).ClickAsync();await Assertions.Expect(dialog).ToBeHiddenAsync();
         Assert.Equal("Child saved notes",(await api.Send(HttpMethod.Get,path)).EnumerateArray().Single(x=>Id(x)==first).GetProperty("notes").GetString());
-        await Action(secondRow,"power").ClickAsync();await Assertions.Expect(secondRow.Locator(".status-badge").First).ToHaveTextAsync(CrudCaption("Inactive",culture));
+        await MenuAction(secondRow,"power");await Assertions.Expect(secondRow.Locator(".status-badge").First).ToHaveTextAsync(CrudCaption("Inactive",culture));
         Assert.DoesNotContain((await api.Send(HttpMethod.Get,path)).EnumerateArray(),x=>x.GetProperty(selected).GetBoolean());
-        await Action(secondRow,"power").ClickAsync();await Assertions.Expect(secondRow.Locator(".status-badge").First).ToHaveTextAsync(CrudCaption("Active",culture));
-        await Action(secondRow,"check").ClickAsync();await Assertions.Expect(secondRow.Locator(".status-badge").Last).ToHaveTextAsync(Caption(kind=="contacts"?"Primary":"Default",culture));
+        await MenuAction(secondRow,"power");await Assertions.Expect(secondRow.Locator(".status-badge").First).ToHaveTextAsync(CrudCaption("Active",culture));
+        await MenuAction(secondRow,"check");await Assertions.Expect(secondRow.Locator(".status-badge").Last).ToHaveTextAsync(Caption(kind=="contacts"?"Primary":"Default",culture));
         await CloseEditor();await page.ReloadAsync();await Ready("[data-supplier-directory] input[name=supplierSearch]","input");
         await Grid.Locator("[name=supplierSearch]").FillAsync("");
         var ownerRow=Grid.Locator($"tbody tr[data-id='{owner}']");
         var ownerDetail=await api.Send(HttpMethod.Get,$"/api/v1/suppliers/core/{owner}");await Search(ownerDetail.GetProperty("supplier").GetProperty("supplierCode").GetString()!,1);
-        await Action(ownerRow,"trash").ClickAsync();await page.Locator("[data-supplier-delete] footer .btn-danger").ClickAsync();
+        await MenuAction(ownerRow,"trash");await page.Locator("[data-supplier-delete] footer .btn-danger").ClickAsync();
         await Assertions.Expect(page.Locator("[data-supplier-delete] .inline-error")).ToHaveTextAsync(Caption("DeleteProtected",culture));
         await page.Locator("[data-supplier-delete] footer .btn-secondary").ClickAsync();
-        await Action(ownerRow,"edit").ClickAsync();await Tab(kind);
+        await MenuAction(ownerRow,"edit");await Tab(kind);
         await Assertions.Expect(grid.Locator("tbody tr")).ToHaveCountAsync(2);
         await Assertions.Expect(secondRow.Locator(".status-badge").Last).ToHaveTextAsync(Caption(kind=="contacts"?"Primary":"Default",culture));
-        await Action(firstRow,"edit").ClickAsync();await page.SetViewportSizeAsync(390,844);await Modal(dialog);await Font(culture);await dialog.Locator("footer .btn-secondary").ClickAsync();await page.SetViewportSizeAsync(1440,1000);
+        await MenuAction(firstRow,"edit");await page.SetViewportSizeAsync(390,844);await Modal(dialog);await Font(culture);await dialog.Locator("footer .btn-secondary").ClickAsync();await page.SetViewportSizeAsync(1440,1000);
         foreach(Guid id in new[]{first,second}){
-            await Action(grid.Locator($"tbody tr[data-id='{id}']"),"trash").ClickAsync();
+            await MenuAction(grid.Locator($"tbody tr[data-id='{id}']"),"trash");
             var deletion=page.Locator($"[data-supplier-child-delete='{kind}']");await deletion.Locator("footer .btn-danger").ClickAsync();await Assertions.Expect(deletion).ToBeHiddenAsync();
         }
         await Assertions.Expect(grid.Locator("tbody tr")).ToHaveCountAsync(0);Assert.Empty((await api.Send(HttpMethod.Get,path)).EnumerateArray());
@@ -197,14 +203,14 @@ public sealed class SupplierCoreE2ETests:IAsyncLifetime
         await OpenDirectory();var first=Grid.Locator("tbody tr").First;await first.WaitForAsync();string code=await first.Locator(".entity-link").InnerTextAsync();
         foreach(string culture in new[]{"fa","ar","en"}){
             await Switch(culture);await Search(code,1);var row=Grid.Locator("tbody tr").First;
-            await Action(row,"eye").ClickAsync();await Assertions.Expect(Editor).ToBeVisibleAsync();
+            await MenuAction(row,"eye");await Assertions.Expect(Editor).ToBeVisibleAsync();
             var tabs=Editor.Locator(".supplier-tabs button");Assert.Equal(12,await tabs.CountAsync());
             await Assertions.Expect(Editor.Locator(".supplier-tabs")).ToHaveAttributeAsync("aria-orientation","vertical");
             Assert.True(await Editor.EvaluateAsync<bool>("el=>{const m=el.matches('.barang-modal')?el:el.querySelector('.barang-modal'),b=m?.querySelector('.dialog-body');return !!m&&!!b&&m.scrollWidth<=m.clientWidth+1&&b.scrollWidth<=b.clientWidth+1&&[...m.querySelectorAll('.data-grid-wrap')].every(x=>x.scrollWidth<=x.clientWidth+1);}"));
             Assert.True(await Editor.EvaluateAsync<bool>("el=>{const n=el.querySelector('.supplier-tabs').getBoundingClientRect(),c=el.querySelector('.supplier-tab-content').getBoundingClientRect();return document.documentElement.dir==='rtl'?n.right>=c.right:n.left<=c.left; }"));
             foreach(var tab in await tabs.AllAsync()){await tab.ClickAsync();await Assertions.Expect(tab).ToHaveAttributeAsync("aria-selected","true");}
             await CloseEditor();
-            await Action(row,"edit").ClickAsync();await Assertions.Expect(Editor).ToBeVisibleAsync();
+            await MenuAction(row,"edit");await Assertions.Expect(Editor).ToBeVisibleAsync();
             await Input(Editor,"notes","vertical state marker");await Tab("addresses");await Tab("general");await Assertions.Expect(Editor.Locator("[name=notes]")).ToHaveValueAsync("vertical state marker");
             if(culture=="en"){await page.SetViewportSizeAsync(390,844);await Modal(Editor);Assert.True(await page.EvaluateAsync<bool>("()=>document.documentElement.scrollWidth<=innerWidth+1"));await page.SetViewportSizeAsync(1440,1000);}
             await Editor.Locator(":scope > footer .btn-secondary").ClickAsync();await page.GetByRole(AriaRole.Button,new(){Name=Caption("Discard",culture),Exact=true}).ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();
@@ -251,7 +257,7 @@ public sealed class SupplierCoreE2ETests:IAsyncLifetime
     private Task<Microsoft.Playwright.IJSHandle> Ready(string selector,string eventName)=>page.WaitForFunctionAsync("({selector,eventName})=>{const el=document.querySelector(selector);return !!el&&Object.keys(el).some(k=>k.startsWith('_blazorEvents_')&&!!el[k].getHandler?.(eventName));}",new{selector,eventName},new(){Timeout=15000});
     private async Task Tab(string name){await Editor.Locator($"[data-supplier-tab='{name}']").ClickAsync();await Assertions.Expect(Editor.Locator($"[data-supplier-tab='{name}']")).ToHaveAttributeAsync("aria-selected","true");}
     private async Task CloseEditor(){await Editor.Locator(":scope > footer .btn-secondary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();}
-    private static ILocator Action(ILocator row,string icon)=>row.Locator($".barang-icon-button:has(svg[data-icon='{icon}'])");
+    private async Task MenuAction(ILocator row,string icon){var trigger=row.Locator(".barang-action-menu-trigger");await trigger.ClickAsync();await Assertions.Expect(trigger).ToHaveAttributeAsync("aria-expanded","true");ILocator popup=page.Locator(".barang-action-menu-popup");await Assertions.Expect(popup).ToBeVisibleAsync();await page.WaitForTimeoutAsync(150);await page.EvaluateAsync("""icon=>{const p=document.querySelector('.barang-action-menu-popup');const b=[...p.querySelectorAll('button')].find(x=>x.querySelector(`svg[data-icon="${icon}"]`));if(!b)throw new Error(`action ${icon} not found`);b.click();}""",icon);}
     private static Task Input(ILocator parent,string name,string value)=>parent.Locator($"[name='{name}']").FillAsync(value);
     private async Task Reference(ILocator parent,string name,string type,string culture){
         var input=parent.Locator($"[name='{name}']");await Assertions.Expect(input).ToBeEnabledAsync();await input.FillAsync(RefCaption(type,culture));

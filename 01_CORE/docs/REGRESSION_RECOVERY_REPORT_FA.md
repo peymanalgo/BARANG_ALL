@@ -526,3 +526,29 @@ E2E از executable رسمی xUnit v3 (نه مسیر `dotnet test` که JSON ن�
 | Order Wizard Step 1 | **FAIL** | login و صفحهٔ wizard موفق؛ POST با خطای معتبر branch/customer فعال نبود و هنوز به Step 2 نرسید؛ فیلتر branch inactive در image جدید اعمال شده، اما این اجرا نشان داد داده/شرکت جاری نیز باید جداگانه بررسی شود |
 
 HTTP/API login، cookie browser و claims bypass نشدند. هیچ credential، token یا cookie value در artifact یا Git ثبت نشده است. مشکل shared login برطرف شد؛ شکست‌های باقی‌مانده داخل SupplierCore/DomainReference/Order feature هستند و baseline browser هنوز کامل اعلام نمی‌شود.
+
+#### اجرای feature-level پس از عبور login ــ ۱۳ اکتبر ۲۰۲۶
+
+در اجرای current-source، login و company selection واقعاً عبور کردند؛ بنابراین شکست‌های زیر دیگر شکست setup احراز هویت نیستند:
+
+| سناریو | شاهد جاری | تشخیص | نتیجه |
+|---|---|---|---|
+| SupplierCore فرد/حقوقی در fa/en/ar | `SupplierCoreE2ETests.MenuAction` پس از مشاهدهٔ ردیف و handler، trigger به `aria-expanded=true` نمی‌رسد؛ در همان محیط `SupplierLifecycle` مستقل PASS است | ایراد browser-level در action menu استفاده‌شده توسط SupplierCore، نه optional بودن Grade/Date. اصلاح shared `ReferenceSelect` شناسهٔ واقعی را به‌جای code برمی‌گرداند و API جزئیات supplier تاریخ را در `1985-06-08` ذخیره می‌کند؛ verification کامل CRUD هنوز blocked است | ناموفق/ناقص |
+| DomainReference | endpointهای lookup و create با 201/200 موفق‌اند؛ پس از create ردیف واقعی نمایش داده می‌شود اما همان action-menu trigger در browser باز نمی‌شود | `ReferenceValueGrid` از row-actions به `BarangActionMenu` منتقل شد و ردیف‌ها key شدند. با این حال current browser هنوز menu را باز نمی‌کند؛ modal timeout قبلی دیگر علت اصلی ثبت نمی‌شود | ناموفق/ناقص |
+| Order Wizard | به علت توقف acceptance قبل از انتخاب معتبر branch/customer، مسیر items/print/pricing/submit در این نوبت کامل نشد | تست به selector محلی هر searchable-select تغییر کرده و UI فقط branch فعال را بارگذاری می‌کند؛ valid isolated record و Submit هنوز browser-verified نیست | ناموفق/ناقص |
+
+تغییرات جاری: `ReferenceSelect.razor` برای قراردادهای FK-backed شناسهٔ پایدار را نگه می‌دارد و فقط `UseCode=true` کد را انتخاب می‌کند؛ `ReferenceValueGrid.razor` عملیات ردیف را در منوی مشترک قرار می‌دهد؛ تست‌های Supplier/Domain/Order از منوی واقعی و selector scoped استفاده می‌کنند. Build Release برنامه و پروژهٔ E2E با TreatWarningsAsErrors هر دو با صفر warning/zero error موفق شدند.
+
+آخرین deployment محلی قابل‌استناد Backoffice با image digest `sha256:55ea06f7bd425c2db9c319822e93f3c59e7b906b8458a89212d1df3506915e53` اجرا شد؛ API بدون تغییر با digest قبلی `sha256:74f7a3947267beb2218da141bcc50cc9fc61803db75f5723144e9f27fdc81808` است. این digest شامل پاک‌سازی anchorهای جداشده در popup manager و محافظت parsing/reload در ReferenceValueGrid است. تا رفع عدم بازشدن منوی shared action، baseline recovery کامل اعلام نمی‌شود و STEP 2/STEP 3 شروع نمی‌شوند.
+
+#### اجرای نهایی feature-level ــ ۱۳ اکتبر ۲۰۲۶
+
+در اجرای current-source، login و company selection موفق بودند. با وجود آن، پس از Create در DomainReference، `#blazor-error-ui` فعال و `aria-expanded` trigger خالی باقی ماند. درخواست‌های lookup/create در لاگ Backoffice به‌ترتیب 200/201 بودند؛ پس این شکست API یا login نیست و browser acceptance هنوز به منوی عملیات نمی‌رسد. پاک‌سازی anchorهای جداشده در `app.js` و محافظت parsing/reload در `ReferenceValueGrid` اضافه شد، اما اجرای مجدد همان سناریو همچنان همین circuit failure را نشان داد؛ exception نهایی در log سطح کانتینر ثبت نشده است.
+
+| مورد | نتیجهٔ current-source | شاهد دقیق |
+|---|---|---|
+| SupplierCore شش سناریو | **FAIL** | پس از login، trigger منوی ردیف به `aria-expanded=true` نمی‌رسد؛ API lookup/create موفق است و nullable بودن `GradeId`/تاریخ با قرارداد فعلی سازگار است؛ CRUD/status کامل تأیید نشد |
+| DomainReference modal و CRUD | **FAIL** | create با 201 و reload با 200؛ circuit پس از create خطای عمومی نشان می‌دهد و trigger منوی shared باز نمی‌شود؛ timeout افزایش نیافت |
+| Order Wizard | **FAIL** | login و wizard باز شد، اما Next پیام دقیق غیرفعال/غیرهم‌شرکت بودن branch و customer را نشان داد؛ items/print/pricing/submit browser-verified نشد |
+
+Build برنامه و E2E از source جاری با صفر warning/error موفق است. Backoffice با image digest `sha256:19361b30a734bdbb5ded1c207b4ed5d063102919967dc406526dc1e540413726` و API با digest `sha256:74f7a3947267beb2218da141bcc50cc9fc61803db75f5723144e9f27fdc81808` در حال اجراست. هیچ credential/token/cookie یا دادهٔ عملیاتی در artifact ثبت نشد. baseline browser و STEP 2 identity/UOM هنوز برای acceptance نهایی آماده نیستند و STEP 3 شروع نشده است.

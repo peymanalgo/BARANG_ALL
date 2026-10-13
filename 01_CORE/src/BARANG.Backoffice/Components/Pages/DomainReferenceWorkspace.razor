@@ -37,7 +37,7 @@ else
                 }
                 else
                 {
-                    <ReferenceValueGrid @key="Selected.Code" TypeCode="@Selected.Code" Caption="@Selected.Caption" Global="@(Selected.Scope=="Global")" CanManage="@(CanManage&&Selected.CanManage)" />
+                    <ReferenceValueGrid TypeCode="@Selected.Code" Caption="@Selected.Caption" Global="@(Selected.Scope=="Global")" CanManage="@(CanManage&&Selected.CanManage)" />
                 }
             }
             else { <section class="crud-card"><p>@R["NoConfigurableTypes"]</p></section> }
