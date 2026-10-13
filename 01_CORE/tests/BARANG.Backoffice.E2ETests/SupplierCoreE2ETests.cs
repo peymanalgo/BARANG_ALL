@@ -81,10 +81,11 @@ public sealed class SupplierCoreE2ETests:IAsyncLifetime
         await Editor.Locator("[name=entityType]").SelectOptionAsync(entityType);
         await Input(Editor,"nationalId","NATIONAL-"+stamp);await Input(Editor,"primaryMobile","+989120000123");await Input(Editor,"primaryEmail",stamp+"@example.com");
         await Input(Editor,"notes","Initial notes");
-        await Input(Editor,"cooperationStartDate",DateText(culture));await Editor.Locator("[name=cooperationStartDate]").BlurAsync();
+        await Ready("[data-supplier-editor] [name=cooperationStartDate]","input");await Input(Editor,"cooperationStartDate",DateText(culture));await Editor.Locator("[name=cooperationStartDate]").BlurAsync();
+        string cooperationInput=await Editor.Locator("[name=cooperationStartDate]").InputValueAsync();
         if(entityType=="LegalEntity"){
             await Input(Editor,"legalName","Legal "+stamp);await Input(Editor,"tradeName","Trade "+stamp);await Input(Editor,"registrationNo","REG-"+stamp);
-            await Input(Editor,"establishmentDate",DateText(culture));await Editor.Locator("[name=establishmentDate]").BlurAsync();
+            await Ready("[data-supplier-editor] [name=establishmentDate]","input");await Input(Editor,"establishmentDate",DateText(culture));await Editor.Locator("[name=establishmentDate]").BlurAsync();
             await Reference(Editor,"legalEntityTypeId","legal.entity.type",culture);
         }else{await Input(Editor,"firstName","Supplier");await Input(Editor,"lastName","Individual");await Input(Editor,"occupation","Supplier activity");}
         await Reference(Editor,"supplierCategories","supplier.category",culture);await Reference(Editor,"gradeId","supplier.grade",culture);
@@ -100,7 +101,7 @@ public sealed class SupplierCoreE2ETests:IAsyncLifetime
         ILocator row=Grid.Locator($"tbody tr[data-id='{id}']");
         Assert.Matches("^[1-9][0-9]*$",await row.Locator("td").First.InnerTextAsync());
         Assert.True(saved.GetProperty("supplier").TryGetProperty("cooperationStartDate",out var cooperation),$"cooperationStartDate missing; postStatus={saveStatus}; payload={savePayload}; response={saveResponse}");
-        Assert.True(cooperation.GetString()=="1985-06-08",$"cooperationStartDate={cooperation.GetString()}; postStatus={saveStatus}; payload={savePayload}; response={saveResponse}");
+        Assert.True(cooperation.GetString()=="1985-06-08",$"cooperationStartDate={cooperation.GetString()}; dom={cooperationInput}; saved={saved}; postStatus={saveStatus}; payload={savePayload}; response={saveResponse}");
         if(entityType=="LegalEntity")Assert.True(saved.GetProperty("supplier").TryGetProperty("establishmentDate",out var establishment),$"establishmentDate missing; postStatus={saveStatus}; payload={savePayload}; response={saveResponse}");
         if(entityType=="LegalEntity")Assert.Equal("1985-06-08",saved.GetProperty("supplier").GetProperty("establishmentDate").GetString());
         var detail=await api.Send(HttpMethod.Get,$"/api/v1/suppliers/core/{id}");

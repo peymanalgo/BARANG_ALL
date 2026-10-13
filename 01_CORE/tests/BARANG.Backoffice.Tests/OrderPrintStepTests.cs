@@ -69,7 +69,7 @@ public sealed class OrderPrintStepTests
         Assert.Contains("api/v1/lookups/types/print.method/values?activeOnly=true", component, StringComparison.Ordinal);
         Assert.Contains("PrintMethodOption", component, StringComparison.Ordinal);
         Assert.Contains("api/v1/lookups/{TypeCode}/options", selector, StringComparison.Ordinal);
-        Assert.Contains("api/v1/lookups/types/{TypeCode}/values?activeOnly=true", selector, StringComparison.Ordinal);
+        Assert.Contains("api/v1/lookups/types/{TypeCode}/values?activeOnly={activeOnly}", selector, StringComparison.Ordinal);
         Assert.Contains("ParseOptions", selector, StringComparison.Ordinal);
         Assert.Contains("DisplayName", selector, StringComparison.Ordinal);
         Assert.Contains("Logger.LogWarning", selector, StringComparison.Ordinal);

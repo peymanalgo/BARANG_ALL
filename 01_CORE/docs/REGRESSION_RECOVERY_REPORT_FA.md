@@ -578,3 +578,32 @@ Build برنامه و E2E از source جاری با صفر warning/error موف�
 در اجرای DomainReference قبل از lifecycle fix، متن `#blazor-error-ui` عمومی بود اما هیچ exception اولِ API یا server stack در log کانتینر ثبت نشد؛ console فقط بازشدن WebSocketهای `_blazor` را نشان می‌داد. بنابراین علت از روی request identity و disappearance نود popup در lifecycle تشخیص داده شد، نه با تغییر selector یا forced click. تست‌های جدید از handler واقعی Blazor استفاده می‌کنند.
 
 آخرین build Release برنامه و E2E با ۰ warning و ۰ error موفق است. Backoffice از image digest `sha256:1322ab9e5ef40beea66aecd927d5f3442ea2749132770a85b51eedf418b626cf` اجرا و healthy است؛ API بدون تغییر با digest `sha256:74f7a3947267beb2218da141bcc50cc9fc61803db75f5723144e9f27fdc81808` healthy است. migration یا تغییر دادهٔ عملیاتی انجام نشد. اجرای کامل Supplier حقوقی و broad integration suite هنوز unverified است؛ خطاهای مستقلی که قبلاً در `GoodsReceiptSection/InventorySection` دربارهٔ آرایه در برابر object ثبت شده‌اند نیز در این task اصلاح نشده‌اند. baseline browser تا تکمیل آن شواهد، کامل اعلام نمی‌شود؛ STEP 3 شروع نشده است.
+
+#### اصلاح تاریخ Supplier حقوقی و اجرای broad regression ــ ۱۳ اکتبر ۲۰۲۶
+
+**تاریخ همکاری حقوقی:** بازتولید current-source مقدار نمایشی DOM را `1985/06/08` در ar/en و `1364/03/18` در fa نشان داد، اما raw response همان POST مقدار `cooperationStartDate:null` و `establishmentDate:"1985-06-08"` داشت. بررسی PostgreSQL رکوردهای LegalEntity ایجادشده را با `cooperation_start_date=1985-06-08` و `establishment_date=1985-06-08` نشان داد؛ `SupplierCoreApiTests` نیز 10/10 موفق شد. بنابراین timezone، DateOnly serialization و EF persistence علت نبودند. نقص browser در dynamic `SupplierFields` بود: fieldهای date هنگام تغییر Individual به LegalEntity با lifecycle/rerender و callback capture ناپایدار می‌شدند.
+
+اصلاحات محدود:
+
+- `SupplierFields.razor`: wrapper و child هر field با `fieldKey` پایدار key شدند و callbackها local key را capture می‌کنند تا تاریخ همکاری و تأسیس مستقل بمانند.
+- `LocaleDateInput.razor`: input علاوه بر input/change روی blur نیز همان parser موجود را commit می‌کند؛ first-render دیگر text کاربر را overwrite نمی‌کند. مقدار canonical همچنان `DateOnly` و `yyyy-MM-dd` است و تبدیل timezone اضافه نشده است.
+- تست E2E readiness واقعی handler و مقدار DOM را گزارش می‌کند؛ assertionی حذف یا ضعیف نشده است.
+
+**نتیجه browser حقوقی:** اجرای کامل سه زبان پس از آخرین اصلاح هنوز خروجی پایدار نداد و test-runner/Playwright در cleanup گاهی orphan می‌ماند؛ آخرین raw failure پیش از key نهایی همچنان `cooperationStartDate:null` را نشان می‌داد. API/DB و SupplierCore integration سبز هستند، اما create/read/edit/reload حقوقی در browser هنوز verified نهایی نیست.
+
+**Broad checks:**
+
+| تست/مسیر | نتیجه جاری | علت دقیق |
+|---|---:|---|
+| `BARANG.Core.IntegrationTests` کامل | **126/126 PASS** در `barang_step2_recovery_test` ایزوله | migration chain و persistence/API regressionهای جاری سبز؛ operational DB استفاده نشد |
+| `SupplierCoreApiTests` | **10/10 PASS** | تاریخ‌های DateOnly و Supplier Core API/persistence معتبر |
+| `BARANG.Backoffice.Tests` | **184/184 PASS** | یک source-contract assertion در `OrderPrintStepTests` با fallback فعلی `activeOnly={activeOnly}` همسان شد؛ رفتار runtime تغییر نکرد |
+| `BARANG.Core.UnitTests` | **222/222 PASS** | بدون failure |
+| `GoodsReceiptsE2ETests.GoodsReceiptDraftPostAndOverreceiptAreRealWorkflow` | **FAIL** | exception آرایه/object رفع شد؛ سپس fixture هیچ PO واجدشرایطی (`Submitted/PartiallyReceived`) نداشت و selector گزینه‌ای پیدا نکرد |
+| `InventorySectionE2ETests` (۲ سناریو) | **FAIL/timeout** | مسیر menu/fixture جاری با assertion قدیمی `Inventory / Stock`/`موجودی` همسان نیست؛ پس از repair، failure دیگر همان exception آرایه نیست |
+
+**GoodsReceipt/Inventory parser repair:** `GoodsReceiptSection.LoadOrders` و `InventorySection.LoadWarehouses` اکنون envelope دارای `items` و پاسخ array را parse می‌کنند و روی شکل نامعتبر circuit را نمی‌شکنند. این اصلاح در image محلی deploy شد. GoodsReceipt هنوز برای acceptance کامل به fixture معتبر PO و Inventory test به داده/locator مطابق navigation فعلی نیاز دارد؛ این موارد به‌عنوان شکست واقعی verification گزارش شده‌اند، نه pass فرضی.
+
+آخرین buildهای برنامه و image محلی پس از این اصلاحات healthy هستند؛ migration یا تغییر در operational data انجام نشد. وضعیت recovery: **کامل نیست**؛ API/persistence، unit، Backoffice static tests و broad isolated integration سبز هستند، اما browser Supplier حقوقی و acceptance داده‌محور GoodsReceipt/Inventory باقی مانده‌اند. STEP 2 integration جدیدی شروع نشد و STEP 3 همچنان متوقف است.
+
+Deployment نهایی این نوبت: API image `sha256:c1bff03c8ba6edb2ae3934cb135bd7acfe17e53330a9172d1df680dedd9e54f3` و Backoffice image `sha256:cb3f9706023d84f5151077048540ba073fd4f020a2c1e4568f92c91b5877eba1`؛ هر دو container healthy هستند.
