@@ -30,7 +30,7 @@ public sealed class InventorySectionE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Inventory_balance_grid_is_read_only_paged_searchable_and_kardex_connected()
+    public async Task InventoryBalanceGridIsReadOnlyPagedSearchableAndKardexConnected()
     {
         await GoToInventory("en");
         ILocator section = page.Locator("[data-inventory-grid]");
@@ -66,7 +66,7 @@ public sealed class InventorySectionE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Inventory_balance_grid_localizes_and_switches_direction()
+    public async Task InventoryBalanceGridLocalizesAndSwitchesDirection()
     {
         foreach ((string culture, string title, string direction) in new[]
         {

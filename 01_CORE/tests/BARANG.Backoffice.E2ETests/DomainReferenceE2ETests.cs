@@ -168,7 +168,7 @@ public sealed class DomainReferenceE2ETests : IAsyncLifetime
     [InlineData("fa", "داده‌های پایه تجهیزات", "دسته‌بندی تجهیزات")]
     [InlineData("ar", "البيانات المرجعية للمعدات", "فئات المعدات")]
     [InlineData("en", "Equipment Reference Data", "Equipment Categories")]
-    public async Task Equipment_reference_workspace_uses_the_selected_language(string culture, string title, string category)
+    public async Task EquipmentReferenceWorkspaceUsesTheSelectedLanguage(string culture, string title, string category)
     {
         await Goto(culture, "/master/reference-data/equipment/equipment.category");
         await Assertions.Expect(page.Locator("header.crud-header h1")).ToHaveTextAsync(title);
@@ -247,7 +247,7 @@ public sealed class DomainReferenceE2ETests : IAsyncLifetime
     }
 
     private ILocator Editor=>page.Locator(".barang-modal:has(> .dialog-body > .reference-editor)");
-    private Task Goto(string culture,string path)=>page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(path)}",new(){WaitUntil=WaitUntilState.NetworkIdle});
+    private Task<Microsoft.Playwright.IResponse?> Goto(string culture,string path)=>page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(path)}",new(){WaitUntil=WaitUntilState.NetworkIdle});
     private static ILocator Action(ILocator row,string icon)=>row.Locator($".barang-icon-button:has(svg[data-icon='{icon}'])");
     private static ILocator Field(ILocator root,string label)=>root.Locator("label").Filter(new(){HasText=label}).Locator("input").First;
     private async Task Cancel(){await Editor.Locator("footer .btn-secondary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();}

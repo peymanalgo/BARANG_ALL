@@ -5,6 +5,7 @@ namespace BARANG.Backoffice.E2ETests;
 
 public sealed class UserAccessManagementE2ETests : IAsyncLifetime
 {
+    private static readonly string[] TabLabels = ["Users", "Roles", "Access"];
     private IPlaywright playwright = null!;
     private IBrowser browser = null!;
     private IBrowserContext context = null!;
@@ -36,7 +37,7 @@ public sealed class UserAccessManagementE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Integrated_workspace_executes_user_role_and_permission_roundtrips()
+    public async Task IntegratedWorkspaceExecutesUserRoleAndPermissionRoundtrips()
     {
         string suffix = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
         string username;
@@ -47,7 +48,7 @@ public sealed class UserAccessManagementE2ETests : IAsyncLifetime
         await Assertions.Expect(page.Locator("main h1")).ToHaveTextAsync("User & Access Management");
         await Assertions.Expect(page.Locator("nav.sidebar-navigation > a[href='/admin/user-access']")).ToHaveTextAsync(new Regex("User & Access Management"));
         Assert.Equal(0, await page.Locator("nav a[href='/admin/security'], nav a[href='/admin/users'], nav a[href='/admin/roles'], nav a[href='/admin/role-permissions']").CountAsync());
-        Assert.Equal(new[] { "Users", "Roles", "Access" }, await page.Locator(".uam-tabs [role=tab]").AllInnerTextsAsync());
+        Assert.Equal(TabLabels, await page.Locator(".uam-tabs [role=tab]").AllInnerTextsAsync());
 
         await SearchCurrentGrid("uam.browser.");
         ILocator acceptanceUsers = page.Locator(".uam-grid tbody tr");
@@ -175,7 +176,7 @@ public sealed class UserAccessManagementE2ETests : IAsyncLifetime
     [InlineData("fa", "rtl", "مدیریت کاربران و دسترسیها", "کاربران", "نقشها", "دسترسیها", "مشاهده")]
     [InlineData("en", "ltr", "User & Access Management", "Users", "Roles", "Access", "View")]
     [InlineData("ar", "rtl", "إدارة المستخدمين والصلاحيات", "المستخدمون", "الأدوار", "الصلاحيات", "عرض")]
-    public async Task Workspace_is_fully_localized_and_directional(
+    public async Task WorkspaceIsFullyLocalizedAndDirectional(
         string culture,
         string direction,
         string title,

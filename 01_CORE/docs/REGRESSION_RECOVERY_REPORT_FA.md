@@ -374,3 +374,20 @@ Visual browser verification فرم‌های هر منو در این محیط ا�
 - شواهد جاری: Order/Pricing/Workflow integration **۵/۵**، unit **۲۲۲/۲۲۲**، Designer/Cartable E2E source **۶ تست موفق از ۸ تست انتخاب‌شده**؛ دو تست SupplierLifecycle در setup browser به timeout ناوبری login رسیدند، در حالی‌که API login و `auth/me/company` با ۲۰۰ ثبت شدند و علت آن در assertion/fixture ناوبری تست باقی است. این limitation مستقل از `criterionLabel` است و به‌عنوان تست ناموفق پنهان نشده است.
 
 بنابراین baseline recovery برای قابلیت‌های موجود و تأییدشده بسته می‌شود؛ delegation مستقل و deletion تاریخی attachment به‌عنوان scope تأییدنشدهٔ آینده باقی می‌مانند. STEP 2 identity/UOM هنوز موضوع جداگانه است و فقط acceptanceهای قبلی آن که در گزارش ثبت شده‌اند معتبرند؛ تصمیم‌های reservation/consumption و سایر integrationهای STEP 3 به بعد همچنان برای business confirmation باقی هستند.
+
+### شواهد نهایی verification ــ ۱۳ اکتبر ۲۰۲۶
+
+این بخش، ادعاهای قدیمی‌تر دربارهٔ warningهای analyzer و timeout ورود SupplierLifecycle را supersede می‌کند:
+
+- `BARANG.Backoffice.E2ETests.csproj` از سورس فعلی با `TreatWarningsAsErrors=true` build شد: **۰ warning / ۰ error**. CA1707، CA1305، CA18xx و xUnit diagnostics با اصلاح نام‌گذاری تست، culture صریح، allocationهای ثابت، APIهای جدید analyzer و cancellation token رفع شدند؛ analyzer غیرفعال یا suppress نشد.
+- علت timeout مرورگر Login در SupplierLifecycle، آماده‌نبودن hydration قبل از fill/click و return URL قدیمی `/login` بود؛ session API مشکل نداشت. تست اکنون پس از hydration به `/master/suppliers` می‌رود و company selection واقعی را دنبال می‌کند.
+- علت runtime منوی عملیات Supplier، حذف شدن implementationهای `barangPopupManager` و `barangActionMenu` از `src/BARANG.Backoffice/wwwroot/app.js` در checkout هدف بود، درحالی‌که `BarangActionMenu.razor` به آن‌ها وابسته است. implementation واقعی از checkout canonical به‌صورت انتخابی بازیابی شد؛ شامل outside-click، Escape/focus restoration، portal، anchoring و scroll/resize repositioning.
+- چهار View action در `SupplierLifecycleWorkspace.razor` به‌دلیل markup ناقص به‌صورت متن خام render می‌شدند. هر چهار مورد به `BarangIconButton` واقعی اصلاح شد. این اصلاح، View/Edit/Download action-menu را با UI فعلی هم‌تراز کرد.
+- caption واقعی دکمه‌های ایجاد در lifecycle، طبق shared standard، `Add` است؛ انتظار قدیمی `Add evaluation`/`Add incident` در تست به scope هر lifecycle اصلاح شد. assertionهای CRUD، status، reload، file upload/download و company isolation حفظ شدند؛ پاسخ شرکت غیرمجاز در قرارداد فعلی **403** است.
+- `SupplierLifecycleE2ETests`: **۲/۲ موفق** از build و binary تازهٔ همان commit؛ هر دو سناریو به صفحهٔ authenticated رسیدند و assertionهای اصلی را کامل کردند.
+- `BARANG.Core.UnitTests`: **۲۲۲/۲۲۲ موفق**.
+- `BARANG.Backoffice.Tests`: **۱۷۰/۱۸۴ موفق**؛ ۱۴ failure باقی‌مانده source-contract/design هستند و به فایل‌های Cartable/مستندات/assetهای غایب در checkout هدف ارجاع می‌دهند، از جمله `CartablePersonalStateConfiguration.cs`، `OrderMessageAdministration.cs`، `D:\00_BARANG\step2-clean\04_Document\...` و assertionهای قدیمی متن source. این failureها suppress یا حذف نشدند و baseline کلی را هنوز برای پذیرش کامل محدود می‌کنند.
+- `BARANG.Core.IntegrationTests`: اجرا شد اما بدون `BARANG_TEST_DB_CONNECTION` به isolated PostgreSQL، fixture عمداً با خطای صریح متوقف شد؛ هیچ تستی علیه development business DB اجرا نشد. بنابراین این نوبت ادعای integration persistence جدید ندارد.
+- چون `wwwroot/app.js` و `SupplierLifecycleWorkspace.razor` تغییر application بودند، فقط Backoffice rebuild/deploy شد. image در حال اجرا: Backoffice manifest `sha256:6c811ce327909ba1fb2e2fa7e504f7a27a5952a03412f7018677308686350ef2`; API بدون تغییر باقی ماند. هر دو container healthy هستند.
+
+نتیجه: دو blocker مشخص این نوبت (analyzer build و browser Login/SupplierLifecycle) رفع و با شواهد واقعی تأیید شدند؛ اما به‌علت ۱۴ شکست مستقل `Backoffice.Tests` و نبود connection string برای integration suite، baseline recovery را «کاملاً پذیرفته‌شده» اعلام نمی‌کنم. این محدودیت‌ها باید پیش از resume رسمی STEP 2 تعیین تکلیف شوند.

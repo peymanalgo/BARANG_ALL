@@ -63,7 +63,7 @@ public sealed class SupplierReferenceE2ETests:IAsyncLifetime
     public async Task EachApprovedCatalogSupportsCompleteCrudPagingAndLiveLocalizedIdentity(string type)
     {
         string prefix="sre2e."+Guid.NewGuid().ToString("N")[..12]+".",code=prefix+"20";
-        for(int i=0;i<20;i++)disposableValues.Add(Id(await api.CreateValue(type,prefix+i.ToString("D2"),i)));
+        for(int i=0;i<20;i++)disposableValues.Add(Id(await api.CreateValue(type,prefix+i.ToString("D2", System.Globalization.CultureInfo.InvariantCulture),i)));
         ILocator grid=await Open(type);
         await Search(grid,prefix,20);
         await Assertions.Expect(grid.Locator("tbody tr")).ToHaveCountAsync(20);
@@ -75,17 +75,17 @@ public sealed class SupplierReferenceE2ETests:IAsyncLifetime
         await Editor.Locator("footer .btn-primary").ClickAsync();
         await Assertions.Expect(Editor).ToBeHiddenAsync();
         await Assertions.Expect(grid.Locator(".barang-pagination button").Last).ToBeEnabledAsync();
-        await Assertions.Expect(grid.Locator("tbody tr td:first-child")).ToHaveTextAsync(Enumerable.Range(0,20).Select(i=>prefix+i.ToString("D2")));
+        await Assertions.Expect(grid.Locator("tbody tr td:first-child")).ToHaveTextAsync(Enumerable.Range(0,20).Select(i=>prefix+i.ToString("D2", System.Globalization.CultureInfo.InvariantCulture)));
         await grid.Locator(".barang-pagination button").Last.ClickAsync();
         await Assertions.Expect(grid.Locator("tbody tr td:first-child")).ToHaveTextAsync(new[]{code});
         await grid.Locator(".barang-pagination button").First.ClickAsync();
         await grid.Locator(".barang-sort-header").Nth(0).ClickAsync();
-        await Assertions.Expect(grid.Locator("tbody tr td:first-child")).ToHaveTextAsync(Enumerable.Range(1,20).Reverse().Select(i=>prefix+i.ToString("D2")));
+        await Assertions.Expect(grid.Locator("tbody tr td:first-child")).ToHaveTextAsync(Enumerable.Range(1,20).Reverse().Select(i=>prefix+i.ToString("D2", System.Globalization.CultureInfo.InvariantCulture)));
         await grid.Locator(".barang-pagination button").Last.ClickAsync();
         await Assertions.Expect(grid.Locator("tbody tr td:first-child")).ToHaveTextAsync(new[]{prefix+"00"});
         await grid.Locator(".barang-pagination button").First.ClickAsync();
         await grid.Locator(".barang-sort-header").Nth(1).ClickAsync();
-        await Assertions.Expect(grid.Locator("tbody tr td:first-child")).ToHaveTextAsync(Enumerable.Range(0,20).Select(i=>prefix+i.ToString("D2")));
+        await Assertions.Expect(grid.Locator("tbody tr td:first-child")).ToHaveTextAsync(Enumerable.Range(0,20).Select(i=>prefix+i.ToString("D2", System.Globalization.CultureInfo.InvariantCulture)));
         await Search(grid,code);
         ILocator row=grid.Locator("tbody tr");
         await Assertions.Expect(row).ToHaveCountAsync(1);
@@ -255,7 +255,7 @@ public sealed class SupplierReferenceE2ETests:IAsyncLifetime
         Assert.Equal(marker,await page.EvaluateAsync<string>("()=>window.__supplierReferenceDocument"));
         Assert.Equal(url,page.Url);
     }
-    private Task Ready(string selector,string eventName)=>page.WaitForFunctionAsync("({selector,eventName})=>{const el=document.querySelector(selector);return !!el&&Object.keys(el).some(k=>k.startsWith('_blazorEvents_')&&!!el[k].getHandler?.(eventName));}",new{selector,eventName});
+    private Task<Microsoft.Playwright.IJSHandle> Ready(string selector,string eventName)=>page.WaitForFunctionAsync("({selector,eventName})=>{const el=document.querySelector(selector);return !!el&&Object.keys(el).some(k=>k.startsWith('_blazorEvents_')&&!!el[k].getHandler?.(eventName));}",new{selector,eventName});
     private async Task FillCaptions(Dictionary<string,string> names,string description)
     {
         foreach(string culture in new[]{"fa","ar","en"})

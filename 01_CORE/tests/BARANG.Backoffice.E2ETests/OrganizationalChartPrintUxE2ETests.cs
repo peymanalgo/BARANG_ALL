@@ -12,7 +12,7 @@ public sealed partial class OrganizationalChartActionSearchPrintE2ETests
     [InlineData("en", "ltr")]
     [InlineData("fa", "rtl")]
     [InlineData("ar", "rtl")]
-    public async Task Print_UX_icons_large_selectors_full_width_search_and_scoped_horizontal_tree(string culture, string direction)
+    public async Task PrintUXIconsLargeSelectorsFullWidthSearchAndScopedHorizontalTree(string culture, string direction)
     {
         await page.SetViewportSizeAsync(1440, 1000);
         await page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl=/master/organization-chart", new() { WaitUntil = WaitUntilState.NetworkIdle });
@@ -93,7 +93,7 @@ public sealed partial class OrganizationalChartActionSearchPrintE2ETests
     }
 
     [Fact]
-    public async Task Print_UX_large_deep_structures_continue_without_overlap_or_missing_nodes()
+    public async Task PrintUXLargeDeepStructuresContinueWithoutOverlapOrMissingNodes()
     {
         List<Guid> created = [];
         Guid parent = sourceUnitId;
@@ -117,7 +117,7 @@ public sealed partial class OrganizationalChartActionSearchPrintE2ETests
         await AssertHorizontalGeometryAsync("ltr");
         Assert.True(await page.EvaluateAsync<bool>("[...document.querySelectorAll('.print-tree-sheet')].slice(1).every(sheet => getComputedStyle(sheet).breakBefore === 'page')"));
         byte[] pdf = await page.PdfAsync(new() { Format = "A4", Landscape = true, PrintBackground = true, DisplayHeaderFooter = false });
-        Assert.True(Regex.Matches(Encoding.Latin1.GetString(pdf), @"/Type\s*/Page\b").Count > 1);
+        Assert.True(Regex.Count(Encoding.Latin1.GetString(pdf), @"/Type\s*/Page\b") > 1);
         AssertBrowserHealthy();
     }
 

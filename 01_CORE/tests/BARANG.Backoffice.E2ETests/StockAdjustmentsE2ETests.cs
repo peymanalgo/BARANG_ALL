@@ -26,11 +26,11 @@ public sealed class StockAdjustmentsE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Adjustment_grid_is_canonical_and_localized()
+    public async Task AdjustmentGridIsCanonicalAndLocalized()
     {
         await GoTo("en");
         var section = page.Locator("[data-adjustment-grid]");
-        Assert.True(int.Parse(await section.GetAttributeAsync("data-warehouse-options") ?? "0") > 1, "warehouse option count=" + await section.GetAttributeAsync("data-warehouse-options"));
+        Assert.True(int.Parse(await section.GetAttributeAsync("data-warehouse-options") ?? "0", System.Globalization.CultureInfo.InvariantCulture) > 1, "warehouse option count=" + await section.GetAttributeAsync("data-warehouse-options"));
         await Assertions.Expect(section).ToBeVisibleAsync();
         await Assertions.Expect(section.Locator(".crud-search input")).ToHaveCountAsync(1);
         await Assertions.Expect(section.Locator(".crud-toolbar button")).ToHaveCountAsync(1);
@@ -49,11 +49,11 @@ public sealed class StockAdjustmentsE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Positive_adjustment_posts_from_real_editor()
+    public async Task PositiveAdjustmentPostsFromRealEditor()
     {
         await GoTo("en");
         var section = page.Locator("[data-adjustment-grid]");
-        Assert.True(int.Parse(await section.GetAttributeAsync("data-warehouse-options") ?? "0") > 1, "warehouse option count=" + await section.GetAttributeAsync("data-warehouse-options"));
+        Assert.True(int.Parse(await section.GetAttributeAsync("data-warehouse-options") ?? "0", System.Globalization.CultureInfo.InvariantCulture) > 1, "warehouse option count=" + await section.GetAttributeAsync("data-warehouse-options"));
         await section.GetByRole(AriaRole.Button, new() { Name = "Add adjustment", Exact = true }).ClickAsync();
         var dialog = page.GetByRole(AriaRole.Dialog, new() { Name = "Add stock adjustment" });
         var selectors = dialog.Locator("input[role=combobox]");

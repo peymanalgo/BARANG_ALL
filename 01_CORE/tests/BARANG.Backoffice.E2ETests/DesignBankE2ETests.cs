@@ -29,7 +29,7 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Design_bank_create_reload_tabs_and_localized_direction()
+    public async Task DesignBankCreateReloadTabsAndLocalizedDirection()
     {
         string code = "E2E-D" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         await Go("en", "/manage/design-bank");
@@ -69,7 +69,7 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Design_file_upload_creates_thumbnail_and_history_events()
+    public async Task DesignFileUploadCreatesThumbnailAndHistoryEvents()
     {
         string code = "E2E-F" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         await Go("en", "/manage/design-bank");
@@ -88,7 +88,7 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
         await modal.GetByRole(AriaRole.Tab, new() { Name = "Files", Exact = true }).ClickAsync();
         string path = Path.Combine(Path.GetTempPath(), $"{code}.png");
         int seed = Math.Abs(code.GetHashCode());
-        await File.WriteAllBytesAsync(path, CreatePng((byte)(seed % 251), (byte)((seed / 251) % 251), (byte)((seed / 63001) % 251)));
+        await File.WriteAllBytesAsync(path, CreatePng((byte)(seed % 251), (byte)((seed / 251) % 251), (byte)((seed / 63001) % 251)), TestContext.Current.CancellationToken);
         try
         {
             await modal.Locator("input[type=file]").SetInputFilesAsync(path);
@@ -106,7 +106,7 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Design_category_tree_creates_root_and_child_and_reloads()
+    public async Task DesignCategoryTreeCreatesRootAndChildAndReloads()
     {
         string rootCode = "E2E-C" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         await Go("en", "/master/design-categories");
@@ -146,7 +146,7 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Design_categories_navigation_opens_visible_category_tree()
+    public async Task DesignCategoriesNavigationOpensVisibleCategoryTree()
     {
         await Go("en", "/");
         ILocator masterData = page.Locator("details[data-navigation-group='Nav_MasterData']");
@@ -173,7 +173,7 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Design_editor_category_tab_reports_layout_geometry()
+    public async Task DesignEditorCategoryTabReportsLayoutGeometry()
     {
         string code = "E2E-L" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         await Go("en", "/manage/design-bank");
@@ -232,9 +232,9 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Design_classification_catalogs_are_selectable_and_persisted()
+    public async Task DesignClassificationCatalogsAreSelectableAndPersisted()
     {
-        string stamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+        string stamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
         string[] types = ["artwork.subcategory", "artwork.type", "artwork.style", "artwork.theme", "artwork.audience", "artwork.license", "artwork.usage"];
         Dictionary<string, string> captions = [];
         foreach (string type in types)
@@ -294,7 +294,7 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
         await page.WaitForURLAsync(u => new Uri(u).AbsolutePath != "/company");
     }
 
-    private Task Go(string culture, string path) => page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(path)}", new() { WaitUntil = WaitUntilState.NetworkIdle });
+    private Task<Microsoft.Playwright.IResponse?> Go(string culture, string path) => page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(path)}", new() { WaitUntil = WaitUntilState.NetworkIdle });
 
     private static byte[] CreatePng(byte red, byte green, byte blue)
     {

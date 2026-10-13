@@ -30,7 +30,7 @@ public sealed class WarehouseSectionE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Warehouse_grid_and_crud_are_real_server_backed_workflows()
+    public async Task WarehouseGridAndCrudAreRealServerBackedWorkflows()
     {
         await GoToWarehouses("en");
         ILocator section = page.Locator("[data-warehouse-grid]");
@@ -96,7 +96,7 @@ public sealed class WarehouseSectionE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Warehouse_section_localizes_and_preserves_direction()
+    public async Task WarehouseSectionLocalizesAndPreservesDirection()
     {
         foreach ((string culture, string title, string direction) in new[]
         {

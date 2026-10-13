@@ -10,6 +10,7 @@ namespace BARANG.Backoffice.E2ETests;
 public sealed class SupplierSourcingE2ETests:IAsyncLifetime
 {
     private static readonly Guid Company=Guid.Parse("42f0e459-6095-45bb-aa13-f38126d91d9c"),Other=Guid.Parse("d82f44d5-8d22-4154-8eed-e7075ee6ce9f");
+    private static readonly string[] PagingTailLabels = ["PAGE-10", "PAGE-11"];
     private static CancellationToken Ct=>TestContext.Current.CancellationToken;
     private static DateOnly Today=>DateOnly.FromDateTime(DateTime.UtcNow);
     private readonly string stamp=Guid.NewGuid().ToString("N")[..9];
@@ -174,7 +175,7 @@ public sealed class SupplierSourcingE2ETests:IAsyncLifetime
         await OpenSupplier(supplierCode);await Tab("products");var grid=Grid("products");var rows=grid.Locator("tbody tr");
         await Assertions.Expect(rows).ToHaveCountAsync(10);await grid.Locator(".barang-sort-header").Nth(1).ClickAsync();
         await Assertions.Expect(rows.Locator("td:nth-child(2)")).ToHaveTextAsync(Enumerable.Range(0,10).Select(i=>"PAGE-"+i.ToString("D2",CultureInfo.InvariantCulture)).ToArray());
-        await grid.Locator(".barang-pagination button").Last.ClickAsync();await Assertions.Expect(rows.Locator("td:nth-child(2)")).ToHaveTextAsync(new[]{"PAGE-10","PAGE-11"});
+        await grid.Locator(".barang-pagination button").Last.ClickAsync();await Assertions.Expect(rows.Locator("td:nth-child(2)")).ToHaveTextAsync(PagingTailLabels);
         await grid.Locator(".barang-pagination button").First.ClickAsync();await Assertions.Expect(rows).ToHaveCountAsync(10);
         await grid.Locator(".barang-sort-header").Nth(1).ClickAsync();await Assertions.Expect(rows.Locator("td:nth-child(2)").First).ToHaveTextAsync("PAGE-11");
         await grid.Locator("[name=sourcingSearch]").FillAsync("PAGE-03");await Assertions.Expect(rows.Locator("td:nth-child(2)").First).ToHaveTextAsync("PAGE-03");
@@ -201,7 +202,7 @@ public sealed class SupplierSourcingE2ETests:IAsyncLifetime
             Record(x,"prices").GetProperty("effectiveFrom").GetString()==from.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture)&&
             Record(x,"prices").GetProperty("unitPrice").GetDecimal()==decimal.Parse(amount,CultureInfo.InvariantCulture)),"prices"));
     }
-    private Task Ready(string selector,string eventName)=>page.WaitForFunctionAsync("({selector,eventName})=>{const el=document.querySelector(selector);return !!el&&Object.keys(el).some(key=>key.startsWith('_blazorEvents_')&&!!el[key].getHandler?.(eventName));}",new{selector,eventName});
+    private Task<Microsoft.Playwright.IJSHandle> Ready(string selector,string eventName)=>page.WaitForFunctionAsync("({selector,eventName})=>{const el=document.querySelector(selector);return !!el&&Object.keys(el).some(key=>key.startsWith('_blazorEvents_')&&!!el[key].getHandler?.(eventName));}",new{selector,eventName});
     private async Task SelectCompany(Guid company){
         await page.GotoAsync(baseUrl+"/company");await page.Locator($".company-list form:has(input[name=companyId][value='{company}']) button[type=submit]").ClickAsync();
         await page.WaitForURLAsync(url=>new Uri(url).AbsolutePath!="/company");await Assertions.Expect(page.Locator(".shell")).ToBeVisibleAsync();
@@ -249,7 +250,7 @@ public sealed class SupplierSourcingE2ETests:IAsyncLifetime
         await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("dir",language=="en"?"ltr":"rtl");
         Assert.Empty(await page.Locator("[data-supplier-editor]").EvaluateAsync<string[]>("(root,font)=>[root,...root.querySelectorAll('h2,h3,label,input,button,td,th,textarea')].filter(el=>el.getClientRects().length&&!getComputedStyle(el).fontFamily.toLowerCase().includes(font.toLowerCase())).map(el=>el.tagName+':'+getComputedStyle(el).fontFamily)",font));
     }
-    private async Task Modal(ILocator dialog){
+    private static async Task Modal(ILocator dialog){
         var box=await dialog.BoundingBoxAsync();Assert.NotNull(box);Assert.True(box.X>=0&&box.Y>=0&&box.X+box.Width<=391&&box.Y+box.Height<=845);
         Assert.True(await dialog.Locator(":scope > footer").EvaluateAsync<bool>("el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1;}"));
         Assert.True(await dialog.EvaluateAsync<bool>("el=>el.scrollWidth<=el.clientWidth+1"));

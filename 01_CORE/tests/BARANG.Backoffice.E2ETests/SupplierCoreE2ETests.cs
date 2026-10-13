@@ -224,7 +224,7 @@ public sealed class SupplierCoreE2ETests:IAsyncLifetime
         await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("lang",culture);await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("dir",culture=="en"?"ltr":"rtl");
         await Assertions.Expect(page.Locator("h1")).ToHaveTextAsync(Caption("Title",culture));Assert.Equal(marker,await page.EvaluateAsync<string>("()=>window.__supplierCoreDocument"));
     }
-    private Task Ready(string selector,string eventName)=>page.WaitForFunctionAsync("({selector,eventName})=>{const el=document.querySelector(selector);return !!el&&Object.keys(el).some(k=>k.startsWith('_blazorEvents_')&&!!el[k].getHandler?.(eventName));}",new{selector,eventName});
+    private Task<Microsoft.Playwright.IJSHandle> Ready(string selector,string eventName)=>page.WaitForFunctionAsync("({selector,eventName})=>{const el=document.querySelector(selector);return !!el&&Object.keys(el).some(k=>k.startsWith('_blazorEvents_')&&!!el[k].getHandler?.(eventName));}",new{selector,eventName});
     private async Task Tab(string name){await Editor.Locator($"[data-supplier-tab='{name}']").ClickAsync();await Assertions.Expect(Editor.Locator($"[data-supplier-tab='{name}']")).ToHaveAttributeAsync("aria-selected","true");}
     private async Task CloseEditor(){await Editor.Locator(":scope > footer .btn-secondary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();}
     private static ILocator Action(ILocator row,string icon)=>row.Locator($".barang-icon-button:has(svg[data-icon='{icon}'])");

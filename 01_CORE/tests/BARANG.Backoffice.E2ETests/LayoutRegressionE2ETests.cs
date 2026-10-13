@@ -43,7 +43,7 @@ public sealed class LayoutRegressionE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Desktop_grid_toolbars_keep_search_status_and_refresh_on_one_row()
+    public async Task DesktopGridToolbarsKeepSearchStatusAndRefreshOnOneRow()
     {
         await SetViewport(1440, 900);
         await Navigate("en", "/master/equipment");
@@ -64,7 +64,7 @@ public sealed class LayoutRegressionE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Person_and_generic_crud_modals_keep_fields_inside_safe_inner_spacing()
+    public async Task PersonAndGenericCrudModalsKeepFieldsInsideSafeInnerSpacing()
     {
         await SetViewport(1440, 900);
         await Navigate("en", "/master/persons");
@@ -88,7 +88,7 @@ public sealed class LayoutRegressionE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Organizational_tree_disclosure_and_nested_nodes_mirror_in_fa_ar_and_en()
+    public async Task OrganizationalTreeDisclosureAndNestedNodesMirrorInFaArAndEn()
     {
         await Navigate("fa", "/master/organization-chart");
         var path = await ReadDisclosurePath();
@@ -189,7 +189,7 @@ public sealed class LayoutRegressionE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Header_controls_and_grid_search_follow_the_cleanup_in_all_directions()
+    public async Task HeaderControlsAndGridSearchFollowTheCleanupInAllDirections()
     {
         foreach ((string culture, string direction) in new[] { ("fa", "rtl"), ("ar", "rtl"), ("en", "ltr") })
         {

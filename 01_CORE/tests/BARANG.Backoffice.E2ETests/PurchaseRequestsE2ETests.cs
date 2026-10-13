@@ -26,7 +26,7 @@ public sealed class PurchaseRequestsE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Purchase_request_grid_and_same_session_multiline_draft_work()
+    public async Task PurchaseRequestGridAndSameSessionMultilineDraftWork()
     {
         await page.GotoAsync(baseUrl + "/culture?culture=en&returnUrl=%2Fworkspace%2Finventory", new() { WaitUntil = WaitUntilState.NetworkIdle });
         await page.GotoAsync(baseUrl + "/workspace/inventory?section=requests", new() { WaitUntil = WaitUntilState.NetworkIdle });

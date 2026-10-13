@@ -7,6 +7,7 @@ namespace BARANG.Backoffice.E2ETests;
 
 public sealed partial class OrganizationalChartActionSearchPrintE2ETests : IAsyncLifetime
 {
+    private static readonly string[] BrowserCandidates = [@"C:\Program Files\Google\Chrome\Application\chrome.exe", @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe", "/usr/bin/google-chrome", "/usr/bin/chromium"];
     private IPlaywright playwright = null!;
     private IBrowser browser = null!;
     private IBrowserContext context = null!;
@@ -32,12 +33,7 @@ public sealed partial class OrganizationalChartActionSearchPrintE2ETests : IAsyn
         string username = Environment.GetEnvironmentVariable("BARANG_E2E_USERNAME") ?? throw new InvalidOperationException("BARANG_E2E_USERNAME is required.");
         string password = Environment.GetEnvironmentVariable("BARANG_E2E_PASSWORD") ?? throw new InvalidOperationException("BARANG_E2E_PASSWORD is required.");
         playwright = await Playwright.CreateAsync();
-        string? executable = Environment.GetEnvironmentVariable("BARANG_E2E_BROWSER_PATH") ?? new[]
-        {
-            @"C:\Program Files\Google\Chrome\Application\chrome.exe",
-            @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-            "/usr/bin/google-chrome", "/usr/bin/chromium"
-        }.FirstOrDefault(File.Exists);
+        string? executable = Environment.GetEnvironmentVariable("BARANG_E2E_BROWSER_PATH") ?? BrowserCandidates.FirstOrDefault(File.Exists);
         browser = await playwright.Chromium.LaunchAsync(new() { Headless = true, ExecutablePath = executable, Channel = executable is null ? "chrome" : null });
         context = await browser.NewContextAsync(new() { Locale = "en-US" });
         page = await context.NewPageAsync();
@@ -96,7 +92,7 @@ public sealed partial class OrganizationalChartActionSearchPrintE2ETests : IAsyn
     }
 
     [Fact]
-    public async Task Edit_manager_and_move_have_distinct_fields_and_persist_only_the_intended_change()
+    public async Task EditManagerAndMoveHaveDistinctFieldsAndPersistOnlyTheIntendedChange()
     {
         await ExpandFixtureAsync();
         JsonElement original = await AssignmentAsync(reportId);
@@ -145,7 +141,7 @@ public sealed partial class OrganizationalChartActionSearchPrintE2ETests : IAsyn
     [InlineData("en", "ltr", "Search company, branch, unit or person", "Print Organizational Chart", "Select Company", "Print", "Save as PDF", "Move to Organizational Unit")]
     [InlineData("fa", "rtl", "جستجوی شرکت، شعبه، واحد یا شخص", "چاپ چارت سازمانی", "انتخاب شرکت", "چاپ", "ذخیره به صورت PDF", "انتقال به واحد سازمانی")]
     [InlineData("ar", "rtl", "البحث عن شركة أو فرع أو وحدة أو شخص", "طباعة الهيكل التنظيمي", "اختيار الشركة", "طباعة", "حفظ بصيغة PDF", "نقل إلى وحدة تنظيمية")]
-    public async Task Search_focused_dialogs_and_graphical_print_work_in_each_language(string culture, string direction, string searchLabel, string printTitle, string companyLabel, string printLabel, string pdfLabel, string moveTitle)
+    public async Task SearchFocusedDialogsAndGraphicalPrintWorkInEachLanguage(string culture, string direction, string searchLabel, string printTitle, string companyLabel, string printLabel, string pdfLabel, string moveTitle)
     {
         await page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl=/master/organization-chart", new() { WaitUntil = WaitUntilState.NetworkIdle });
         await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("lang", culture);
@@ -236,7 +232,7 @@ public sealed partial class OrganizationalChartActionSearchPrintE2ETests : IAsyn
     }
 
     [Fact]
-    public async Task Print_reloads_the_selected_company_scope_without_changing_the_active_company()
+    public async Task PrintReloadsTheSelectedCompanyScopeWithoutChangingTheActiveCompany()
     {
         JsonElement authorized = await GetAsync("api/v1/auth/me/companies");
         HashSet<Guid> allowedIds = authorized.EnumerateArray().Select(row => row.GetProperty("companyId").GetGuid()).ToHashSet();
@@ -268,7 +264,7 @@ public sealed partial class OrganizationalChartActionSearchPrintE2ETests : IAsyn
     }
 
     [Fact]
-    public async Task Unavailable_company_print_route_shows_error_without_chart_or_print_controls()
+    public async Task UnavailableCompanyPrintRouteShowsErrorWithoutChartOrPrintControls()
     {
         await page.GotoAsync($"{baseUrl}/master/organization-chart/print/{Guid.NewGuid()}", new() { WaitUntil = WaitUntilState.NetworkIdle });
         await Assertions.Expect(page.GetByRole(AriaRole.Alert)).ToHaveTextAsync("The company chart could not be loaded. Check your company access and try again.");

@@ -143,7 +143,7 @@ public sealed class StrictCrudAcceptanceE2ETests : IAsyncLifetime
     [Fact]
     public async Task CustomersCompleteCrudChildrenStatusProtectedDeleteAndLocaleDateRoundTrip()
     {
-        string stamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+        string stamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
         string code = "E2E" + stamp;
         string lastName = "Customer" + stamp;
         string bankCaption="Acceptance Bank "+stamp;
@@ -367,9 +367,9 @@ public sealed class StrictCrudAcceptanceE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Legal_customer_fields_and_establishment_date_roundtrip_between_gregorian_and_jalali()
+    public async Task LegalCustomerFieldsAndEstablishmentDateRoundtripBetweenGregorianAndJalali()
     {
-        string stamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+        string stamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
         string code = "LEGAL" + stamp;
         string legalName = "Legal Customer " + stamp;
         await GotoCulture("en", "/manage/customers");

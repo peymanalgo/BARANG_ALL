@@ -56,7 +56,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Company_real_create_view_edit_status_and_reload()
+    public async Task CompanyRealCreateViewEditStatusAndReload()
     {
         string suffix = UniqueSuffix();
         string code = $"E2EC{suffix}";
@@ -131,7 +131,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Current_company_edit_reconciles_authoritative_tree_immediately_and_after_reload()
+    public async Task CurrentCompanyEditReconcilesAuthoritativeTreeImmediatelyAndAfterReload()
     {
         ILocator company = await CurrentCompanyAsync();
         await ExpandAsync(company);
@@ -167,7 +167,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CompanyEdit_UpdatesVisibleRowImmediatelyAndAfterReload()
+    public async Task CompanyEditUpdatesVisibleRowImmediatelyAndAfterReload()
     {
         ILocator initialCompany = await CurrentCompanyAsync();
         await ExpandAsync(initialCompany);
@@ -206,7 +206,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Branch_real_create_view_edit_status_and_reload()
+    public async Task BranchRealCreateViewEditStatusAndReload()
     {
         string suffix = UniqueSuffix();
         string code = $"E2EB{suffix}";
@@ -270,7 +270,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Unit_real_create_view_edit_status_and_reload()
+    public async Task UnitRealCreateViewEditStatusAndReload()
     {
         string suffix = UniqueSuffix();
         string branchCode = $"E2EUB{suffix}";
@@ -340,7 +340,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Person_assignment_real_create_view_edit_subordinate_remove_and_reload()
+    public async Task PersonAssignmentRealCreateViewEditSubordinateRemoveAndReload()
     {
         string suffix = UniqueSuffix();
         string branchCode = $"E2EAB{suffix}";
@@ -474,7 +474,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Position_delete_action_confirms_and_archives_position_with_history()
+    public async Task PositionDeleteActionConfirmsAndArchivesPositionWithHistory()
     {
         string suffix = UniqueSuffix();
         string branchCode = $"E2EPB{suffix}";
@@ -508,7 +508,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Chart_icon_tooltips_and_accessible_names_switch_between_fa_ar_and_en()
+    public async Task ChartIconTooltipsAndAccessibleNamesSwitchBetweenFaArAndEn()
     {
         string suffix = UniqueSuffix();
         string companyCode = $"E2EL{suffix}";
@@ -544,7 +544,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Organizational_unit_display_order_is_editable_and_reorders_children()
+    public async Task OrganizationalUnitDisplayOrderIsEditableAndReordersChildren()
     {
         const string branchCode = "B21B1788281840";
         const string parentCode = "OPS";
@@ -591,7 +591,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Targeted_cleanup_is_visible_in_real_browser_without_chart_branches_or_extra_people()
+    public async Task TargetedCleanupIsVisibleInRealBrowserWithoutChartBranchesOrExtraPeople()
     {
         await Assertions.Expect(page.Locator("article[data-chart-node='branch']").Filter(new() { HasTextString = "Chart Branch" })).ToHaveCountAsync(0);
         await Assertions.Expect(page.Locator("article[data-chart-node='branch']").Filter(new() { HasTextString = "مدیریت برنگ ایران" })).ToHaveCountAsync(0);
@@ -700,7 +700,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
         }
     }
 
-    private async Task AssertDeleteBlockedAsync(ILocator node, string nodeType)
+    private static async Task AssertDeleteBlockedAsync(ILocator node, string nodeType)
     {
         await node.Locator($"[data-chart-action='{nodeType}-more']").ClickAsync();
         ILocator delete = node.Locator($"[data-chart-action='{nodeType}-delete']");
@@ -819,7 +819,7 @@ public sealed class OrganizationalChartCrudE2ETests : IAsyncLifetime
         Assert.DoesNotContain(diagnostics.Events, item => item.StartsWith("response:", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string UniqueSuffix() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString()[^9..];
+    private static string UniqueSuffix() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture)[^9..];
 
     private static string? GetLocalBrowserExecutable()
     {

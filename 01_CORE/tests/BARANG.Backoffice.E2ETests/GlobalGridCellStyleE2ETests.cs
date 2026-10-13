@@ -6,6 +6,7 @@ namespace BARANG.Backoffice.E2ETests;
 
 public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
 {
+    private static readonly JsonSerializerOptions ArtifactJsonOptions = new() { WriteIndented = true };
     private readonly string baseUrl = Environment.GetEnvironmentVariable("BARANG_E2E_BASE_URL") ?? "http://localhost:5100";
     private readonly string artifacts = Environment.GetEnvironmentVariable("BARANG_E2E_ARTIFACTS") ?? Path.Combine(AppContext.BaseDirectory, "artifacts", "global-grid-cell-style");
     private IPlaywright playwright = null!;
@@ -58,7 +59,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
     [InlineData("products", "en")]
     [InlineData("products", "fa")]
     [InlineData("products", "ar")]
-    public async Task Ordinary_cells_are_unframed_and_interactions_and_semantics_survive(string grid, string culture)
+    public async Task OrdinaryCellsAreUnframedAndInteractionsAndSemanticsSurvive(string grid, string culture)
     {
         await Navigate(culture, Route(grid));
         await AssertLanguage(culture);
@@ -128,7 +129,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
     [InlineData("en")]
     [InlineData("fa")]
     [InlineData("ar")]
-    public async Task Narrow_grids_keep_plain_cells_and_reachable_semantic_actions(string culture)
+    public async Task NarrowGridsKeepPlainCellsAndReachableSemanticActions(string culture)
     {
         await page.SetViewportSizeAsync(390, 844);
         foreach (string grid in new[] { "persons", "customers", "users", "products" })
@@ -155,7 +156,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task All_permission_visible_grid_routes_follow_the_shared_ordinary_cell_contract()
+    public async Task AllPermissionVisibleGridRoutesFollowTheSharedOrdinaryCellContract()
     {
         await Navigate("en", "/");
         string[] routes = await page.Locator(".sidebar-navigation a[href]").EvaluateAllAsync<string[]>("links => [...new Set(links.map(link => link.getAttribute('href')).filter(href => href && href !== '/'))]");
@@ -172,7 +173,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
             }
         }
         Assert.True(audited.Count >= 6, $"Only {audited.Count} populated grids were audited.");
-        await File.WriteAllTextAsync(Path.Combine(artifacts, "audited-grid-routes.json"), JsonSerializer.Serialize(audited, new JsonSerializerOptions { WriteIndented = true }));
+        await File.WriteAllTextAsync(Path.Combine(artifacts, "audited-grid-routes.json"), JsonSerializer.Serialize(audited, ArtifactJsonOptions), TestContext.Current.CancellationToken);
         AssertNoBrowserErrors();
     }
 
@@ -211,7 +212,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
         }
     }
 
-    private Task Navigate(string culture, string route) => page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(route)}", new() { WaitUntil = WaitUntilState.NetworkIdle });
+    private Task<Microsoft.Playwright.IResponse?> Navigate(string culture, string route) => page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(route)}", new() { WaitUntil = WaitUntilState.NetworkIdle });
     private async Task AssertLanguage(string culture)
     {
         await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("lang", culture);

@@ -26,7 +26,7 @@ public sealed class ReservationsShortagesE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Reservations_and_shortages_are_independent_read_workflows_with_canonical_toolbars()
+    public async Task ReservationsAndShortagesAreIndependentReadWorkflowsWithCanonicalToolbars()
     {
         await GoTo("en");
         ILocator section = page.Locator("[data-reservation-shortage-grid]");
@@ -52,7 +52,7 @@ public sealed class ReservationsShortagesE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Reservations_and_shortages_localize_in_fa_ar_en()
+    public async Task ReservationsAndShortagesLocalizeInFaArEn()
     {
         foreach ((string culture, string title, string reservations, string shortages, string direction) in new[]
         {

@@ -26,7 +26,7 @@ public sealed class WarehouseTransfersE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Transfer_workspace_is_dedicated_and_uses_canonical_grid()
+    public async Task TransferWorkspaceIsDedicatedAndUsesCanonicalGrid()
     {
         await GoTo("en");
         var section = page.Locator("[data-transfer-grid]");
@@ -43,7 +43,7 @@ public sealed class WarehouseTransfersE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Transfer_workspace_localizes_and_keeps_internal_navigation()
+    public async Task TransferWorkspaceLocalizesAndKeepsInternalNavigation()
     {
         foreach ((string culture, string title, string direction) in new[] { ("fa", "انتقال بین انبارها", "rtl"), ("ar", "التحويل بين المستودعات", "rtl"), ("en", "Warehouse Transfers", "ltr") })
         {
@@ -55,7 +55,7 @@ public sealed class WarehouseTransfersE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Transfer_can_start_and_complete_through_the_real_editor()
+    public async Task TransferCanStartAndCompleteThroughTheRealEditor()
     {
         await GoTo("en");
         var section = page.Locator("[data-transfer-grid]");

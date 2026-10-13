@@ -43,7 +43,7 @@ public sealed class SidebarIdentityE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Linked_person_and_selected_company_are_authoritative_and_company_switch_updates_both_shell_locations()
+    public async Task LinkedPersonAndSelectedCompanyAreAuthoritativeAndCompanySwitchUpdatesBothShellLocations()
     {
         CancellationToken ct = TestContext.Current.CancellationToken;
         using HttpClient api = new() { BaseAddress = new Uri(coreUrl) };
