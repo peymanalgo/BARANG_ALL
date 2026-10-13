@@ -33,7 +33,7 @@ public sealed class CartableV2GridTests
         Assert.Contains("DateOnly?fromDate", endpoint);
         Assert.Contains("string?outcome", endpoint);
         Assert.Contains("string?sort", endpoint);
-        Assert.Contains("order by t.created_at_utc desc,t.id offset @skip limit @take", runtime);
+        Assert.Contains("order by {sort} {direction},t.id offset @skip limit @take", runtime);
         Assert.Contains("TaskPage(query", runtime);
         Assert.Contains("order_number", runtime);
         Assert.Contains("t.company_id=@company", runtime);

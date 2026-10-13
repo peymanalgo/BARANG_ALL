@@ -61,7 +61,7 @@ public sealed class CatalogFoundationTests(PostgreSqlDatabaseFixture database)
         Assert.DoesNotContain(await Send<EquipmentOption[]>(client, Request(HttpMethod.Get, "/api/v1/equipment/options?limit=100", login.AccessToken, companyId)), x => x.Id == equipment.Id);
 
         Guid otherCompanyId = Guid.NewGuid(); await using (CoreDbContext setup = database.CreateAdministrationCoreDbContext()) { setup.Companies.Add(Company.Create(otherCompanyId, "CAT_OTHER", "Other", DateTimeOffset.UtcNow).Value); await setup.SaveChangesAsync(TestContext.Current.CancellationToken); }
-        using (HttpResponseMessage crossCompany = await client.SendAsync(Request(HttpMethod.Get, $"/api/v1/products/{product.Id}", login.AccessToken, otherCompanyId), TestContext.Current.CancellationToken)) { Assert.Equal(HttpStatusCode.Forbidden, crossCompany.StatusCode); }
+        using (HttpResponseMessage crossCompany = await client.SendAsync(Request(HttpMethod.Get, $"/api/v1/products/{product.Id}", login.AccessToken, otherCompanyId), TestContext.Current.CancellationToken)) { Assert.Equal(HttpStatusCode.NotFound, crossCompany.StatusCode); }
 
         await using (CoreDbContext verify = database.CreateAdministrationCoreDbContext())
         {

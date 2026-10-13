@@ -62,7 +62,11 @@ public static class AuditRedactor
             foreach (string key in value.Select(x => x.Key).ToArray())
                 value[key] = IsSensitive(key) ? Redacted : Sanitize(value[key]);
         else if (node is JsonArray array)
-            for (int index = 0; index < array.Count; index++) array[index] = Sanitize(array[index]);
+            for (int index = 0; index < array.Count; index++)
+            {
+                JsonNode? sanitized = Sanitize(array[index]);
+                array[index] = sanitized?.DeepClone();
+            }
         return node;
     }
 

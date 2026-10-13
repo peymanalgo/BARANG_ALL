@@ -308,7 +308,10 @@ public sealed class UserAccessManagementTests(PostgreSqlDatabaseFixture database
     }
     private static async Task<JsonElement> Send(HttpClient client, HttpRequestMessage request)
     {
-        using HttpResponseMessage response = await client.SendAsync(request, TestContext.Current.CancellationToken); response.EnsureSuccessStatusCode(); return (await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken));
+        using HttpResponseMessage response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        string body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.True(response.IsSuccessStatusCode, $"{(int)response.StatusCode} {response.ReasonPhrase}: {body}");
+        return JsonSerializer.Deserialize<JsonElement>(body);
     }
     private static PermissionState State(JsonElement target, Guid permission) { JsonElement value = target.GetProperty("permissions").EnumerateArray().Single(x => x.GetProperty("permissionId").GetGuid() == permission); return new(value.GetProperty("direct").GetBoolean(), value.GetProperty("inherited").GetBoolean(), value.GetProperty("effective").GetBoolean()); }
     private sealed record PermissionState(bool Direct, bool Inherited, bool Effective);

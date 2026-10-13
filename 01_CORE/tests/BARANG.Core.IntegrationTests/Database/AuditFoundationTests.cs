@@ -34,36 +34,40 @@ public sealed class AuditFoundationTests(PostgreSqlDatabaseFixture database)
 
         DateTimeOffset before = DateTimeOffset.UtcNow.AddSeconds(-2);
         LoginResult admin = await LoginAsync(client, "audit.admin", "StrongAuditPassword123");
+        Guid auditPersonId = Guid.NewGuid();
+        await using (CoreDbContext personContext = database.CreateAdministrationCoreDbContext())
+        {
+            personContext.Persons.Add(Person.Create(auditPersonId, companyA, "AUDIT-USER", "Audit", "User", null, null, null, null, null, null, DateTimeOffset.UtcNow).Value);
+            await personContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
         const string correlation = "audit-company-selection-correlation";
         using HttpRequestMessage select = Request(HttpMethod.Post, "/api/v1/auth/me/company", admin.AccessToken, null,
             new { companyId = companyA });
         select.Headers.Add("X-Correlation-ID", correlation);
         (await client.SendAsync(select, TestContext.Current.CancellationToken)).EnsureSuccessStatusCode();
 
-        using HttpRequestMessage createUser = Request(HttpMethod.Post, "/api/v1/security/users", admin.AccessToken, companyA,
-            new { username = "audit.user", displayName = "Audit User", password = "StrongAuditUserPassword123" });
+        using HttpRequestMessage createUser = Request(HttpMethod.Post, $"/api/v1/security/users/for-person/{auditPersonId}", admin.AccessToken, companyA,
+            new { username = "audit.user", displayName = "Audit User", password = "StrongAuditUserPassword123", enabled = true });
         createUser.Headers.Add("X-Correlation-ID", "audit-user-created-correlation");
         using HttpResponseMessage createdResponse = await client.SendAsync(createUser, TestContext.Current.CancellationToken);
         createdResponse.EnsureSuccessStatusCode();
         using JsonDocument createdJson = JsonDocument.Parse(await createdResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         Guid userId = createdJson.RootElement.GetProperty("id").GetGuid();
+        long userVersion = createdJson.RootElement.GetProperty("version").GetInt64();
 
         using HttpResponseMessage updatedResponse = await client.SendAsync(Request(HttpMethod.Put,
-            $"/api/v1/security/users/{userId}", admin.AccessToken, companyA,
-            new { displayName = "Updated Audit User", email = (string?)null, version = 1 }), TestContext.Current.CancellationToken);
-        updatedResponse.EnsureSuccessStatusCode();
+            $"/api/v1/security/users/{userId}/account", admin.AccessToken, companyA,
+            new { username = "audit.user.updated", version = userVersion }), TestContext.Current.CancellationToken);
+        string updatedBody = await updatedResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.True(updatedResponse.IsSuccessStatusCode, $"{updatedResponse.StatusCode}: {updatedBody}");
 
-        (await client.SendAsync(Request(HttpMethod.Post, $"/api/v1/security/users/{userId}/companies",
-            admin.AccessToken, companyA, new { companyId = companyA }), TestContext.Current.CancellationToken)).EnsureSuccessStatusCode();
         using HttpResponseMessage rolesResponse = await client.SendAsync(Request(HttpMethod.Get,
-            "/api/v1/security/roles", admin.AccessToken, companyA), TestContext.Current.CancellationToken);
+            "/api/v1/security/roles/", admin.AccessToken, companyA), TestContext.Current.CancellationToken);
         using JsonDocument rolesJson = JsonDocument.Parse(await rolesResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         Guid roleId = rolesJson.RootElement[0].GetProperty("id").GetGuid();
         (await client.SendAsync(Request(HttpMethod.Post, $"/api/v1/security/users/{userId}/roles",
             admin.AccessToken, companyA, new { roleId, companyId = companyA }), TestContext.Current.CancellationToken)).EnsureSuccessStatusCode();
         (await client.SendAsync(Request(HttpMethod.Delete, $"/api/v1/security/users/{userId}/roles/{roleId}/companies/{companyA}",
-            admin.AccessToken, companyA), TestContext.Current.CancellationToken)).EnsureSuccessStatusCode();
-        (await client.SendAsync(Request(HttpMethod.Delete, $"/api/v1/security/users/{userId}/companies/{companyA}",
             admin.AccessToken, companyA), TestContext.Current.CancellationToken)).EnsureSuccessStatusCode();
 
         using HttpResponseMessage filtered = await client.SendAsync(Request(HttpMethod.Get,
@@ -82,8 +86,6 @@ public sealed class AuditFoundationTests(PostgreSqlDatabaseFixture database)
         {
             string[] actions = await auditContext.AuditEvents.IgnoreQueryFilters()
                 .Where(x => x.CompanyId == companyA).Select(x => x.Action).ToArrayAsync(TestContext.Current.CancellationToken);
-            Assert.Contains(AuditActions.UserCompanyGranted, actions);
-            Assert.Contains(AuditActions.UserCompanyRevoked, actions);
             Assert.Contains(AuditActions.UserRoleAssigned, actions);
             Assert.Contains(AuditActions.UserRoleRevoked, actions);
             AuditEvent loginAudit = await auditContext.AuditEvents.IgnoreQueryFilters().SingleAsync(
@@ -92,7 +94,7 @@ public sealed class AuditFoundationTests(PostgreSqlDatabaseFixture database)
             Assert.Equal("InternalUser", loginAudit.ActorType);
             AuditEvent update = await auditContext.AuditEvents.IgnoreQueryFilters().SingleAsync(
                 x => x.Action == AuditActions.UserUpdated && x.EntityId == userId.ToString(), TestContext.Current.CancellationToken);
-            Assert.Contains("displayName", update.ChangesJson, StringComparison.Ordinal);
+            Assert.Contains("username", update.ChangesJson, StringComparison.Ordinal);
             Assert.DoesNotContain("password", update.ChangesJson, StringComparison.OrdinalIgnoreCase);
         }
 

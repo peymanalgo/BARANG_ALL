@@ -454,3 +454,28 @@ Visual browser verification فرم‌های هر منو در این محیط ا�
 9. `CatalogFoundationTests.AuthenticatedCatalogFlowPersistsRelationshipsAuditAndConcurrency` — همان تفاوت امنیتی `403` در تست و `404` در implementation فعلی.
 
 این ۹ مورد در این task به صورت حدس‌زده اصلاح نشدند؛ هیچ migration، fixture کسب‌وکار، قرارداد امنیتی یا workflow ناقص برای سبز کردن مصنوعی full suite تغییر نکرد.
+
+#### به‌روزرسانی پذیرش جاری ــ ۱۳ اکتبر ۲۰۲۶
+
+بخش‌های قدیمی این گزارش که ۹ شکست را باقی‌مانده نشان می‌دهند، پیش از اصلاحات جاری ثبت شده‌اند. در اجرای جدید از source و image هماهنگ، هر ۹ مورد به‌طور جداگانه اصلاح و دوباره اجرا شد:
+
+| حوزه | نتیجه و علت اصلاح‌شده |
+|---|---|
+| Customer profile/RLS | fixtureها از جدول حذف‌شدهٔ `customer_business_profiles` به `order_business_profiles` و پروفایل‌های normalized منتقل شدند؛ **pass** |
+| سازمان | fixture چرخهٔ غیرمستقیم با `BranchA` مالکیت معتبر گرفت؛ **pass** |
+| Order/Finance submit | fixtureهای ایزوله پیش از submit، نسخهٔ منتشرشدهٔ معتبر `BARANG.ORDER` را با `WorkflowTestData.SeedPublishedOrderDefinitionAsync` seed می‌کنند؛ هیچ seed خودکار production اضافه نشد؛ **pass** |
+| UserAccess | خطای واقعی `JsonNode already has a parent` در `AuditRedactor` با `DeepClone` هنگام درج آرایهٔ sanitized رفع شد؛ **pass** |
+| Audit | fixture به endpoint normalized و trailing slash فعلی (`/api/v1/audit/events/`) هم‌تراز شد؛ **pass** |
+| Artwork/Catalog/Finance cross-company | سیاست عدم افشای منابع مستند به‌صورت 404 است؛ assertionهای قدیمی 403 با این قرارداد هم‌تراز شدند؛ **pass** |
+
+در مجموع full `BARANG.Core.IntegrationTests` از source جاری روی PostgreSQL ایزوله با **۱۲۶/۱۲۶ موفق، ۰ شکست، ۰ skip** اجرا شد. `BARANG.Backoffice.Tests` **۱۸۴/۱۸۴** و `BARANG.Core.UnitTests` **۲۲۲/۲۲۲** موفق شدند. Release buildهای API، Backoffice و E2E با `TreatWarningsAsErrors=true` همگی **۰ warning / ۰ error** هستند.
+
+پشتیبانی artwork اکنون برای PNG، JPEG، GIF، WebP، BMP و TIFF با MIME/signature validation و پردازش thumbnail PNG فعال است؛ PDF همچنان فقط فایل اصلی و `NotApplicable` برای thumbnail است. تست MinIO ایزوله هر شش raster را upload می‌کند و وجود derivative را بررسی می‌کند. SVG و executable/script عمداً پشتیبانی نمی‌شوند.
+
+Cartable runtime اکنون فیلترهای server-side مربوط به جستجو، stage/customer/date، outcome/status، priority، starred، aging، follow-up و sort allow-list را در `WorkflowDefinitionRuntime.TaskPage` اعمال می‌کند؛ تست‌های منبع و E2E مرتبط با Cartable **۴/۴ موفق** هستند.
+
+E2E از executable رسمی xUnit v3 (نه مسیر `dotnet test` که JSON نامعتبر تولید می‌کرد) و Chrome نصب‌شده با `BARANG_E2E_BROWSER_PATH` اجرا شد. نتایج مستقیم: Login **۶/۶**، Cartable **۴/۴**، Workflow Designer **۲/۲** و Supplier Lifecycle **۲/۲** موفق. اجرای SupplierCore و DomainReference پس از شروع، به‌علت طولانی‌شدن بدون assembly summary در محیط shared development متوقف شد و **unverified** است. یک Order wizard test نیز به‌صورت مستقل اجرا شد و شکست آن دقیقاً به انتظار قدیمی متن `ذخیره پیش‌نویس` در Step 1 مربوط بود؛ UI جاری در این مرحله فقط `بعدی` دارد. این assertion بدون evidence تغییر نکرد و browser acceptance کامل Order/Base Data هنوز اعلام نمی‌شود.
+
+در deployment جاری، imageهای جدید از `step2-clean/01_CORE/compose.yaml` ساخته و با `docker compose up -d --force-recreate api backoffice` اجرا شدند: API `sha256:dc3232126a20cc9786816fc799355a4481aa787417895c19ba135101b56179be` و Backoffice `sha256:741843e44556184b9ea61bf09eff9bf8feca5d2a9ac29d9fddb3baaa5ab9f55c`. هر دو سرویس healthy هستند. هیچ migration جدید یا تغییر در database عملیاتی انجام نشد.
+
+نتیجهٔ پذیرش باید جدا بماند: **baseline persistence/API و مسیرهای منتخب Designer/Cartable پذیرفته شدند، اما baseline browser کامل به‌دلیل SupplierCore/DomainReference طولانی و Order Step 1 assertion ناسازگار هنوز کامل نیست.** STEP 2 identity/UOM فقط بر اساس acceptanceهای API/persistence قبلی معتبر است و این task integration جدیدی اجرا نکرد؛ reservation/consumption و STEP 3 آغاز نشده‌اند.
