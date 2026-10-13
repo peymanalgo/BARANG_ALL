@@ -18,7 +18,7 @@ public sealed class DomainReferenceE2ETests : IAsyncLifetime
         await page.Locator("#username").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_USERNAME")??throw new InvalidOperationException("BARANG_E2E_USERNAME is required."));
         await page.Locator("#password").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_PASSWORD")??throw new InvalidOperationException("BARANG_E2E_PASSWORD is required."));
         await page.Locator("button[type=submit]").ClickAsync();
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
         Assert.DoesNotContain("/login",page.Url,StringComparison.OrdinalIgnoreCase);
         if(new Uri(page.Url).AbsolutePath!="/company")await page.GotoAsync(baseUrl+"/company");
         await page.Locator(".company-list form:has(input[name=companyId][value='42f0e459-6095-45bb-aa13-f38126d91d9c']) button[type=submit]").ClickAsync();
@@ -95,11 +95,11 @@ public sealed class DomainReferenceE2ETests : IAsyncLifetime
         await Action(row,"power").ClickAsync();await Assertions.Expect(row).ToContainTextAsync("Inactive");
         await Action(row,"power").ClickAsync();await Assertions.Expect(row.Locator(".status-badge")).ToHaveTextAsync("Active");
         await grid.Locator(".barang-sort-header").Filter(new(){HasText="Code"}).ClickAsync();
-        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.NetworkIdle});await grid.Locator(".search-box input").FillAsync(code);await Assertions.Expect(row).ToContainTextAsync(edited);
+        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.DOMContentLoaded});await grid.Locator(".search-box input").FillAsync(code);await Assertions.Expect(row).ToContainTextAsync(edited);
         var style=await row.Locator("td").Nth(1).EvaluateAsync<string>("e=>getComputedStyle(e).boxShadow");Assert.True(style is "none" or "",$"ordinary cell must not have a box shadow, actual: {style}");
         await Action(row,"trash").ClickAsync();
         ILocator confirm=page.Locator(".barang-modal:has(> header h2:text-is(\"Delete\"))");await confirm.Locator("footer .btn-danger").ClickAsync();await Assertions.Expect(confirm).ToBeHiddenAsync();await Assertions.Expect(row).ToBeHiddenAsync();
-        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.NetworkIdle});await grid.Locator(".search-box input").FillAsync(code);await Assertions.Expect(row).ToBeHiddenAsync();
+        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.DOMContentLoaded});await grid.Locator(".search-box input").FillAsync(code);await Assertions.Expect(row).ToBeHiddenAsync();
     }
     [Theory]
     [InlineData("fa","rtl")]
@@ -247,7 +247,7 @@ public sealed class DomainReferenceE2ETests : IAsyncLifetime
     }
 
     private ILocator Editor=>page.Locator(".barang-modal:has(> .dialog-body > .reference-editor)");
-    private Task<Microsoft.Playwright.IResponse?> Goto(string culture,string path)=>page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(path)}",new(){WaitUntil=WaitUntilState.NetworkIdle});
+    private Task<Microsoft.Playwright.IResponse?> Goto(string culture,string path)=>page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(path)}",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
     private static ILocator Action(ILocator row,string icon)=>row.Locator($".barang-icon-button:has(svg[data-icon='{icon}'])");
     private static ILocator Field(ILocator root,string label)=>root.Locator("label").Filter(new(){HasText=label}).Locator("input").First;
     private async Task Cancel(){await Editor.Locator("footer .btn-secondary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();}

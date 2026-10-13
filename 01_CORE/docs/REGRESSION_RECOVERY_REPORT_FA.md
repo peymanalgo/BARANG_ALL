@@ -487,3 +487,20 @@ E2E از executable رسمی xUnit v3 (نه مسیر `dotnet test` که JSON ن�
 در `SupplierCoreE2ETests` علت hang قبلی در helper `Ready` بود: انتظار JavaScript برای handler داخلی Blazor سقف زمانی نداشت. helper اکنون timeout پانزده‌ثانیه‌ای دارد تا به‌جای process بی‌نهایت، failure قابل گزارش تولید کند. اجرای مجدد مستقل SupplierCore/DomainReference در این محیط به‌علت processهای orphaned و قفل‌شدن apphost به summary نهایی نرسید؛ بنابراین نتایج این دو مجموعه **unverified** باقی می‌ماند و هیچ assertion یا قابلیت کاربردی برای سبزکردن مصنوعی تضعیف نشد.
 
 تست‌های قبلی Login **۶/۶**، Cartable **۴/۴**، Designer **۲/۲** و Supplier Lifecycle **۲/۲** همچنان آخرین browser evidence معتبر هستند. Order Wizard کامل از Step 2 تا pricing/submit و تمام DomainReference/SupplierCore هنوز نیازمند اجرای موفق در یک process پایدار با timeout جدید است. STEP 2 identity/UOM نیز از browser acceptance جداست و تنها شواهد API/persistence ثبت‌شده قبلی معتبر است.
+
+#### اجرای جاری تست‌های مرورگر پس از تعمیر test-runner ــ ۱۳ اکتبر ۲۰۲۶
+
+برای رفع قفل `apphost.exe` ابتدا مالکیت پردازش‌ها با PID، مسیر executable و command line بررسی شد. پردازش‌های `BARANG.Backoffice.E2ETests.exe` با PIDهای `10128` و `19676` از مسیر `tests/BARANG.Backoffice.E2ETests/bin/Release/net10.0` بودند و parent مشترک آن‌ها یک `pwsh` بود که همان حلقهٔ اجرای E2E را با نام تست‌های DomainReference اجرا می‌کرد. فقط همان زنجیره‌های orphaned متوقف شدند؛ پردازش‌های Chrome، Docker، سرویس‌ها و نشست‌های کاربر دست‌نخورده ماندند.
+
+پروژهٔ E2E از source جاری با `TreatWarningsAsErrors=true` ساخته شد: **موفق، ۰ warning و ۰ error**. اصلاح test-runner شامل استفاده از `DOMContentLoaded` به‌جای `NetworkIdle` در مسیرهای دارای اتصال زنده و تبدیل انتظار URL به انتظار bounded با خطای تشخیصی است؛ هیچ کد production یا رفتار برنامه تغییر نکرد.
+
+| سناریو | اجرای جاری | شاهد دقیق | نتیجه |
+|---|---|---|---|
+| `SupplierCoreE2ETests.CompanySwitchShowsOnlyCurrentSupplierDataInBothDirections` | `dotnet test` مستقل، current source | `TimeoutException` پس از ۳۰ ثانیه در `SupplierCoreE2ETests.InitializeAsync` خط ۲۹؛ URL روی `http://localhost:5100/login` ماند | **شکست؛ قبل از CRUD/تعویض شرکت** |
+| `DomainReferenceE2ETests` | اجرای ترتیبی با filter کلاس | موارد با شکست یکسان initialization مشاهده شد؛ `Assert.DoesNotContain` در `DomainReferenceE2ETests.InitializeAsync` خط ۲۲، URL روی `/login`؛ اجرای طولانی بدون summary نهایی با همان parent زنجیرهٔ تست به‌صورت امن متوقف شد | **تکمیل‌نشده/ناموفق؛ هیچ catalog اجرا نشد** |
+| `OrdersE2ETests.OrderStepOneRendersHeaderWizardAndLocalizedDateControl` | `dotnet test` مستقل، current source | `TimeoutException` انتظار URL در `OrdersE2ETests.InitializeAsync`؛ URL روی `/login` ماند | **شکست؛ به Step 1 نرسید** |
+| Order Wizard کامل (items/print/pricing/submit) | وابسته به setup مشترک login | setup مشترک قبل از انتخاب company/customer متوقف شد | **اجرا نشد** |
+
+علت مشترکِ اثبات‌شده در این اجرا، شکست session/navigation واقعی مرورگر است، نه `NetworkIdle`: درخواست HTTP فرم login با antiforgery و API login خارج از مرورگر موفق و cookie session ایجاد می‌شود و لاگ Backoffice درخواست‌های auth/me و company را نشان می‌دهد، اما Playwright پس از submit در `/login` باقی می‌ماند. بنابراین API/HTTP موفقیت، browser acceptance محسوب نشده است. هیچ bypass، تزریق claim، API-only جایگزین، reset داده یا deploy انجام نشد.
+
+نتیجهٔ این نوبت: test-runner اکنون build قابل‌تشخیص و cleanup کنترل‌شده دارد، اما سه سناریوی خواسته‌شده هنوز browser-verified نیستند. baseline recovery به‌دلیل session مرورگر باز است؛ شواهد قبلی Login ۶/۶، Cartable ۴/۴، Designer ۲/۲ و Supplier Lifecycle ۲/۲ دست‌نخورده باقی است. STEP 2 identity/UOM همچنان فقط بر اساس شواهد API/persistence قبلی جداگانه ارزیابی می‌شود؛ این نوبت هیچ integration جدیدی شروع نکرد.

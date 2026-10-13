@@ -7,11 +7,11 @@ public sealed class OrdersE2ETests : IAsyncLifetime
 {
     private IPlaywright playwright = null!; private IBrowser browser = null!; private IBrowserContext context = null!; private IPage page = null!;
     private readonly string baseUrl = Environment.GetEnvironmentVariable("BARANG_E2E_BASE_URL") ?? "http://localhost:5100";
-    public async ValueTask InitializeAsync(){playwright=await Playwright.CreateAsync();browser=await playwright.Chromium.LaunchAsync(new(){Headless=true,ExecutablePath=Environment.GetEnvironmentVariable("BARANG_E2E_BROWSER_PATH")??@"C:\Program Files\Google\Chrome\Application\chrome.exe"});context=await browser.NewContextAsync(new(){Locale="en-US",ViewportSize=new(){Width=1440,Height=1000}});page=await context.NewPageAsync();await page.GotoAsync(baseUrl+"/login",new(){WaitUntil=WaitUntilState.NetworkIdle});await page.Locator("#username").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_USERNAME")??"admin");await page.Locator("#password").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_PASSWORD")??"BarangDev@2026");await page.Locator("button[type=submit]").ClickAsync();await page.WaitForLoadStateAsync(LoadState.NetworkIdle);if(new Uri(page.Url).AbsolutePath=="/company"){await page.Locator(".company-list form:has(input[name=companyId][value='42f0e459-6095-45bb-aa13-f38126d91d9c']) button[type=submit]").ClickAsync();await page.WaitForURLAsync(url=>new Uri(url).AbsolutePath!="/company");}}
+    public async ValueTask InitializeAsync(){playwright=await Playwright.CreateAsync();browser=await playwright.Chromium.LaunchAsync(new(){Headless=true,ExecutablePath=Environment.GetEnvironmentVariable("BARANG_E2E_BROWSER_PATH")??@"C:\Program Files\Google\Chrome\Application\chrome.exe"});context=await browser.NewContextAsync(new(){Locale="en-US",ViewportSize=new(){Width=1440,Height=1000}});page=await context.NewPageAsync();await page.GotoAsync(baseUrl+"/login",new(){WaitUntil=WaitUntilState.DOMContentLoaded});await page.Locator("#username").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_USERNAME")??"admin");await page.Locator("#password").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_PASSWORD")??"BarangDev@2026");Task loginNavigation=page.WaitForURLAsync(url=>new Uri(url).AbsolutePath!="/login",new(){WaitUntil=WaitUntilState.Commit});await page.Locator("button[type=submit]").ClickAsync();try{await loginNavigation;}catch(Exception ex){string body=await page.Locator("body").InnerTextAsync();throw new InvalidOperationException($"Backoffice login did not navigate. Url={page.Url}; Body={body[..Math.Min(body.Length,1000)]}",ex);}if(new Uri(page.Url).AbsolutePath=="/company"){await page.Locator(".company-list form:has(input[name=companyId][value='42f0e459-6095-45bb-aa13-f38126d91d9c']) button[type=submit]").ClickAsync();await page.WaitForURLAsync(url=>new Uri(url).AbsolutePath!="/company",new(){WaitUntil=WaitUntilState.Commit});}}
     [Fact]
     public async Task OrdersWorkspaceIsCanonicalAndExposesOperationalActions(){
-        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Fworkspace%2Forders",new(){WaitUntil=WaitUntilState.NetworkIdle});
-        await page.GotoAsync(baseUrl+"/workspace/orders",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Fworkspace%2Forders",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
+        await page.GotoAsync(baseUrl+"/workspace/orders",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
         var grid=page.Locator("[data-orders-grid]"); await Assertions.Expect(grid).ToBeVisibleAsync();
         await Assertions.Expect(grid.Locator(".crud-search input")).ToHaveCountAsync(1); await Assertions.Expect(grid.Locator(".crud-toolbar button")).ToHaveCountAsync(1); await Assertions.Expect(grid).Not.ToContainTextAsync("Refresh");
         await Assertions.Expect(page.GetByRole(AriaRole.Link,new(){Name="New order",Exact=true})).ToBeVisibleAsync();
@@ -20,8 +20,8 @@ public sealed class OrdersE2ETests : IAsyncLifetime
     }
     [Fact]
     public async Task OrderStepOneRendersHeaderWizardAndLocalizedDateControl(){
-        await page.GotoAsync(baseUrl+"/culture?culture=fa&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
-        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/culture?culture=fa&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
         await Assertions.Expect(page.Locator(".wizard-stepper")).ToBeVisibleAsync();
         await Assertions.Expect(page.Locator(".wizard-stepper button")).ToHaveCountAsync(7);
         await Assertions.Expect(page.Locator("input[type=date]")).ToHaveCountAsync(0);
@@ -34,7 +34,7 @@ public sealed class OrdersE2ETests : IAsyncLifetime
         string customerCaption=await page.Locator("input[name='order-customer']").InputValueAsync();
         await page.GetByRole(AriaRole.Button,new(){Name="بعدی",Exact=true}).ClickAsync();
         await Assertions.Expect(page.Locator(".order-items-step")).ToBeVisibleAsync();
-        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.DOMContentLoaded});
         await Assertions.Expect(page.Locator(".order-items-step")).ToHaveCountAsync(0);
         await Assertions.Expect(page.Locator("input[name='order-branch']")).ToHaveValueAsync(branchCaption);
         await Assertions.Expect(page.Locator("input[name='order-customer']")).ToHaveValueAsync(customerCaption);
@@ -44,8 +44,8 @@ public sealed class OrdersE2ETests : IAsyncLifetime
     }
     [Fact]
     public async Task OrderStepTwoSupportsMultiItemDraftEditingInOneWizardSession(){
-        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
-        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
         await page.Locator("input[name='order-branch']").ClickAsync();
         await page.Locator("[role=option]").First.ClickAsync();
         await page.Locator("input[name='order-customer']").ClickAsync();
@@ -76,8 +76,8 @@ public sealed class OrdersE2ETests : IAsyncLifetime
 
     [Fact]
     public async Task OrderStepThreeSupportsPrintOperationCrudInSameWizardSession(){
-        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
-        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
         await page.Locator("input[name='order-branch']").ClickAsync();
         await page.Locator("[role=option]").First.ClickAsync();
         await page.Locator("input[name='order-customer']").ClickAsync();
@@ -126,8 +126,8 @@ public sealed class OrdersE2ETests : IAsyncLifetime
     }
     [Fact]
     public async Task OrderStepFourPersistsSelectedServicesAndPackagingInSameWizardSession(){
-        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
-        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
         await page.Locator("input[name='order-branch']").ClickAsync();
         await page.Locator("[role=option]").First.ClickAsync();
         await page.Locator("input[name='order-customer']").ClickAsync();
@@ -173,8 +173,8 @@ public sealed class OrdersE2ETests : IAsyncLifetime
     }
     [Fact]
     public async Task OrderStepFivePersistsDeliverySnapshotAndShippingMethod(){
-        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
-        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
         await page.Locator("input[name='order-branch']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync();
         await page.Locator("input[name='order-customer']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync();
         await page.GetByText("Next",new(){Exact=true}).ClickAsync();
@@ -197,14 +197,14 @@ public sealed class OrdersE2ETests : IAsyncLifetime
         await Assertions.Expect(step).ToBeVisibleAsync(); await Assertions.Expect(step.Locator("input[name='order-step5-recipient']")).Not.ToHaveValueAsync("");
         await step.GetByRole(AriaRole.Button,new(){Name="Back",Exact=true}).ClickAsync(); await Assertions.Expect(page.Locator(".order-services-step")).ToBeVisibleAsync();
         await page.Locator(".order-services-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync(); await Assertions.Expect(step).ToBeVisibleAsync();
-        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.ReloadAsync(new(){WaitUntil=WaitUntilState.DOMContentLoaded});
         await Assertions.Expect(page.Locator(".order-shipping-step")).ToHaveCountAsync(0);
         await Assertions.Expect(page.Locator(".wizard-stepper")).ToBeVisibleAsync();
     }
     [Fact]
     public async Task OrderStepSixCalculatesAuthoritativePricingAndSupportsRecalculation(){
-        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle});
-        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
+        await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
         await page.Locator("input[name='order-branch']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync();
         await page.Locator("input[name='order-customer']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync();
         await page.GetByText("Next",new(){Exact=true}).ClickAsync();
@@ -227,7 +227,7 @@ public sealed class OrdersE2ETests : IAsyncLifetime
     }
     [Fact]
     public async Task OrderStepSevenReviewsAndFinalizesWithoutStartingWorkflow(){
-        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.NetworkIdle}); await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.NetworkIdle});
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Forders%2Fnew",new(){WaitUntil=WaitUntilState.DOMContentLoaded}); await page.GotoAsync(baseUrl+"/orders/new",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
         await page.Locator("input[name='order-branch']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync(); await page.Locator("input[name='order-customer']").ClickAsync(); await page.Locator("[role=option]").First.ClickAsync(); await page.GetByText("Next",new(){Exact=true}).ClickAsync();
         await page.Locator("input[name='order-item-product']").ClickAsync(); await page.Locator(".order-items-step [role=option]").First.ClickAsync(); await page.Locator("input[name='order-item-sku']").ClickAsync(); await page.Locator(".order-items-step [role=option]").First.ClickAsync(); await page.Locator("input[name='order-item-quantity']").FillAsync("1"); await page.GetByText("Add item",new(){Exact=true}).ClickAsync(); await page.Locator(".order-items-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync();
         await page.Locator(".order-print-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync(); await page.Locator(".order-services-step").GetByRole(AriaRole.Button,new(){Name="Next",Exact=true}).ClickAsync(); ILocator shipping=page.Locator(".order-shipping-step");
