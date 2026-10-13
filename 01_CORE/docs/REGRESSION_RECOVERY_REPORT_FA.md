@@ -438,3 +438,19 @@ Visual browser verification فرم‌های هر منو در این محیط ا�
 - هر دو container healthy هستند. API login با حساب موجود، `/api/v1/auth/me` با status 200، `/login` با status 200 و root Backoffice با status 200 بررسی شد. browser interactive در این محیط در دسترس نبود؛ این شواهد، cookie/session واقعی مرورگر یا visual verification را اثبات نمی‌کند.
 
 نتیجهٔ جداگانه: baseline موجود از نظر build، تست‌های Backoffice، مسیرهای منتخب persistence/API و deploy coherent آمادهٔ پذیرش محدود است؛ full baseline browser acceptance به‌دلیل runner/browser limitation هنوز unverified است. STEP 2 identity/UOM در مسیرهای منتخب API/persistence پذیرفته شد، اما این نوبت reservation/consumption و integrationهای STEP 3 را اجرا یا شروع نکرد.
+
+#### اجرای کامل IntegrationTests پس از این تغییرات
+
+اجرای full suite روی همان PostgreSQL ایزوله: **۱۱۷ موفق، ۹ شکست، ۰ skip از ۱۲۶**. شکست‌های باقی‌مانده:
+
+1. `BusinessProfileFoundationTests.ProfileRlsHidesRowsWhenCompanyContextIsAbsent` — `42P01 relation barang.customer_business_profiles does not exist`; تست هنوز schema پیش از Customer normalization را می‌خواهد.
+2. `BusinessProfileFoundationTests.MigrationCreatesProfileTablesWithRlsAndImmutableSnapshotGrants` — انتظار `customer_business_profiles`، schema فعلی `order_business_profiles` را دارد.
+3. `MultiCompanyFoundationTests.OrganizationalUnitRejectsIndirectHierarchyCycle` — fixture با `branch_id = null` رکورد می‌سازد، درحالی‌که ستون فعلی NOT NULL است؛ خطا قبل از اجرای سناریوی cycle رخ می‌دهد.
+4. `BusinessProfileApiTests.ProfilesPersistConflictFreezeAndRemainCompanyIsolated` — `POST /api/v1/orders/{id}/submit` با `422 workflow.definition.no_published_version`; fixture definition/version منتشرشدهٔ `BARANG.ORDER` را seed نکرده است.
+5. `FinanceE2ETests.PaymentReversalApprovalInvoiceHistoryAndIsolationFlow` — همان `422 workflow.definition.no_published_version` در submit fixture.
+6. `UserAccessManagementTests.DirectInheritedAndEffectivePermissionsMatchRuntimeAuthorization` — درخواست fixture در خط 227 با HTTP 500 برمی‌گردد؛ response body/exception این اجرای کامل از helper فعلی capture نشده و نیازمند trace مستقل است.
+7. `AuditFoundationTests.SecurityFlowsPersistSafeCorrelatedCompanyAuditAndQueryFilters` — درخواست fixture در خط 47 با HTTP 405؛ method/route تست با endpoint فعلی هم‌راستا نیست.
+8. `ArtworkFileE2ETests.CompleteArtworkFileFlowUsesRealMinioAndEnforcesSecurity` — تست `403 Forbidden` می‌خواهد، قرارداد فعلی برای دادهٔ شرکت دیگر `404 NotFound` می‌دهد.
+9. `CatalogFoundationTests.AuthenticatedCatalogFlowPersistsRelationshipsAuditAndConcurrency` — همان تفاوت امنیتی `403` در تست و `404` در implementation فعلی.
+
+این ۹ مورد در این task به صورت حدس‌زده اصلاح نشدند؛ هیچ migration، fixture کسب‌وکار، قرارداد امنیتی یا workflow ناقص برای سبز کردن مصنوعی full suite تغییر نکرد.
