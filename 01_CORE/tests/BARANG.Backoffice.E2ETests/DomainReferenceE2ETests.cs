@@ -14,15 +14,19 @@ public sealed class DomainReferenceE2ETests : IAsyncLifetime
         browser=await playwright.Chromium.LaunchAsync(new(){Headless=true,ExecutablePath=Environment.GetEnvironmentVariable("BARANG_E2E_BROWSER_PATH")});
         context=await browser.NewContextAsync(new(){ViewportSize=new(){Width=1440,Height=1000}});
         page=await context.NewPageAsync();
-        await Goto("en","/login");
+        await Goto("en","/master/reference-data/shared/bank");
+        await page.WaitForTimeoutAsync(1000);
         await page.Locator("#username").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_USERNAME")??throw new InvalidOperationException("BARANG_E2E_USERNAME is required."));
         await page.Locator("#password").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_PASSWORD")??throw new InvalidOperationException("BARANG_E2E_PASSWORD is required."));
+        Task loginNavigation=page.WaitForURLAsync(url=>new Uri(url).AbsolutePath!="/login",new(){WaitUntil=WaitUntilState.Commit});
         await page.Locator("button[type=submit]").ClickAsync();
-        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+        await loginNavigation;
         Assert.DoesNotContain("/login",page.Url,StringComparison.OrdinalIgnoreCase);
-        if(new Uri(page.Url).AbsolutePath!="/company")await page.GotoAsync(baseUrl+"/company");
-        await page.Locator(".company-list form:has(input[name=companyId][value='42f0e459-6095-45bb-aa13-f38126d91d9c']) button[type=submit]").ClickAsync();
-        await page.WaitForURLAsync(url=>new Uri(url).AbsolutePath!="/company");
+        if(new Uri(page.Url).AbsolutePath.Equals("/company",StringComparison.OrdinalIgnoreCase))
+        {
+            await page.Locator(".company-list form:has(input[name=companyId][value='42f0e459-6095-45bb-aa13-f38126d91d9c']) button[type=submit]").ClickAsync();
+            await page.WaitForURLAsync(url=>new Uri(url).AbsolutePath!="/company",new(){WaitUntil=WaitUntilState.Commit});
+        }
         await Assertions.Expect(page.Locator(".shell")).ToBeVisibleAsync();
     }
     public async ValueTask DisposeAsync(){if(context is not null)await context.DisposeAsync();if(browser is not null)await browser.DisposeAsync();playwright?.Dispose();}
@@ -247,9 +251,9 @@ public sealed class DomainReferenceE2ETests : IAsyncLifetime
     }
 
     private ILocator Editor=>page.Locator(".barang-modal:has(> .dialog-body > .reference-editor)");
-    private Task<Microsoft.Playwright.IResponse?> Goto(string culture,string path)=>page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(path)}",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
+    private async Task<Microsoft.Playwright.IResponse?> Goto(string culture,string path){Microsoft.Playwright.IResponse? response=await page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(path)}",new(){WaitUntil=WaitUntilState.DOMContentLoaded});await page.WaitForTimeoutAsync(1000);return response;}
     private static ILocator Action(ILocator row,string icon)=>row.Locator($".barang-icon-button:has(svg[data-icon='{icon}'])");
     private static ILocator Field(ILocator root,string label)=>root.Locator("label").Filter(new(){HasText=label}).Locator("input").First;
     private async Task Cancel(){await Editor.Locator("footer .btn-secondary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();}
-    private async Task CreateValue(ILocator grid,string code,string name,string? categoryName=null){await grid.GetByRole(AriaRole.Button,new(){Name="Add",Exact=true}).ClickAsync();await Editor.Locator("[name=reference-code]").FillAsync(code);foreach(string culture in new[]{"fa","ar","en"})await Editor.Locator($"[name='reference-name-{culture}']").FillAsync(culture=="fa"?"فارسی "+name:culture=="ar"?"عربي "+name:name);if(categoryName is not null){var category=Editor.Locator("[name=reference-category]");await category.FillAsync(categoryName);await category.Locator("..").GetByRole(AriaRole.Option,new(){Name=categoryName,Exact=true}).ClickAsync();await Editor.Locator("[name=reference-severity]").SelectOptionAsync("Major");await Editor.Locator("[name=reference-blocking]").CheckAsync();}await Editor.Locator("footer .btn-primary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();}
+    private async Task CreateValue(ILocator grid,string code,string name,string? categoryName=null){await grid.GetByRole(AriaRole.Button,new(){Name="Add",Exact=true}).ClickAsync();await Assertions.Expect(Editor).ToBeVisibleAsync();await Editor.Locator("[name=reference-code]").FillAsync(code);foreach(string culture in new[]{"fa","ar","en"})await Editor.Locator($"[name='reference-name-{culture}']").FillAsync(culture=="fa"?"فارسی "+name:culture=="ar"?"عربي "+name:name);if(categoryName is not null){var category=Editor.Locator("[name=reference-category]");await category.FillAsync(categoryName);await category.Locator("..").GetByRole(AriaRole.Option,new(){Name=categoryName,Exact=true}).ClickAsync();await Editor.Locator("[name=reference-severity]").SelectOptionAsync("Major");await Editor.Locator("[name=reference-blocking]").CheckAsync();}await Editor.Locator("footer .btn-primary").ClickAsync();await Assertions.Expect(Editor).ToBeHiddenAsync();}
 }

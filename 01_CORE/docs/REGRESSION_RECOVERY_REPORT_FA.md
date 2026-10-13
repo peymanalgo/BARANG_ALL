@@ -504,3 +504,25 @@ E2E از executable رسمی xUnit v3 (نه مسیر `dotnet test` که JSON ن�
 علت مشترکِ اثبات‌شده در این اجرا، شکست session/navigation واقعی مرورگر است، نه `NetworkIdle`: درخواست HTTP فرم login با antiforgery و API login خارج از مرورگر موفق و cookie session ایجاد می‌شود و لاگ Backoffice درخواست‌های auth/me و company را نشان می‌دهد، اما Playwright پس از submit در `/login` باقی می‌ماند. بنابراین API/HTTP موفقیت، browser acceptance محسوب نشده است. هیچ bypass، تزریق claim، API-only جایگزین، reset داده یا deploy انجام نشد.
 
 نتیجهٔ این نوبت: test-runner اکنون build قابل‌تشخیص و cleanup کنترل‌شده دارد، اما سه سناریوی خواسته‌شده هنوز browser-verified نیستند. baseline recovery به‌دلیل session مرورگر باز است؛ شواهد قبلی Login ۶/۶، Cartable ۴/۴، Designer ۲/۲ و Supplier Lifecycle ۲/۲ دست‌نخورده باقی است. STEP 2 identity/UOM همچنان فقط بر اساس شواهد API/persistence قبلی جداگانه ارزیابی می‌شود؛ این نوبت هیچ integration جدیدی شروع نکرد.
+
+#### تعمیر مشترک browser-login و اجرای مجدد ــ ۱۳ اکتبر ۲۰۲۶
+
+مقایسهٔ دو flow روی همان deployment نشان داد که `SupplierLifecycleE2ETests` مقصد معتبر `/master/suppliers` را در `returnUrl` می‌فرستاد، اما `SupplierCoreE2ETests` و `DomainReferenceE2ETests` مقصد `/login` داشتند. endpoint رسمی login در این حالت پس از احراز هویت دوباره به `/login` redirect می‌کرد. علاوه بر آن، دو helper شکست‌خورده بلافاصله بعد از `DOMContentLoaded` روی فرم کلیک می‌کردند، درحالی‌که helper موفق SupplierLifecycle یک مکث hydration داشت. تشخیص با trace امن تأیید شد: پیش از اصلاح، SupplierCore هیچ request به `/auth/login` نداشت (`status=0`، cookie فقط Culture/Antiforgery)؛ پس از اصلاح login به صفحهٔ اصلی/هدف رسید.
+
+تغییرات current source:
+
+- `SupplierCoreE2ETests` مقصد واقعی suppliers، مکث bounded یک‌ثانیه‌ای پس از navigation، انتظار URL با `Commit`، تشخیص cookie-name/response status بدون مقدار حساس، و انتخاب شرکت شرطی را استفاده می‌کند.
+- `DomainReferenceE2ETests` مقصد واقعی reference-data، hydration wait، انتظار bounded navigation و انتخاب شرکت شرطی را استفاده می‌کند؛ navigationهای catalog نیز wait محدود دارند.
+- `OrdersE2ETests` hydration wait را در login/reload دارد و مقصد flow با login سازگار است.
+- `OrderWizard.razor` branchهای inactive را از گزینه‌های قابل انتخاب حذف می‌کند؛ پیش از این UI نخستین branch inactive را نشان می‌داد و POST سفارش با خطای معتبر `order.invalid_branch` رد می‌شد.
+
+نتایج اجرای مجدد ترتیبی از source جاری:
+
+| سناریو | نتیجهٔ فعلی | مرز شکست |
+|---|---|---|
+| SupplierLifecycle ــ workspace authorized | **PASS 1/1** | login، session و صفحهٔ Supplier روی deployment جاری موفق است |
+| SupplierCore ــ شش ترکیب fa/ar/en و فرد/حقوقی | **FAIL 0/6** | همه از login عبور کردند؛ ۴ مورد در rehydration/nullable lookup assertion (`gradeId` یا تاریخ null) و ۲ مورد با alert اعتبارسنجی modal باقی ماندند؛ شکست login نیست |
+| DomainReference | **FAIL/تکمیل‌نشده** | از login عبور کرد؛ در `CreateValue` هنگام انتظار `reference-code` modal پس از Add با timeout ۳۰ثانیه‌ای متوقف شد؛ هیچ failure login مشاهده نشد |
+| Order Wizard Step 1 | **FAIL** | login و صفحهٔ wizard موفق؛ POST با خطای معتبر branch/customer فعال نبود و هنوز به Step 2 نرسید؛ فیلتر branch inactive در image جدید اعمال شده، اما این اجرا نشان داد داده/شرکت جاری نیز باید جداگانه بررسی شود |
+
+HTTP/API login، cookie browser و claims bypass نشدند. هیچ credential، token یا cookie value در artifact یا Git ثبت نشده است. مشکل shared login برطرف شد؛ شکست‌های باقی‌مانده داخل SupplierCore/DomainReference/Order feature هستند و baseline browser هنوز کامل اعلام نمی‌شود.

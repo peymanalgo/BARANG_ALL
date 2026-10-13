@@ -25,9 +25,33 @@ public sealed class SupplierCoreE2ETests:IAsyncLifetime
         api=new(client,login.GetProperty("accessToken").GetString()!,Company,Ct);await api.Send(HttpMethod.Post,"/api/v1/auth/me/company",new{companyId=Company});
         playwright=await Playwright.CreateAsync();browser=await playwright.Chromium.LaunchAsync(new(){Headless=true,ExecutablePath=Environment.GetEnvironmentVariable("BARANG_E2E_BROWSER_PATH")});
         context=await browser.NewContextAsync(new(){ViewportSize=new(){Width=1440,Height=1000}});page=await context.NewPageAsync();
-        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Flogin",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
-        await page.Locator("#username").FillAsync(Username);await page.Locator("#password").FillAsync(Password);Task loginNavigation=page.WaitForURLAsync(url=>new Uri(url).AbsolutePath!="/login",new(){WaitUntil=WaitUntilState.Commit});await page.Locator("button[type=submit]").ClickAsync();await loginNavigation;
-        await Assertions.Expect(page.Locator(".company-list")).ToBeVisibleAsync();await SelectCompany(Company);
+        await page.GotoAsync(baseUrl+"/culture?culture=en&returnUrl=%2Fmaster%2Fsuppliers",new(){WaitUntil=WaitUntilState.DOMContentLoaded});
+        await page.WaitForTimeoutAsync(1000);
+        await page.Locator("#username").FillAsync(Username);
+        await page.Locator("#password").FillAsync(Password);
+        string? loginLocation = null;
+        int loginStatus = 0;
+        Task<IResponse> responseTask = page.WaitForResponseAsync(response => response.Url.Contains("/auth/login", StringComparison.OrdinalIgnoreCase), new() { Timeout = 30_000 });
+        Task loginNavigation = page.WaitForURLAsync(url => new Uri(url).AbsolutePath! != "/login", new() { WaitUntil = WaitUntilState.Commit });
+        await page.Locator("button[type=submit]").ClickAsync();
+        try
+        {
+            IResponse loginResponse = await responseTask;
+            loginStatus = loginResponse.Status;
+            loginResponse.Headers.TryGetValue("location", out loginLocation);
+            await loginNavigation;
+        }
+        catch (Exception ex)
+        {
+            string body = await page.Locator("body").InnerTextAsync();
+            IReadOnlyList<BrowserContextCookiesResult> cookies = await context.CookiesAsync();
+            string cookieNames = string.Join(",", cookies.Select(cookie => cookie.Name));
+            throw new InvalidOperationException($"Browser login did not navigate. url={page.Url}; status={loginStatus}; hasLocation={!string.IsNullOrWhiteSpace(loginLocation)}; cookies={cookieNames}; body={body[..Math.Min(body.Length, 500)]}", ex);
+        }
+        if (new Uri(page.Url).AbsolutePath.Equals("/company", StringComparison.OrdinalIgnoreCase))
+            await SelectCompany(Company);
+        else
+            await Assertions.Expect(page.Locator(".shell")).ToBeVisibleAsync();
     }
     public async ValueTask DisposeAsync(){
         try{
