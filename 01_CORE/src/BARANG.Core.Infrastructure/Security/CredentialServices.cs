@@ -122,7 +122,7 @@ public sealed class IdentityAccountService(UserManager<ApplicationUser> users) :
 
     public async Task<Result<PasswordAuthenticationOutcome>> CheckPasswordAsync(ApplicationUser user, string password, CancellationToken ct)
     {
-        if (user.AccountState == UserAccountState.Inactive) return Result.Success(PasswordAuthenticationOutcome.Failed);
+        if (user.AccountState is UserAccountState.Inactive or UserAccountState.Locked) return Result.Success(PasswordAuthenticationOutcome.Failed);
         if (await users.IsLockedOutAsync(user)) return Result.Success(PasswordAuthenticationOutcome.Locked);
         if (await users.CheckPasswordAsync(user, password))
         {

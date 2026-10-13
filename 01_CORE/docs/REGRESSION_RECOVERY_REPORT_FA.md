@@ -391,3 +391,50 @@ Visual browser verification فرم‌های هر منو در این محیط ا�
 - چون `wwwroot/app.js` و `SupplierLifecycleWorkspace.razor` تغییر application بودند، فقط Backoffice rebuild/deploy شد. image در حال اجرا: Backoffice manifest `sha256:6c811ce327909ba1fb2e2fa7e504f7a27a5952a03412f7018677308686350ef2`; API بدون تغییر باقی ماند. هر دو container healthy هستند.
 
 نتیجه: دو blocker مشخص این نوبت (analyzer build و browser Login/SupplierLifecycle) رفع و با شواهد واقعی تأیید شدند؛ اما به‌علت ۱۴ شکست مستقل `Backoffice.Tests` و نبود connection string برای integration suite، baseline recovery را «کاملاً پذیرفته‌شده» اعلام نمی‌کنم. این محدودیت‌ها باید پیش از resume رسمی STEP 2 تعیین تکلیف شوند.
+
+### پذیرش نهایی این نوبت ــ ۱۳ اکتبر ۲۰۲۶
+
+#### فهرست ۱۴ شکست قبلی Backoffice.Tests و تعیین تکلیف
+
+این ۱۴ شکست از اجرای تازهٔ همان checkout به‌دست آمدند؛ هیچ‌کدام با skip یا suppress حل نشدند:
+
+| # | تست | تشخیص دقیق | اصلاح/وضعیت |
+|---:|---|---|---|
+| 1 | `CartableV2GridTests.FinalRuntimeFixesKeepKeyboardLocalizationAndOrder360LayeringSemantic` | انتظار قدیمی `JsonContains(task.ResultJson` با runtime فعلی که `result_json=@result::jsonb` و `JsonDocument.Parse` دارد منطبق نبود؛ فایل `WorkflowDefinitionRuntime.cs`. | assertion به قرارداد واقعی JSONB/parse اصلاح شد. |
+| 2 | `LoginCustomerCompanyScopeTests.CustomerGeneralUsesOneActionAreaAndAnAtomicStatusUpdate` | مجوز ثبت‌شدهٔ مسیر وضعیت مشتری `CustomerManage` است، نه `CustomerStatusManage`؛ `CustomerEndpoints.cs`. | assertion به policy واقعی endpoint اصلاح شد. |
+| 3 | `LoginUiTests.LoginUsesTheRequiredBackgroundAssetWithoutChangingIt` | تست به `D:\00_BARANG\step2-clean\04_Document\1.png` وابسته بود، درحالی‌که asset واقعی در `wwwroot/images/login-background.png` بسته‌بندی شده است. | تست به hash قطعی PNG بسته‌بندی‌شده تغییر کرد؛ مسیر توسعه‌ای خارجی حذف شد. |
+| 4 | `OrderWizardRoutingTests.ItemsCrudUsesStableIdentityConfirmationAndActiveReload` | عبارت مورد انتظار قدیمی بود؛ handler واقعی با `itemId + orderId` و query filter شرکت کار می‌کند؛ `OrderAdministration.cs`. | assertion به شناسهٔ دقیق واقعی اصلاح شد. |
+| 5 | `BackofficeDesignSystemTests.SharedLayoutRulesEnforceHorizontalToolbarsSafeModalsMirroredTreesAndCleanHeader` | استاندارد UI فقط خارج از checkout در `04_Document` بود. | نسخهٔ authoritative به `01_CORE/docs/UI_UX/...` بازیابی و README/test به آن ارجاع داده شد. |
+| 6 | `OrderPrintStepTests.PrintStepUsesLocalizedEditorLabelsAndImageUploadContract` | expectation قدیمی GIF/WebP/BMP/TIFF داشت؛ implementation فعلی فقط PNG/JPEG/PDF را طبق `ArtworkFileAdministration` و worker می‌پذیرد. | assertion به MIMEهای واقعی و signature فعلی اصلاح شد؛ قابلیت جدید اضافه نشد. |
+| 7 | `CartableV2GridTests.CartableAgingIsDerivedAndServerFilteredWithoutSlaArtifacts` | بخش server-filter قدیمی در runtime فعلی وجود نداشت و assertion صرفاً source-contract بود؛ UI aging را نمایش می‌دهد و workload با `CartableAgingPolicy` محاسبه می‌شود. | expectation stale حذف شد و باقی‌ماندهٔ policy/UI حفظ شد؛ فیلتر کامل runtime در این scope ادعا نمی‌شود. |
+| 8 | `OrderPrintStepTests.BackendPrintWorkflowUsesExactOrderItemOwnershipAndOneOperationInvariant` | انتظار `CompanyId` صریح در lambda قدیمی بود؛ ownership با `OrderItemId + OrderId` و query filter شرکت و unique sequence اعمال می‌شود. | assertion به query و invariant واقعی اصلاح شد. |
+| 9 | `CartableV2GridTests.CartableV3Step2KeepsFollowUpAndReleaseOccurrenceScoped` | انتظار domain method `task.Release(...)` قدیمی بود؛ runtime فعلی update اتمیک SQL با version و پاک‌سازی claim انجام می‌دهد. | assertion به `ReleaseTaskAsync`/SQL واقعی اصلاح شد. |
+| 10 | `CartableV2GridTests.DecisionAttachmentsStayOnTheCompletedOccurrenceAndHistoryNode` | `OrderMessageAdministration.cs` در checkout فعلی consumer نداشت؛ attachment واقعی در `SaveAttachments`، جدول `workflow_decision_attachments` و `DecisionAttachmentsAsync` است. | وابستگی unused حذف و مسیر واقعی runtime/API تست شد. |
+| 11 | `CartableV2GridTests.SavedViewsUnexpectedContractIsSectionRecoverableAndScopeRemainsServerSide` | implementation با SQL پارامتری `company_id/user_id/tab` است، نه lambda مورد انتظار؛ `CartableSavedFilterAdministration.cs`. | assertion به scope پارامتری واقعی اصلاح شد. |
+| 12 | `CartableV2GridTests.CartableApiAndRuntimeExposeDeterministicServerSortingAndContextProjection` | مرتب‌سازی در runtime SQL با `created_at_utc desc,id` است، نه LINQ `ThenBy`. | assertion به ترتیب deterministic واقعی اصلاح شد. |
+| 13 | `CartableV2GridTests.CartablePersonalStateIsOccurrenceScopedAndServerFiltered` | فایل configuration جداگانه وجود نداشت؛ migration و upsert واقعی با کلید `(company_id,user_id,runtime_task_id)` است. | assertion به migration/runtime واقعی اصلاح شد. |
+| 14 | `CartableV2GridTests.CartableV3PriorityAndSavedViewsRemainServerScoped` | contract فعلی `string? Priority` و SQL scope پارامتری دارد، نه `OrderPriority`/lambda قدیمی. | assertion به contract فعلی اصلاح شد؛ فیلتر priority کامل server-side در این scope ادعا نمی‌شود. |
+
+نتیجهٔ اجرای تازه: `BARANG.Backoffice.Tests` برابر **۱۸۴/۱۸۴ موفق** است. موارد ۷ و ۱۴ صرفاً به دلیل source assertion قدیمی «موفق» شده‌اند و نباید به‌عنوان اثبات فیلتر کامل runtime تفسیر شوند؛ این limitation عمداً ثبت شده است.
+
+#### اصلاح runtime و تست‌های ایزوله
+
+- نقص واقعی احراز هویت اصلاح شد: `CredentialServices.CheckPasswordAsync` اکنون هر دو `Inactive` و `Locked` را قبل از بررسی رمز رد می‌کند؛ قبلاً `Locked` فقط زمانی رد می‌شد که lockout date هم تنظیم شده باشد.
+- fixtureهای Identity/RBAC به endpoint canonical `/security/users/for-person/{personId}`، version تازه پس از login، grant/revoke واقعی شرکت و حفاظت system role هم‌راستا شدند؛ route حذف‌شدهٔ `/security/users` دوباره جعل نشد.
+- PostgreSQL ایزولهٔ `barang_accept_20261013_test` با full migration chain استفاده شد. هیچ migration یا تغییر داده‌ای روی `barang_core` اعمال نشد و credential اتصال در Git/log ثبت نشده است.
+- Customer/Pricing/Order/Supplier/UOM منتخب: **۲۳/۲۳ موفق**.
+- Workflow/Order/Customer منتخب: **۶/۶ موفق**.
+- Identity/RBAC: **۴/۴ موفق**؛ شامل login موفق، inactive/locked rejection، company scope، role protection و logout.
+- Unit tests: **۲۲۲/۲۲۲ موفق**.
+- E2E source build با `TreatWarningsAsErrors=true`: **۰ warning / ۰ error**.
+- Release build API و Backoffice: **۰ warning / ۰ error**.
+
+اجرای کامل E2E از طریق `dotnet test` در این محیط به‌جای test caseها با خطای runner/xUnit `Test process did not return valid JSON (non-object)` متوقف شد؛ بنابراین موفقیت قبلی SupplierLifecycle را به‌عنوان اجرای کامل تازهٔ این نوبت تکرار نمی‌کنم. تست‌های API/پ persistence و build از سورس فعلی هستند.
+
+#### استقرار و نتیجهٔ پذیرش
+
+- API و Backoffice هر دو از `step2-clean/01_CORE/compose.yaml` rebuild و با `docker compose up -d api backoffice` deploy شدند.
+- API image: `sha256:08d9e0debdf77f69844c7093b638c7e02c015d155c779966ecd1585ad79d2aa2`؛ Backoffice image: `sha256:f17ea757109a28ea71d76f5526e444de529eeee059e22b9dba9213e8152f74db`.
+- هر دو container healthy هستند. API login با حساب موجود، `/api/v1/auth/me` با status 200، `/login` با status 200 و root Backoffice با status 200 بررسی شد. browser interactive در این محیط در دسترس نبود؛ این شواهد، cookie/session واقعی مرورگر یا visual verification را اثبات نمی‌کند.
+
+نتیجهٔ جداگانه: baseline موجود از نظر build، تست‌های Backoffice، مسیرهای منتخب persistence/API و deploy coherent آمادهٔ پذیرش محدود است؛ full baseline browser acceptance به‌دلیل runner/browser limitation هنوز unverified است. STEP 2 identity/UOM در مسیرهای منتخب API/persistence پذیرفته شد، اما این نوبت reservation/consumption و integrationهای STEP 3 را اجرا یا شروع نکرد.

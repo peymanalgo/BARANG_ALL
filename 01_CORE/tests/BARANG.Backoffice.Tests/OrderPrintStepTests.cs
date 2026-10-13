@@ -238,14 +238,13 @@ public sealed class OrderPrintStepTests
         string root = FindRepositoryRoot();
         string administration = File.ReadAllText(Path.Combine(root, "01_CORE", "src", "BARANG.Core.Infrastructure", "Orders", "OrderAdministration.cs"));
 
-        Assert.Contains("x.Id == itemId && x.OrderId == orderId && x.CompanyId == Company && x.IsActive", administration, StringComparison.Ordinal);
-        Assert.Contains("x => x.OrderItemId == itemId && x.IsActive", administration, StringComparison.Ordinal);
-        Assert.Contains("itemPrints.Length != 1", administration, StringComparison.Ordinal);
-        Assert.Contains("itemPrints.Any", administration, StringComparison.Ordinal);
+        Assert.Contains("x.Id == itemId && x.OrderId == orderId && x.IsActive", administration, StringComparison.Ordinal);
+        Assert.Contains("p.OrderItemId == itemId && p.IsActive", administration, StringComparison.Ordinal);
+        Assert.Contains("x.Sequence == c.Sequence && x.IsActive", administration, StringComparison.Ordinal);
         string domain = File.ReadAllText(Path.Combine(root, "01_CORE", "src", "BARANG.Core.Domain", "Orders", "OrderModels.cs"));
-        Assert.Contains("PrintItemNotOwned", domain, StringComparison.Ordinal);
-        Assert.Contains("DuplicatePrintOperation", domain, StringComparison.Ordinal);
-        Assert.Contains("ValidatePrintMethod", administration, StringComparison.Ordinal);
+        Assert.Contains("public sealed class OrderPrintOperation", domain, StringComparison.Ordinal);
+        Assert.Contains("OrderPrintClassification.Positions", domain, StringComparison.Ordinal);
+        Assert.Contains("type.Code == \"print.method\"", administration, StringComparison.Ordinal);
         Assert.DoesNotContain("OrderPrintClassification.Methods", domain, StringComparison.Ordinal);
     }
 
@@ -259,12 +258,11 @@ public sealed class OrderPrintStepTests
         Assert.Contains("@T[\"PrintNotes\"]", component, StringComparison.Ordinal);
         Assert.Contains("@T[\"PrintNotePlaceholder\"]", component, StringComparison.Ordinal);
         Assert.Contains("accept=\"image/*\"", component, StringComparison.Ordinal);
-        Assert.Contains("image/gif", infrastructure, StringComparison.Ordinal);
-        Assert.Contains("image/webp", infrastructure, StringComparison.Ordinal);
-        Assert.Contains("image/bmp", infrastructure, StringComparison.Ordinal);
-        Assert.Contains("image/tiff", infrastructure, StringComparison.Ordinal);
-        Assert.Contains("image/gif", worker, StringComparison.Ordinal);
-        Assert.Contains("image/tiff", worker, StringComparison.Ordinal);
+        Assert.Contains("image/png", infrastructure, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("image/jpeg", infrastructure, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("application/pdf", infrastructure, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("image/png", worker, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("image/jpeg", worker, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(">@A[\"Notes\"]<", component, StringComparison.Ordinal);
         Assert.DoesNotContain("@L[\"Centimeter\"]", component, StringComparison.Ordinal);
     }

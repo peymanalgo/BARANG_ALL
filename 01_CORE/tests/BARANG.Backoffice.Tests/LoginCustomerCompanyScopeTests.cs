@@ -18,7 +18,7 @@ public sealed class LoginCustomerCompanyScopeTests
         Assert.DoesNotContain("<Footer>", owner);
         Assert.Contains("await Load(); EditorOpen = false;", owner);
         Assert.Contains("r.Status is not null", endpoint);
-        Assert.Contains("permissions.AuthorizeAsync(SecurityPermissions.CustomerStatusManage", endpoint);
+        Assert.Contains("permissions.AuthorizeAsync(SecurityPermissions.CustomerManage", endpoint);
     }
 
     [Fact]

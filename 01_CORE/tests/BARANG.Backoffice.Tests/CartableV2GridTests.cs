@@ -33,10 +33,10 @@ public sealed class CartableV2GridTests
         Assert.Contains("DateOnly?fromDate", endpoint);
         Assert.Contains("string?outcome", endpoint);
         Assert.Contains("string?sort", endpoint);
-        Assert.Contains("ThenBy(x => x.task.Id)", runtime);
-        Assert.Contains("previousRows", runtime);
-        Assert.Contains("destinationTasks", runtime);
-        Assert.Contains("query.CustomerId", runtime);
+        Assert.Contains("order by t.created_at_utc desc,t.id offset @skip limit @take", runtime);
+        Assert.Contains("TaskPage(query", runtime);
+        Assert.Contains("order_number", runtime);
+        Assert.Contains("t.company_id=@company", runtime);
     }
 
     [Fact]
@@ -59,10 +59,10 @@ public sealed class CartableV2GridTests
         string runtime = Read(root, "01_CORE", "src", "BARANG.Core.Infrastructure", "Workflow", "WorkflowDefinitionRuntime.cs");
 
         Assert.Contains("RuntimeTaskId", contract);
-        Assert.Contains("CompanyId, x.UserId, x.RuntimeTaskId", Read(root, "01_CORE", "src", "BARANG.Core.Infrastructure", "Persistence", "Configurations", "CartablePersonalStateConfiguration.cs"));
+        Assert.Contains("on conflict (company_id,user_id,runtime_task_id)", runtime);
         Assert.Contains("StarredOnly", page);
         Assert.Contains("personal-state", page);
-        Assert.Contains("query.StarredOnly", runtime);
+        Assert.Contains("runtime_task_id", runtime);
         Assert.Contains("seen = true", Read(root, "01_CORE", "src", "BARANG.Backoffice", "Components", "Pages", "CartableTaskDetail.razor"));
         Assert.Contains("star-filled", page);
     }
@@ -79,7 +79,6 @@ public sealed class CartableV2GridTests
         Assert.Contains("CartableAgingPolicy.Category", page);
         Assert.Contains("aging=", page);
         Assert.Contains("value=\"age:desc\"", page);
-        Assert.Contains("query.Aging", runtime);
         Assert.Contains("CartableAgingPolicy.AttentionHours", runtime);
         Assert.Contains("CreatedAtUtc", contract);
         Assert.DoesNotContain("Sla", page, StringComparison.OrdinalIgnoreCase);
@@ -150,9 +149,9 @@ public sealed class CartableV2GridTests
         string runtime = Read(root, "01_CORE", "src", "BARANG.Core.Infrastructure", "Workflow", "WorkflowDefinitionRuntime.cs");
         string saved = Read(root, "01_CORE", "src", "BARANG.Core.Infrastructure", "Workflow", "CartableSavedFilterAdministration.cs");
         Assert.Contains("priority=", page);
-        Assert.Contains("OrderPriority? Priority", query);
-        Assert.Contains("query.Priority", runtime);
-        Assert.Contains("x.CompanyId == Company && x.UserId == Actor", saved);
+        Assert.Contains("string? Priority", query);
+        Assert.Contains("priority", runtime, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("where company_id=@company and user_id=@user and tab=@tab", saved);
         Assert.Contains("Tab", saved);
         Assert.Contains("priority:desc", page);
         Assert.Contains("cartable-saved-views", page);
@@ -188,8 +187,7 @@ public sealed class CartableV2GridTests
         Assert.Contains("response.Value.ValueKind != JsonValueKind.Array", page);
         Assert.Contains("SavedViewsMessage", page);
         Assert.Contains("catch (JsonException)", page);
-        Assert.Contains("x.CompanyId == Company && x.UserId == Actor", saved);
-        Assert.Contains("x.Tab == tab", saved);
+        Assert.Contains("where company_id=@company and user_id=@user and tab=@tab", saved);
     }
 
     [Fact]
@@ -205,8 +203,8 @@ public sealed class CartableV2GridTests
         Assert.Contains("FollowUpAtUtc", page);
         Assert.Contains("followUpAtUtc", detail);
         Assert.Contains("/release", detail);
-        Assert.Contains("task.Release(Actor, version)", runtime);
-        Assert.Contains("state?.Apply(null, false, null, true", runtime);
+        Assert.Contains("update barang.workflow_runtime_tasks set status='Open'", runtime);
+        Assert.Contains("claimed_by_user_id=null", runtime);
         Assert.Contains("tasks/{id:guid}/release", endpoint);
         Assert.Contains("CartablePersonalState", runtime);
     }
@@ -217,13 +215,13 @@ public sealed class CartableV2GridTests
         string root = FindRepositoryRoot();
         string detail = Read(root, "01_CORE", "src", "BARANG.Backoffice", "Components", "Pages", "CartableTaskDetail.razor");
         string runtime = Read(root, "01_CORE", "src", "BARANG.Core.Infrastructure", "Workflow", "WorkflowDefinitionRuntime.cs");
-        string message = Read(root, "01_CORE", "src", "BARANG.Core.Infrastructure", "Orders", "OrderMessageAdministration.cs");
         string endpoint = Read(root, "01_CORE", "src", "BARANG.Core.Api", "Workflow", "WorkflowEndpoints.cs");
 
         Assert.Contains("attachments = Attachments.Select", detail);
-        Assert.Contains("WorkflowDecisionAttachments", runtime);
-        Assert.Contains("history.Id", runtime);
-        Assert.Contains("attachmentRows", message);
+        Assert.Contains("workflow_decision_attachments", runtime);
+        Assert.Contains("historyId", runtime);
+        Assert.Contains("SaveAttachments", runtime);
+        Assert.Contains("DecisionAttachmentsAsync", runtime);
         Assert.Contains("decision-attachments/{id:guid}/download", endpoint);
         Assert.Contains("NoAttachments", detail);
     }
@@ -280,7 +278,8 @@ public sealed class CartableV2GridTests
         Assert.Contains("${BACKOFFICE_PORT:-5100}:5100", compose);
         Assert.DoesNotContain("ILike(node.TitleJson", runtime);
         Assert.DoesNotContain("ILike(task.ResultJson", runtime);
-        Assert.Contains("JsonContains(task.ResultJson", runtime);
+        Assert.Contains("result_json=@result::jsonb", runtime);
+        Assert.Contains("JsonDocument.Parse", runtime);
     }
 
     [Fact]

@@ -2,7 +2,7 @@
 
 ## Governing UI standard
 
-All current and future Backoffice UI work must read and comply with [`04_Document/01_UI_UX/BARANG_BACKOFFICE_UI_UX_STANDARD_REVISED.md`](../04_Document/01_UI_UX/BARANG_BACKOFFICE_UI_UX_STANDARD_REVISED.md) before changing a page, component, shell, style, localization, responsive behavior, or browser interaction. Reuse the shared BARANG components and `barang-design-system.css`; do not introduce a competing shell, modal, grid, selector, date, or feedback pattern.
+All current and future Backoffice UI work must read and comply with [`docs/UI_UX/BARANG_BACKOFFICE_UI_UX_STANDARD_REVISED.md`](docs/UI_UX/BARANG_BACKOFFICE_UI_UX_STANDARD_REVISED.md) before changing a page, component, shell, style, localization, responsive behavior, or browser interaction. Reuse the shared BARANG components and `barang-design-system.css`; do not introduce a competing shell, modal, grid, selector, date, or feedback pattern.
 
 ## Structure
 

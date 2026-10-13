@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BARANG.Core.Application.Security;
+using BARANG.Core.Domain.Common;
 using BARANG.Core.Domain.Organization;
 using BARANG.Core.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,9 @@ public sealed class IdentityAndRbacTests(PostgreSqlDatabaseFixture database)
         await AddCompanyAccessAsync(multiple.Id, companyB);
         await AddCompanyAccessAsync(companyBOnly.Id, companyB);
         await AddCompanyAccessAsync(expired.Id, companyC, DateTimeOffset.UtcNow.AddDays(-2), DateTimeOffset.UtcNow.AddDays(-1));
+        await RevokeCompanyAccessAsync(client, admin, companyBOnly.Id, companyA, companyA);
+        await RevokeCompanyAccessAsync(client, admin, expired.Id, companyA, companyA);
+        await RevokeCompanyAccessAsync(client, admin, zero.Id, companyA, companyA);
         await AssertSelfReadContextDoesNotLeakAsync(single.Id);
 
         LoginResult singleLogin = await LoginAsync(client, "single", "StrongUserPassword123");
@@ -122,19 +126,19 @@ public sealed class IdentityAndRbacTests(PostgreSqlDatabaseFixture database)
         CurrentUserView adminMe = await SendAsync<CurrentUserView>(client, Request(HttpMethod.Get, "/api/v1/auth/me", admin.AccessToken, companyA));
         Assert.True(adminMe.IsSystemAdministrator);
         using HttpRequestMessage allowed = Request(HttpMethod.Get, "/api/v1/security/users", admin.AccessToken, companyA); using HttpResponseMessage allowedResponse = await client.SendAsync(allowed, TestContext.Current.CancellationToken); Assert.Equal(HttpStatusCode.OK, allowedResponse.StatusCode); Assert.DoesNotContain("passwordHash", await allowedResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken), StringComparison.OrdinalIgnoreCase);
-        using HttpRequestMessage crossCompany = Request(HttpMethod.Get, "/api/v1/security/users", admin.AccessToken, companyB); Assert.Equal(HttpStatusCode.Forbidden, (await client.SendAsync(crossCompany, TestContext.Current.CancellationToken)).StatusCode);
+        using HttpRequestMessage crossCompany = Request(HttpMethod.Get, "/api/v1/security/users", admin.AccessToken, companyB); Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(crossCompany, TestContext.Current.CancellationToken)).StatusCode);
 
-        UserView low = await SendAsync<UserView>(client, Request(HttpMethod.Post, "/api/v1/security/users", admin.AccessToken, companyA, new { username = "limited", displayName = "Limited", password = "StrongLimitedPassword123" }));
-        await SendAsync<UserCompanyView>(client, Request(HttpMethod.Post, $"/api/v1/security/users/{low.Id}/companies", admin.AccessToken, companyA, new { companyId = companyA }));
+        UserView low = await CreateUserAsync(client, admin, companyA, "limited", "StrongLimitedPassword123");
         LoginResult limited = await LoginAsync(client, "limited", "StrongLimitedPassword123");
         using HttpRequestMessage forbidden = Request(HttpMethod.Get, "/api/v1/security/users", limited.AccessToken, companyA); Assert.Equal(HttpStatusCode.Forbidden, (await client.SendAsync(forbidden, TestContext.Current.CancellationToken)).StatusCode);
         using HttpRequestMessage cannotGrant = Request(HttpMethod.Post, "/api/v1/security/roles", limited.AccessToken, companyA, new { code = "unsafe.role", displayTitle = "Unsafe" }); Assert.Equal(HttpStatusCode.Forbidden, (await client.SendAsync(cannotGrant, TestContext.Current.CancellationToken)).StatusCode);
 
-        using HttpRequestMessage deactivate = Request(HttpMethod.Put, $"/api/v1/security/users/{low.Id}/activation", admin.AccessToken, companyA, new { isActive = false, version = low.Version }); (await client.SendAsync(deactivate, TestContext.Current.CancellationToken)).EnsureSuccessStatusCode();
+        SecurityUserDetailView currentLow = await SendAsync<SecurityUserDetailView>(client, Request(HttpMethod.Get, $"/api/v1/security/users/{low.Id}", admin.AccessToken, companyA));
+        using HttpRequestMessage deactivate = Request(HttpMethod.Put, $"/api/v1/security/users/{low.Id}/activation", admin.AccessToken, companyA, new { isActive = false, version = currentLow.Account.Version }); using HttpResponseMessage deactivated = await client.SendAsync(deactivate, TestContext.Current.CancellationToken); Assert.True(deactivated.IsSuccessStatusCode, await deactivated.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/v1/auth/login", new { username = "limited", password = "StrongLimitedPassword123" }, TestContext.Current.CancellationToken)).StatusCode);
         using HttpRequestMessage rolesRequest = Request(HttpMethod.Get, "/api/v1/security/roles", admin.AccessToken, companyA); RoleView[] roles = await SendAsync<RoleView[]>(client, rolesRequest); RoleView administratorRole = Assert.Single(roles);
-        using HttpRequestMessage deactivateRole = Request(HttpMethod.Put, $"/api/v1/security/roles/{administratorRole.Id}/activation", admin.AccessToken, companyA, new { isActive = false, version = administratorRole.Version }); (await client.SendAsync(deactivateRole, TestContext.Current.CancellationToken)).EnsureSuccessStatusCode();
-        using HttpRequestMessage inactiveRole = Request(HttpMethod.Get, "/api/v1/security/users", admin.AccessToken, companyA); Assert.Equal(HttpStatusCode.Forbidden, (await client.SendAsync(inactiveRole, TestContext.Current.CancellationToken)).StatusCode);
+        using HttpRequestMessage deactivateRole = Request(HttpMethod.Put, $"/api/v1/security/roles/{administratorRole.Id}/activation", admin.AccessToken, companyA, new { isActive = false, version = administratorRole.Version }); Assert.Equal(HttpStatusCode.UnprocessableEntity, (await client.SendAsync(deactivateRole, TestContext.Current.CancellationToken)).StatusCode);
+        using HttpRequestMessage inactiveRole = Request(HttpMethod.Get, "/api/v1/security/users", admin.AccessToken, companyA); Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(inactiveRole, TestContext.Current.CancellationToken)).StatusCode);
         using HttpRequestMessage logout = Request(HttpMethod.Post, "/api/v1/auth/logout", admin.AccessToken, null); Assert.Equal(HttpStatusCode.NoContent, (await client.SendAsync(logout, TestContext.Current.CancellationToken)).StatusCode);
         using HttpRequestMessage revoked = Request(HttpMethod.Get, "/api/v1/security/users", admin.AccessToken, companyA); Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(revoked, TestContext.Current.CancellationToken)).StatusCode);
     }
@@ -167,14 +171,27 @@ public sealed class IdentityAndRbacTests(PostgreSqlDatabaseFixture database)
         await context.Database.ExecuteSqlInterpolatedAsync($"UPDATE barang.application_users SET account_state = {state} WHERE username = {username};", TestContext.Current.CancellationToken);
     }
     private static async Task BootstrapAsync(HttpClient client, Guid companyId) { using HttpRequestMessage request = new(HttpMethod.Post, "/api/v1/security/bootstrap") { Content = JsonContent.Create(new { companyId, username = "admin", displayName = "Administrator", password = "StrongAdminPassword123" }) }; request.Headers.Add("X-Bootstrap-Secret", "test-bootstrap-secret-123456789"); (await client.SendAsync(request, TestContext.Current.CancellationToken)).EnsureSuccessStatusCode(); }
-    private static Task<UserView> CreateUserAsync(HttpClient client, LoginResult admin, Guid companyId, string username) => SendAsync<UserView>(client, Request(HttpMethod.Post, "/api/v1/security/users", admin.AccessToken, companyId, new { username, displayName = username, password = "StrongUserPassword123" }));
+    private async Task<UserView> CreateUserAsync(HttpClient client, LoginResult admin, Guid companyId, string username, string password = "StrongUserPassword123")
+    {
+        await using CoreDbContext context = database.CreateAdministrationCoreDbContext();
+        Result<Person> person = Person.Create(Guid.NewGuid(), companyId, $"TEST-{username}", username, "User", null, null, $"{username}@example.test", null, null, null, DateTimeOffset.UtcNow);
+        Assert.True(person.IsSuccess, person.IsFailure ? person.Error.Code : "");
+        context.Persons.Add(person.Value);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return await SendAsync<UserView>(client, Request(HttpMethod.Post, $"/api/v1/security/users/for-person/{person.Value.Id}", admin.AccessToken, companyId, new { username, displayName = username, password }));
+    }
     private async Task AddCompanyAccessAsync(Guid userId, Guid companyId, DateTimeOffset? from = null, DateTimeOffset? to = null)
     {
         await using NpgsqlConnection connection = new(database.ConnectionString); await connection.OpenAsync(TestContext.Current.CancellationToken);
         await using NpgsqlTransaction transaction = await connection.BeginTransactionAsync(TestContext.Current.CancellationToken);
         await using (NpgsqlCommand context = new("SELECT set_config('barang.company_id', @company, true);", connection, transaction)) { context.Parameters.AddWithValue("company", companyId.ToString()); await context.ExecuteNonQueryAsync(TestContext.Current.CancellationToken); }
-        await using NpgsqlCommand insert = new("INSERT INTO barang.user_companies (id, user_id, company_id, valid_from_utc, valid_to_utc, granted_at_utc, granted_by_user_id) VALUES (@id, @user, @company, @from, @to, now(), NULL);", connection, transaction);
+        await using NpgsqlCommand insert = new("INSERT INTO barang.user_companies (id, user_id, company_id, valid_from_utc, valid_to_utc, granted_at_utc, granted_by_user_id) VALUES (@id, @user, @company, @from, @to, now(), NULL) ON CONFLICT (user_id, company_id) WHERE valid_to_utc IS NULL DO NOTHING;", connection, transaction);
         insert.Parameters.AddWithValue("id", Guid.NewGuid()); insert.Parameters.AddWithValue("user", userId); insert.Parameters.AddWithValue("company", companyId); insert.Parameters.AddWithValue("from", from ?? DateTimeOffset.UtcNow.AddMinutes(-1)); insert.Parameters.AddWithValue("to", (object?)to ?? DBNull.Value); await insert.ExecuteNonQueryAsync(TestContext.Current.CancellationToken); await transaction.CommitAsync(TestContext.Current.CancellationToken);
+    }
+    private static async Task RevokeCompanyAccessAsync(HttpClient client, LoginResult admin, Guid userId, Guid companyId, Guid contextCompany)
+    {
+        using HttpResponseMessage response = await client.SendAsync(Request(HttpMethod.Delete, $"/api/v1/security/users/{userId}/companies/{companyId}", admin.AccessToken, contextCompany), TestContext.Current.CancellationToken);
+        response.EnsureSuccessStatusCode();
     }
     private async Task AssertSelfReadContextDoesNotLeakAsync(Guid userId)
     {

@@ -144,7 +144,7 @@ public sealed class BackofficeDesignSystemTests
     {
         string root = FindRepositoryRoot();
         string readme = Read(root, "01_CORE", "README.md");
-        Assert.Contains("04_Document/01_UI_UX/BARANG_BACKOFFICE_UI_UX_STANDARD_REVISED.md", readme);
+        Assert.Contains("docs/UI_UX/BARANG_BACKOFFICE_UI_UX_STANDARD_REVISED.md", readme);
         Assert.Contains("shared BARANG", readme, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -156,7 +156,7 @@ public sealed class BackofficeDesignSystemTests
         string shell = Read(root, "01_CORE", "src", "BARANG.Backoffice", "Components", "Layout", "MainLayout.razor");
         string tree = Read(root, "01_CORE", "src", "BARANG.Backoffice", "Components", "OrganizationalChartTree.razor");
         string persons = Read(root, "01_CORE", "src", "BARANG.Backoffice", "Components", "Pages", "Persons.razor");
-        string standard = Read(root, "04_Document", "01_UI_UX", "BARANG_BACKOFFICE_UI_UX_STANDARD_REVISED.md");
+        string standard = Read(root, "01_CORE", "docs", "UI_UX", "BARANG_BACKOFFICE_UI_UX_STANDARD_REVISED.md");
 
         Assert.Contains("flex-wrap: nowrap", css);
         Assert.Contains("--barang-toolbar-gap: 10px", css);

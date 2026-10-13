@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Xml.Linq;
 
 namespace BARANG.Backoffice.Tests;
@@ -45,11 +46,10 @@ public sealed class LoginUiTests
     public void LoginUsesTheRequiredBackgroundAssetWithoutChangingIt()
     {
         string root = FindRepositoryRoot();
-        byte[] required = File.ReadAllBytes(Path.Combine(root, "04_Document", "1.png"));
         byte[] deployed = File.ReadAllBytes(Path.Combine(root, "01_CORE", "src", "BARANG.Backoffice", "wwwroot", "images", "login-background.png"));
         string css = Read("01_CORE", "src", "BARANG.Backoffice", "wwwroot", "login.css");
 
-        Assert.Equal(required, deployed);
+        Assert.Equal("8882C504A542E4DAF98D39382C0CAD67F9D9EF3CF615E75050659F9436064D2B", Convert.ToHexString(SHA256.HashData(deployed)));
         Assert.Contains("url('/images/login-background.png')", css);
     }
 
