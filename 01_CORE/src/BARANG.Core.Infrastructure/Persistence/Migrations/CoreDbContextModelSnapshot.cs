@@ -615,43 +615,59 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("AcquisitionMethodCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("acquisition_method_code");
 
                     b.Property<string>("AssetNumber")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("asset_number");
 
                     b.Property<string>("AssetTag")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("asset_tag");
 
                     b.Property<Guid?>("AssignedPersonId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("assigned_person_id");
 
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid")
                         .HasColumnName("branch_id");
 
                     b.Property<string>("BrandCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("brand_code");
 
                     b.Property<DateOnly?>("CommissioningDate")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("commissioning_date");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("company_id");
 
                     b.Property<string>("ConditionCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("condition_code");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
 
                     b.Property<string>("CriticalityCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("criticality_code");
 
                     b.Property<string>("CurrencyCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("currency_code");
 
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
@@ -659,7 +675,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("description");
 
                     b.Property<string>("EquipmentCategoryCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("category_code");
 
                     b.Property<string>("EquipmentCode")
                         .IsRequired()
@@ -668,7 +686,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("equipment_code");
 
                     b.Property<string>("EquipmentSubtypeCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("subtype_code");
 
                     b.Property<string>("EquipmentTypeCode")
                         .IsRequired()
@@ -677,14 +697,17 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("equipment_type_code");
 
                     b.Property<int?>("ExpectedUsefulLifeMonths")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("expected_useful_life_months");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
                     b.Property<string>("LifecycleStatusCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("lifecycle_status_code");
 
                     b.Property<string>("Manufacturer")
                         .HasMaxLength(150)
@@ -692,7 +715,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("manufacturer");
 
                     b.Property<string>("ManufacturerCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("manufacturer_code");
 
                     b.Property<string>("Model")
                         .HasMaxLength(150)
@@ -706,7 +731,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("name");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
 
                     b.Property<string>("OperationalStatusCode")
                         .IsRequired()
@@ -719,28 +746,41 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("organizational_unit_id");
 
                     b.Property<string>("OwnershipTypeCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("ownership_type_code");
 
                     b.Property<string>("PhysicalLocation")
-                        .HasColumnType("text");
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
+                        .HasColumnName("physical_location");
 
                     b.Property<DateOnly?>("PurchaseDate")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("purchase_date");
 
                     b.Property<decimal?>("PurchasePrice")
-                        .HasColumnType("numeric");
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("purchase_price");
 
                     b.Property<string>("PurchaseReference")
-                        .HasColumnType("text");
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("purchase_reference");
 
                     b.Property<Guid?>("ResponsiblePersonId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("responsible_person_id");
 
                     b.Property<DateOnly?>("RetirementDate")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("retirement_date");
 
                     b.Property<string>("RetirementReasonCode")
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("retirement_reason_code");
 
                     b.Property<string>("SerialNumber")
                         .HasMaxLength(150)
@@ -748,7 +788,8 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("serial_number");
 
                     b.Property<Guid?>("SupplierId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -760,19 +801,26 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("version");
 
                     b.Property<Guid?>("WarehouseId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("warehouse_id");
 
                     b.Property<DateOnly?>("WarrantyEnd")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("warranty_end");
 
                     b.Property<string>("WarrantyNotes")
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("warranty_notes");
 
                     b.Property<string>("WarrantyProvider")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("warranty_provider");
 
                     b.Property<DateOnly?>("WarrantyStart")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("warranty_start");
 
                     b.HasKey("Id")
                         .HasName("pk_equipment");

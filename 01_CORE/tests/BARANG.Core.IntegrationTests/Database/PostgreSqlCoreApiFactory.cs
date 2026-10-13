@@ -14,6 +14,9 @@ public sealed class PostgreSqlCoreApiFactory(string connectionString, string env
         builder.UseSetting("CompanyResolution:AllowDevelopmentAdministration", "true");
         builder.UseSetting("SecurityBootstrap:Secret", "test-bootstrap-secret-123456789");
         builder.UseSetting("BackgroundJobs:ServerEnabled", "false");
+        builder.UseSetting("FileStorage:Endpoint", "127.0.0.1:9000");
+        builder.UseSetting("FileStorage:AccessKey", "barang_minio_test");
+        builder.UseSetting("FileStorage:SecretKey", "barang_minio_test_secret");
         if (useObjectStorage)
         {
             builder.UseSetting("FileStorage:Enabled", "true");

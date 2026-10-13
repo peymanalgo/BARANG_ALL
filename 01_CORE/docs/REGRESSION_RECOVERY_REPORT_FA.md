@@ -338,3 +338,29 @@ backup توسعه در `D:\00_BARANG\recovery-snapshots\20261012170707\barang_co
 این پیاده‌سازی Designer load/validate/save/reload و هستهٔ runtime/Cartable را از contract تا SQL و API متصل می‌کند، اما recovery کامل baseline هنوز قابل اعلام نیست: forward/delegation/substitution success path، workload/history/assignment filtering کامل، attachment mutation و Order Submit end-to-end نیازمند تست/کار بیشتر هستند. همچنین 3 integration test سفارش/قیمت در setup ایزوله با `POST /orders` و یک تست BusinessProfile با ستون قدیمی `equipment.AcquisitionMethodCode` شکست خوردند؛ این موارد پیش از اعلام resume امن STEP 2 باید جداگانه رفع یا با شواهد به baseline مالک خود نسبت داده شوند. هیچ Inventory/Finance/Quality/Logistics integration جدیدی در این کار فعال نشده است.
 
 Visual browser verification فرم‌های هر منو در این محیط انجام نشد؛ شواهد فعلی شامل build، persistence/API integration و authenticated deserialization-level پاسخ‌هاست. WorkflowDefinitionRuntime/Designer و Cartable کامل عمداً پیاده‌سازی نشده و این recovery آن را حل نمی‌کند.
+
+### اصلاحات تکمیلی این نوبت
+
+- علت دقیق خطای POST سفارش/قیمت مشخص شد: `WorkflowDefinitionRuntime.CmdTx` tupleهای strongly-typed را به پارامتر SQL تبدیل نمی‌کرد؛ PostgreSQL نام‌هایی مثل `company` را ستون می‌دید. helper اکنون هر `ITuple` دوبخشی را به‌درستی bind می‌کند.
+- runtime اتصال EF-owned را dispose نمی‌کند؛ پیش‌تر `GetDbConnection()` در Submit اتصال context را می‌بست و پاسخ نهایی سفارش با `ObjectDisposedException` شکست می‌خورد.
+- نبودن definition سفارش در test baseline با یک definition/version معتبر و حداقلی پوشش داده شد؛ در صورت نبود definition در شرکت، runtime آن را یک‌بار با کد canonical `BARANG.ORDER` ایجاد و publish می‌کند و start همچنان بر اساس `company + order` idempotent است.
+- `EquipmentExtendedConfiguration` ستون‌های جزئیات تجهیزات را به ستون‌های موجود snake_case نگاشت می‌کند. migration metadata-only `20261013070735_EquipmentMappingMetadataAlignment` snapshot را با schema موجود هم‌تراز می‌کند و عملیات rename/drop ندارد.
+- `EfTransactionExecutor` rollback را در transactionهای تکمیل‌شده امن می‌کند تا خطای اصلی پنهان نشود.
+- Cartable runtime اکنون forward هدف‌مند، substitutionهای دارای بازه/هم‌پوشانی/عضویت شرکت، فهرست کاربران واجد شرایط، فیلتر assignment، workload و history را از persistence واقعی می‌خواند. forward برای attribution از `claimed_on_behalf_of_user_id` و history استفاده می‌کند.
+
+نتیجهٔ تست ایزولهٔ جاری: `OrderE2ETests`، `PricingE2ETests` و `BusinessProfileApiTests` برابر **3/3 موفق**؛ E2E Designer/Cartable برابر **6/6 موفق**. isolation در تست‌های فعلی با پاسخ `404 NotFound` برای دادهٔ شرکت دیگر (به‌جای `403`) تأیید می‌شود و داده نمایش داده نمی‌شود.
+
+موارد هنوز خارج از پذیرش کامل: mutation حذف attachment endpoint مستقل ندارد و باید پیش از اعلام baseline کامل، با policy مالکیت/retention طراحی و تست شود؛ delegation مستقل از forward نیز در قرارداد فعلی endpoint جداگانه ندارد. این موارد در این نوبت به success جعلی تبدیل نشده‌اند.
+
+### تصحیح شواهد نهایی این نوبت
+
+بخش‌های قدیمی‌تر این گزارش که شکست Order/Pricing و تجهیزات را ثبت کرده‌اند، با اجرای اصلاحات این نوبت supersede می‌شوند. نتیجهٔ نهایی روی checkout فعلی:
+
+- `OrderE2ETests`، `PricingE2ETests` و `BusinessProfileApiTests`: **۳/۳ موفق** روی PostgreSQL ایزوله؛ شامل ایجاد سفارش، اقلام/چاپ، قیمت‌گذاری و نگاشت تجهیزات.
+- `WorkflowFoundationTests`: **۳/۳ موفق**؛ ایجاد تعریف پیش‌فرض سفارش فقط در شرکتی که تعریف ندارد انجام می‌شود و start بر اساس order idempotent است.
+- unit tests: **۲۲۲/۲۲۲ موفق**.
+- Playwright headless پس از rebuild بدون cache: Designer/Cartable **۶/۶ موفق** (load/validate/save/reload و ناوبری Cartable در fa/en/ar). build مجدد کل پروژهٔ E2E به دلیل خطای analyzer قدیمی در `SupplierLifecycleE2ETests.criterionLabel` انجام نشد؛ باینری Release موجود با `--no-build` اجرا و موفق شد.
+- migration metadata-only تجهیزات پس از backup توسعه اعمال شد؛ migration chain تازه و database توسعه بدون drop/rename و بدون حذف داده عبور کردند. backup تأییدشده در `recovery-snapshots/20261013104656/barang_core_pre_recovery.dump` خارج از commit نگه داشته شد.
+- ایمیج‌های واقعاً در حال اجرا از rebuild نهایی: API `sha256:d5ad3c5f1d8b1c04a8e9212711edf8ee56e0562a3ac92903f8a06fe2841c194a` و Backoffice `sha256:b741d22f41c9e665d8183141d03b734fb97b8b96981ab4b4597577abff0ed8cd`.
+
+هنوز نباید recovery را کاملاً تمام‌شده تلقی کرد: endpoint مستقل delegation و حذف attachment در قرارداد فعلی وجود ندارند؛ این دو capability و تست mutation مستقل باید با policy مالکیت/retention مصوب تکمیل شوند. قابلیت forward و substitution موجود در قرارداد فعلی پیاده‌سازی و build شده‌اند، ولی برای mutation end-to-end مستقل، fixture/تست اختصاصی لازم است.
