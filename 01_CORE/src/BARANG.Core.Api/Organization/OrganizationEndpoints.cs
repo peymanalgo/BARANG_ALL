@@ -47,6 +47,10 @@ public static class OrganizationEndpoints
         RouteGroupBuilder persons = group.MapGroup("/persons").RequireAuthorization(SecurityPermissions.OrganizationUnitManage);
         persons.MapGet("/", async (string? search, int? take, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.SearchPersonsAsync(search, take ?? 30, ct)));
         persons.MapGet("/{id:guid}", async (Guid id, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.GetPersonAsync(id, ct)));
+        persons.MapPost("/", async (CreatePersonRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.CreatePersonAsync(new(r.PersonnelCode, r.FirstName, r.LastName, r.NationalId, r.BirthDate, r.Email, r.Phone, r.Address, r.Notes), ct), true));
+        persons.MapPut("/{id:guid}", async (Guid id, CreatePersonRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.UpdatePersonAsync(id, new(r.PersonnelCode, r.FirstName, r.LastName, r.NationalId, r.BirthDate, r.Email, r.Phone, r.Address, r.Notes), r.Version, ct)));
+        persons.MapPut("/{id:guid}/activation", async (Guid id, ActivationRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.SetPersonActiveAsync(id, r.IsActive, r.Version, ct)));
+        persons.MapDelete("/{id:guid}", async (Guid id, long version, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.DeletePersonAsync(id, version, ct)));
         RouteGroupBuilder warehouses = group.MapGroup("/warehouses").RequireAuthorization(SecurityPermissions.OrganizationWarehouseManage);
         warehouses.MapPost("/", async (CreateWarehouseRequest r, IOrganizationAdministration s, CancellationToken ct) => Map(await s.CreateWarehouseAsync(new(r.Code, r.Name, r.Type, r.BranchId), ct), true));
         warehouses.MapGet("/", async (IOrganizationAdministration s, CancellationToken ct) => Map(await s.ListWarehousesAsync(ct)));
@@ -100,3 +104,4 @@ public sealed record UpdateUnitRequest(string DisplayName, Guid? BranchId, Guid?
 public sealed record CreateWarehouseRequest(string Code, string Name, WarehouseType Type, Guid? BranchId);
 public sealed record UpdateWarehouseRequest(string Name, WarehouseType Type, Guid? BranchId, long Version);
 public sealed record CreateAssignmentRequest(Guid PersonId, Guid OrganizationalUnitId, Guid? ManagerAssignmentId, string PositionCode, string PositionTitle, bool IsPrimary, DateOnly? StartDate, DateOnly? EndDate, string? Notes, long Version = 0);
+public sealed record CreatePersonRequest(string PersonnelCode, string FirstName, string LastName, string? NationalId, DateOnly? BirthDate, string? Email, string? Phone, string? Address, string? Notes, long Version = 0);
