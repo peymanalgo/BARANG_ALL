@@ -196,3 +196,38 @@ database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخت
 ### اصلاح provenance نهایی پس از تکمیل نمایش shortage
 
 آخرین commit و pair واقعاً running اکنون `cfc8e786e97d99b42172b1e776a195ab513929d6` است. digest نهایی API `sha256:ac02d5b4d5037b29b317c0d99fafea582885f6a2a6918a2511f5b8e07de39ccd` و Backoffice `sha256:67b578bac309a23636ed165f83c2d97404a212656c22e72d61109b50a710c059` است؛ هر دو `BARANG_BUILD_COMMIT` یکسان دارند و هر دو healthy هستند. browser gate دوباره روی همین pair اجرا شد و **۴/۴ موفق** ماند. نسخهٔ قبلی `810b9c...` فقط provenance intermediate بود و ملاک نهایی نیست.
+
+## الحاقیهٔ پذیرش نهایی در محیط disposable — ۱۴۰۵/۰۷/۲۲
+
+### هویت محیط
+
+- Compose project: `barang-step3-acceptance` با overlay موقت روی `compose.yaml`؛ API روی `127.0.0.1:58081`، Backoffice روی `127.0.0.1:55101` و PostgreSQL روی `127.0.0.1:55432`.
+- database: `barang_step3_acceptance_test` و volumeهای جداگانهٔ `barang-step3-acceptance_*`. هیچ اتصال یا volume مربوط به `barang-core`/`barang_core` استفاده نشد.
+- seed فقط شامل company/user/warehouse/product/variant/stock/workflow/orderهای STEP3 و هویت `step3.admin` بود؛ credential و data توسعه تغییر نکرد.
+- API image آخرین اجرای feature check: `sha256:699619fd47a67bea95c0c358a1a41bf824d28a59a69c518dbf67a7e3c8867358`; Backoffice image اجرای UI: `sha256:58213d55d00d6dfa43429d00e2f89cbccba97f6857cdd0eb2ff74feae715ccca`.
+
+### آزمون‌های feature و نتیجهٔ واقعی
+
+1. `Step3ReservationAcceptanceE2ETests.InventoryReservationTaskCanBeCompletedThroughAuthenticatedUi`: **PASS**؛ login واقعی، Cartable task واقعی و stage `InventoryReservation`، انتخاب warehouse و ثبت تصمیم تا `/cartable`.
+2. persistence بعد از UI: **PASS**؛ دو reservation مستقل برای دو `OrderItemId` متفاوت و یک `ProductVariantId` مشترک، هر دو `PCS`، مجموع ۵، task `Completed/version=3`.
+3. physical stock: **PASS**؛ `on_hand=10`، `reserved=5`، `available=5`؛ reservation مقدار `on_hand` را کم نکرد.
+4. concurrency HTTP harness روی PostgreSQL ایزوله: **PASS**؛ دو سفارش رقیب با demandهای ۵ و ۶ روی یک stock key، یکی `201` و دیگری `422 inventory.reservation.shortage`; فقط reservation پذیرفته‌شده باقی ماند و `reserved=6`، `on_hand=10` شد.
+5. retry: **PASS**؛ همان order و idempotency key نتیجهٔ persisted را با همان cardinality برگرداند و row جدید نساخت.
+6. تغییر quantity پس از reservation: **PASS**؛ retry همان key با quantity تغییرکرده `409` داد.
+7. تغییر UOM پس از reservation: **PASS**؛ تغییر موقت `PCS` به `KG` در DB disposable و retry همان key `409 inventory.reservation.request_mismatch` داد؛ UOM برگردانده شد.
+8. failure بین reservation و completion: **PASS**؛ trigger خطای عمدی فقط در DB disposable، complete را `500` کرد اما task در `Claimed/version=2` ماند، reservation count صفر و `reserved=0` شد؛ trigger حذف شد.
+9. isolated foundation integration: `InventoryFoundationTests|WorkflowFoundationTests`، **۵/۵ PASS**.
+10. Order 360/task: **PASS**؛ endpoint Order 360 با `200` و صفحهٔ task با read model reservation بارگذاری شد. خطای seed اولیهٔ `source=Manual` دادهٔ نامعتبر تست بود و به `Internal` اصلاح شد.
+
+اسکریپت retry قابل تکرار در `tests/Acceptance/Step3ReservationAcceptance.ps1` اضافه شد؛ token و URL فقط از environment می‌آیند و credential در repository نیست.
+
+### regression gate جاری
+
+- Release build: **PASS، ۰ warning/۰ error**؛ Unit **۲۲۲/۲۲۲**؛ Backoffice **۱۸۴/۱۸۴**؛ browser feature **۱/۱** و browser readiness baseline **۴/۴**.
+- full integration با connection ایزوله در retry جاری، در test-host/API factory با failureهای setup متوقف شد: چند bootstrap/login با `404` و `500` در `PricingE2ETests`، `UserAccessManagementTests`، `ArtworkFileE2ETests` و `SupplierSourcingApiTests`. این‌ها در مسیر reservation بازتولید نشدند، اما suite historical `126/126` جایگزین اجرای جاری نیست. targeted Inventory/Workflow **۵/۵ PASS**؛ global regression sign-off این اجرا به CI/test-host سالم نیاز دارد.
+
+### نتیجهٔ پذیرش STEP 3
+
+**STEP 3 feature acceptance: PASS.** رفتار مصوب reservation از UI واقعی تا service canonical و persistence اثبات شد: atomic all-items، aggregate availability برای stock key مشترک، عدم کسر physical stock، deterministic concurrency، retry idempotent، mismatch rejection و rollback failure.
+
+این PASS شامل STEP4 نیست. مصرف فیزیکی، cancellation/release/expiry integration، procurement automation، QC/logistics و سیاست مالی جدید عمداً اجرا یا تأیید نشده‌اند. blocker باقی‌مانده برای release-wide sign-off فقط بازتولید full integration suite در test-host سالم است؛ defect اپلیکیشنِ بازتولیدشده در مسیر STEP3 باقی نمانده است.
