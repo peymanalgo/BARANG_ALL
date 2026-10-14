@@ -39,6 +39,8 @@ Checkout `step2-clean/01_CORE`، شاخه `codex/step2-inventory-unit-contracts`
 
 این failureها با نتیجهٔ تاریخی جایگزین نشده‌اند. اجرای مستقل feature test موفق است؛ علت full-suite هنوز باید از نظر fixture isolation/parallel reset/registration بررسی و اثبات شود.
 
+پس از deploy commit `84437b15151d9545fd0fa5c5adf78db8ee8fc24f`، rerun چهار browser check نتیجهٔ **3/4 PASS** داشت: navigation/heading و Organization/Persons PASS؛ User Access menu تا بازشدن action menu پیش رفت اما assertion قدیمی indicator sort (`svg[data-icon='arrow-up/down']`) با marker فعلی `barang-sort-indicator` failure شد. این آخرین blocker تست مرورگر است.
+
 ## وضعیت requirementها
 
 - issue، deduction on-hand، کاهش reservation، idempotent reference و release هنگام cancel در backend موجود و feature-test مستقل است.
