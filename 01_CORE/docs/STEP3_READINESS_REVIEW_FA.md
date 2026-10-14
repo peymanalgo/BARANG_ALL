@@ -204,7 +204,7 @@ database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخت
 - Compose project: `barang-step3-acceptance` با overlay موقت روی `compose.yaml`؛ API روی `127.0.0.1:58081`، Backoffice روی `127.0.0.1:55101` و PostgreSQL روی `127.0.0.1:55432`.
 - database: `barang_step3_acceptance_test` و volumeهای جداگانهٔ `barang-step3-acceptance_*`. هیچ اتصال یا volume مربوط به `barang-core`/`barang_core` استفاده نشد.
 - seed فقط شامل company/user/warehouse/product/variant/stock/workflow/orderهای STEP3 و هویت `step3.admin` بود؛ credential و data توسعه تغییر نکرد.
-- API image آخرین اجرای feature check: `sha256:699619fd47a67bea95c0c358a1a41bf824d28a59a69c518dbf67a7e3c8867358`; Backoffice image اجرای UI: `sha256:58213d55d00d6dfa43429d00e2f89cbccba97f6857cdd0eb2ff74feae715ccca`.
+- API image deployment نهایی: `sha256:d25dbf22f499c8b33c492b52972dcd1db41f97a57831ec2413c247539cdb2d6d`; Backoffice image deployment نهایی: `sha256:2b0abd6a57f0b7873be9734760141c87a6dc6d41f904ae8f421b2b1121b24752`؛ هر دو `BARANG_BUILD_COMMIT=647eebe` و Backoffice با `CoreApi__BaseUrl=http://api:8080` هستند.
 
 ### آزمون‌های feature و نتیجهٔ واقعی
 
