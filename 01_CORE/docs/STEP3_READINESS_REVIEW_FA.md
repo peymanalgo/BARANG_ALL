@@ -269,3 +269,16 @@ database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخت
 - **Development-deployment acceptance: PASS**؛ pair coherent با provenance کامل و smoke/browser سبز است.
 - Remaining failures: **هیچ failure جاری شناخته‌شده‌ای وجود ندارد**. failureهای 106تایی قبلی با علت test-host اصلاح و با full rerun تأیید شدند.
 - **STEP4 می‌تواند آغاز شود**، مشروط به ثبت تصمیم شروع مرحلهٔ بعد؛ این turn هیچ consumption، cancellation release، procurement automation یا تغییر مالی STEP4 را اجرا نکرد.
+
+### الحاقیهٔ اجرای STEP 4 در source فعلی
+
+این گزارش readiness تاریخی است؛ پس از آن source فعلی issue واقعی، release هنگام Cancel، workflow `InventoryIssue` و return قابل‌ردیابی را روی همان InventoryAdministration/ledger اضافه کرده است. در این الحاقیه ادعای acceptance نهایی STEP 4 داده نمی‌شود تا current-source full integration و isolated mutation tests تکمیل شوند. baseline STEP 3 همچنان مرجع پذیرفته‌شده است و هیچ migration جدیدی برای این تغییر لازم نشده است.
+
+### شواهد current-source STEP 4
+
+- source commit هنگام بررسی: `a81835b47f44e917363bef366e5ef7e27b4c4457`؛ working tree فقط تغییرات همین STEP و `.keys` نامرتبط را دارد.
+- `dotnet build BARANG.Core.slnx -c Release --no-restore`: PASS، ۰ warning/۰ error؛ Unit `222/222 PASS`؛ Backoffice `184/184 PASS`.
+- isolated PostgreSQL `barang_step4_test` روی `127.0.0.1:55432` و roleهای disposable: full current integration `127/127 PASS`، و `Step4InventoryIssueE2ETests.WarehouseIssueIsAtomicAndRetrySafeWithoutDuplicatingLedgerEntries`: PASS. این تست دو OrderItem مستقل با یک stock key را reserve/issue می‌کند، on-hand را از ۱۰ به ۵ و reserved را به صفر می‌رساند، retry را بدون transaction تکراری می‌پذیرد، retry با payload متفاوت را `409` می‌گیرد، و در سفارش دوم Cancel قبل از issue، reserved را بدون افزایش on-hand آزاد می‌کند. منابع isolated پس از ثبت نتیجه حذف شدند.
+- authenticated development browser smoke فعلی: `LoginPageE2ETests` به‌همراه دو smoke اصلی طراحی/زبان `10/10 PASS`. broad suite بیست‌تایی `4` failure دارد (صفحه Notifications بدون heading؛ دو سناریوی create در Organization chart/Persons با پیام «عملیات انجام نشد»؛ و User Access بدون action icon View). این failureها در صفحات نامرتبط با STEP4 و داده/پیش‌شرط development هستند؛ assertion ضعیف نشده و برای پذیرش broad UI به بررسی جداگانه نیاز دارند.
+- deployment فعلی Compose project `barang-core`: API image `sha256:c7187a7629cd43b7c15e90cd28ed8ed1590dd5a265de604dd8f447bb3284878d` و Backoffice image `sha256:8409e95300008385867427618414124d62292db1eb76c20ba1731ef0a0c7d685`؛ هر دو `BARANG_BUILD_COMMIT=a81835b47f44e917363bef366e5ef7e27b4c4457`، API روی `8080` و Backoffice روی `5100` healthy هستند. حجم‌ها، کلیدها و `barang_core` توسعه حفظ شدند؛ migration جدیدی اضافه نشد.
+- current published workflow definition در این checkout stage کلیددار `InventoryIssue` ندارد؛ runtime و UI پشتیبانی آن را اضافه کرده‌اند، اما ایجاد/تغییر definition published بدون تصمیم owner انجام نشده است. بنابراین STEP4 از نظر backend/API و persistence ایزوله اثبات شده، ولی UI workflow issue تا وجود stage واقعی و تست Cartable آن **بلاک** است. adjustment اتمیک quantity/variant پس از reservation نیز به change-request/pricing process نیاز دارد و هنوز تأیید نهایی نشده است.

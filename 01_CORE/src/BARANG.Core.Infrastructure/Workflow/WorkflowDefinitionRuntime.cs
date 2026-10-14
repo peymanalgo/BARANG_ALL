@@ -52,6 +52,17 @@ public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExec
             if (reserved.IsFailure) return Result.Failure<object>(reserved.Error);
             resultJson = JsonSerializer.Serialize(new { outcome, warehouseId, idempotencyKey = key, reservations = reserved.Value.Reservations });
         }
+        if (nodeKey.Contains("InventoryIssue", StringComparison.OrdinalIgnoreCase))
+        {
+            if (result is null || !result.RootElement.TryGetProperty("warehouseId", out var issueWarehouse) || issueWarehouse.ValueKind != JsonValueKind.String || !Guid.TryParse(issueWarehouse.GetString(), out Guid warehouseId)) return Result.Failure<object>(Error.Validation("inventory.issue.warehouse_required"));
+            string reference = result.RootElement.TryGetProperty("reference", out var referenceValue) && referenceValue.ValueKind == JsonValueKind.String ? referenceValue.GetString() ?? $"WORKFLOW-ISSUE:{id:N}" : $"WORKFLOW-ISSUE:{id:N}";
+            List<IssueOrderItemCommand>? items = result.RootElement.TryGetProperty("items", out var issueItems) && issueItems.ValueKind == JsonValueKind.Array ? JsonSerializer.Deserialize<List<IssueOrderItemCommand>>(issueItems.GetRawText()) : null;
+            if (items is null || items.Count == 0) return Result.Failure<object>(Error.Validation("inventory.issue.items_required"));
+            Result<IssueOrderInventoryResult> issued = await inventory.IssueOrderInsideTransactionAsync(new(orderId, warehouseId, reference, items), ct);
+            if (issued.IsFailure) return Result.Failure<object>(issued.Error);
+            if (issued.Value.Reservations.Any(x => x.RemainingQuantity > 0)) return Result.Failure<object>(Error.BusinessRule("inventory.issue.incomplete"));
+            resultJson = JsonSerializer.Serialize(new { outcome, warehouseId, reference, items, reservations = issued.Value.Reservations, transactions = issued.Value.Transactions });
+        }
         await using (DbCommand u = CmdTx(c, "update barang.workflow_runtime_tasks set status='Completed',completed_at_utc=@now,completed_by_user_id=@actor,result_json=@result::jsonb,version=version+1 where company_id=@company and id=@id and version=@version", ("now", Now), ("actor", Actor), ("result", resultJson ?? "{}"), ("company", Company), ("id", id), ("version", version), tr)) if (await u.ExecuteNonQueryAsync(ct) != 1) return Result.Failure<object>(Error.Concurrency("workflow.task.concurrency"));
         Guid historyId = await History(c, tr, instance, id, "TaskCompleted", resultJson, ct); await SaveAttachments(c, tr, historyId, instance, id, resultJson, attachments, ct); await CreateNextTasks(c, tr, instance, await VersionForInstance(c, tr, instance, ct), node, ct, outcome); return Result.Success<object>(new { id, status = "Completed" });
     }

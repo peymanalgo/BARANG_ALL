@@ -7,6 +7,7 @@ using BARANG.Core.Application.Organization;
 
 namespace BARANG.Core.Api.Inventory;
 public sealed record ReserveOrderInventoryRequest(Guid WarehouseId,string IdempotencyKey,DateTimeOffset? ExpiresAtUtc=null);
+public sealed record ReturnStockRequest(Guid OriginalIssueTransactionId,decimal Quantity,string Reference,string? UomCode=null,string? Disposition=null);
 public static class InventoryEndpoints
 {
  public static IEndpointRouteBuilder MapInventoryEndpoints(this IEndpointRouteBuilder e)
@@ -18,12 +19,14 @@ public static class InventoryEndpoints
   inventory.MapGet("/reservations",async(bool?includeClosed,int?limit,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ReservationsAsync(includeClosed??false,Math.Clamp(limit??100,1,200),ct))).RequireAuthorization(SecurityPermissions.InventoryRead);
   inventory.MapGet("/warehouses",async(IOrganizationAdministration s,CancellationToken ct)=>Map(await s.ListWarehousesAsync(ct))).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/orders/{orderId:guid}/reservations",async(Guid orderId,ReserveOrderInventoryRequest c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ReserveOrderAsync(new(orderId,c.WarehouseId,c.IdempotencyKey,c.ExpiresAtUtc),ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
+  inventory.MapPost("/orders/{orderId:guid}/issues",async(Guid orderId,IssueOrderInventoryRequest c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.IssueOrderAsync(new(orderId,c.WarehouseId,c.Reference,c.Items),ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/receipts",async(StockMovementCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ReceiveAsync(c,ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/issues/{type}",async(StockTransactionType type,StockMovementCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.IssueAsync(c,type,ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/adjustments/{increase:bool}",async(bool increase,StockMovementCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.AdjustAsync(c,increase,ct),true)).RequireAuthorization(SecurityPermissions.InventoryAdjust);
   inventory.MapPost("/reservations",async(ReserveStockCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ReserveAsync(c,ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/reservations/{id:guid}/release",async(Guid id,ReleaseReservationCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ReleaseAsync(id,c,ct))).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/reservations/{id:guid}/issue",async(Guid id,IssueReservationCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.IssueReservedAsync(id,c,ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
+  inventory.MapPost("/returns",async(ReturnStockRequest c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ReturnAsync(new(c.OriginalIssueTransactionId,c.Quantity,c.Reference,c.UomCode,c.Disposition),ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/reservations/expire",async(IInventoryAdministration s,CancellationToken ct)=>Map(await s.ExpireAsync(ct))).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/transfers",async(TransferCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.TransferAsync(c,ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/transfers/{id:guid}/complete",async(Guid id,CompleteTransferCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.CompleteTransferAsync(id,c,ct))).RequireAuthorization(SecurityPermissions.InventoryManage);
@@ -39,3 +42,4 @@ public static class InventoryEndpoints
  }
  private static EndpointResult<T>Map<T>(Result<T>r,bool created=false)=>new(r,created);private sealed class EndpointResult<T>(Result<T>r,bool created):IResult{public Task ExecuteAsync(HttpContext c){if(r.IsSuccess){c.Response.StatusCode=created?201:200;return c.Response.WriteAsJsonAsync(r.Value,c.RequestAborted);}return Results.Problem(ApiProblemDetailsMapper.Create(r.Error,c.TraceIdentifier,c.Request.Path)).ExecuteAsync(c);}}
 }
+public sealed record IssueOrderInventoryRequest(Guid WarehouseId,string Reference,IReadOnlyList<IssueOrderItemCommand> Items);

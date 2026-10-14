@@ -7,6 +7,9 @@ public sealed record ReserveStockCommand(Guid OrderItemId,Guid WarehouseId,decim
 public sealed record ReserveOrderInventoryCommand(Guid OrderId,Guid WarehouseId,string IdempotencyKey,DateTimeOffset? ExpiresAtUtc=null);
 public sealed record ReleaseReservationCommand(decimal Quantity,long Version);
 public sealed record IssueReservationCommand(decimal Quantity,long Version,string Reference);
+public sealed record IssueOrderItemCommand(Guid OrderItemId,decimal Quantity,string? UomCode=null);
+public sealed record IssueOrderInventoryCommand(Guid OrderId,Guid WarehouseId,string Reference,IReadOnlyList<IssueOrderItemCommand> Items);
+public sealed record ReturnStockCommand(Guid OriginalIssueTransactionId,decimal Quantity,string Reference,string? UomCode=null,string? Disposition=null);
 public sealed record TransferCommand(Guid SourceWarehouseId,Guid DestinationWarehouseId,Guid ProductVariantId,decimal Quantity,string Reference);
 public sealed record CompleteTransferCommand(long Version);
 public sealed record PurchaseRequestItemCommand(Guid ProductVariantId,decimal Quantity,string? UomCode=null);
@@ -24,6 +27,7 @@ public sealed record ReservationView(Guid Id,Guid OrderItemId,Guid WarehouseId,G
 public sealed record ReserveStockResult(ReservationView? Reservation,Guid? ShortageId,decimal Available,decimal ShortageQuantity);
 public sealed record OrderReservationShortage(Guid OrderItemId,Guid ProductVariantId,string UomCode,decimal RequiredQuantity,decimal AvailableQuantity,decimal ShortageQuantity);
 public sealed record ReserveOrderInventoryResult(Guid OrderId,Guid WarehouseId,string IdempotencyKey,IReadOnlyList<ReservationView> Reservations,IReadOnlyList<OrderReservationShortage> Shortages);
+public sealed record IssueOrderInventoryResult(Guid OrderId,Guid WarehouseId,string Reference,IReadOnlyList<ReservationView> Reservations,IReadOnlyList<StockTransactionView> Transactions);
 public sealed record StockShortageView(Guid Id,Guid OrderItemId,Guid WarehouseId,Guid ProductVariantId,decimal RequiredQuantity,decimal AvailableQuantity,decimal ShortageQuantity,bool IsActive,DateTimeOffset CreatedAtUtc,long Version);
 public sealed record TransferView(Guid Id,Guid SourceWarehouseId,Guid DestinationWarehouseId,Guid ProductVariantId,decimal Quantity,StockTransferStatus Status,long Version);
 public sealed record PurchaseRequestView(Guid Id,Guid WarehouseId,string Reason,PurchaseRequestStatus Status,long Version);
@@ -35,7 +39,7 @@ public sealed record PurchaseOrderView(Guid Id,string PurchaseOrderNumber,Guid S
 public interface IInventoryAdministration
 {
  Task<Result<IReadOnlyList<StockBalanceView>>> BalancesAsync(Guid?warehouseId,Guid?variantId,CancellationToken cancellationToken);Task<Result<IReadOnlyList<StockTransactionView>>> TransactionsAsync(Guid?warehouseId,Guid?variantId,CancellationToken cancellationToken);Task<Result<StockTransactionView>> ReceiveAsync(StockMovementCommand command,CancellationToken cancellationToken);Task<Result<StockTransactionView>> IssueAsync(StockMovementCommand command,StockTransactionType type,CancellationToken cancellationToken);Task<Result<StockTransactionView>> AdjustAsync(StockMovementCommand command,bool increase,CancellationToken cancellationToken);Task<Result<ReserveStockResult>> ReserveAsync(ReserveStockCommand command,CancellationToken cancellationToken);Task<Result<ReservationView>> ReleaseAsync(Guid id,ReleaseReservationCommand command,CancellationToken cancellationToken);Task<Result<ReservationView>> IssueReservedAsync(Guid id,IssueReservationCommand command,CancellationToken cancellationToken);Task<Result<int>> ExpireAsync(CancellationToken cancellationToken);Task<Result<TransferView>> TransferAsync(TransferCommand command,CancellationToken cancellationToken);Task<Result<TransferView>> CompleteTransferAsync(Guid id,CompleteTransferCommand command,CancellationToken cancellationToken);
- Task<Result<IReadOnlyList<StockShortageView>>> ShortagesAsync(bool includeClosed,int limit,CancellationToken cancellationToken);Task<Result<IReadOnlyList<ReservationView>>> ReservationsAsync(bool includeClosed,int limit,CancellationToken cancellationToken);Task<Result<ReserveOrderInventoryResult>> ReserveOrderAsync(ReserveOrderInventoryCommand command,CancellationToken cancellationToken);
+ Task<Result<IReadOnlyList<StockShortageView>>> ShortagesAsync(bool includeClosed,int limit,CancellationToken cancellationToken);Task<Result<IReadOnlyList<ReservationView>>> ReservationsAsync(bool includeClosed,int limit,CancellationToken cancellationToken);Task<Result<ReserveOrderInventoryResult>> ReserveOrderAsync(ReserveOrderInventoryCommand command,CancellationToken cancellationToken);Task<Result<IssueOrderInventoryResult>> IssueOrderAsync(IssueOrderInventoryCommand command,CancellationToken cancellationToken);Task<Result<StockTransactionView>> ReturnAsync(ReturnStockCommand command,CancellationToken cancellationToken);Task<Result> ReleaseOrderReservationsInsideTransactionAsync(Guid orderId,CancellationToken cancellationToken);
 }
 public interface IPurchasingAdministration
 {
