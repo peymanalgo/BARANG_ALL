@@ -6,14 +6,16 @@ using BARANG.Core.Application.Abstractions.Companies;
 using BARANG.Core.Application.Abstractions.Transactions;
 using BARANG.Core.Application.Files;
 using BARANG.Core.Application.Workflow;
+using BARANG.Core.Application.Inventory;
 using BARANG.Core.Domain.Common;
 using BARANG.Core.Infrastructure.Persistence;
+using BARANG.Core.Infrastructure.Inventory;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace BARANG.Core.Infrastructure.Workflow;
 
-public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExecutor tx, ICompanyContext company, ICurrentActor actor, IArtworkFileAdministration files, TimeProvider clock) : IWorkflowDefinitionRuntime
+public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExecutor tx, ICompanyContext company, ICurrentActor actor, IArtworkFileAdministration files, InventoryAdministration inventory, TimeProvider clock) : IWorkflowDefinitionRuntime
 {
     private Guid Company => company.CompanyId is { } id && id != Guid.Empty ? id : throw new InvalidOperationException("Company context is required.");
     private Guid Actor => Guid.TryParse(actor.Actor.UserId, out Guid id) ? id : throw new InvalidOperationException("Actor context is required.");
@@ -38,11 +40,20 @@ public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExec
     public Task<Result<object>> CompleteTaskAsync(Guid id, string? resultJson, IReadOnlyList<DecisionAttachmentCommand>? attachments, long version, CancellationToken ct) => tx.ExecuteAsync(t => CompleteInside(id, resultJson, attachments, version, t), ct);
     private async Task<Result<object>> CompleteInside(Guid id, string? resultJson, IReadOnlyList<DecisionAttachmentCommand>? attachments, long version, CancellationToken ct)
     {
-        DbConnection c = db.Database.GetDbConnection(); if (c.State != ConnectionState.Open) await c.OpenAsync(ct); await SetCompany(c, ct); DbTransaction? tr = db.Database.CurrentTransaction?.GetDbTransaction(); Guid instance; Guid node; string status; Guid? owner; string nodeKey; await using (DbCommand q = CmdTx(c, "select workflow_instance_id,definition_node_id,node_key,status,claimed_by_user_id from barang.workflow_runtime_tasks where company_id=@company and id=@id for update", ("company", Company), ("id", id), tr)) await using (DbDataReader r = await q.ExecuteReaderAsync(ct)) { if (!await r.ReadAsync(ct)) return Result.Failure<object>(Error.NotFound("workflow.task.not_found")); instance = r.GetGuid(0); node = r.GetGuid(1); nodeKey = r.GetString(2); status = r.GetString(3); owner = r.IsDBNull(4) ? null : r.GetGuid(4); }
+        DbConnection c = db.Database.GetDbConnection(); if (c.State != ConnectionState.Open) await c.OpenAsync(ct); await SetCompany(c, ct); DbTransaction? tr = db.Database.CurrentTransaction?.GetDbTransaction(); Guid instance; Guid node; Guid orderId; string status; Guid? owner; string nodeKey; await using (DbCommand q = CmdTx(c, "select t.workflow_instance_id,t.definition_node_id,t.node_key,t.status,t.claimed_by_user_id,i.order_id from barang.workflow_runtime_tasks t join barang.workflow_instances i on i.id=t.workflow_instance_id and i.company_id=t.company_id where t.company_id=@company and t.id=@id for update", ("company", Company), ("id", id), tr)) await using (DbDataReader r = await q.ExecuteReaderAsync(ct)) { if (!await r.ReadAsync(ct)) return Result.Failure<object>(Error.NotFound("workflow.task.not_found")); instance = r.GetGuid(0); node = r.GetGuid(1); nodeKey = r.GetString(2); status = r.GetString(3); owner = r.IsDBNull(4) ? null : r.GetGuid(4); orderId = r.GetGuid(5); }
         if (status == "Completed") return Result.Success<object>(new { id, status }); if (owner != Actor) return Result.Failure<object>(Error.BusinessRule("workflow.task.not_owner"));
         JsonDocument? result = null; try { if (!string.IsNullOrWhiteSpace(resultJson)) result = JsonDocument.Parse(resultJson); } catch (JsonException) { return Result.Failure<object>(Error.Validation("workflow.task.invalid_result")); }
+        string? outcome = result?.RootElement.TryGetProperty("outcome", out var outcomeValue) == true && outcomeValue.ValueKind == JsonValueKind.String ? outcomeValue.GetString() : null;
+        if (nodeKey.Contains("InventoryReservation", StringComparison.OrdinalIgnoreCase))
+        {
+            if (result is null || !result.RootElement.TryGetProperty("warehouseId", out var warehouse) || warehouse.ValueKind != JsonValueKind.String || !Guid.TryParse(warehouse.GetString(), out Guid warehouseId)) return Result.Failure<object>(Error.Validation("inventory.reservation.warehouse_required"));
+            string key = result.RootElement.TryGetProperty("idempotencyKey", out var keyValue) && keyValue.ValueKind == JsonValueKind.String ? keyValue.GetString() ?? $"workflow:{id:N}" : $"workflow:{id:N}";
+            Result<ReserveOrderInventoryResult> reserved = await inventory.ReserveOrderInsideTransactionAsync(new(orderId, warehouseId, key), ct);
+            if (reserved.IsFailure) return Result.Failure<object>(reserved.Error);
+            resultJson = JsonSerializer.Serialize(new { outcome, warehouseId, idempotencyKey = key, reservations = reserved.Value.Reservations });
+        }
         await using (DbCommand u = CmdTx(c, "update barang.workflow_runtime_tasks set status='Completed',completed_at_utc=@now,completed_by_user_id=@actor,result_json=@result::jsonb,version=version+1 where company_id=@company and id=@id and version=@version", ("now", Now), ("actor", Actor), ("result", resultJson ?? "{}"), ("company", Company), ("id", id), ("version", version), tr)) if (await u.ExecuteNonQueryAsync(ct) != 1) return Result.Failure<object>(Error.Concurrency("workflow.task.concurrency"));
-        string? outcome = result?.RootElement.TryGetProperty("outcome", out var outcomeValue) == true && outcomeValue.ValueKind == JsonValueKind.String ? outcomeValue.GetString() : null; Guid historyId = await History(c, tr, instance, id, "TaskCompleted", resultJson, ct); await SaveAttachments(c, tr, historyId, instance, id, resultJson, attachments, ct); await CreateNextTasks(c, tr, instance, await VersionForInstance(c, tr, instance, ct), node, ct, outcome); return Result.Success<object>(new { id, status = "Completed" });
+        Guid historyId = await History(c, tr, instance, id, "TaskCompleted", resultJson, ct); await SaveAttachments(c, tr, historyId, instance, id, resultJson, attachments, ct); await CreateNextTasks(c, tr, instance, await VersionForInstance(c, tr, instance, ct), node, ct, outcome); return Result.Success<object>(new { id, status = "Completed" });
     }
 
     public async Task<Result<object>> EligibleTasksAsync(CartableTaskQuery query, CancellationToken ct) => await TaskPage(query, false, ct);

@@ -219,6 +219,15 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 
 **وضعیت STEP 1:** قرارداد و شواهد آماده است؛ application integrations عمداً اصلاح نشده‌اند.
 
+## الحاقیه STEP 3 — قرارداد رزرو اتمیک موجودی (مصوب)
+
+- Draft و Submit هیچ reservation یا stock deduction ایجاد نمی‌کنند؛ نقطهٔ رسمی رزرو فقط action مرحلهٔ `InventoryReservation` در `WorkflowDefinitionRuntime` است.
+- actor مجاز باید warehouse فعالِ همان CompanyContext را صریحاً انتخاب کند؛ جایگزینی خاموش، cross-company و aggregation بین warehouseها ممنوع است.
+- availability برای هر `CompanyId + WarehouseId + ProductVariantId + UomCode` برابر usable physical stock منهای reservationهای فعال است؛ blocked stock دوباره از آن کسر نمی‌شود.
+- demand هم‌کلید برای check تجمیع می‌شود، اما reservationها برای هر `OrderItemId` جدا ثبت می‌شوند. همهٔ اقلام در یک transaction و با lock مرتب stock key ثبت می‌شوند؛ کمبود هر قلم کل درخواست را rollback می‌کند و task باز می‌ماند.
+- `OrderId` از workflow task و `OrderItemId` دقیق از order خوانده می‌شود؛ quantity اعشاری و UOM canonical snapshot می‌شوند. retry موفق همان نتیجه را برمی‌گرداند؛ تغییر warehouse/quantity/variant پس از reservation با خطای روشن رد می‌شود.
+- reservation فیزیکی را کم نمی‌کند. مصرف و release/cancellation به STEP 4 تعلق دارند و در این STEP فعال نشده‌اند.
+
 ## الحاقیه STEP 2 — قرارداد هویت و واحد موجودی
 
 ### تصمیم‌های پیاده‌سازی‌شده

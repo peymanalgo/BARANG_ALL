@@ -157,3 +157,26 @@ database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخت
 منطق business application و operational data/migration تغییر نکرد. دو Dockerfile برای provenance، assertionهای stale E2E و تست diagnostics evidence تغییر کردند. deployment فقط pair محلی API/Backoffice را با volumeهای موجود recreate کرد؛ credentialها حفظ شدند. database ایزولهٔ `barang_step3_review_20261014_test` برای تست استفاده شد.
 
 برای تبدیل CONDITIONAL GO به GO، فقط تصمیم‌های بخش STEP 3 باید توسط مالک business تصویب و ثبت شوند؛ هیچ reservation integration جدیدی در این کار پیاده‌سازی نشد.
+
+## الحاقیه اجرای STEP 3 — وضعیت جاری این checkout
+
+### پیاده‌سازی واقعی
+
+- `InventoryAdministration.ReserveOrderAsync` و `ReserveOrderInsideTransactionAsync` به implementation canonical reservation اضافه شدند؛ سیستم موازی ساخته نشد.
+- `WorkflowDefinitionRuntime` در node دارای کلید `InventoryReservation` ابتدا warehouse و idempotency را از command می‌خواند، سپس همان سرویس را داخل transaction جاری اجرا می‌کند و فقط پس از موفقیت task را complete/advance می‌کند.
+- demand برای stock keyهای همسان تجمیع و lockها به ترتیب variant انجام می‌شوند؛ reservationهای distinct `OrderItemId` جدا هستند. کمبود با `inventory.reservation.shortage` و شرح ساختاریافتهٔ required/available/missing/UOM برمی‌گردد و هیچ row جدیدی ایجاد نمی‌شود.
+- retry با کلید durable به reservationهای قبلی بازمی‌گردد؛ warehouse، quantity یا variant ناسازگار با `inventory.reservation.request_mismatch` رد می‌شود. physical stock در reservation تغییر نمی‌کند.
+- Backoffice Cartable در stage رزرو، warehouse فعال را از API همان شرکت نشان می‌دهد و command را با loading/duplicate prevention موجود ارسال می‌کند؛ خطای shortage task را باز نگه می‌دارد. Order 360 از همان reservation read model استفاده می‌کند.
+- migration جدید اضافه نشد؛ زنجیرهٔ schema فعلی و UOM/identity STEP 2 بدون تغییر باقی ماند.
+
+### بررسی و تست جاری
+
+این نتایج مربوط به source جاری است، نه baseline تاریخی: branch `codex/step2-inventory-unit-contracts` در شروع روی `a35017aae256e5617768dd65725942673d92b4d0` بود و working tree فقط `.keys` نامرتبط و تغییرات این implementation را داشت. Release buildهای API و Backoffice هر دو ۰ warning/۰ error شدند؛ Unit **۲۲۲/۲۲۲** و Backoffice **۱۸۴/۱۸۴** سبز شدند. Integration با `BARANG_TEST_DB_CONNECTION` صریح روی `barang_step3_review_20261014_test` اجرا شد و **۱۲۶/۱۲۶** سبز شد؛ مدت اجرا ۳:۰۸ بود. اجرای بدون متغیر اتصال که پیش‌تر ۱۰۶ failure داده بود، failure پیکربندی محسوب می‌شود و جایگزین این نتیجه نیست.
+
+### Backup، migration و deployment
+
+قبل از تغییر source، backup موجود recovery بررسی شد: archive `D:\00_BARANG\barang_core_recovery_stopplan_20261012162450.backup` با `pg_restore --list` و ۱۷۲۵ TOC entry معتبر بود. این implementation migration جدید ندارد؛ plan recovery همان restore به DB ایزوله و اجرای full chain تا `20261013070735_EquipmentMappingMetadataAlignment` است. deployment توسعه باید فقط با compose project `barang-core`، volumeهای موجود و یک pair واحد API/Backoffice انجام شود؛ `barang_core` reset نمی‌شود.
+
+### تصمیم‌های باز
+
+مصرف فیزیکی، release در cancellation/reject/expiry، change بعد از consume، اتصال shortage به procurement، و gateهای production/QC/logistics عمداً STEP 4 یا later phase هستند و در STEP 3 تأیید نشده‌اند. تا اجرای browser authenticated روی دادهٔ ایزوله و ثبت digest/provenance pair جدید، نتیجهٔ STEP 3 **CONDITIONAL GO** است.

@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace BARANG.Core.Infrastructure.Inventory;
 #pragma warning disable CA1725,CA1862
-public sealed class InventoryAdministration(CoreDbContext db,ITransactionExecutor tx,ICompanyContext company,ICurrentActor actor,ICorrelationContext correlation,IAuditWriter audit,TimeProvider time):IInventoryAdministration,IPurchasingAdministration
+public sealed partial class InventoryAdministration(CoreDbContext db,ITransactionExecutor tx,ICompanyContext company,ICurrentActor actor,ICorrelationContext correlation,IAuditWriter audit,TimeProvider time):IInventoryAdministration,IPurchasingAdministration
 {
  private Guid Company=>company.RequireCompanyId();private Guid Actor=>Guid.TryParse(actor.Actor.UserId,out Guid id)?id:throw new InvalidOperationException("Authenticated actor required.");private DateTimeOffset Now=>time.GetUtcNow();private string Correlation=>correlation.CorrelationId??Guid.NewGuid().ToString("N");
  public Task<Result<IReadOnlyList<StockBalanceView>>>BalancesAsync(Guid?w,Guid?v,CancellationToken ct)=>tx.ExecuteAsync(async t=>{IQueryable<StockBalance>q=db.StockBalances.AsNoTracking();if(w is not null)q=q.Where(x=>x.WarehouseId==w);if(v is not null)q=q.Where(x=>x.ProductVariantId==v);return Result.Success<IReadOnlyList<StockBalanceView>>((await q.OrderBy(x=>x.WarehouseId).ThenBy(x=>x.ProductVariantId).ToListAsync(t)).Select(BalanceView).ToArray());},ct);

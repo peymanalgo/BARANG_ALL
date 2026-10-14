@@ -95,6 +95,10 @@ API و Backoffice از همین checkout با Release Docker build و deploy م�
 
 این برنامه برای مراحل ۲ تا ۱۵ آماده استفاده است، اما تصمیم‌های رزرو، consume، Finance approval، shortage-to-purchasing، QC receipt hold و return accounting باید قبل از implementation تأیید شوند. هیچ‌کدام از integrationهای فعلی در این STEP اصلاح نشده‌اند.
 
+## اجرای STEP 3 — reservation از مسیر واقعی workflow
+
+در این checkout policy رزرو اتمیک مصوب شد و پیاده‌سازی canonical آن در `InventoryAdministration` انجام شد. endpoint گروهی سفارش و action واقعی `WorkflowDefinitionRuntime.CompleteTaskAsync` از همان سرویس استفاده می‌کنند؛ task فقط پس از persistence موفق complete می‌شود. migration جدید لازم نشد، چون schema STEP 2 شامل `uom_code` و unique idempotency موجود بود. تست اتمیک باید روی PostgreSQL ایزوله، با دو order رقابتی، shortage چندقلمی، retry و عدم تغییر physical stock اجرا و در report ثبت شود.
+
 ## وضعیت اجرای STEP 2 — هویت و قرارداد واحد موجودی
 
 STEP 2 از نظر تغییرات source، مدل و قرارداد API، migration قابل‌ردیابی و تست واحد در این شاخه پیاده‌سازی شده است. واحد مرجع `Product.UnitOfMeasureCode` است و تبدیل ضمنی یا generic conversion ایجاد نشده است. رزرو، Purchase Request و Purchase Order اکنون واحد را نگه می‌دارند و ورودی واحد ناسازگار را رد می‌کنند.
