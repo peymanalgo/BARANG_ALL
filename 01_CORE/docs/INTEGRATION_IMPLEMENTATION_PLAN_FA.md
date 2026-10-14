@@ -126,6 +126,10 @@ Probe build روی snapshot working tree اصلی پس از قراردادن con
 
 ### دروازهٔ اجباری جلوگیری از regression برای گام‌های ۲ تا ۱۵
 
+### الحاقیه پذیرش STEP 4 جاری
+
+endpointهای assignment مورد استفادهٔ Organization Chart تکمیل و صفحهٔ Notifications و assertion منوی User Access اصلاح شدند. با این حال graph منتشرشده هنوز مرحلهٔ واقعی `InventoryIssue` و policy routing آن را ندارد؛ adjustment اتمیک پیش از issue و return-document UI نیز هنوز end-to-end پذیرفته نشده‌اند. full Integration جاری نیز failureهای ثبت‌شده در `docs/STEP4_ACCEPTANCE_REPORT_FA.md` دارد، بنابراین STEP 4 بسته و STEP 5 آغاز نمی‌شود.
+
 هر گام باید قبل و بعد از تغییر، checkout/commit، context کامپوز، imageهای API و Backoffice، تاریخچهٔ migration و backup قابل‌بازگردانی را ثبت کند. قراردادهای frontend/API، DTO و serializer، مدل EF و schema باید از یک baseline سازگار ساخته شوند. تست‌های ماژول تغییرکرده، تست‌های contract بین API و Backoffice و smokeهای cross-module باید اجرا شوند؛ هر تغییر schema باید روی PostgreSQL تازه و یک نسخهٔ restore‌شدهٔ نماینده اعتبارسنجی شود. فقط یک جفت Release سازگار deploy می‌شود و پس از آن acceptance احراز هویت‌شدهٔ واقعی اجرا می‌گردد؛ health check یا HTTP 200 به‌تنهایی کافی نیست. حساب مدیر توسعه، دادهٔ موجود و تغییرات نامرتبط حفظ می‌شوند و تا وقتی regression تأییدشده وجود دارد، گام بسته نمی‌شود.
 
 ### الحاقیه STEP 4 — issue، release و return

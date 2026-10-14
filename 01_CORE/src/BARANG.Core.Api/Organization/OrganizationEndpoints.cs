@@ -40,6 +40,10 @@ public static class OrganizationEndpoints
         RouteGroupBuilder chart = group.MapGroup("/chart").RequireAuthorization(SecurityPermissions.OrganizationUnitManage);
         chart.MapGet("/", async (Guid? highlightedPersonId, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.GetChartAsync(highlightedPersonId, ct)));
         chart.MapGet("/companies/{companyId:guid}", async (Guid companyId, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.GetCompanyChartAsync(companyId, ct)));
+        chart.MapPost("/assignments", async (CreateAssignmentRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.AssignPersonAsync(new(r.PersonId, r.OrganizationalUnitId, r.ManagerAssignmentId, r.PositionCode, r.PositionTitle, r.IsPrimary, r.StartDate, r.EndDate, r.Notes), ct), true));
+        chart.MapPut("/assignments/{id:guid}", async (Guid id, CreateAssignmentRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.ChangeAssignmentAsync(id, new(r.PersonId, r.OrganizationalUnitId, r.ManagerAssignmentId, r.PositionCode, r.PositionTitle, r.IsPrimary, r.StartDate, r.EndDate, r.Notes), r.Version, ct)));
+        chart.MapPut("/assignments/{id:guid}/activation", async (Guid id, ActivationRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.SetAssignmentActiveAsync(id, r.IsActive, r.Version, ct)));
+        chart.MapDelete("/assignments/{id:guid}", async (Guid id, long version, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.RemoveAssignmentAsync(id, version, ct)));
         RouteGroupBuilder persons = group.MapGroup("/persons").RequireAuthorization(SecurityPermissions.OrganizationUnitManage);
         persons.MapGet("/", async (string? search, int? take, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.SearchPersonsAsync(search, take ?? 30, ct)));
         persons.MapGet("/{id:guid}", async (Guid id, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.GetPersonAsync(id, ct)));
@@ -53,6 +57,7 @@ public static class OrganizationEndpoints
     }
 
     private static OrganizationResult<T> Map<T>(Result<T> result, bool created = false) => new(result, created);
+    private static OrganizationVoidResult Map(Result result) => new(result);
 
     private sealed class OrganizationResult<T>(Result<T> result, bool created) : IResult
     {
@@ -70,6 +75,17 @@ public static class OrganizationEndpoints
             return httpContext.Response.WriteAsJsonAsync(details, httpContext.RequestAborted);
         }
     }
+
+    private sealed class OrganizationVoidResult(Result result) : IResult
+    {
+        public Task ExecuteAsync(HttpContext httpContext)
+        {
+            if (result.IsSuccess) { httpContext.Response.StatusCode = StatusCodes.Status204NoContent; return Task.CompletedTask; }
+            ICorrelationContext correlation = httpContext.RequestServices.GetRequiredService<ICorrelationContext>();
+            ProblemDetails details = ApiProblemDetailsMapper.Create(result.Error, correlation.CorrelationId ?? httpContext.TraceIdentifier, httpContext.Request.Path);
+            return Results.Problem(details).ExecuteAsync(httpContext);
+        }
+    }
 }
 
 public sealed record CreateCompanyRequest(string Code, string DisplayName);
@@ -83,3 +99,4 @@ public sealed record CreateUnitRequest(string Code, string DisplayName, Guid? Br
 public sealed record UpdateUnitRequest(string DisplayName, Guid? BranchId, Guid? ParentId, long Version);
 public sealed record CreateWarehouseRequest(string Code, string Name, WarehouseType Type, Guid? BranchId);
 public sealed record UpdateWarehouseRequest(string Name, WarehouseType Type, Guid? BranchId, long Version);
+public sealed record CreateAssignmentRequest(Guid PersonId, Guid OrganizationalUnitId, Guid? ManagerAssignmentId, string PositionCode, string PositionTitle, bool IsPrimary, DateOnly? StartDate, DateOnly? EndDate, string? Notes, long Version = 0);
