@@ -180,3 +180,15 @@ database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخت
 ### تصمیم‌های باز
 
 مصرف فیزیکی، release در cancellation/reject/expiry، change بعد از consume، اتصال shortage به procurement، و gateهای production/QC/logistics عمداً STEP 4 یا later phase هستند و در STEP 3 تأیید نشده‌اند. تا اجرای browser authenticated روی دادهٔ ایزوله و ثبت digest/provenance pair جدید، نتیجهٔ STEP 3 **CONDITIONAL GO** است.
+
+## شواهد نهایی deployment و browser
+
+- commit کامل source/deployed: `810b9c089cb2f2357c3e28cb31603a0009cfc5ba`؛ image API: `sha256:7aa15cc8f60c634dbf9ab4f0cbdad02bcc11df75335fe6636a9182486bf67e38`؛ image Backoffice: `sha256:c1e051f3c4591e08439dcb322e615a53fd42f28c5e2c849935b6258092990961`. هر دو container environment و startup log همین SHA را نشان دادند.
+- Compose project/context: `barang-core` / `D:\00_BARANG\step2-clean\01_CORE\compose.yaml`. API واقعی `barang-core-api-1` روی `127.0.0.1:8080` و Backoffice واقعی `barang-core-backoffice-1` روی `0.0.0.0:5100` است؛ Backoffice به `http://api:8080` متصل است. postgres/redis/minio سالم و volumeهای موجود حفظ شدند.
+- `GET /health/ready` API و `/login` Backoffice هر دو HTTP 200/healthy بودند. هیچ migration جدیدی اعمال نشد و history توسعه تا `20261013070735_EquipmentMappingMetadataAlignment` باقی ماند.
+- browser readiness با `BARANG_E2E_BASE_URL=http://localhost:5100` و Chrome سیستم اجرا شد: shell **موفق**؛ culture برای fa، ar و en **۳/۳ موفق**؛ مجموع **۴/۴ موفق**. screenshot و traceهای هر چهار سناریو در `D:\00_BARANG\step2-clean\artifacts\step3-readiness-browser` ثبت شدند. اجرای اول با Chromium bundle ناموجود ۴ failure محیطی داشت؛ CDN آن HTTP 403 منطقه‌ای داد، اما اجرای Chrome path همان تست‌ها را سبز کرد.
+- baseline regression gate پس از implementation: API/Backoffice Release build **۰ warning/۰ error**، Unit **۲۲۲/۲۲۲**، Backoffice **۱۸۴/۱۸۴**، isolated PostgreSQL integration **۱۲۶/۱۲۶**. هیچ assertion تضعیف نشد.
+
+### نتیجهٔ پذیرش STEP 3
+
+**CONDITIONAL GO** برای reservation اتمیک مصوب: مسیر actual workflow، rollback اتمیک، deterministic locking، retry identity، انتخاب warehouse و UI failure behavior پیاده شده و baseline regression ندارد. تأیید GO نهایی به acceptance authenticated داده‌محور روی رکوردهای کاملاً ایزوله برای success/shortage/retry نیاز دارد؛ برای جلوگیری از mutation رکوردهای موجود، این سناریو در DB توسعه اجرا نشد.
