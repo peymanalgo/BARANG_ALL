@@ -192,3 +192,7 @@ database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخت
 ### نتیجهٔ پذیرش STEP 3
 
 **CONDITIONAL GO** برای reservation اتمیک مصوب: مسیر actual workflow، rollback اتمیک، deterministic locking، retry identity، انتخاب warehouse و UI failure behavior پیاده شده و baseline regression ندارد. تأیید GO نهایی به acceptance authenticated داده‌محور روی رکوردهای کاملاً ایزوله برای success/shortage/retry نیاز دارد؛ برای جلوگیری از mutation رکوردهای موجود، این سناریو در DB توسعه اجرا نشد.
+
+### اصلاح provenance نهایی پس از تکمیل نمایش shortage
+
+آخرین commit و pair واقعاً running اکنون `cfc8e786e97d99b42172b1e776a195ab513929d6` است. digest نهایی API `sha256:ac02d5b4d5037b29b317c0d99fafea582885f6a2a6918a2511f5b8e07de39ccd` و Backoffice `sha256:67b578bac309a23636ed165f83c2d97404a212656c22e72d61109b50a710c059` است؛ هر دو `BARANG_BUILD_COMMIT` یکسان دارند و هر دو healthy هستند. browser gate دوباره روی همین pair اجرا شد و **۴/۴ موفق** ماند. نسخهٔ قبلی `810b9c...` فقط provenance intermediate بود و ملاک نهایی نیست.
