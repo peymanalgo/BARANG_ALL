@@ -231,3 +231,41 @@ database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخت
 **STEP 3 feature acceptance: PASS.** رفتار مصوب reservation از UI واقعی تا service canonical و persistence اثبات شد: atomic all-items، aggregate availability برای stock key مشترک، عدم کسر physical stock، deterministic concurrency، retry idempotent، mismatch rejection و rollback failure.
 
 این PASS شامل STEP4 نیست. مصرف فیزیکی، cancellation/release/expiry integration، procurement automation، QC/logistics و سیاست مالی جدید عمداً اجرا یا تأیید نشده‌اند. blocker باقی‌مانده برای release-wide sign-off فقط بازتولید full integration suite در test-host سالم است؛ defect اپلیکیشنِ بازتولیدشده در مسیر STEP3 باقی نمانده است.
+
+## بسته‌شدن regression و development deployment — current source
+
+### علت و رفع failureهای full integration
+
+اولین اجرای current-source روی PostgreSQL تازه `106/126` failure و `20/126` pass داشت. هر ۱۰۶ failure در `PostgreSqlDatabaseFixture.InitializeAsync`، هنگام `Database.MigrateAsync` و قبل از اجرای endpoint تست بود؛ exception مشترک `Npgsql.PostgresException 42704: role "barang_test_app" does not exist` بود، endpoint status نداشت (`N/A`) و هیچ failure application-level نبود. نام کامل ۱۰۶ تست در `TestResults/step3-full.trx` ثبت شده؛ دسته‌ها شامل Lookup، MultiCompany، Artwork، Audit، BusinessProfile، Catalog، Customer، Database، Finance، Identity/RBAC، Inventory، Logistics، Pricing، Order، Production، Quality، PublicClient، Supplier/Sourcing و Workflow بودند. بنابراین 404/500 گزارش قبلی ناشی از test-host ناقص بود و با application regression اشتباه نشد.
+
+ریشهٔ قابل‌بازدید: `docker/postgres/init-app-role.sh` در checkout ویندوز CRLF می‌شد، اما PostgreSQL entrypoint فایل `.sh` را با shebang مستقیم اجرا می‌کند؛ role ساخته نمی‌شد و migration به role ناموجود ارجاع می‌داد. `.gitattributes` با `docker/postgres/init-app-role.sh text eol=lf` اضافه شد. پس از ساخت role در disposable PostgreSQL و سپس اصلاح دائمی EOL، full suite دوباره اجرا شد:
+
+- `BARANG.Core.IntegrationTests`: **126/126 PASS، 0 failure، 0 skipped، 3:11** (`step3-full-after-eol.trx`).
+- اجرای قبلی پس از role repair نیز **126/126 PASS، 3:08** بود.
+
+### current-source regression gate
+
+- `dotnet build BARANG.Core.slnx -c Release --no-restore`: **PASS، 0 warning/0 error**.
+- Unit: **222/222 PASS**.
+- Backoffice: **184/184 PASS**.
+- Full isolated PostgreSQL integration: **126/126 PASS**.
+- Development authenticated browser smoke: `GlobalLanguageSwitchUpdatesLocalizedShellAndDirection` (fa/ar/en)، `GlobalDesignSystemShellUsesLoginPaletteAndRemainsCompactResponsive` و `LoginPageE2ETests`: **10/10 PASS**.
+- STEP3 isolated feature acceptance قبلی روی source implementation commit `647eebe` و گزارش‌شده در commit `2e81664` سبز بود؛ تغییر current فقط `.gitattributes` است و atomicity/concurrency/retry/rollback/UOM implementation دست‌نخورده باقی ماند.
+
+### development deployment پذیرش‌شده
+
+- Checkout/source commit: `f31900eeae016ea3e7eaef29afd9d146a5470363`.
+- Compose project/context: `barang-core` / `D:\00_BARANG\step2-clean\01_CORE\compose.yaml`.
+- API container `barang-core-api-1`: image `sha256:9015f6633afe21c291c52dcdcfc97fc6686784eb8dd2918830dbed0c5bf8f106`، `BARANG_BUILD_COMMIT=f31900eeae016ea3e7eaef29afd9d146a5470363`.
+- Backoffice container `barang-core-backoffice-1`: image `sha256:c0021b785ea3e644d94b19e734d786fff17a482f34f9f22dde1e743215188229`، همان provenance و `CoreApi__BaseUrl=http://api:8080`.
+- API `http://localhost:8080/health/ready` و Backoffice `http://localhost:5100/login`: هر دو HTTP 200؛ هر پنج container توسعه healthy هستند.
+- volumeهای PostgreSQL/Redis/MinIO/keys حفظ شدند؛ شمارش read-only سفارش‌ها پس از deploy `orders=60` و `order_items=65` باقی ماند. admin credentials و local keys تغییر نکردند.
+- backup توسعه با `pg_restore --list` معتبر و دارای **1735** خط TOC بود؛ migration history توسعه بدون تغییر تا `20261013070735_EquipmentMappingMetadataAlignment` و **81** migration باقی ماند.
+
+### نتیجه نهایی
+
+- **STEP3 feature acceptance: PASS**؛ شواهد isolated atomicity، deterministic concurrency، retry، rollback، UOM mismatch و UI قبلی حفظ شد.
+- **Full baseline regression acceptance: PASS**؛ full suite current-source اکنون 126/126 است.
+- **Development-deployment acceptance: PASS**؛ pair coherent با provenance کامل و smoke/browser سبز است.
+- Remaining failures: **هیچ failure جاری شناخته‌شده‌ای وجود ندارد**. failureهای 106تایی قبلی با علت test-host اصلاح و با full rerun تأیید شدند.
+- **STEP4 می‌تواند آغاز شود**، مشروط به ثبت تصمیم شروع مرحلهٔ بعد؛ این turn هیچ consumption، cancellation release، procurement automation یا تغییر مالی STEP4 را اجرا نکرد.
