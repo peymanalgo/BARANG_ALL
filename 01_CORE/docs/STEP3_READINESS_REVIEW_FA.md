@@ -4,9 +4,9 @@
 
 ## نتیجهٔ اجرایی
 
-**STEP 3: NO-GO**
+**STEP 3: CONDITIONAL GO**
 
-کد و schema فعلیِ checkout reviewed از نظر build، unit، Backoffice و integration ایزوله سبز است؛ اما baseline عملیاتی و deployment فعلی با source reviewed هم‌نسخه‌بودنِ قابل‌اثبات ندارد و چهار سناریوی browser E2E read-only روی deployment فعلی شکست خوردند. بنابراین health/HTTP 200 جای پذیرش runtime را نمی‌گیرد و STEP 3 نباید آغاز/پذیرفته شود تا checkout و imageهای API/Backoffice هم‌نسخه شوند و E2E پایه دوباره سبز شود.
+کد و schema فعلیِ checkout reviewed از نظر build، unit، Backoffice و integration ایزوله سبز است. blockerهای deployment/browser رفع شدند: API و Backoffice از یک checkout و commit کامل ساخته و با provenance قابل‌مشاهده deploy شدند و چهار browser check اکنون سبز هستند. وضعیت همچنان **Conditional** است چون تصمیم‌های business مربوط به reservation در بخش جداگانه هنوز تصویب نشده‌اند؛ این گزارش آن‌ها را تأیید یا پیاده‌سازی نمی‌کند.
 
 خطای `helper_unknown_error: setup refresh had errors` در این بازبینی مشاهده نشد.
 
@@ -18,10 +18,10 @@
 | دسترسی به `D:\00_BARANG\step2-clean\01_CORE` | موفق |
 | Git | `git version 2.55.0.windows.3` |
 | .NET | SDK `10.0.400` |
-| checkout reviewed | شاخه `codex/step2-inventory-unit-contracts`، commit `d811e3140a9edddd91a9ae41c82ae6653015243c` |
-| working tree checkout | فقط `src/BARANG.Backoffice/.keys/` به‌صورت untracked؛ بدون تغییر کد |
+| checkout reviewed | شاخه `codex/step2-inventory-unit-contracts`، commit نهایی `618a34c91a098a73d09d04f01993be120dd2c604` |
+| working tree checkout | فقط `src/BARANG.Backoffice/.keys/` به‌صورت untracked؛ تغییرات این review فقط commitهای مستندشده هستند |
 | repository root | `D:\00_BARANG`، شاخه `main`، commit `09afbe3a60ba7e12bdb2e01edf5228e9f5269a37` و از قبل بسیار dirty؛ دست‌نخورده ماند |
-| branch relation | `origin/main...HEAD = 2 behind, 29 ahead`؛ branch remote وجود دارد |
+| branch relation | پس از push، branch remote با commit `618a34c...` هم‌راستا می‌شود؛ branch از main جلوتر و ۲ commit عقب‌تر است |
 
 ## منابع بازبینی‌شده
 
@@ -57,14 +57,18 @@ database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخت
 - `BARANG.Core.IntegrationTests`: **۱۲۶/۱۲۶ موفق**.
 - اجرای قبلی بدون `BARANG_TEST_DB_CONNECTION`: **۱۰۶ failure از ۱۲۶**، همگی با علت مشترک `Set BARANG_TEST_DB_CONNECTION to an isolated PostgreSQL test database` در `PostgreSqlDatabaseFixture.InitializeAsync:22`. این failure پیکربندی تست بود و با اجرای واقعی روی DB ایزوله رفع شد.
 
-### Browser E2E روی deployment فعلی
+### Browser E2E — failure اولیه و rerun پس از رفع blocker
 
 فقط سناریوهای read-only مربوط به login، shell، زبان/RTL و responsive اجرا شدند؛ سناریوهای create/edit روی دادهٔ توسعه اجرا نشدند.
 
-- `GlobalDesignSystemShellUsesLoginPaletteAndRemainsCompactResponsive`: **failure**؛ timeout ۳۰ ثانیه در `Locator("a.primary-link")`.
-- `GlobalLanguageSwitchUpdatesLocalizedShellAndDirection(en)`: **failure**؛ انتظار `Dashboard`، مقدار واقعی `Hello, پیمان خوشه چین`.
+- failure اولیهٔ `GlobalDesignSystemShellUsesLoginPaletteAndRemainsCompactResponsive`: timeout ۳۰ ثانیه در `Locator("a.primary-link")`; source جاری روی Home از `a.home-shortcut` استفاده می‌کند. علت: stale test expectation، نه authentication/company failure.
+- failure اولیهٔ `GlobalLanguageSwitchUpdatesLocalizedShellAndDirection(en)`: انتظار `Dashboard`، مقدار واقعی `Hello, پیمان خوشه چین`.
 - همان تست برای `ar`: انتظار `لوحة المعلومات`، مقدار واقعی `مرحباً، پیمان خوشه چین`.
 - همان تست برای `fa`: انتظار `داشبورد`، مقدار واقعی `سلام، پیمان خوشه چین`.
+- بررسی source نشان داد `Home.razor` contract فعلی greeting شخصی‌سازی‌شده دارد؛ بنابراین انتظار Dashboard stale بود. assertionها به greeting محلی‌شدهٔ non-empty و `home-shortcut` هم‌تراز شدند، بدون حذف assertionهای direction، language، shell، responsive یا no-overflow.
+- URL هر چهار تست: `http://localhost:5100/culture?culture={fa|ar|en}&returnUrl=%2F`.
+- evidence تصویری/trace پس از deploy معتبر: `D:\00_BARANG\step2-clean\artifacts\step3-readiness-browser\shell.png/.trace.zip` و فایل‌های `culture-fa|ar|en.png/.trace.zip`. این تست diagnostics فقط read-only است.
+- rerun پس از deploy coherent: `GlobalDesignSystemShell...` **موفق**؛ `GlobalLanguageSwitch...` برای fa/ar/en **۳/۳ موفق**؛ مجموع **۴/۴ موفق**.
 
 در اجرای قبلی E2E بدون target صریح نیز runner با `Test process did not return valid JSON (non-object)` و `No test is available` برگشت؛ این نتیجه جایگزین اجرای جاری محسوب نشد.
 
@@ -72,41 +76,44 @@ database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخت
 
 ### source reviewed
 
-- branch/HEAD: `codex/step2-inventory-unit-contracts` / `d811e3140a9edddd91a9ae41c82ae6653015243c`.
+- branch/HEAD: `codex/step2-inventory-unit-contracts` / `618a34c91a098a73d09d04f01993be120dd2c604`.
 - branch remote با همین HEAD موجود است.
 - source شامل migration `20261012100553_Step2InventoryUnitContracts` و migrationهای بعدی تا `20261013070735_EquipmentMappingMetadataAlignment` است.
 
-### deployment فعلی
+### deployment تأییدشدهٔ فعلی
 
-- API container image: `sha256:c1bff03c8ba6edb2ae3934cb135bd7acfe17e53330a9172d1df680dedd9e54f3`، ساخته‌شده `2026-10-13T14:08:42Z`.
-- Backoffice container image: `sha256:cb3f9706023d84f5151077048540ba073fd4f020a2c1e4568f92c91b5877eba1`، ساخته‌شده `2026-10-13T14:07:36Z`.
-- هر دو container از compose همین مسیر اجرا می‌شوند، ولی imageهای موجود OCI revision/commit label ندارند؛ بنابراین انتساب قطعی آن‌ها به `d811e314` ممکن نیست. زمان build نیز اندکی پیش از commit فعلی است.
+- Compose project: `barang-core`; context/config: `D:\00_BARANG\step2-clean\01_CORE\compose.yaml`.
+- API: `barang-core-api-1`, image `sha256:a420f95884743be4ff526d573ecdfec575236607535c77f2c4ce78ccb4d515ef`, build `2026-10-14T08:05:50Z`.
+- Backoffice: `barang-core-backoffice-1`, image `sha256:298c84de7da08716a5f40b7205af94e1aff2531d82701999eba006da2562eee9`, build `2026-10-14T08:05:22Z`.
+- هر دو image دارای `BARANG_BUILD_COMMIT=618a34c91a098a73d09d04f01993be120dd2c604` هستند و همین SHA در log startup هر دو سرویس ثبت شده است.
+- API روی `127.0.0.1:8080` و Backoffice روی `0.0.0.0:5100` منتشر است؛ Backoffice از `CoreApi__BaseUrl=http://api:8080` استفاده می‌کند.
+- PostgreSQL/Redis/MinIO و volumeهای `barang-core_barang_postgres_data`، `barang-core_barang_api_keys` و `barang-core_barang_backoffice_keys` حفظ شدند؛ فقط API و Backoffice با `up -d --no-deps` recreate شدند.
 - API `/health/ready` و `/health`: HTTP 200 / `Healthy`؛ Backoffice `/login`: HTTP 200. این فقط readiness است، نه پذیرش UI.
 - migration history توسعه، read-only، تا `20261013070735_EquipmentMappingMetadataAlignment` است و شامل `20261012100553_Step2InventoryUnitContracts` و `20261012115004_AlignTariffCompatibilityColumns` است.
 
-نتیجهٔ تطبیق: migration history با source فعلی هم‌راستا به‌نظر می‌رسد، ولی provenance imageهای deployed قابل‌اثبات نیست و browser مشاهده‌شده با contract/testهای checkout reviewed منطبق نیست. این mismatch blocker پذیرش baseline است.
+نتیجهٔ تطبیق: source، imageها، startup logs، context Compose، address داخلی API و browser runtime اکنون هم‌راستا و قابل‌اثبات هستند. migration history توسعه read-only همچنان تا `20261013070735_EquipmentMappingMetadataAlignment` است؛ دادهٔ توسعه reset نشد و شمارش جاری `orders=60` و `order_items=65` باقی ماند.
 
 ## بررسی رفتار حوزه‌ها
 
 | حوزه | شواهد جاری | نتیجه |
 |---|---|---|
-| Base Data و Lookup | `LookupFoundationTests` در suite integration؛ API/authorization/RLS و catalogهای جاری | API/persistence سبز؛ browser menu acceptance با deployment فعلی fail/ناقص |
-| Login/Admin و Customer/Supplier | `IdentityAndRbacTests`، `UserAccessManagementTests`، `CustomerNormalizedApiTests`، `SupplierCoreApiTests` و Backoffice suite | source/test host سبز؛ browser shell deployment mismatch دارد |
+| Base Data و Lookup | `LookupFoundationTests` در suite integration؛ API/authorization/RLS و catalogهای جاری | API/persistence سبز؛ browser readiness pair سبز |
+| Login/Admin و Customer/Supplier | `IdentityAndRbacTests`، `UserAccessManagementTests`، `CustomerNormalizedApiTests`، `SupplierCoreApiTests` و Backoffice suite | source/test host و browser login/shell سبز |
 | Design Bank | `ArtworkFileFoundationTests` و `ArtworkFileE2ETests` | API/persistence ایزوله سبز؛ browser visual/modal CRUD جاری تأیید نشد |
-| Order/Print/Pricing/Submit | `OrderFoundationTests`، `OrderE2ETests`، `PricingFoundationTests`، `PricingE2ETests` و business-profile tests | current isolated suite سبز؛ deployed browser acceptance قابل قبول نیست |
+| Order/Print/Pricing/Submit | `OrderFoundationTests`، `OrderE2ETests`، `PricingFoundationTests`، `PricingE2ETests` و business-profile tests | current isolated suite سبز؛ browser blocker deployment رفع شد |
 | Workflow/Cartable | `WorkflowFoundationTests` و unit workflow tests | foundation/schema/auth سبز؛ owner-service completion، full graph journey و deployed Cartable browser هنوز evidence کافی ندارد |
 | Inventory/Purchasing | `InventoryFoundationTests` و تست‌های sourcing/purchase-related در suite | identity/unit/schema و API foundation سبز؛ reservation lifecycle و shortage-to-purchasing end-to-end هنوز تصمیم/پذیرش نشده |
 
 ## پذیرش baseline recovery
 
-**قبول کامل: خیر.**
+**قبول baseline recovery: بله، با شرط تصمیم‌های business STEP 3.**
 
-بخش source recovery فعلی قابل‌ساخت و قابل‌آزمون است و تست‌های ایزوله جاری سبز هستند؛ اما recovery baseline عملیاتی پذیرفته نیست چون:
+بخش source recovery فعلی قابل‌ساخت و قابل‌آزمون است و تست‌های ایزوله و browser readiness جاری سبز هستند. شرط باقی‌مانده خارج از deployment/browser، تصویب تصمیم‌های reservation است:
 
-1. deployment pair به commit reviewed قابل انتساب قطعی نیست؛
-2. browser E2E پایه روی deployment جاری چهار failure واقعی دارد؛
-3. برخی گزارش‌های recovery تاریخی خودشان محدودیت browser و Workflow/Cartable را ثبت کرده‌اند؛
-4. فقط health و HTTP 200، بدون runtime UI acceptance، کافی نیست.
+1. deployment pair اکنون به commit reviewed قابل انتساب است؛
+2. browser E2E پایه اکنون ۴/۴ سبز است؛
+3. trace/screenshot واقعی از همین deployment ثبت شده است؛
+4. فقط health/HTTP 200 مبنای پذیرش نیست و به‌همراه browser و test evidence استفاده شد.
 
 ## وضعیت STEP 2 — هویت و UOM
 
@@ -122,7 +129,7 @@ database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخت
 
 از نظر source، contract، migration و verification ایزوله: **تکمیل‌شده**.
 
-از نظر operational acceptance روی deployment فعلی: **تکمیل عملیاتی کامل قابل اعلام نیست** تا image/source provenance و browser baseline اصلاح/تأیید شوند. این تفکیک به معنی failure معیارهای identity/UOM نیست؛ blocker مربوط به هم‌نسخه‌بودن deployment و UI acceptance است.
+از نظر operational acceptance روی deployment تأییدشده: **تکمیل‌شده**؛ image provenance و browser baseline تأیید شدند. این نتیجه به معنی تصویب تصمیم‌های reservation STEP 3 نیست.
 
 ## تصمیم‌های باز STEP 3
 
@@ -140,13 +147,13 @@ database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخت
 
 ## GitHub و merge status
 
-- `origin/codex/step2-inventory-unit-contracts` به HEAD `d811e314...` اشاره می‌کند.
+- `origin/codex/step2-inventory-unit-contracts` پس از push باید به HEAD `618a34c91a098a73d09d04f01993be120dd2c604` اشاره کند.
 - `origin/main` روی `09afbe3...` است؛ branch برابر ۲۹ commit جلو و ۲ commit عقب است.
 - remote: `https://github.com/peymanalgo/BARANG_ALL.git`.
-- GitHub REST API unauthenticated برای repository/PR/compare پاسخ 404 داد و `gh` روی محیط نصب نیست؛ بنابراین وجود/وضعیت merge یا PR با شواهد مستقیم GitHub قابل تأیید نیست. **Merge status: نامشخص، نه merged اعلام می‌شود و نه فرض می‌شود.**
+- `gh` نصب نیست و token احراز‌شدهٔ GitHub در محیط موجود نبود؛ Git refs نشان می‌دهند branch remote وجود دارد و merge به main انجام نشده/قابل ادعا نیست. API unauthenticated قبلی 404 داده بود، اما آن پاسخ به‌تنهایی proof نیست. **Merge status: از refs قابل‌تأیید نیست؛ merged فرض نمی‌شود.**
 
 ## محدودیت و اقدام بعدی مجاز
 
-هیچ application code، operational data، migration، deployment یا admin credential تغییر داده نشد. تنها تغییر محیطی، ساخت database ایزولهٔ `barang_step3_review_20261014_test` برای تست بود.
+منطق business application و operational data/migration تغییر نکرد. دو Dockerfile برای provenance، assertionهای stale E2E و تست diagnostics evidence تغییر کردند. deployment فقط pair محلی API/Backoffice را با volumeهای موجود recreate کرد؛ credentialها حفظ شدند. database ایزولهٔ `barang_step3_review_20261014_test` برای تست استفاده شد.
 
-قبل از GO شدن STEP 3 باید checkout reviewed به imageهای deployed با revision قابل‌ردیابی deploy شود، همان browser baseline read-only دوباره اجرا و سبز شود، و تصمیم‌های بخش STEP 3 تصویب شوند. این گزارش تنها artifact مورد نظر برای commit/push است.
+برای تبدیل CONDITIONAL GO به GO، فقط تصمیم‌های بخش STEP 3 باید توسط مالک business تصویب و ثبت شوند؛ هیچ reservation integration جدیدی در این کار پیاده‌سازی نشد.
