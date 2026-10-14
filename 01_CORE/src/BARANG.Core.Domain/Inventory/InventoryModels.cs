@@ -11,7 +11,7 @@ public enum PurchaseOrderStatus{Draft,Submitted,PartiallyReceived,Received,Close
 
 public static class InventoryErrors
 {
- public static Error UnitMismatch=>Error.Validation("inventory.unit_mismatch");
+ public static Error UnitMismatch=>Error.Validation("inventory.unit_mismatch");public static Error PricingReapprovalRequired=>Error.BusinessRule("inventory.adjustment.pricing_reapproval_required");public static Error IssuedItemImmutable=>Error.BusinessRule("inventory.adjustment.issued_item_immutable");
  public static Error InvalidData=>Error.Validation("inventory.invalid_data");public static Error NotFound=>Error.NotFound("inventory.resource.not_found");public static Error Insufficient=>Error.BusinessRule("inventory.insufficient_stock");public static Error OverRelease=>Error.BusinessRule("inventory.reservation.over_release");public static Error AlreadyConsumed=>Error.Conflict("inventory.reservation.already_consumed");public static Error DuplicateReference=>Error.Conflict("inventory.duplicate_reference");public static Error InvalidTransition=>Error.BusinessRule("inventory.invalid_transition");public static Error ReasonRequired=>Error.Validation("inventory.reason_required");public static Error OverReceipt=>Error.BusinessRule("purchasing.over_receipt");public static Error Concurrency=>Error.Concurrency("inventory.concurrency_conflict");
 }
 public static class InventoryText{public static string Code(string? x)=>(x??"").Trim().ToUpperInvariant();public static string? Text(string?x,int max){if(string.IsNullOrWhiteSpace(x))return null;string s=x.Trim();return s.Length<=max?s:null;}}

@@ -1,0 +1,39 @@
+@using System.Text.Json
+@using System.Globalization
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<section class="crud-card inventory-return" aria-labelledby="inventory-return-heading">
+    <header class="section-header"><div><h2 id="inventory-return-heading">@T("برگشت از issue انبار","إرجاع من صرف المستودع","Warehouse returns")</h2><p>@T("برگشت فقط برای کالای issue‌شده و با وضعیت قابل استفاده ثبت می‌شود.","يُسجل الإرجاع فقط للبضاعة المصروفة وبحالة صالحة للاستخدام.","Returns are posted only for issued goods explicitly accepted as usable.")</p></div><button type="button" class="btn btn-secondary" @onclick="Load" disabled="@Busy">@T("بارگذاری مجدد","إعادة تحميل","Reload")</button></header>
+    @if (Loading) { <div class="crud-loading">@T("در حال بارگذاری...","جار التحميل...","Loading...")</div> }
+    else {
+        <div class="form-grid">
+            <label><span>@T("issue اصلی","عملية الصرف الأصلية","Original issue")</span><select @bind="IssueId" disabled="@Busy"><option value="">@T("انتخاب کنید","اختر","Select")</option>@foreach (var issue in Issues) { <option value="@issue.Id">@issue.Label</option> }</select></label>
+            @if (Selected is not null) { <div class="field-note">@T("باقی‌مانده قابل برگشت","المتبقي القابل للإرجاع","Remaining returnable"): @Selected.Remaining @Selected.Uom</div> }
+            <label><span>@T("مقدار برگشت","كمية الإرجاع","Return quantity")</span><input type="number" min="0.01" step="0.01" @bind="Quantity" disabled="@Busy" /></label>
+            <label><span>@T("واحد اندازه‌گیری","وحدة القياس","UOM")</span><input value="@(Selected?.Uom ?? "—")" readonly /></label>
+            <label><span>@T("وضعیت کالا","حالة البضاعة","Disposition")</span><select @bind="Disposition" disabled="@Busy"><option value="USABLE">@T("قابل استفاده — افزایش موجودی","صالح للاستخدام — يضاف للمخزون","Usable — add to stock")</option><option value="DAMAGED">@T("آسیب‌دیده — نیازمند قرنطینه","تالف — يحتاج للحجر","Damaged — quarantine required")</option><option value="UNKNOWN">@T("نامشخص — نیازمند بررسی","غير معروف — يحتاج للمراجعة","Unknown — review required")</option></select></label>
+            <label><span>@T("مرجع سند","مرجع المستند","Document reference")</span><input @bind="Reference" disabled="@Busy" /></label>
+        </div>
+        @if (Disposition != "USABLE") { <div class="inline-error">@T("کالای آسیب‌دیده یا نامشخص به‌طور خودکار usable نمی‌شود؛ سند قرنطینه/تعیین تکلیف warehouse لازم است.","البضاعة التالفة أو غير المعروفة لا تصبح صالحة تلقائياً؛ يلزم مستند حجر/تحديد مصير.","Damaged or unknown goods are not made usable automatically; a quarantine/disposition document is required.")</div> }
+        @if (!string.IsNullOrWhiteSpace(Message)) { <div class="@(Success ? "inline-success" : "inline-error")">@Message</div> }
+        <div class="form-actions"><button type="button" class="btn btn-primary" @onclick="Post" disabled="@(Busy || Selected is null || Quantity <= 0 || Quantity > (Selected?.Remaining ?? 0) || Disposition != "USABLE")">@T("ثبت برگشت قابل استفاده","تسجيل إرجاع صالح","Post usable return")</button></div>
+        @if (Issues.Count == 0) { <div class="crud-empty">@T("issue قابل برگشت وجود ندارد.","لا توجد عمليات صرف قابلة للإرجاع.","No returnable issue exists.")</div> }
+    }
+</section>
+
+@code {
+    private sealed record IssueRow(Guid Id, string Label, decimal Remaining, string Uom);
+    private List<IssueRow> Issues = [];
+    private string IssueId = "", Disposition = "USABLE", Reference = "RET-" + Guid.NewGuid().ToString("N")[..10], Message = "";
+    private decimal Quantity;
+    private bool Loading, Busy, Success;
+    private string T(string fa, string ar, string en) => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "fa" => fa, "ar" => ar, _ => en };
+    private IssueRow? Selected => Guid.TryParse(IssueId, out var id) ? Issues.FirstOrDefault(x => x.Id == id) : null;
+    protected override Task OnInitializedAsync() => Load();
+    private async Task Load() { var s = await Session(); if (s is null) return; Loading = true; Message = ""; Issues = []; var r = await Core.GetAsync("api/v1/inventory/transactions", s.Value.Token, s.Value.Company, default); if (r.IsSuccess) { var root = r.Value.ValueKind == JsonValueKind.Array ? r.Value : r.Value.TryGetProperty("items", out var items) ? items : default; if (root.ValueKind == JsonValueKind.Array) { var all = root.EnumerateArray().ToArray(); foreach (var x in all.Where(x => Text(x, "transactionType") == "Issue" && Text(x, "sourceType") == "WAREHOUSE_ISSUE")) { var id = Guid.Parse(Text(x, "id")); decimal issued = Math.Abs(Decimal(x, "quantityDelta")); decimal returned = all.Where(y => Text(y, "transactionType") == "Return" && Text(y, "sourceId") == id.ToString()).Sum(y => Decimal(y, "quantityDelta")); if (issued > returned) Issues.Add(new(id, $"{Text(x, "reference")} · {Text(x, "productVariantId")} · {issued - returned} {Text(x, "uomCode")}", issued - returned, Text(x, "uomCode"))); } } } Loading = false; }
+    private async Task Post() { if (Selected is null || Quantity <= 0 || Quantity > Selected.Remaining || Disposition != "USABLE") return; var s = await Session(); if (s is null) return; Busy = true; var r = await Core.SendAsync(HttpMethod.Post, "api/v1/inventory/returns", new { originalIssueTransactionId = Selected.Id, quantity = Quantity, reference = Reference, uomCode = Selected.Uom, disposition = Disposition }, s.Value.Token, s.Value.Company, default); Success = r.IsSuccess; Message = r.IsSuccess ? T("برگشت ثبت شد و موجودی پایدار شد.","تم تسجيل الإرجاع وتحديث المخزون.","Return posted and inventory reloaded.") : T("ثبت برگشت انجام نشد.","تعذر تسجيل الإرجاع.","Return could not be posted."); Busy = false; if (r.IsSuccess) { Quantity = 0; Reference = "RET-" + Guid.NewGuid().ToString("N")[..10]; await Load(); } }
+    private async Task<(string Token, Guid Company)?> Session() { var u = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var company) && u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? (token, company) : null; }
+    private static string Text(JsonElement x, string name) => x.TryGetProperty(name, out var p) && p.ValueKind != JsonValueKind.Null ? p.ToString() : "";
+    private static decimal Decimal(JsonElement x, string name) => x.TryGetProperty(name, out var p) && p.TryGetDecimal(out var d) ? d : 0;
+}

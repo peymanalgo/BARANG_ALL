@@ -7,6 +7,7 @@ using BARANG.Core.Application.Organization;
 
 namespace BARANG.Core.Api.Inventory;
 public sealed record ReserveOrderInventoryRequest(Guid WarehouseId,string IdempotencyKey,DateTimeOffset? ExpiresAtUtc=null);
+public sealed record AdjustOrderInventoryRequest(long OrderVersion,string RequestKey,IReadOnlyList<AdjustOrderItemCommand> Items);
 public sealed record ReturnStockRequest(Guid OriginalIssueTransactionId,decimal Quantity,string Reference,string? UomCode=null,string? Disposition=null);
 public static class InventoryEndpoints
 {
@@ -20,6 +21,7 @@ public static class InventoryEndpoints
   inventory.MapGet("/warehouses",async(IOrganizationAdministration s,CancellationToken ct)=>Map(await s.ListWarehousesAsync(ct))).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/orders/{orderId:guid}/reservations",async(Guid orderId,ReserveOrderInventoryRequest c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ReserveOrderAsync(new(orderId,c.WarehouseId,c.IdempotencyKey,c.ExpiresAtUtc),ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/orders/{orderId:guid}/issues",async(Guid orderId,IssueOrderInventoryRequest c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.IssueOrderAsync(new(orderId,c.WarehouseId,c.Reference,c.Items),ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
+  inventory.MapPost("/orders/{orderId:guid}/adjustments",async(Guid orderId,AdjustOrderInventoryRequest c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.AdjustOrderAsync(new(orderId,c.OrderVersion,c.RequestKey,c.Items),ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/receipts",async(StockMovementCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ReceiveAsync(c,ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/issues/{type}",async(StockTransactionType type,StockMovementCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.IssueAsync(c,type,ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/adjustments/{increase:bool}",async(bool increase,StockMovementCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.AdjustAsync(c,increase,ct),true)).RequireAuthorization(SecurityPermissions.InventoryAdjust);
