@@ -86,3 +86,20 @@ Checkout `step2-clean/01_CORE`، شاخه `codex/step2-inventory-unit-contracts`
 **STEP 4: FAIL / NOT READY**
 
 مسدودکننده‌ها: graph/routing InventoryIssue، adjustment اتمیک، return UI و failureهای توضیح‌داده‌نشدهٔ full Integration. STEP 5 آغاز نشده است. داده‌ها، volumeها، credentials و deployment توسعه reset یا mutate نشده‌اند.
+
+## الحاقیهٔ تلاش پذیرش ایزوله — ۱۵ اکتبر ۲۰۲۶
+
+این نوبت با هدف بستن دو مورد باقی‌مانده اجرا شد؛ نتیجهٔ آن PASS نیست.
+
+- checkout/source دقیق: `8c010c4a49ceea6fae452a2d4c9a50db7b96c965`.
+- محیط مستقل: Compose project `barang-step4-acceptance`، API `localhost:18080`، Backoffice `localhost:15100`، PostgreSQL `localhost:55436`، Redis `localhost:16379` و MinIO `localhost:19000/19001`. volumeها با پیشوند `barang-step4-acceptance_` ساخته شدند و هیچ volume توسعه یا `barang_core` mount نشد.
+- imageهای ساخته‌شده از همین checkout: API digest `sha256:9fcb0a4645d74686c5f47cecf44ed3a89c1b235e1a71975bcf340db3d15e447f` و Backoffice digest `sha256:606838ff4c5fcf44d0222e0b57d4cefc0c2ac7dfba43f9f38719ac8bae2dcf3d`. لاگ API provenance همین SHA را چاپ کرد.
+- migration chain روی PostgreSQL ایزوله پس از build صحیح Debug ابزار EF کامل اعمال شد و `20261015062226_WarehouseResponsibilities` نیز اعمال‌شده ثبت شد. در شروع نخست، init script با CRLF اجرا نشد و roleهای `barang_app`/`barang_test_app` ساخته نشدند؛ این failure محیط تست بود، با ساخت roleهای محدود و اجرای دوباره migration برطرف شد. برای Hangfire نیز schema/privilege فقط در محیط ایزوله تکمیل شد.
+- bootstrap هویت ایزوله با `step4-admin` موفق شد و API پس از اصلاح privilege ایزوله healthy شد. این هویت/داده در محیط توسعه وجود نداشت.
+- گراف واقعی توسعه فقط‌خواندنی از PostgreSQL بررسی شد: `BARANG.ORDER`، نسخهٔ Active شمارهٔ 17، نسخه `ba83e320-e43f-49d9-82d8-7f5c50ca3f9b`، 23 node و 41 transition؛ node `InventoryIssue` در آن وجود ندارد. تلاش API برای دریافت همان گراف از deployment توسعه نیز به‌دلیل `security.company_access.denied` نشست مدیریتی شکست خورد. برای جلوگیری از نقض policy، graph tableها در محیط ایزوله برای ساختن candidate دستکاری نشدند و گراف minimal/test-only نیز ساخته نشد.
+- در نتیجه، مسیر supported Designer برای ساخت draft واقعی، publish ایزوله، start instance جدید و مقایسهٔ binding instance قبلی هنوز به‌طور معتبر اجرا نشده است.
+- به‌دلیل نبود candidate graph معتبر، browser feature acceptance authenticated برای responsibility/claim، issue/retry/partial issue، cancel، adjustment، return و same-stock-key OrderItems قابل اجرا و قابل نسبت‌دادن نبود. هیچ نتیجهٔ مرورگری به‌عنوان PASS ثبت نمی‌شود؛ smoke/health جایگزین acceptance نشد.
+- dedicated concurrency evidence موجود قبلی: issue atomic/retry و adjustment atomic روی PostgreSQL ایزوله PASS است؛ برای این نوبت نتیجهٔ جدیدی برای issue-vs-cancel، adjustment-vs-issue و return-limit در deployment candidate ثبت نشد.
+- محیط `barang-step4-acceptance` پس از جمع‌آوری این شواهد حذف شد؛ development Compose، volumeها، records، keys، credentials و admin account دست‌نخورده ماندند.
+
+**نتیجهٔ این نوبت: STEP 4 = FAIL / NOT READY.** تنها blocker باقی‌ماندهٔ قابل اقدام برای دو requirement درخواست‌شده: دسترسی/مسیر معتبر برای import یا ایجاد baseline واقعی `BARANG.ORDER` در محیط ایزوله و سپس ساخت candidate فقط با Designer، پس از آن اجرای authenticated browser feature matrix. STEP 4.5 و STEP 5 آغاز نشده‌اند.
