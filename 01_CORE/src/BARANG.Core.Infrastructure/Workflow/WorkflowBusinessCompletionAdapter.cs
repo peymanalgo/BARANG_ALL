@@ -1,6 +1,7 @@
 using BARANG.Core.Application.Finance;
 using BARANG.Core.Application.Production;
 using BARANG.Core.Application.Workflow;
+using BARANG.Core.Infrastructure.Inventory;
 using BARANG.Core.Domain.Common;
 using BARANG.Core.Domain.Finance;
 using BARANG.Core.Domain.Orders;
@@ -12,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 namespace BARANG.Core.Infrastructure.Workflow;
 #pragma warning disable CA1725
 
-public sealed class WorkflowBusinessCompletionAdapter(CoreDbContext db, IFinanceAdministration finance, IProductionAdministration production,ITransactionExecutor tx) : IWorkflowBusinessCompletionAdapter
+public sealed class WorkflowBusinessCompletionAdapter(CoreDbContext db, IFinanceAdministration finance, IProductionAdministration production, InventoryAdministration inventory, ITransactionExecutor tx) : IWorkflowBusinessCompletionAdapter
 {
     public async Task<Result> ExecuteAsync(WorkflowStage stage,Guid orderId,WorkflowTaskOutcome outcome,string? reason,CancellationToken ct)
     {
@@ -33,7 +34,7 @@ public sealed class WorkflowBusinessCompletionAdapter(CoreDbContext db, IFinance
         {
             WorkflowStage.AdministrativeReview=>true,
             WorkflowStage.DesignPreparation=>await db.ProductionJobs.AnyAsync(x=>x.OrderId==orderId&&x.JobType==Domain.Production.ProductionJobType.DesignPreparation&&x.Status==Domain.Production.ProductionJobStatus.Completed,token),
-            WorkflowStage.InventoryReservation=>await db.StockReservations.AnyAsync(x=>db.OrderItems.Where(i=>i.OrderId==orderId).Select(i=>i.Id).Contains(x.OrderItemId),token),
+            WorkflowStage.InventoryReservation=>await inventory.HasCompleteReservationEvidenceAsync(orderId,token),
             WorkflowStage.Printing=>await db.ProductionJobs.AnyAsync(x=>x.OrderId==orderId&&x.JobType==Domain.Production.ProductionJobType.Print&&x.Status==Domain.Production.ProductionJobStatus.Completed,token),
             WorkflowStage.HeatPress=>await db.ProductionJobs.AnyAsync(x=>x.OrderId==orderId&&x.JobType==Domain.Production.ProductionJobType.HeatPress&&x.Status==Domain.Production.ProductionJobStatus.Completed,token),
             WorkflowStage.QualityControl=>await db.QCInspections.AnyAsync(x=>x.OrderId==orderId&&x.Outcome==Domain.Quality.QCOutcome.Approved,token),
