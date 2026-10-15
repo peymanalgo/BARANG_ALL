@@ -156,7 +156,7 @@ Checkout `step2-clean/01_CORE`، شاخه `codex/step2-inventory-unit-contracts`
 - UserAccess روی DB تازه: **6/6 PASS**؛ Pricing/Artwork/Supplier: **20/20 PASS**؛ آزمون‌های STEP4 و concurrency انتخاب‌شده: **19/19 PASS**.
 - Unit: **222/222 PASS**؛ Backoffice: **184/184 PASS**؛ Release solution build: **PASS** با صفر warning/error.
 - SQL بازتولید پس از migration: خواندن `user_companies` و `user_roles` با app role بدون stack overflow انجام شد. مسیرهای active/inactive/locked، انتخاب شرکت، cross-company و محدودیت‌های administrator در UserAccess جاری سبز هستند.
-- محیط پذیرش جدید `barang-step4-final`: API=`http://localhost:18091`، Backoffice=`http://localhost:15111`، PostgreSQL=`55447`، database=`barang_step4_final`، volumeها project-scoped و image API digest=`sha256:8a6ec02399d5d5de5d1e086f26af73094727f2abf783c38352df842065600bd9`.
+- محیط پذیرش جدید `barang-step4-final`: API=`http://localhost:18091`، Backoffice=`http://localhost:15111`، PostgreSQL=`55447`، database=`barang_step4_final`، volumeها project-scoped؛ پس از commit نهایی image API digest=`sha256:41a6c1b53f0d2c9b5f7d97178f02abf06cd77a7e5d16ff5d0c78082870da729f` و Backoffice digest=`sha256:2977a4216f794e470f83fd29d37c6f189803b40e58f69eb5fa895e853f6211bb`، هر دو با `BARANG_BUILD_COMMIT=81559456d14a6e4d8ef99e8346fc2492b54c405f`.
 
 ### وضعیت candidate و browser
 
