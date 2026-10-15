@@ -62,6 +62,17 @@ Checkout `step2-clean/01_CORE`، شاخه `codex/step2-inventory-unit-contracts`
 
 **STEP 4 فعلی: FAIL / NOT READY**؛ full Integration evidence، browser sort و workflow assignment blocker هستند. adjustment backend اکنون implemented/tested است. STEP 5 آغاز نشده است.
 
+## الحاقیهٔ پذیرش assignment — ۱۵ اکتبر ۲۰۲۶
+
+- رابطهٔ پایدار `warehouse_responsibilities` با کلیدهای `CompanyId + WarehouseId + ApplicationUserId`، unique constraint، active/version و migration غیرمخرب `20261015090000_WarehouseResponsibilities` اضافه شد. endpointهای مدیریت آن زیر مجوز `organization.warehouse.manage` و صفحهٔ مدیریتی `/workspace/inventory/warehouse-responsibility` فراهم است؛ کاربر باید فعال و عضو معتبر همان شرکت و انبار باید فعال و متعلق به همان شرکت باشد.
+- `ClaimTaskAsync`، فهرست eligible task و `CompleteTaskAsync` برای nodeهای `InventoryIssue` مسئول فعال همان warehouse رزرو‌شده را server-side بررسی می‌کنند. administrator، مسئول warehouse دیگر، کاربر غیرفعال، عضویت منقضی و cross-company fallback پذیرفته نمی‌شود. خطای نبود پیکربندی `inventory.issue.warehouse_responsible_not_configured` است. رقابت claim با version/row update موجود کنترل می‌شود.
+- Designer اکنون فقط برای nodeهای InventoryIssue اجازهٔ position تهی می‌دهد؛ سایر UserTaskها همچنان position اجباری دارند. گراف published توسعه عمداً تغییر نکرده و candidate هنوز باید با graph واقعی موجود در disposable deployment ساخته/اعتبارسنجی و سپس طبق policy منتشر شود؛ instanceهای جاری به version خود bind می‌مانند.
+- backup توسعه در `artifacts/barang_core_before_step4_assignment_20261015.dump` گرفته شد؛ archive با `pg_restore --exit-on-error` در database موقت `barang_step4_restore_verify` restore و سپس database موقت حذف شد. volume، records، keyها و credentials توسعه دست‌نخورده ماندند.
+- تست migration و feature روی PostgreSQL ایزولهٔ `barang-step4-assignment-pg`، database `barang_assignment_test`، port `55435` انجام شد. `Step4InventoryIssueE2ETests` برابر ۲/۲ PASS بود. full Integration current-source برابر **128/128 PASS** در ۳:۱۸ با roleهای `barang_app`/`barang_test_app` بود؛ توقف قبلی ۹۰ثانیه‌ای hang نبود.
+- Unit برابر ۲۲۲/۲۲۲ PASS، Backoffice برابر ۱۸۴/۱۸۴ PASS پس از به‌روزرسانی شمارش مستند route جدید، و هر دو Release build صفر warning/error هستند. Browser E2E علیه image توسعهٔ قدیمی هنوز rerun نشده است؛ sort failure قبلی نتیجهٔ mismatch deployment بوده و باید بعد از deploy coherent جدید دوباره ثبت شود.
+
+**وضعیت فعلی:** هستهٔ assignment server-side و management UI تحویل شده، اما STEP 4 تا ساخت/اعتبارسنجی candidate InventoryIssue واقعی، feature browser acceptance روی deployment جدید، و deploy provenance جدید PASS نهایی نیست. STEP 5 و STEP 4.5 آغاز نشده‌اند.
+
 ## نتیجه
 
 **STEP 4: FAIL / NOT READY**

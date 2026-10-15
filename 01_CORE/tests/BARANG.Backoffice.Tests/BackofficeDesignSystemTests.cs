@@ -75,7 +75,7 @@ public sealed class BackofficeDesignSystemTests
             .Where(file => File.ReadAllText(file).Contains("@page ", StringComparison.Ordinal))
             .ToArray();
 
-        Assert.Equal(45, routedPages.Length);
+        Assert.Equal(46, routedPages.Length); // WarehouseResponsibilityPage is the approved assignment-management route.
         foreach (string file in Directory.GetFiles(components, "*.razor", SearchOption.AllDirectories))
         {
             string source = File.ReadAllText(file);

@@ -135,3 +135,6 @@ endpointهای assignment مورد استفادهٔ Organization Chart تکمی�
 ### الحاقیه STEP 4 — issue، release و return
 
 سیاست مصوب STEP 4 در source به همان `InventoryAdministration` و ledger موجود متصل شد: issue واقعی از انبار با `WAREHOUSE_ISSUE`، release رزرو outstanding هنگام Cancel، و return قابل‌ردیابی با `WAREHOUSE_RETURN`. مسیر issue چندقلمی تراکنش واحد دارد و workflow runtime پیش از complete کردن task آن را اجرا می‌کند؛ اگر issue کامل نباشد task تکمیل نمی‌شود. هیچ migration جدیدی لازم نشد، چون قراردادهای UOM، reservation و append-only ledger موجود کافی بود. تغییر مستقیم item پس از submit همچنان رد می‌شود؛ مسیر تغییر اتمیک قیمت/variant نیازمند تصمیم و integration بعدی pricing/change-request است و در STEP 4 به‌صورت silent پیاده‌سازی نشده است.
+### الحاقیه STEP 4 — assignment مبتنی بر warehouse
+
+مسئول InventoryIssue از رابطهٔ صریح `warehouse_responsibilities` در همان شرکت resolve می‌شود؛ مجوز inventory، عضویت شرکت و active بودن حساب مستقل و الزامی هستند. نبود مسئول پیکربندی‌شده خطای `inventory.issue.warehouse_responsible_not_configured` می‌دهد و administrator یا warehouse دیگر جایگزین نمی‌شود. این رابطه migration و UI مدیریتی دارد و candidate graph با node `InventoryIssue` position تهی را فقط برای resolve پویا بر اساس warehouse رزرو‌شده می‌پذیرد. انتشار candidate و feature browser acceptance باید پیش از PASS نهایی STEP 4 تکمیل شود.
