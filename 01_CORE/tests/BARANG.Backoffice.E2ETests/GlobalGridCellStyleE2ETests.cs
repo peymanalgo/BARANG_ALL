@@ -33,7 +33,11 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         if (new Uri(page.Url).AbsolutePath == "/company")
         {
-            await page.Locator(".company-list form button[type=submit]").First.ClickAsync();
+            string? company = Environment.GetEnvironmentVariable("BARANG_E2E_COMPANY_ID");
+            ILocator choice = string.IsNullOrWhiteSpace(company)
+                ? page.Locator(".company-list form button[type=submit]").First
+                : page.Locator($".company-list form:has(input[name='companyId'][value='{company}']) button[type=submit]");
+            await choice.ClickAsync();
             await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
         Assert.DoesNotContain("/login", page.Url, StringComparison.OrdinalIgnoreCase);

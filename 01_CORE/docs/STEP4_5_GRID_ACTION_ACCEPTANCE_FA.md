@@ -2,7 +2,7 @@
 
 ## وضعیت جاری
 
-- منبع بررسی‌شده: commit جاری checkout روی branch `codex/step2-inventory-unit-contracts`؛ SHA نهایی پس از commit در handoff ثبت می‌شود.
+- منبع بررسی‌شده: commit جاری checkout روی branch `codex/step2-inventory-unit-contracts`؛ provenance نهایی پس از commit ثبت می‌شود.
 - Release build برای solution و Backoffice/API موفق شد؛ صفر warning و error.
 - محیط توسعه، volumeها، کلیدها، داده‌ها و حساب مدیر تغییر نکردند. فایل محلی `.keys/` untracked است و commit نمی‌شود.
 - برای تست PostgreSQL از container جداگانه `barang-step45-postgres`، port `5545`، database `barang_step45_test` و volume `barang_step45_pgdata` استفاده شد؛ database توسعه `barang_core` و volumeهای Compose توسعه target نبودند.
@@ -24,6 +24,7 @@ Base Data و lookupها؛ organization/warehouses/persons/equipment؛ User/RBAC�
 - modal close، password toggle، chip removal، toolbar و workflow-canvas کنترل row action نیستند.
 - expanderهای tree و دکمه‌های فرم/toolbar/chip عمداً row action نیستند و migrate نشده‌اند. DesignCategoryTree عملیات را از RenderTreeBuilder با `BarangActionMenu` می‌سازد تا مالکیت DOM/expand حفظ شود.
 - هیچ `class="icon-button"` یا `chart-action-menu` خام در سه nested purchasing هدف باقی نماند؛ `EquipmentManager` نیز برای child grids به menu مشترک منتقل شد.
+- runner مرورگر اکنون در محیط ایزوله company مشخص‌شده با `BARANG_E2E_COMPANY_ID` را انتخاب می‌کند؛ اجرای publish نیز با content root خود artifact انجام می‌شود تا static-web-assets قدیمی از checkout سرو نشود.
 
 ## تست‌های جاری
 
@@ -37,13 +38,14 @@ Base Data و lookupها؛ organization/warehouses/persons/equipment؛ User/RBAC�
 | Integration current source | PASS — 128/128 on isolated PostgreSQL; fixture provisions migration roles before migration and enables the direct test roles with the documented test passwords |
 | STEP 3/4 baseline | preserved as historical accepted evidence; not substituted for current STEP 4.5 browser acceptance |
 | E2E discovery | PASS after explicit `IsTestProject`/private runner configuration; prior invalid-JSON was traced to the module initializer guard |
-| Browser: shared sort/action standard | FAIL — current source reached local published Backoffice on `127.0.0.1:5510`; `SharedSortHeadersUserGridAndActionIconsMatchTheGlobalStandard` expected sort header border-top `0px`, actual `2px` |
-| Browser: exposed navigation smoke | FAIL — authenticated navigation reached pages, then `#blazor-error-ui` became visible; this needs correlation before attributing it to row menus |
-| Browser mutation matrix | NOT ACCEPTED — no isolated API/Backoffice pair with isolated business records was available; shared-development execution was used only for read-only diagnostics with explicit guard override |
+| Browser: shared sort/action standard | PASS — current published source, isolated API `5511` / Backoffice `5512`; `SharedSortHeadersUserGridAndActionIconsMatchTheGlobalStandard` passed after the scoped sort-header reset |
+| Browser: exposed navigation smoke | PASS — `EveryExposedNavigationPageRendersTheSharedShellWithoutRuntimeFailure` passed on the same isolated pair; no `#blazor-error-ui` or `.blazor-error-boundary` observed |
+| Browser setup/provenance | PASS — published outputs were served from their own content roots; isolated PostgreSQL `barang_step45_test` on `5545`, company `42f0e459-6095-45bb-aa13-f38126d91c9c`, system Chrome |
+| Browser mutation matrix | PARTIAL — representative isolated sort/navigation and menu-shell checks passed; full mutation matrix across every module/family and STEP 3/4 feature E2E was not rerun in this turn |
 
 ## نتیجه
 
-**STEP 4.5 = FAIL / NOT READY.** Source coverage for the previously identified nested purchasing and tree-action gaps is implemented, and current build/unit/backoffice/integration gates pass. Acceptance remains blocked by a reproduced sort-indicator browser failure, a browser smoke circuit error requiring correlation, and the absence of a fully isolated authenticated browser deployment for mutation scenarios. STEP 5 شروع نشده است.
+**STEP 4.5 = CONDITIONAL / NOT READY FOR PASS.** The two previously reproduced browser defects are fixed and pass on a current-source isolated deployment. Current Release, Unit `222/222`, Backoffice `184/184`, and isolated Integration `128/128` pass. Remaining acceptance work is the full per-family authenticated mutation matrix, including STEP 3/4 feature browser regressions; no development deployment was performed. STEP 5 شروع نشده است.
 
 ## checklist تفصیلی source/grid
 
