@@ -294,3 +294,40 @@ Final deployment/image IDs, served asset provenance, representative screenshots,
 
 STEP 4.5 با این شواهد **PASS / ACCEPTED** است. STEP 5 همچنان paused است.
 
+## اصلاح نهایی چیدمان داخلی dropdown (2026-10-15)
+
+این تغییر فقط به layout آیتم‌های dropdown مشترک مربوط است:
+
+- قواعد داخل `BarangActionMenu.razor.css` برای child componentها حفظ شد.
+- چون popup با body پورتال می‌شود، قرارداد مؤثر در `wwwroot/barang-design-system.css` و فقط زیر `.barang-action-menu-popup` اعمال شد.
+- `display:flex`، `flex-direction:row`، `align-items:center`، `gap:8px`، عرض کامل و حذف اندازه/کادر icon-only با specificity scoped اعمال شد.
+- ترتیب RTL/LTR از `direction:inherit` پیروی می‌کند؛ focus، hover، disabled و رنگ destructive حفظ شدند.
+- standalone Add، trigger، handlers و positioning تغییری نکردند.
+
+### شواهد deployment واقعی
+
+- deployed commit: `ea08cdf13b54830ec310470229224bb5a3ff1112`
+- Compose project: `barang-core`
+- Backoffice image: `sha256:a6c3dfaf2d21769b87bae1cf5b2e7cd62a79f32d6999df67bc9bbb4ec2c5a566`
+- `BARANG_BUILD_COMMIT` داخل container با commit بالا برابر است؛ port `5100` healthy است.
+
+تست computed-style واقعی روی `http://localhost:5100`:
+
+| culture/direction | نتیجه |
+|---|---:|
+| fa / rtl | PASS |
+| ar / rtl | PASS |
+| en / ltr | PASS |
+
+هر سه مورد `display:flex`، `flex-direction:row`، `gap:8px`، هم‌ترازی عمودی، border `0px` و بدون shadow را تأیید کردند؛ در RTL آیکون در سمت راست متن قرار گرفت.
+
+تست focused: `SharedActionMenuItemsKeepIconAndLabelOnOneHorizontalRow` — **3/3 PASS**؛ تست regression قبلی `SharedSortHeadersUserGridAndActionIconsMatchTheGlobalStandard` — **1/1 PASS**.
+
+Screenshotهای بررسی‌شده:
+
+- [fa dropdown](../.artifacts/step45-menu-layout/step45-action-menu-fa.png)
+- [ar dropdown](../.artifacts/step45-menu-layout/step45-action-menu-ar.png)
+- [en dropdown](../.artifacts/step45-menu-layout/step45-action-menu-en.png)
+
+نتیجه: defect icon/text layout رفع شد؛ هیچ تغییر دیگری در UI، داده، credentials یا STEP 5 انجام نشد.
+
