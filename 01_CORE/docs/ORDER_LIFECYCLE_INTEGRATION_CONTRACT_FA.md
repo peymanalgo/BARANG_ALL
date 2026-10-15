@@ -281,3 +281,9 @@ backup توسعه قبل از migration در `D:\00_BARANG\barang_core_pricing_f
 # الحاقیه STEP 5 — گیت عملیات Inventory
 
 در گام پنجم، تکمیل هر مرحلهٔ Inventory فقط با نتیجهٔ persisted و معتبر سرویس canonical Inventory مجاز است. `InventoryReservation` باید برای همهٔ OrderItemهای فعال reservation مستقل با OrderItemId، variant، warehouse، quantity و UOM صحیح داشته باشد. `InventoryIssue` باید برای همهٔ همان اقلام movement ثبت‌شدهٔ `WAREHOUSE_ISSUE` با مقدار لازم داشته باشد؛ issue ناقص task را باز نگه می‌دارد. گیت، claim/list و adapter قدیمی نیز همین قرارداد را اجرا می‌کنند و generic completion نمی‌تواند آن را دور بزند. release/adjustment/return همچنان مالکیت Inventory را حفظ می‌کنند و return compensating، issue تاریخی را خودکار باطل نمی‌کند.
+
+## الحاقیه STEP ۶ — قرارداد محاسبه قیمت canonical
+
+برآورد و نهایی‌سازی هر دو از resolver canonical قیمت استفاده می‌کنند. `CustomerGroupId` از Customer به context محاسبه منتقل می‌شود؛ ترتیب انتخاب یک قانون تخفیف فعال و معتبر، بدون stacking، به‌ترتیب Customer، CustomerGroup، source/partner و general است. قانون گروه فقط با شناسه پایدار گروه سنجیده می‌شود و caption ترجمه‌شده هویت نیست.
+
+`TaxStatusCode` از CustomerFinancialProfile به resolver می‌رسد و قانون status-specific بر قانون DEFAULT مقدم است. `Customer.PriceGroupId` فقط برای انتخاب tariffهای `price.group` کاربرد دارد و با `customer.group` قاطی نمی‌شود؛ tariff گروه‌دارِ منطبق بر tariff بدون گروه مقدم است. snapshot قیمت، شناسه و نسخه قانون، ورودی‌های محاسبه و breakdown را نگه می‌دارد و پس از نهایی‌سازی با تغییر master data بازنویسی نمی‌شود. تبدیل ارز، exemption خارج از TaxStatusCode و stacking تخفیف در این مرحله سیاست مصوب ندارند و به STEP ۷/تصمیم مستقل نیاز دارند.

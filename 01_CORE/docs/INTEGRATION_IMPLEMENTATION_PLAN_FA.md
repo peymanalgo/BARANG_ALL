@@ -138,6 +138,12 @@ endpointهای assignment مورد استفادهٔ Organization Chart تکمی�
 ### الحاقیه STEP 4 — assignment مبتنی بر warehouse
 
 مسئول InventoryIssue از رابطهٔ صریح `warehouse_responsibilities` در همان شرکت resolve می‌شود؛ مجوز inventory، عضویت شرکت و active بودن حساب مستقل و الزامی هستند. نبود مسئول پیکربندی‌شده خطای `inventory.issue.warehouse_responsible_not_configured` می‌دهد و administrator یا warehouse دیگر جایگزین نمی‌شود. این رابطه migration و UI مدیریتی دارد و candidate graph با node `InventoryIssue` position تهی را فقط برای resolve پویا بر اساس warehouse رزرو‌شده می‌پذیرد. انتشار candidate و feature browser acceptance باید پیش از PASS نهایی STEP 4 تکمیل شود.
+
+### الحاقیه اجرای STEP ۶ — canonical pricing
+
+resolver canonical سفارش اکنون CustomerGroupId، PriceGroupId و TaxStatusCode را از دادهٔ company-scoped سفارش/مشتری می‌خواند. precedence تخفیف خودکار `customer > customer-group > source/partner > general` است و فقط یک rule اعمال می‌شود؛ tax-status منطبق بر `DEFAULT` مقدم است؛ تعرفهٔ price-group منطبق بر تعرفهٔ بدون گروه مقدم است. snapshot component برای ruleهای discount/tax شناسه و version را نگه می‌دارد و snapshotهای finalized تغییرناپذیر باقی می‌مانند.
+
+stacking تخفیف، معافیت خارج از TaxStatusCode، تبدیل ارز و Finance/Invoice در این مرحله تعریف یا پیاده‌سازی نشده‌اند.
 # الحاقیهٔ اجرای STEP 5
 
 مسیر اجرای Workflow/Cartable باید به `InventoryAdministration` canonical متکی باشد: عملیات و transition در یک transaction، با idempotency و lockهای موجود. قبل از transition، gate authoritative پوشش کامل itemها و انطباق CompanyId/WarehouseId/ProductVariantId/OrderItemId/UOM/quantity را بررسی می‌کند. مسیرهای legacy و generic نیز حق completion بدون evidence را ندارند. تست ایزولهٔ گام پنجم graph واقعی reservation→issue، rollback issue ناقص، ledger/on-hand/reservation invariants و retry را پوشش می‌دهد. return usable فقط compensating movement است و damaged/unknown usable نمی‌شود؛ consumption/cancellation policyهای گام‌های قبل تغییر نمی‌کنند.

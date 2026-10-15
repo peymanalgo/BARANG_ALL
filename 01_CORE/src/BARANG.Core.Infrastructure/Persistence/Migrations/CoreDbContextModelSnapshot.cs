@@ -6954,6 +6954,10 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("currency_code")
                         .IsFixedLength();
 
+                    b.Property<Guid?>("CustomerGroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_group_id");
+
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid")
                         .HasColumnName("customer_id");
@@ -7002,6 +7006,8 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("version");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CustomerGroupId");
 
                     b.HasIndex("CompanyId", "Code", "ValidFrom")
                         .HasDatabaseName("ix_discount_rules_resolution");
@@ -7230,6 +7236,14 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("order_print_operation_id");
 
+                    b.Property<Guid?>("PricingRuleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pricing_rule_id");
+
+                    b.Property<long?>("PricingRuleVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("pricing_rule_version");
+
                     b.Property<decimal>("Quantity")
                         .HasPrecision(18, 4)
                         .HasColumnType("numeric(18,4)")
@@ -7315,6 +7329,10 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasDefaultValue("")
                         .HasColumnName("name");
 
+                    b.Property<Guid?>("PriceGroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("price_group_id");
+
                     b.Property<string>("PrintMethodCode")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
@@ -7359,6 +7377,8 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("version_number");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PriceGroupId");
 
                     b.HasIndex("CompanyId", "ProductVariantId");
 
@@ -7407,6 +7427,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("rate_percent");
 
+                    b.Property<string>("TaxStatusCode")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("customer_tax_status_code");
+
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at_utc");
@@ -7426,7 +7451,7 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId", "Code", "ValidFrom")
+                    b.HasIndex("CompanyId", "Code", "TaxStatusCode", "ValidFrom")
                         .HasDatabaseName("ix_tax_rules_resolution");
 
                     b.ToTable("tax_rules", "barang", t =>
@@ -11122,6 +11147,14 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_warehouses_branches_company_id_branch_id");
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Pricing.DiscountRule", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerGroupId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Pricing.OrderItemPriceSnapshot", b =>
                 {
                     b.HasOne("BARANG.Core.Domain.Pricing.OrderPriceSnapshot", null)
@@ -11154,6 +11187,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("BARANG.Core.Domain.Pricing.Tariff", b =>
                 {
+                    b.HasOne("BARANG.Core.Domain.Lookups.LookupValue", null)
+                        .WithMany()
+                        .HasForeignKey("PriceGroupId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BARANG.Core.Domain.Catalog.ProductVariant", null)
                         .WithMany()
                         .HasForeignKey("CompanyId", "ProductVariantId")
