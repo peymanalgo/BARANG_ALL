@@ -929,3 +929,54 @@ pre { max-width: 100%; margin: 10px 0 0; padding: 12px; overflow: auto; color: #
 .tree-toggle:hover, .tree-action:hover { color: var(--barang-accent); background: var(--barang-accent-soft); border-color: var(--barang-border-strong); }
 .tree-action.danger { color: var(--barang-danger); }
 .design-category-admin .row-actions { display: inline-flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+
+/* The popup is body-portaled, so keep its action-item contract in the global
+   stylesheet while scoping every rule to the shared dropdown. */
+.barang-action-menu-popup > .barang-icon-button,
+.barang-action-menu-popup > .icon-button {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 38px !important;
+    max-width: none !important;
+    padding: 7px 10px !important;
+    border: 0 !important;
+    border-radius: 7px;
+    box-shadow: none !important;
+    text-align: start;
+    white-space: nowrap;
+    direction: inherit;
+}
+.barang-action-menu-popup > .barang-icon-button .barang-icon,
+.barang-action-menu-popup > .icon-button .barang-icon {
+    display: block;
+    flex: 0 0 18px;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px;
+    min-height: 18px;
+}
+.barang-action-menu-popup > .barang-icon-button .barang-action-menu-item-label {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.barang-action-menu-popup > .barang-icon-button:hover,
+.barang-action-menu-popup > .barang-icon-button:focus-visible,
+.barang-action-menu-popup > .icon-button:hover,
+.barang-action-menu-popup > .icon-button:focus-visible {
+    background: #edf5f1;
+    border-color: transparent !important;
+}
+.barang-action-menu-popup > .barang-icon-button:focus-visible,
+.barang-action-menu-popup > .icon-button:focus-visible {
+    outline: 2px solid #86b8a7;
+    outline-offset: -2px;
+}
