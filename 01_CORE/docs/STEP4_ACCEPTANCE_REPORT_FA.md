@@ -39,6 +39,13 @@ Full Integration شامل company selection، active/inactive/locked account، c
 
 **نتیجهٔ این الحاقیه: STEP 4 PASS برای scope فعلی.** Issue، cancel/release، pre-issue adjustment، stale/shortage rollback، return/idempotency و workflow assignment در تست‌های current-source پوشش دارند؛ browser acceptance مستقیم issue و return سبز است و cancellation/adjustment/rollback در feature integration ایزوله سبز است. STEP 4.5 و STEP 5 شروع نشده‌اند.
 
+### provenance تحویل
+
+- application tested/deployed commit: `4bd08d0ddd3c3ad27f5f5f0f39e77a99f8a2dad9`؛ report commit پس از این الحاقیه به‌صورت docs-only ثبت می‌شود و کد application را تغییر نمی‌دهد.
+- development API image: `barang-core-api@sha256:cbe947d832fe91bfa8c2b48aa56246cd270dab3c9026759d35bfc5ffd3ea42f3`؛ Backoffice image: `barang-core-backoffice@sha256:98b8e9014773e2e37eb7209241743ed83bc506e9c82af86ffbd3a125c0d987c8`؛ هر دو environment variable provenance همان SHA را expose می‌کنند.
+- development migration backup: `D:\00_BARANG\barang_core_step4_4bd08d0_predeploy.backup`، archive معتبر و `pg_restore --list` موفق؛ migration chain روی development تا `20261015121000_NormalizeWorkflowStartedStage` اعمال شد.
+- branch push موفق به `origin/codex/step2-inventory-unit-contracts`؛ وضعیت ref جاری `4bd08d0...` بود و branch نسبت به `origin/main` برابر `ahead 58 / behind 2` گزارش شد. PR/merge status از این محیط احراز هویت‌شده قابل تأیید نشد؛ merge را ادعا نمی‌کنم.
+
 ## دامنه و provenance
 
 Checkout `step2-clean/01_CORE`، شاخه `codex/step2-inventory-unit-contracts`. commit شروع این نوبت `a0b8041bffe9a018fdd3d0366a178ad61343e394` و commit برنامهٔ گزارش‌شده `1a88ef344fb19dcf2eb83a43353726b8559c4e72` بود. `.keys` محلیِ untracked دست‌نخورده باقی ماند.
