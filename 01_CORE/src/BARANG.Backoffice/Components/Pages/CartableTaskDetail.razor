@@ -90,8 +90,6 @@ else
             var o = await Core.GetAsync($"api/v1/orders/{Row.OrderId}/360", s.Value.Token, s.Value.Company, _loadCts?.Token ?? default);
             if (!o.IsSuccess) { Message = C["LoadFailed"].Value; return; }
             Order = o.Value;
-            var m = await Core.GetAsync($"api/v1/orders/{Row.OrderId}/messages", s.Value.Token, s.Value.Company, _loadCts?.Token ?? default);
-            if (m.IsSuccess && m.Value.ValueKind == JsonValueKind.Array) Messages = m.Value.EnumerateArray().Select(ParseMessage).ToList();
             if (!Historical) await Core.SendAsync(HttpMethod.Post, $"api/v1/workflows/definition/runtime/tasks/{Row.Id}/personal-state", new { isStarred = (bool?)null, seen = true }, s.Value.Token, s.Value.Company, default);
         }
         catch (OperationCanceledException) { Message = C["LoadFailed"].Value; }

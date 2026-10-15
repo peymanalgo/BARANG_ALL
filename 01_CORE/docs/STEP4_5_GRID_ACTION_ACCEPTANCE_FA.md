@@ -119,3 +119,57 @@ Base Data و lookupها؛ organization/warehouses/persons/equipment؛ User/RBAC�
 | 49 | src/BARANG.Backoffice/Components/WarehouseSection.razor | migrated/shared | verified in Razor source inventory |
 | 50 | src/BARANG.Backoffice/Components/WarehouseTransferSection.razor | migrated/shared | verified in Razor source inventory |
 
+## الحاقیه اجرای جاری در 2026-10-15
+
+این الحاقیه نتایج همین checkout را ثبت می‌کند و شواهد تاریخی جدول بالا را جایگزین نمی‌کند.
+
+### provenance و محیط ایزوله
+
+- source checkout: `82205c17f6ee7426daa2b50e1b68099070a0bd47` در شروع اجرای جاری؛ اصلاحات جاری هنوز commit نشده‌اند.
+- PostgreSQL ایزوله: پروژه/منبع `barang-step45-postgres`، پورت `5545`، پایگاه `barang_step45_test` و volume مستقل؛ `barang_core` و volumeهای توسعه استفاده نشدند.
+- API جاری: `127.0.0.1:5513`، artifact خروجی `.artifacts/step45-current-api` با content-root خودش.
+- Backoffice جاری: `127.0.0.1:5514`، artifact خروجی `.artifacts/step45-current-backoffice` با content-root خودش، system Chrome.
+- شرکت fixture: `STEP45B` با شناسه‌ی `df2a30fb-5566-4d7f-8c7a-c35f86014f31`؛ اطلاعات محرمانه، token و password در repository/report ثبت نشده‌اند.
+
+### علت دقیق defect مرورگر و اصلاح
+
+در اجرای قبلی، Backoffice با content-root checkout اجرا شده بود نه publish output. مسیر static web asset مانند `Components/Layout/ReconnectModal.razor.js` با HTTP 200 و body صفر بایت تحویل می‌شد. Chrome آن را به علت SRI نامعتبر مسدود می‌کرد؛ در نتیجه circuit Blazor تشکیل نمی‌شد و پس از Claim، `#blazor-error-ui` و متن «خطایی غیرمنتظره رخ داد» ظاهر می‌شد. این deployment mismatch بود، نه خطای business action.
+
+اجرای همان artifact با `--contentRoot .artifacts/step45-current-backoffice` body واقعی و digest صحیح را سرو کرد. سپس تست واقعی `Step3ReservationAcceptanceE2ETests.InventoryReservationTaskCanBeCompletedThroughAuthenticatedUi` سبز شد. تست `SharedSortHeadersUserGridAndActionIconsMatchTheGlobalStandard` نیز پس از scoped CSS correction سبز شد. درخواست پشتیبانی‌نشده‌ی `/api/v1/orders/{id}/messages` از `CartableTaskDetail` حذف شد؛ Cartable برای این مسیر در API جاری contract پیام ندارد.
+
+### fixture و نتایج browser جاری
+
+fixture workflow از `tests/Acceptance/fixtures/barang-order-workflow.v17.sanitized.json` با APIهای Designer import/draft/validate/publish ساخته شد؛ nodeهای position با positionهای company-scoped map شدند و `InventoryIssue` به position `WHSE` وصل شد. fixture order در اجرای موفق قبلی این attempt دارای دو OrderItem مستقل با variant مشترک و task InventoryIssue بود؛ پس از reservation، reservationهای دو item persisted شدند و تست UI issue واقعی و retry را PASS کرد. شناسه‌ی task آن اجرای ایزوله `715fcd27-c20b-4dbd-a183-d7750aa1015a` بود.
+
+نتایج قابل بازتولید همین source:
+
+| سناریو/تست | نتیجه جاری | شواهد/علت |
+|---|---|---|
+| `Step3ReservationAcceptanceE2ETests.InventoryReservationTaskCanBeCompletedThroughAuthenticatedUi` | PASS | login، company selection، Claim، issue تمام اقلام، و retry از UI؛ بدون Blazor error در publish artifact صحیح |
+| `DeployedInteractivityTests.SharedSortHeadersUserGridAndActionIconsMatchTheGlobalStandard` | PASS | border computed برای sort trigger برابر صفر؛ menu/action assertions جاری |
+| Cartable diagnostic در artifact قبلی | FAIL | به علت static asset/SRI؛ بعد از content-root صحیح PASS شد و فایل diagnostic موقت حذف شد |
+| Release solution build | PASS | 0 warning / 0 error |
+| Unit | PASS | 222/222 |
+| Backoffice | PASS | 184/184 |
+| full Integration run با `BARANG_TEST_DB_CONNECTION` | FAIL/INCOMPLETE | یک اجرای کامل 129 تستی به 88 pass و 41 fail رسید؛ اجرای بعدی پس از 120 ثانیه بدون progress ماند و با timeout اجرایی متوقف شد. این شواهد جایگزین 128/128 تاریخی نیستند. |
+
+نمونه failureهای full Integration جاری:
+
+- `LookupFoundationTests.GlobalRowsAreVisibleWhileRlsIsolatesCompanyRowsAndPoolContextDoesNotLeak`: expected 61, actual 3؛ setup database پس از reset کامل fixture lookup را نداشت.
+- `UserAccessManagementTests.IdentityPasswordResetDisableAndLockoutUseSecureAccountOperations`: `/api/v1/auth/login` HTTP 404؛ API factory/fixture در این run endpoint مورد انتظار را expose نکرد.
+- `ArtworkFileE2ETests.CompleteArtworkFileFlowUsesRealMinioAndEnforcesSecurity`: login/bootstrap path HTTP 404.
+- `Step4InventoryIssueE2ETests.WarehouseIssueIsAtomicAndRetrySafeWithoutDuplicatingLedgerEntries`: FK `stock_balances ... product_variants_company_id_product_variant...` در setup؛ test record/variant company context ناسازگار بود.
+- `Step4InventoryIssueE2ETests.PreIssueAdjustmentIsAtomicVersionedAndRollsBackOnShortage`: endpoint setup HTTP 404.
+- `SupplierSourcingApiTests` و `SupplierReferenceFoundationTests`: چند setup request با HTTP 404/409؛ این run تا بازسازی کامل test-host/fixture معتبر نیست.
+- `Step45WorkflowPositionSetupTests` در اجرای اول به علت نبود `BARANG_ACCEPTANCE_COMPANY_ID` fail شد؛ test به‌صورت non-acceptance full-suite no-op شد و setup صریح با env جداگانه انجام می‌شود.
+
+این failureها توضیح می‌دهند که full regression gate جاری هنوز green نیست؛ assertionها تضعیف نشده‌اند و testها حذف نشده‌اند.
+
+### وضعیت deployment توسعه
+
+به علت full Integration failure/hang و کامل نبودن ماتریس mutation browser، deployment به `http://localhost:5100` انجام نشد. بنابراین این گزارش ادعای تغییر UI واقعی پورت 5100 را ندارد؛ پورت 5100 همچنان باید جداگانه با `docker compose -p barang-core` و asset provenance بررسی شود. منابع توسعه، volume، credential و admin account دست‌نخورده ماندند.
+
+## نتیجه جاری
+
+**STEP 4.5 = FAIL / NOT ACCEPTED.** دو defect فنی بازتولیدشده (static asset/SRI در deployment artifact و sort-trigger border) رفع و با تست مرورگر جاری تأیید شدند. اما شرط کامل acceptance هنوز برقرار نیست: full Integration جاری fail/hang دارد و Orders/Design Bank/Pricing/nested Purchasing و STEP4 return با fixture معتبر و deployment واقعی پورت 5100 به‌صورت کامل اجرا نشده‌اند. STEP 5 همچنان paused است.
+
