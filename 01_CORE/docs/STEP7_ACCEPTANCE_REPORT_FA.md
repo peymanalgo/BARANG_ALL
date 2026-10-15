@@ -80,6 +80,6 @@
 - browser runner ابتدا به‌علت login fixture ناموجود روی `barang-step6` با 401/timeout شکست خورد؛ محیط تازه با migration کامل، bootstrap رسمی، انتخاب company و System Chrome آماده شد. یک assertion نخست نیز به‌علت culture فارسی setup بود و با انتخاب `en` اصلاح شد؛ assertion کسب‌وکاری ضعیف نشد.
 - full Integration یک run بدون app و بدون lock حدود چهار دقیقه ساکت ماند؛ process/PG locks بررسی شد و lock/query فعال وجود نداشت. اجرای مجدد با `--blame-hang-timeout 5m` کامل شد و 130/130 PASS داد. اجرای آزمایشی روی database بدون suffix `_test` به‌طور مستقل با setup validation (`database named barang_*_test`) fail شد و در نتیجهٔ نهایی شمرده نشده است.
 - در این تغییر migration جدیدی لازم نبود؛ UI-only است. development backup قبلی همچنان `D:\00_BARANG\barang_core_step7_predeploy_20261016.backup` است و business data توسعه در پذیرش UI mutation نشده است.
-- source فعلی پس از commit نهایی باید با image جدید به `barang-core` deploy شود؛ تا قبل از آن port 5100 همچنان image تاریخی `b26f38f` را سرو می‌کند.
+- source فعلی با imageهای provenance‌دار به `barang-core` deploy شده است؛ port 5100 اکنون UI همین source فعلی را سرو می‌کند و دیگر image تاریخی `b26f38f` نیست.
 
 secrets، backup و trace حساس نباید commit شوند.
