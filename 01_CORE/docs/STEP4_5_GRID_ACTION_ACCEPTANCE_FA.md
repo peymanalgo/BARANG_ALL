@@ -2,9 +2,10 @@
 
 ## وضعیت جاری
 
-- منبع بررسی‌شده: commit فعلی checkout، branch فعلی `codex/step2-inventory-unit-contracts`.
-- Release build برای Backoffice و API موفق شد؛ صفر warning و error.
+- منبع بررسی‌شده: commit جاری checkout روی branch `codex/step2-inventory-unit-contracts`؛ SHA نهایی پس از commit در handoff ثبت می‌شود.
+- Release build برای solution و Backoffice/API موفق شد؛ صفر warning و error.
 - محیط توسعه، volumeها، کلیدها، داده‌ها و حساب مدیر تغییر نکردند. فایل محلی `.keys/` untracked است و commit نمی‌شود.
+- برای تست PostgreSQL از container جداگانه `barang-step45-postgres`، port `5545`، database `barang_step45_test` و volume `barang_step45_pgdata` استفاده شد؛ database توسعه `barang_core` و volumeهای Compose توسعه target نبودند.
 
 ## قرارداد مشترک
 
@@ -16,13 +17,13 @@ row actionهای مهاجرت‌یافته از `BarangActionMenu` استفاد�
 
 Base Data و lookupها؛ organization/warehouses/persons/equipment؛ User/RBAC؛ Supplier و child grids؛ Customer و child grids؛ Design Bank؛ Orders و Order Wizard؛ Cartable؛ Pricing؛ Inventory، reservations، adjustments، purchasing، receipts و transfers؛ Finance، Quality، Logistics، Notifications و گزارش‌ها؛ و gridهای nested داخل modal/tab/wizard.
 
-برای هر خانواده، source file و route از Razor inventory ثبت شد؛ row actionهای tabular موجود در ۲۸ فایل به menu مشترک منتقل شدند یا از قبل از آن استفاده می‌کردند. gridهای read-only بدون action، menu خالی ندارند. Addهای مشاهده‌شده در toolbar/header به‌صورت standalone باقی ماندند.
+برای هر خانواده، source file و route از Razor inventory ثبت شد؛ row actionهای tabular موجود در ۲۸ فایل به menu مشترک منتقل شدند یا از قبل از آن استفاده می‌کردند. nested PurchaseRequest/PurchaseOrder/InventoryPurchasing و nested Equipment هم اکنون `BarangActionMenu` دارند. OrganizationalChartTree و DesignCategoryTree نیز برای operationهای node از menu واحد استفاده می‌کنند؛ expander/selection کنترل مستقل باقی مانده است. gridهای read-only و nodeهای بدون مجوز menu خالی ندارند. Addهای مشاهده‌شده در toolbar/header به‌صورت standalone باقی ماندند.
 
 ## کنترل‌های خارج از پوشش row-grid
 
 - modal close، password toggle، chip removal، toolbar و workflow-canvas کنترل row action نیستند.
-- OrganizationalChartTree و DesignCategoryTree ساختار hierarchical tree دارند و هنوز tree-specific action rendering دارند؛ این مورد باید در صورت الزام محصول به treeها با shared menu جداگانه مهاجرت شود.
-- چند nested grid در PurchaseRequest/PurchaseOrder/InventoryPurchasing هنوز raw `icon-button` دارند. fallback popup آن‌ها styling کامل دارد، اما تبدیل نهایی به `BarangIconButton` برای SVG و متن استاندارد باقی مانده است.
+- expanderهای tree و دکمه‌های فرم/toolbar/chip عمداً row action نیستند و migrate نشده‌اند. DesignCategoryTree عملیات را از RenderTreeBuilder با `BarangActionMenu` می‌سازد تا مالکیت DOM/expand حفظ شود.
+- هیچ `class="icon-button"` یا `chart-action-menu` خام در سه nested purchasing هدف باقی نماند؛ `EquipmentManager` نیز برای child grids به menu مشترک منتقل شد.
 
 ## تست‌های جاری
 
@@ -33,13 +34,16 @@ Base Data و lookupها؛ organization/warehouses/persons/equipment؛ User/RBAC�
 | git diff --check | PASS |
 | Unit current source | PASS — 222/222 |
 | Backoffice current source | PASS — 184/184 |
-| Integration current source | BLOCKED — 108 failed / 20 passed / 128 total because `BARANG_TEST_DB_CONNECTION` was not set; all failures originated in `PostgreSqlDatabaseFixture.InitializeAsync` line 22, not application assertions |
+| Integration current source | PASS — 128/128 on isolated PostgreSQL; fixture provisions migration roles before migration and enables the direct test roles with the documented test passwords |
 | STEP 3/4 baseline | preserved as historical accepted evidence; not substituted for current STEP 4.5 browser acceptance |
-| full current-source browser matrix | NOT RUN in this pass |
+| E2E discovery | PASS after explicit `IsTestProject`/private runner configuration; prior invalid-JSON was traced to the module initializer guard |
+| Browser: shared sort/action standard | FAIL — current source reached local published Backoffice on `127.0.0.1:5510`; `SharedSortHeadersUserGridAndActionIconsMatchTheGlobalStandard` expected sort header border-top `0px`, actual `2px` |
+| Browser: exposed navigation smoke | FAIL — authenticated navigation reached pages, then `#blazor-error-ui` became visible; this needs correlation before attributing it to row menus |
+| Browser mutation matrix | NOT ACCEPTED — no isolated API/Backoffice pair with isolated business records was available; shared-development execution was used only for read-only diagnostics with explicit guard override |
 
 ## نتیجه
 
-**STEP 4.5 = FAIL / NOT READY.** Shared component and the majority of tabular row actions are standardized without backend/schema/data changes, but complete acceptance cannot be claimed while raw nested controls remain and the full current-source browser matrix has not passed. STEP 5 شروع نشده است.
+**STEP 4.5 = FAIL / NOT READY.** Source coverage for the previously identified nested purchasing and tree-action gaps is implemented, and current build/unit/backoffice/integration gates pass. Acceptance remains blocked by a reproduced sort-indicator browser failure, a browser smoke circuit error requiring correlation, and the absence of a fully isolated authenticated browser deployment for mutation scenarios. STEP 5 شروع نشده است.
 
 ## checklist تفصیلی source/grid
 

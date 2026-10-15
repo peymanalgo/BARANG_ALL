@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><IsPackable>false</IsPackable></PropertyGroup>
-  <ItemGroup><PackageReference Include="Microsoft.NET.Test.Sdk" /><PackageReference Include="Microsoft.Playwright" /><PackageReference Include="xunit.v3" /><PackageReference Include="xunit.runner.visualstudio" /></ItemGroup>
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><IsTestProject>true</IsTestProject><IsPackable>false</IsPackable></PropertyGroup>
+  <ItemGroup><PackageReference Include="Microsoft.NET.Test.Sdk" /><PackageReference Include="Microsoft.Playwright" /><PackageReference Include="xunit.v3" /><PackageReference Include="xunit.runner.visualstudio"><PrivateAssets>all</PrivateAssets><IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets></PackageReference></ItemGroup>
   <ItemGroup><Using Include="Xunit" /></ItemGroup>
   <ItemGroup><Compile Include="../Shared/SupplierReferenceScenario.cs" Link="SupplierReferenceScenario.cs" /></ItemGroup>
 </Project>

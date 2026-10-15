@@ -5,6 +5,8 @@
 @inject IStringLocalizer<AppStrings> L
 @inject ILogger<BarangActionMenu> Logger
 
+@if (Visible)
+{
 <div class="barang-action-menu @(Toolbar ? "barang-action-menu-toolbar" : "barang-action-menu-row")" @onclick:stopPropagation="true">
     <button @ref="_trigger" type="button" class="barang-action-menu-trigger" aria-haspopup="menu" aria-expanded="@(_open ? "true" : "false")" aria-label="@ResolvedLabel" title="@ResolvedLabel" @onclick="Toggle" @onclick:stopPropagation="true" @onkeydown="HandleTriggerKeyDown"><BarangIcon Name="more-vertical" /></button>
     @if (_open)
@@ -14,11 +16,13 @@
         </CascadingValue>
     }
 </div>
+}
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public string Label { get; set; } = "Actions";
     [Parameter] public bool Toolbar { get; set; }
+    [Parameter] public bool Visible { get; set; } = true;
     private string ResolvedLabel => string.IsNullOrWhiteSpace(Label) || Label == "Actions" ? L["Actions"].Value : Label;
     private ElementReference _trigger, _popup;
     private DotNetObjectReference<BarangActionMenu>? _dotNet;

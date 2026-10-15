@@ -11,6 +11,7 @@ public sealed class OrganizationalChartInteractionTests
     public void Company_add_branch_emits_add_branch_action()
     {
         using BunitContext context = new();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddLocalization();
         var companyId = Guid.Parse("10000000-0000-0000-0000-000000000001");
         var branchId = Guid.Parse("20000000-0000-0000-0000-000000000001");
@@ -93,6 +94,7 @@ public sealed class OrganizationalChartInteractionTests
             .Add(x => x.Editable, true)
             .Add(x => x.ActionRequested, EventCallback.Factory.Create<OrganizationChartAction>(this, emitted => action = emitted)));
 
+        chart.Find("article[data-chart-node='company'][data-chart-node-id='" + companyId + "'] .barang-action-menu-trigger").Click();
         chart.Find("article[data-chart-node='company'][data-chart-node-id='" + companyId + "'] button[data-chart-action='branch-create']").Click();
         Assert.NotNull(action);
         Assert.Equal(OrganizationChartActionType.AddBranch, action!.ActionType);
@@ -100,6 +102,7 @@ public sealed class OrganizationalChartInteractionTests
         Assert.Equal(companyId, action!.NodeId);
 
         action = null;
+        chart.Find("article[data-chart-node='branch'][data-chart-node-id='" + branchId + "'] .barang-action-menu-trigger").Click();
         chart.Find("article[data-chart-node='branch'][data-chart-node-id='" + branchId + "'] button[data-chart-action='unit-create']").Click();
         Assert.NotNull(action);
         Assert.Equal(OrganizationChartActionType.AddUnit, action!.ActionType);
@@ -107,6 +110,7 @@ public sealed class OrganizationalChartInteractionTests
         Assert.Equal(branchId, action!.NodeId);
 
         action = null;
+        chart.Find("article[data-chart-node='unit'][data-chart-node-id='" + unitId + "'] .barang-action-menu-trigger").Click();
         chart.Find("article[data-chart-node='unit'][data-chart-node-id='" + unitId + "'] button[data-chart-action='assignment-create']").Click();
         Assert.NotNull(action);
         Assert.Equal(OrganizationChartActionType.AddPerson, action!.ActionType);
@@ -118,6 +122,7 @@ public sealed class OrganizationalChartInteractionTests
     public void Expansion_uses_the_same_typed_chart_action_contract()
     {
         using BunitContext context = new();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddLocalization();
         Guid companyId = Guid.NewGuid();
         OrganizationChartAction? action = null;
@@ -140,6 +145,7 @@ public sealed class OrganizationalChartInteractionTests
     public void Assignment_actions_emit_expected_action_payloads()
     {
         using BunitContext context = new();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddLocalization();
         var companyId = Guid.Parse("10000000-0000-0000-0000-000000000001");
         var branchId = Guid.Parse("20000000-0000-0000-0000-000000000001");
@@ -238,6 +244,7 @@ public sealed class OrganizationalChartInteractionTests
             .Add(x => x.Editable, true)
             .Add(x => x.ActionRequested, EventCallback.Factory.Create<OrganizationChartAction>(this, emitted => action = emitted)));
 
+        chart.Find("article[data-chart-node='assignment'][data-chart-node-id='" + managerId + "'] .barang-action-menu-trigger").Click();
         chart.Find("article[data-chart-node='assignment'][data-chart-node-id='" + managerId + "'] button[data-chart-action='assignment-create-child']").Click();
         Assert.NotNull(action);
         Assert.Equal(OrganizationChartActionType.AddSubordinate, action!.ActionType);
@@ -245,6 +252,7 @@ public sealed class OrganizationalChartInteractionTests
         Assert.Equal(managerId, action!.NodeId);
 
         action = null;
+        chart.Find("article[data-chart-node='assignment'][data-chart-node-id='" + subAssignmentId + "'] .barang-action-menu-trigger").Click();
         chart.Find("article[data-chart-node='assignment'][data-chart-node-id='" + subAssignmentId + "'] button[data-chart-action='assignment-edit']").Click();
         Assert.NotNull(action);
         Assert.Equal(OrganizationChartActionType.EditAssignment, action!.ActionType);

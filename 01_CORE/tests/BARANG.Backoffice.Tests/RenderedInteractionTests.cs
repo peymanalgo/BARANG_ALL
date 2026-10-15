@@ -32,18 +32,25 @@ public sealed class ComponentInteractionTests
         rendered.Find(".branch-node .org-expander").Click();
         rendered.Find(".unit-node .org-expander").Click();
 
-        rendered.Find("button[title='Add Branch']").Click();
+        rendered.Find(".company-node .barang-action-menu-trigger").Click();
+        rendered.Find(".company-node button[data-chart-action='branch-create']").Click();
         Assert.Contains("Branch", rendered.Find(".org-dialog h2").TextContent);
         rendered.Find(".org-dialog .dialog-close").Click();
 
-        rendered.Find("button[title='Add Person']").Click();
+        rendered.Find(".unit-node .barang-action-menu-trigger").Click();
+        rendered.Find(".unit-node button[data-chart-action='assignment-create']").Click();
         Assert.Contains("Assignment", rendered.Find(".org-dialog h2").TextContent);
         rendered.Find(".org-dialog .dialog-close").Click();
 
-        rendered.Find(".company-node button[title='View']").Click();
-        Assert.NotNull(rendered.Find(".org-dialog"));
-        rendered.Find(".org-dialog footer .btn-primary").Click();
-        Assert.Contains(rendered.FindAll(".org-dialog input"), input => !input.HasAttribute("disabled"));
+        using BunitContext viewContext = CreateContext();
+        IRenderedComponent<OrganizationalChart> view = viewContext.Render<OrganizationalChart>();
+        view.WaitForElement(".company-node");
+        view.Find(".company-node .barang-action-menu-trigger").Click();
+        view.Find(".company-node button[data-chart-action='company-view']").Click();
+        Assert.NotNull(view.Find(".org-dialog"));
+        view.Find(".org-dialog footer .btn-primary").Click();
+        Assert.Contains(view.FindAll(".org-dialog input"), input => !input.HasAttribute("disabled"));
+
     }
 
     [Fact]
@@ -171,6 +178,7 @@ public sealed class ComponentInteractionTests
     private static BunitContext CreateContext()
     {
         BunitContext context = new();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddLocalization();
         context.Services.AddSingleton<LocaleDateService>();
         context.Services.AddSingleton<ILocaleDateService>(services => services.GetRequiredService<LocaleDateService>());
