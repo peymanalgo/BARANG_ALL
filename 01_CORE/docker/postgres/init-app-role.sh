@@ -9,10 +9,21 @@ WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'app_user')
 \gexec
 SELECT format('ALTER ROLE %I PASSWORD %L', :'app_user', :'app_password')
 \gexec
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'barang_test_app') THEN
+        CREATE ROLE barang_test_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+    END IF;
+END
+$$;
 CREATE SCHEMA IF NOT EXISTS barang;
 SELECT format('GRANT CONNECT ON DATABASE %I TO %I', current_database(), :'app_user')
 \gexec
+SELECT format('GRANT CREATE ON DATABASE %I TO %I', current_database(), :'app_user')
+\gexec
 SELECT format('GRANT USAGE ON SCHEMA barang TO %I', :'app_user')
+\gexec
+SELECT format('GRANT CREATE ON SCHEMA barang TO %I', :'app_user')
 \gexec
 SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA barang GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I', current_user, :'app_user')
 \gexec

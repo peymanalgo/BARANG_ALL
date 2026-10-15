@@ -34,6 +34,82 @@ public sealed class WorkflowDesignerAdministration(CoreDbContext db, ICompanyCon
         return Result.Success<object>(new { current, history, definition = new { id = definition, code, name } });
     }
 
+    public async Task<Result<object>> ImportAsync(WorkflowDefinitionImportCommand command, CancellationToken ct)
+    {
+        if (!string.Equals(command.Code, "BARANG.ORDER", StringComparison.Ordinal))
+            return Result.Failure<object>(Error.Validation("workflow.definition.import_code_not_supported"));
+        WorkflowGraphCommand graph = new(null, command.Name, command.ChangeNote, command.Nodes, command.Transitions);
+        List<object> issues = Validate(graph);
+        if (issues.Count > 0) return Result.Failure<object>(Error.Validation("workflow.definition.invalid_graph"));
+
+        await using DbConnection c = db.Database.GetDbConnection();
+        await c.OpenAsync(ct);
+        await SetCompany(c, ct);
+        await using DbTransaction tx = await c.BeginTransactionAsync(ct);
+        await using (DbCommand exists = CmdTx(c, "select id from barang.workflow_definitions where company_id=@company and code=@code for update", ("company", Company), ("code", command.Code), tx))
+        {
+            if (await exists.ExecuteScalarAsync(ct) is Guid existingDefinition)
+            {
+                await using DbCommand draft = CmdTx(c, "select id from barang.workflow_definition_versions where company_id=@company and definition_id=@definition and status='Draft' order by version_number desc limit 1", ("company", Company), ("definition", existingDefinition), tx);
+                if (await draft.ExecuteScalarAsync(ct) is Guid existingDraft)
+                {
+                    await tx.RollbackAsync(ct);
+                    await c.CloseAsync();
+                    return await GetAsync(existingDraft, ct);
+                }
+                await tx.RollbackAsync(ct);
+                return Result.Failure<object>(Error.Conflict("workflow.definition.already_exists"));
+            }
+        }
+
+        Dictionary<string, Guid?> mappedPositions = new(StringComparer.OrdinalIgnoreCase);
+        foreach (WorkflowGraphNode node in command.Nodes.Where(x => x.PositionId is not null))
+        {
+            string key = node.PositionId!.Value.ToString();
+            if (command.PositionCodes is null || !command.PositionCodes.TryGetValue(key, out string? code) || string.IsNullOrWhiteSpace(code))
+            {
+                await tx.RollbackAsync(ct);
+                return Result.Failure<object>(Error.Validation("workflow.definition.import_position_mapping_required"));
+            }
+            await using DbCommand position = CmdTx(c, "select id from barang.positions where company_id=@company and code=@code and is_active=true", ("company", Company), ("code", code.Trim()), tx);
+            object? value = await position.ExecuteScalarAsync(ct);
+            if (value is null)
+            {
+                await tx.RollbackAsync(ct);
+                return Result.Failure<object>(Error.BusinessRule("workflow.definition.import_position_not_found"));
+            }
+            mappedPositions[key] = (Guid)value;
+        }
+
+        Guid definition = Guid.NewGuid();
+        Guid version = Guid.NewGuid();
+        DateTimeOffset now = Now;
+        await using (DbCommand insert = CmdTx(c, "insert into barang.workflow_definitions(id,company_id,code,name_json,created_at_utc,updated_at_utc,version) values(@id,@company,@code,@name::jsonb,@now,@now,1)",
+            ("id", definition), ("company", Company), ("code", command.Code), ("name", JsonSerializer.Serialize(command.Name)), ("now", now), tx))
+            await insert.ExecuteNonQueryAsync(ct);
+        await using (DbCommand insertVersion = CmdTx(c, "insert into barang.workflow_definition_versions(id,company_id,definition_id,version_number,status,change_note_json,created_at_utc,created_by_user_id,version) values(@version_id,@company,@definition_id,1,'Draft',@note::jsonb,@now,@actor,1)",
+            ("version_id", version), ("company", Company), ("definition_id", definition), ("note", JsonSerializer.Serialize(command.ChangeNote ?? new("", "", ""))), ("now", now), ("actor", Actor), tx))
+            await insertVersion.ExecuteNonQueryAsync(ct);
+        await tx.CommitAsync(ct);
+        await c.CloseAsync();
+
+        IReadOnlyList<WorkflowGraphNode> nodes = command.Nodes.Select(node =>
+            node.PositionId is { } source && mappedPositions.TryGetValue(source.ToString(), out Guid? target)
+                ? node with { PositionId = target }
+                : node).ToArray();
+        Result<object> saved = await SaveDraftAsync(new WorkflowGraphCommand(version, command.Name, command.ChangeNote, nodes, command.Transitions), ct);
+        if (saved.IsFailure)
+        {
+            await using DbConnection cleanup = db.Database.GetDbConnection();
+            await cleanup.OpenAsync(ct);
+            await SetCompany(cleanup, ct);
+            await using DbCommand delete = Cmd(cleanup, "delete from barang.workflow_definitions where company_id=@company and id=@definition", ("company", Company), ("definition", definition));
+            await delete.ExecuteNonQueryAsync(ct);
+            await cleanup.CloseAsync();
+        }
+        return saved;
+    }
+
     public async Task<Result<object>> SaveDraftAsync(WorkflowGraphCommand command, CancellationToken ct)
     {
         List<object> issues = Validate(command); if (issues.Count > 0) return Result.Failure<object>(Error.Validation("workflow.definition.invalid_graph"));

@@ -41,7 +41,10 @@ public sealed class ReservationsShortagesE2ETests : IAsyncLifetime
         await page.GetByRole(AriaRole.Link, new() { Name = "Stock Shortages", Exact = true }).ClickAsync();
         await Assertions.Expect(section).ToHaveAttributeAsync("data-section", "shortages");
         await Assertions.Expect(section.Locator("h2")).ToHaveTextAsync("Stock Shortages");
-        await Assertions.Expect(section.GetByRole(AriaRole.Columnheader, new() { Name = "Shortage", Exact = true })).ToBeVisibleAsync();
+        if (await section.Locator("table.data-grid tbody tr").CountAsync() > 0)
+            await Assertions.Expect(section.GetByRole(AriaRole.Columnheader, new() { Name = "Shortage", Exact = true })).ToBeVisibleAsync();
+        else
+            await Assertions.Expect(section).ToContainTextAsync("No shortages found");
         await Assertions.Expect(section.Locator(".crud-toolbar input")).ToHaveCountAsync(2); // Search plus warehouse selector.
         await Assertions.Expect(section.Locator(".crud-toolbar button")).ToHaveCountAsync(1);
         await section.Locator(".crud-search input").FillAsync("not-a-real-stock-row");

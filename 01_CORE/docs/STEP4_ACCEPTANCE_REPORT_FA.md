@@ -1,5 +1,44 @@
 # گزارش پذیرش STEP 4 — issue / release / change / return
 
+## الحاقیهٔ پذیرش نهایی این نوبت — 2026-10-15
+
+این بخش آخرین نتیجهٔ قابل اتکای این checkout را جایگزین جمع‌بندی‌های interim پایین سند می‌کند. اجرای فعلی از `bce034cd4e24cdacb8abe358be666dc8f3a9c39d` آغاز شد؛ working tree فقط تغییرات همین پذیرش و `.keys` محلیِ نامرتبط را داشت.
+
+### رفع setup و runner
+
+- علت contradiction در محیط تازه چهار مورد بود: script نقش PostgreSQL با CRLF/shebang نامعتبر داشت؛ `barang_test_app` به‌صورت `NOLOGIN` ساخته می‌شد؛ مسیر supported برای import گراف وجود نداشت؛ و guard تست browser اجرای localhost ایزوله را رد می‌کرد و خطای ثانویهٔ VSTest یعنی `Test process did not return valid JSON` می‌ساخت.
+- مسیر supported جدید `POST /api/v1/workflows/definition/import` است. سرویس فقط `BARANG.ORDER` را می‌پذیرد، graph را validate می‌کند، کد positionهای fixture را به position فعال همان company map می‌کند و missing/cross-company reference را رد می‌کند. persistence با service/EF انجام می‌شود؛ raw SQL برای ساخت definition استفاده نشد.
+- fixture پاک‌شدهٔ version-controlled در `tests/Acceptance/fixtures/barang-order-workflow.v17.sanitized.json` و بازسازی reproducible در `tests/Acceptance/Step4WorkflowSetup.ps1` ثبت شده‌اند. fixture شامل 23 node/41 transition است و هیچ credential، runtime record یا customer record ندارد. script با import، draft، validate و publish، فقط در محیط disposable، مسیر `DECIDE_WAREHOUSE → InventoryIssue → PRINT` را اضافه می‌کند.
+- script PostgreSQL اکنون role تست را با `LOGIN` می‌سازد. اجرای قبلی full Integration با 108 failure فقط به `role "barang_test_app" is not permitted to log in` ختم شد؛ پس از این repair، همان suite روی DB ایزولهٔ `barang_step4_current_test` برابر 128/128 سبز شد. هیچ failure endpointی از آن اجرای اصلاح‌شده باقی نماند.
+- defect runtime جداگانه نیز در این نوبت تثبیت شد: token قدیمی `Started` با enum جاری ناسازگار بود و payload camelCase فرم issue با deserializer حساس به case خوانده می‌شد. migration `20261015121000_NormalizeWorkflowStartedStage` و `JsonSerializerDefaults.Web` برای issue، هر دو با تست/اجرای واقعی تأیید شدند.
+
+### محیط و graph واقعی
+
+Compose project `barang-step4-current` با API=`http://localhost:18091`، Backoffice=`http://localhost:15111`، PostgreSQL=`localhost:55447` و DB مرورگر `barang_step4_browser` استفاده شد؛ DB full Integration جداگانه `barang_step4_current_test` بود. volumeهای این project با `barang-step4-current_` شروع می‌شوند و `barang-core-*` توسعه untouched ماند. migrations تا `20261015121000_NormalizeWorkflowStartedStage` اعمال شدند.
+
+import/Designer در همین محیط با identity احراز‌شده و company ایزوله انجام شد: candidate active id=`e71a16f1-bdcd-4987-a9a1-17e85eb1e205`، version=4 در محیط تازه، 24 node و 42 transition، با دقیقاً یک `InventoryIssue` و بدون position ثابت. validation خالی و publish موفق بود. instanceهای قبلی به version خودشان bind ماندند؛ candidate فقط برای instanceهای جدید اثر دارد.
+
+### نتایج فعلی
+
+| بررسی | نتیجه و evidence |
+|---|---|
+| Full current Integration | **128/128 PASS**، 3:49، `step4-current-full-rerun.trx`؛ بعد از اصلاح role setup، نه historical substitute |
+| Unit | **222/222 PASS** |
+| Backoffice static | **184/184 PASS** |
+| STEP4 PostgreSQL feature | **2/2 PASS**: `WarehouseIssueIsAtomicAndRetrySafeWithoutDuplicatingLedgerEntries` و `PreIssueAdjustmentIsAtomicVersionedAndRollsBackOnShortage` |
+| Designer browser | **2/2 PASS** با Chrome نصب‌شده و explicit dotnet test runner |
+| InventoryIssue browser | **1/1 PASS**؛ task واقعی warehouse-specific claim/complete، دو OrderItem هم‌کلید، issue ledger دو ردیف، retry semantics و task بعدی `PRINT` |
+| Warehouse Return browser | **1/1 PASS**؛ انتخاب original issue، مقدار/UOM/disposition usable، post واقعی و reload persisted form |
+| Reservation/shortage browser regression | **4/4 PASS**؛ empty shortage state نیز به‌صورت contract معتبر assert می‌شود |
+
+برای current order isolated `e09cff44-e054-4865-b16f-02ae53c6ac3d`، on-hand نهایی پس از issue/returnهای ایزوله برابر **19** و reserved برابر 0 بود؛ دو reservation با OrderItemId مستقل به `Consumed` رسیدند، دو `Issue` transaction با source=`WAREHOUSE_ISSUE` ثبت شد و task `InventoryIssue` به `Completed` و task بعدی به `PRINT` رسید. return usable از UI و retry API همان reference را idempotent نگه داشت؛ over-limit با HTTP 422 و کد `inventory.insufficient_stock` رد شد. damaged/unknown در UI دکمهٔ post usable را disabled نگه می‌دارد و API نیز disposition usable را الزام می‌کند.
+
+### security و نتیجه
+
+Full Integration شامل company selection، active/inactive/locked account، cross-company access و administrator restrictions است و پس از RLS recursion repair سبز شد. repair `reference_global_admin` دسترسی legitimate administrator را حفظ کرد و bypass با superuser/BYPASSRLS یا IgnoreQueryFilters در request application اضافه نشد.
+
+**نتیجهٔ این الحاقیه: STEP 4 PASS برای scope فعلی.** Issue، cancel/release، pre-issue adjustment، stale/shortage rollback، return/idempotency و workflow assignment در تست‌های current-source پوشش دارند؛ browser acceptance مستقیم issue و return سبز است و cancellation/adjustment/rollback در feature integration ایزوله سبز است. STEP 4.5 و STEP 5 شروع نشده‌اند.
+
 ## دامنه و provenance
 
 Checkout `step2-clean/01_CORE`، شاخه `codex/step2-inventory-unit-contracts`. commit شروع این نوبت `a0b8041bffe9a018fdd3d0366a178ad61343e394` و commit برنامهٔ گزارش‌شده `1a88ef344fb19dcf2eb83a43353726b8559c4e72` بود. `.keys` محلیِ untracked دست‌نخورده باقی ماند.

@@ -36,16 +36,16 @@ public sealed class Step3ReservationAcceptanceE2ETests : IAsyncLifetime
         await page.GotoAsync($"{baseUrl}/cartable/task/{taskId}?returnUrl=%2Fcartable", new() { WaitUntil = WaitUntilState.NetworkIdle });
         await Assertions.Expect(page.Locator("#reservation-warehouse")).ToBeVisibleAsync();
         await page.Locator("#reservation-warehouse").SelectOptionAsync(new SelectOptionValue { Index = 1 });
+        bool inventoryIssue = await page.Locator("h2").Filter(new() { HasText = "صدور کالا از انبار" }).CountAsync() > 0
+            || await page.Locator("h2").Filter(new() { HasText = "Warehouse issue" }).CountAsync() > 0;
         await page.Locator("section.cartable-actions-panel button").First.ClickAsync();
         await page.Locator("section.cartable-operational-popup .cartable-v5-outcomes button.btn-primary").First.ClickAsync();
-        try
+        if (inventoryIssue)
         {
-            await page.WaitForURLAsync(new System.Text.RegularExpressions.Regex("/cartable$"), new() { Timeout = 2_000 });
+            await Assertions.Expect(page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("/cartable$"));
+            return;
         }
-        catch (TimeoutException)
-        {
-            await page.GetByRole(AriaRole.Button, new() { Name = "تأیید|ثبت تصمیم|Confirm|تأكيد", Exact = false }).Last.ClickAsync(new() { Force = true });
-        }
+        await page.Locator(".dialog-card .form-actions button.btn-primary").Last.ClickAsync(new() { Force = true });
         await Assertions.Expect(page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("/cartable$"));
     }
 

@@ -18,6 +18,13 @@ public sealed record WorkflowGraphCommand(
     WorkflowLocalizedText? ChangeNote,
     IReadOnlyList<WorkflowGraphNode> Nodes,
     IReadOnlyList<WorkflowGraphTransition> Transitions);
+public sealed record WorkflowDefinitionImportCommand(
+    string Code,
+    WorkflowLocalizedText Name,
+    WorkflowLocalizedText? ChangeNote,
+    IReadOnlyList<WorkflowGraphNode> Nodes,
+    IReadOnlyList<WorkflowGraphTransition> Transitions,
+    IReadOnlyDictionary<string, string>? PositionCodes);
 public sealed record WorkflowGraphNode(string Key, int Type, WorkflowLocalizedText? Title, WorkflowLocalizedText? Description, Guid? PositionId, decimal X, decimal Y);
 public sealed record WorkflowGraphTransition(string FromKey, string ToKey, string? FieldCode, int? Operator, string? Value, bool IsDefault, int SortOrder, string? OutcomeCode, string? SourceAnchor, string? TargetAnchor, WorkflowLocalizedText? Title);
 public sealed record WorkflowVersionView(Guid Id, int Number, string Status, DateTimeOffset CreatedAtUtc, bool IsReadOnly, IReadOnlyList<WorkflowGraphNodeView> Nodes, IReadOnlyList<WorkflowGraphTransitionView> Transitions, long Version);
@@ -43,6 +50,7 @@ public sealed record WorkflowFileDownload(string FileName, string MediaType, lon
 public interface IWorkflowDesignerAdministration
 {
     Task<Result<object>> GetAsync(Guid? versionId, CancellationToken ct);
+    Task<Result<object>> ImportAsync(WorkflowDefinitionImportCommand command, CancellationToken ct);
     Task<Result<object>> SaveDraftAsync(WorkflowGraphCommand command, CancellationToken ct);
     Task<Result<IReadOnlyList<object>>> ValidateAsync(Guid versionId, CancellationToken ct);
     Task<Result<IReadOnlyList<object>>> ValidateAsync(WorkflowGraphCommand command, CancellationToken ct);

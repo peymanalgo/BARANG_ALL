@@ -12,6 +12,7 @@ public static class WorkflowEndpoints
  {
   RouteGroupBuilder r=e.MapGroup("/api/v1/workflows");
   r.MapGet("/definition",async(Guid?versionId,IWorkflowDesignerAdministration s,CancellationToken ct)=>Map(await s.GetAsync(versionId,ct))).RequireAuthorization(SecurityPermissions.WorkflowRead);
+  r.MapPost("/definition/import",async(WorkflowDefinitionImportCommand c,IWorkflowDesignerAdministration s,CancellationToken ct)=>Map(await s.ImportAsync(c,ct),true)).RequireAuthorization(SecurityPermissions.WorkflowManage);
   r.MapPut("/definition/draft",async(WorkflowGraphCommand c,IWorkflowDesignerAdministration s,CancellationToken ct)=>Map(await s.SaveDraftAsync(c,ct))).RequireAuthorization(SecurityPermissions.WorkflowManage);
   r.MapGet("/definition/validate/{versionId:guid}",async(Guid versionId,IWorkflowDesignerAdministration s,CancellationToken ct)=>Map(await s.ValidateAsync(versionId,ct))).RequireAuthorization(SecurityPermissions.WorkflowRead);
   r.MapPost("/definition/validate",async(WorkflowGraphCommand c,IWorkflowDesignerAdministration s,CancellationToken ct)=>Map(await s.ValidateAsync(c,ct))).RequireAuthorization(SecurityPermissions.WorkflowRead);
