@@ -54,7 +54,7 @@ Base Data و lookupها؛ organization/warehouses/persons/equipment؛ User/RBAC�
 
 ## نتیجه
 
-**STEP 4.5 = FAIL / NOT ACCEPTED.** The two previously reproduced browser defects are fixed and pass on a current-source isolated deployment. Current Release, Unit `222/222`, Backoffice `184/184`, and isolated Integration `128/128` pass. Source coverage audit reports ۵۰ family/file entries and no remaining raw row-action marker in the audited source; however, the required authenticated per-family mutation matrix and STEP 3/4 browser regressions are not green because the isolated fixture lacks orders, a valid reservation task, and a returnable issue. Therefore no deployment was made to development port `5100`; it still serves the old UI assets. STEP 5 شروع نشده است.
+**Historical snapshot — superseded by the final acceptance section below.** At the time of this earlier snapshot, the isolated fixture and development deployment were incomplete. The later clean fixture run and actual `:5100` deployment are authoritative.
 
 ## شواهد اجرای فعلی و استقرار
 
@@ -171,7 +171,7 @@ fixture workflow از `tests/Acceptance/fixtures/barang-order-workflow.v17.sanit
 
 ## نتیجه جاری
 
-**STEP 4.5 = FAIL / NOT ACCEPTED.** دو defect فنی بازتولیدشده (static asset/SRI در deployment artifact و sort-trigger border) رفع و با تست مرورگر جاری تأیید شدند. اما شرط کامل acceptance هنوز برقرار نیست: full Integration جاری fail/hang دارد و Orders/Design Bank/Pricing/nested Purchasing و STEP4 return با fixture معتبر و deployment واقعی پورت 5100 به‌صورت کامل اجرا نشده‌اند. STEP 5 همچنان paused است.
+**Historical snapshot — superseded by the final acceptance section below.** این نتیجه مربوط به اجرای ناقص پیش از fixture/deployment نهایی است.
 
 ## الحاقیهٔ مقایسهٔ کنترل‌شده و اجرای پایدار
 
@@ -204,7 +204,7 @@ fixture workflow از `tests/Acceptance/fixtures/barang-order-workflow.v17.sanit
 
 ### نتیجهٔ مقایسه
 
-**Regression gate جاری: PASS — current source `129/129`; baseline `128/128`.** علت ۸۸/۴۱ قبلی، محیط/DB/role initialization و آلودگی اجرای مجدد بود و با DB clean قابل تکرار نشد. با این حال **STEP 4.5 هنوز PASS نیست**: Design Bank با fixture کامل و nested Purchasing با summary معتبر browser هنوز کامل نشده‌اند و deployment پورت `5100` انجام نشده است.
+**Historical comparison — superseded by the final acceptance section below.** Regression gate clean با `129/129` تأیید شد؛ در آن زمان Design Bank/PurchaseRequest و deployment نهایی هنوز در حال تکمیل بودند.
 
 ## الحاقیه نهایی — اجرای جاری پس از اصلاح دو check (2026-10-15)
 
