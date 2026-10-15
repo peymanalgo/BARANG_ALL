@@ -6,22 +6,24 @@
 /* Child action buttons need ::deep because BarangIconButton owns their DOM. */
 ::deep .barang-action-menu-popup .barang-icon-button,
 ::deep .barang-action-menu-popup .icon-button{
-    display:flex;
-    flex-direction:row;
+    display:flex !important;
+    flex-direction:row !important;
     align-items:center;
     justify-content:flex-start;
     gap:8px;
-    width:100%;
-    min-width:0;
+    width:100% !important;
+    height:auto !important;
+    min-width:0 !important;
+    min-height:38px !important;
     min-height:38px;
-    max-width:none;
+    max-width:none !important;
     direction:inherit;
-    padding:7px 10px;
+    padding:7px 10px !important;
     color:#31574c;
     background:transparent;
-    border:0;
+    border:0 !important;
     border-radius:7px;
-    box-shadow:none;
+    box-shadow:none !important;
     text-align:start;
     white-space:nowrap;
     font:inherit;
@@ -30,11 +32,11 @@
 ::deep .barang-action-menu-popup .barang-icon-button:hover,
 ::deep .barang-action-menu-popup .barang-icon-button:focus-visible,
 ::deep .barang-action-menu-popup .icon-button:hover,
-::deep .barang-action-menu-popup .icon-button:focus-visible{background:#edf5f1;outline:2px solid transparent;outline-offset:-2px}
+::deep .barang-action-menu-popup .icon-button:focus-visible{background:#edf5f1;outline:2px solid transparent;outline-offset:-2px;border-color:transparent !important}
 ::deep .barang-action-menu-popup .barang-icon-button:focus-visible,
 ::deep .barang-action-menu-popup .icon-button:focus-visible{outline-color:#86b8a7}
 ::deep .barang-action-menu-popup .barang-icon-button:disabled{cursor:not-allowed;opacity:.55}
 ::deep .barang-action-menu-popup .barang-icon-button .barang-icon,
-::deep .barang-action-menu-popup .icon-button .barang-icon{display:block;flex:0 0 18px;width:18px;height:18px;min-width:18px;min-height:18px}
+::deep .barang-action-menu-popup .icon-button .barang-icon{display:block;flex:0 0 18px;width:18px !important;height:18px !important;min-width:18px;min-height:18px}
 ::deep .barang-action-menu-popup .barang-action-menu-item-label{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 ::deep .barang-action-menu-popup .icon-button::after{content:attr(title);flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
