@@ -27,6 +27,7 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
         await EnsureMigrationRolesAsync(_administrationConnectionString);
         await using CoreDbContext context = CreateCoreDbContext(_administrationConnectionString);
         await context.Database.MigrateAsync();
+        await NormalizeMigrationRolePrivilegesAsync(_administrationConnectionString);
         _connectionString = await ConfigureApplicationRoleAsync(_administrationConnectionString);
         await ResetAsync();
     }
@@ -206,6 +207,15 @@ public sealed class PostgreSqlDatabaseFixture : IAsyncLifetime
             $roles$;
             ALTER ROLE barang_app LOGIN PASSWORD 'barang_app_dev_only';
             """;
+        await using NpgsqlConnection connection = new(administrationConnectionString);
+        await connection.OpenAsync();
+        await using NpgsqlCommand command = new(sql, connection);
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private static async Task NormalizeMigrationRolePrivilegesAsync(string administrationConnectionString)
+    {
+        const string sql = "REVOKE UPDATE ON barang.user_permissions FROM barang_app;";
         await using NpgsqlConnection connection = new(administrationConnectionString);
         await connection.OpenAsync();
         await using NpgsqlCommand command = new(sql, connection);

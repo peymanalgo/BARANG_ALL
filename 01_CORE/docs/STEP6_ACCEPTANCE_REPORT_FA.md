@@ -5,54 +5,91 @@
 
 ## نتیجه
 
-وضعیت: **CONDITIONAL GO**. هستهٔ canonical pricing، migration chain و regressionهای فعلی سبز هستند؛ اما browser acceptance کاملِ احراز‌شده برای estimate/finalization/reload یک سفارش با fixture ایزوله در این اجرا تکمیل نشده است. بنابراین PASS نهایی ادعا نمی‌شود.
+وضعیت: **PASS برای دامنهٔ STEP ۶**. محاسبهٔ canonical، انتخاب گروه مشتری/قیمت، tax status، snapshot نهایی و Order Wizard در محیط ایزولهٔ احراز‌شده آزمون شد. سیاست‌های خارج از این STEP همچنان تصمیم‌گیری‌نشده یا خارج از دامنه هستند و مجوز شروع STEP ۷ محسوب نمی‌شوند.
 
-## provenance و baseline
+## منشأ سیاست و حدود approval
 
-- baseline پذیرفته‌شده: application `604c0f3c3d37b6bc648597609825ede6e0254158`، report `8f7b290d599fcdef07bc7bd0bb0508888e8874ca`.
-- source تست‌شده و deploy‌شده: `937454328c52e7f570eab190a03d0a181ad2fb41`.
-- backup توسعه پیش از migration: `D:\00_BARANG\barang_core_step6_predeploy.backup`؛ archive با `pg_restore --list` خوانده شد (TOC=1734، حدود ۵MB). این فایل خارج از repository و خارج از commit است.
-- migration توسعه: `20261015211147_AddCanonicalPricingResolution` با موفقیت روی `barang_core` اعمال شد؛ DB volume و داده‌های قبلی حفظ شدند.
+منشأهای repository:
 
-## رفتار پیاده‌سازی‌شده
+- `docs/PRICING.md`، بخش‌های Discount precedence، Tax resolution و Price group: ترتیب تخفیف دقیقاً **Customer > CustomerGroup > Source/Partner > General** است؛ فقط یک rule با بالاترین specificity انتخاب می‌شود و stacking مجاز نیست.
+- `docs/INTEGRATION_IMPLEMENTATION_PLAN_FA.md`، بخش Pricing policy، و `docs/ORDER_LIFECYCLE_INTEGRATION_CONTRACT_FA.md`، الحاقیهٔ STEP ۶، همین ترتیب و این قاعده را به‌عنوان قرارداد فعلی تکرار می‌کنند.
+- همان اسناد تصریح می‌کنند که `CustomerFinancialProfile.TaxStatusCode` بر rule با همان status منطبق می‌شود و فقط در نبود آن `DEFAULT` fallback است.
+- همان اسناد `Customer.PriceGroupId` را از `CustomerGroupId` مستقل می‌دانند: tariff گروه قیمت منطبق بر tariff بدون گروه مقدم است؛ در نبود tariff منطبق، fallback عمومی استفاده می‌شود.
+- `tests/BARANG.Core.UnitTests/PricingFoundationTests.cs` scope گروه مشتری، price group و tax status را بررسی می‌کند؛ `tests/BARANG.Core.IntegrationTests/Database/PricingE2ETests.cs` مسیر محاسبه، finalization، snapshot تغییرناپذیر و cross-company را آزمون می‌کند.
 
-1. Customer و CustomerGroup به resolver canonical می‌رسند. ترتیب تخفیف، بدون stacking، Customer > CustomerGroup > source/partner > general است و فقط یک قانون با بالاترین specificity اعمال می‌شود.
-2. `CustomerFinancialProfile.TaxStatusCode` برای انتخاب قانون tax استفاده می‌شود؛ قانون status-specific بر DEFAULT مقدم است.
-3. `Customer.PriceGroupId` به tariffهای `price.group` متصل است؛ tariff گروه‌دارِ منطبق بر customer بر tariff عمومی مقدم است. این مسیر از `customer.group` مستقل است.
-4. snapshot componentها `PricingRuleId` و `PricingRuleVersion` را به‌همراه breakdown قبلی حفظ می‌کنند. محاسبه با decimal و precision موجود دامنه انجام می‌شود و total کلاینت trusted نیست.
-5. نمایش breakdown موجود Order/Pricing (component، discount، tax، total و currency) حفظ شد؛ تغییر غیرضروری در wizard انجام نشد.
+این‌ها approval موجود repository هستند، نه سیاست جدید تولیدشده در این اجرا. هنوز برای stacking چند تخفیف، exemption مستقل از TaxStatusCode و تبدیل ارز تصمیم approval جداگانه وجود ندارد؛ این رفتارها اختراع نشده‌اند.
 
-## تغییرات فنی
+## رفتار و اصلاحات تأییدشده
 
-- Domain/Application: scope گروه مشتری، PriceGroupId tariff، TaxStatusCode، و rule id/version در snapshot.
-- Infrastructure: resolver مشترک estimate/finalization، انتخاب tariff بر اساس price.group، eligibility شرکت/فعال/بازهٔ زمانی و precedence تخفیف/مالیات.
-- Database: migration فقط ستون‌های جدید `tariffs.price_group_id`، `price_component_snapshots.pricing_rule_id` و `pricing_rule_version`، index/FKهای لازم و index resolution مالیات را اضافه می‌کند؛ ستون‌های قدیمی `discount_rules.customer_group_id` و `tax_rules.customer_tax_status_code` دوباره ایجاد نمی‌شوند.
-- مستندات: `docs/PRICING.md`، برنامهٔ پیاده‌سازی و قرارداد lifecycle به‌روزرسانی شدند.
+- Customer و CustomerGroup به resolver canonical می‌رسند؛ `CustomerGroupId` با customer دیگر اشتباه نمی‌شود.
+- `PriceGroupId` tariff گروه قیمت را انتخاب می‌کند و از customer group جداست.
+- مقایسهٔ `TaxStatusCode` به‌صورت case-insensitive canonical انجام می‌شود؛ تفاوت casing بین profile و rule باعث افتادن ناخواسته به DEFAULT نمی‌شود.
+- estimate و finalization از resolver مشترک استفاده می‌کنند؛ total ارسالی client مرجع نیست و محاسبهٔ مبلغ با decimal و rounding دامنه انجام می‌شود.
+- snapshot شامل currency، component breakdown، rule id/version، discount، tax و total است و با تغییر master data تغییر نمی‌کند.
+- `OrderStep7Panel` از endpoint canonical `/submit` استفاده می‌کند؛ endpoint جعلی `/finalize` حذف شد.
+- هیچ migration جدیدی برای این اصلاحات لازم نبود؛ migration کامل در دیتابیس ایزوله اعمال شد.
 
-## شواهد آزمون
+## محیط ایزوله و provenance
+
+- Compose project: `barang-step6`
+- PostgreSQL: `127.0.0.1:5546`, database `barang_step6_test`
+- API: `http://localhost:8086`
+- Backoffice: `http://localhost:5106`
+- volumes جدا از توسعه برای PostgreSQL/Redis/MinIO و key storage؛ `barang_core` و داده‌های محیط توسعه استفاده نشدند.
+- `BARANG_BUILD_COMMIT` ایزوله: `working-tree-step6-tax-fix-v2`؛ imageهای اجراشده:
+  - API: `sha256:d87409b13585f647d8de368d901536652e1fd0d9a0d22d246d55a6fced033d8b`
+  - Backoffice: `sha256:15f56cba46b229e4aaa33591e13676a285869900ec5fca1e84690cef42b55624`
+- fixture فقط با company/customer/group/price-group/tax/tariff/orderهای ایزوله و identityهای تست ساخته شد؛ secrets در گزارش نیامده‌اند.
+- backup توسعهٔ ثبت‌شده: `D:\00_BARANG\barang_core_step6_predeploy.backup`؛ فهرست restore با `pg_restore --list` بررسی شده است.
+
+## پذیرش واقعی Order Wizard
+
+تست `tests/BARANG.Backoffice.E2ETests/Step6PricingAcceptanceE2ETests.cs`، متد `IsolatedOrderWizardPersistsCustomerGroupBreakdownAndFinalSnapshot`، با System Chrome، fixture ایزوله و API/Backoffice همین source اجرا شد: **1/1 PASS**.
+
+نتیجهٔ persisted پس از submit و reload:
+
+- order: `2360d500-dba0-40d9-a331-d5dc41a22c7c`
+- snapshot: `02bc424f-fd48-4bbe-8d01-69a72c75be54`
+- currency: `IRR`
+- subtotal: `53.00`
+- discount: `5.30` از `STEP6-GROUP-DISCOUNT`، rule version 1
+- taxable: `47.70`
+- tax: `2.39` با rate 5% از `STEP6-TAX-RULE`، rule version 1
+- final: `50.09`
+- tariff raw گروه قیمت: `STEP6-GROUP-RAW` و id آن در component snapshot ثبت شد.
+
+محاسبهٔ مستقل از resolver: `40 + 6 + 1 + 2 + 4 = 53`; ده درصد discount برابر `5.30`; پایهٔ tax برابر `47.70`; پنج درصد برابر `2.385` و با rounding دامنه `2.39`; total برابر `50.09`.
+
+پذیرش شامل انتخاب و ماندگاری customer/group، breakdown قابل مشاهده، finalize با `/submit`، reload Order 360 و rule id/version است. قانون نامنطبق/منقضی، cross-company، تغییر tariff پس از finalize و حفظ snapshot نیز در `PricingE2ETests.AuthenticatedPricingFlowCalculatesFinalizesAndPreservesHistory` آزمون شد.
+
+## آزمون‌ها و failureهای واقعی
 
 | بررسی | نتیجه |
 |---|---:|
 | Unit current source | **224/224 PASS** |
-| Backoffice | **184/184 PASS** |
-| Integration کامل روی PostgreSQL ایزوله `127.0.0.1:5545 / barang_step45_test` | **130/130 PASS**، 0 fail، 0 skip، حدود ۳:۲۷ |
-| Pricing integration منتخب | **4/4 PASS** |
-| Pricing workspace browser smoke (بدون mutation ذخیره‌شده) | **1/1 PASS** |
-| Release build API | PASS، 0 warning/error |
-| Release build Backoffice | PASS، 0 warning/error |
-| Fresh/restored migration chain | زنجیرهٔ ایزوله در اجرای Integration اعمال شد؛ migration توسعه نیز با موفقیت اعمال شد |
+| Backoffice current source | **184/184 PASS** |
+| Integration کامل روی PostgreSQL ایزوله فعلی | **130/130 PASS**، 0 fail، 0 skip، 3m28s |
+| Pricing integration منتخب (`FullyQualifiedName~Pricing`) | **4/4 PASS** |
+| Order Wizard browser ایزوله و احراز‌شده | **1/1 PASS** |
+| Release build API | PASS |
+| Release build Backoffice | PASS |
+| migration chain تازه/ایزوله | PASS |
 
-Unitهای جدید به‌طور مشخص هم‌خوانی customer-group را از گروه دیگر جدا می‌کنند و وجود price-group/tax-status را در قرارداد مدل بررسی می‌کنند.
+Failureهای بررسی‌شده:
 
-## تصمیم‌های صریح و محدودیت‌ها
+1. اجرای نخست Order Wizard به `POST /api/v1/orders/{id}/finalize` با 404 می‌رسید؛ API قرارداد `/submit` دارد. فقط `OrderStep7Panel` به endpoint موجود اصلاح شد.
+2. tax profile با casing متفاوت از rule به DEFAULT 9% می‌افتاد؛ resolver و overlap validation به مقایسهٔ case-insensitive اصلاح شدند. پس از اصلاح، snapshot مقدار مورد انتظار 5% و `50.09` را ثبت کرد.
+3. اجرای کامل Integration ابتدا در `UserAccessManagementTests.MigrationAddsDirectGrantsGranularCatalogRlsAndUniqueness` شکست خورد، چون fixture بعد از migration دسترسی UPDATE نقش `barang_app` را نرمال نمی‌کرد. این test-host defect با `REVOKE UPDATE ON barang.user_permissions FROM barang_app` در fixture اصلاح شد؛ assertion، authorization و migration تغییر نکردند. سپس همان تست **1/1 PASS** و کل suite **130/130 PASS** شد.
+4. یک testhost قدیمی در اجرای موازی فایل خروجی را قفل کرده بود؛ فقط پردازش‌های همان test runner شناسایی و خاتمه داده شدند و اجرای bounded بعدی کامل شد. این failure application نبود.
 
-- stacking تخفیف، exemptionهای خارج از `TaxStatusCode` و تبدیل ارز policy مصوب در این STEP ندارند؛ resolver عمداً رفتار جدیدی برای آن‌ها اختراع نمی‌کند.
+## محدودیت‌ها و تصمیم‌های لازم
+
+- discount stacking چند rule، exemptionهای tax مستقل از `TaxStatusCode` و currency conversion policy مصوب این STEP نیستند و نباید قبل از approval به سیستم اضافه شوند.
 - Finance/invoice و STEP ۷ خارج از scope است.
-- browser acceptance احراز‌شده برای انتخاب customer/group، نمایش breakdown در Order Wizard، finalization و reload snapshot در یک deployment ایزوله در این اجرا موجود نیست؛ smoke فعلی فقط workspace Pricing را پوشش می‌دهد. این مورد blocker پذیرش نهایی است.
-- regression browser جدید برای STEP3 تا STEP5 در این تغییر backend اجرا نشد؛ شواهد پذیرفته‌شدهٔ قبلی حفظ شده و Integration فعلی تمام گیت‌های backend را پوشش می‌دهد.
+- اجرای browserهای STEP ۳ تا STEP ۵ در این تغییر backend لازم نبود؛ گیت‌های current Unit/Backoffice/Integration سبز هستند و شواهد پذیرفته‌شدهٔ قبلی حفظ شده‌اند.
 
 ## deployment و GitHub
 
-deployment محلی پس از build از همین SHA انجام شد: API image manifest `sha256:bda96f8099e9605ffbf8aa40ee542ff07326239da91202340370553b6249d34c` و Backoffice image manifest `sha256:6638c997487528cf8e40eaa7a3e2575ee38accff8bbcc0eade45daba99ae8d97`. لاگ هر دو سرویس همین SHA را اعلام می‌کند؛ API health و Backoffice `/login` با HTTP 200 تأیید شدند. volumeهای PostgreSQL/Redis/MinIO و key volumeها حفظ شدند.
+محیط ایزوله با imageهای بالا سالم بود. deployment محیط توسعه فقط پس از commit نهایی و در صورت نیاز باید با همان pair coherent و با حفظ volume، کلید، credential و داده انجام شود؛ در این گزارش image توسعهٔ جدید ادعا نمی‌شود.
 
-وضعیت push/PR/merge باید با خروجی Git پس از commit نهایی ثبت شود؛ merge از روی 404 unauthenticated نتیجه‌گیری نمی‌شود.
+SHA نهایی تست‌شده: `1edb804ae826e69e9ecfca81c016a054329f63f0`؛ این commit شامل اصلاحات API/UI، test-host و تست browser ایزوله است. پیش از آن، مبنای application `937454328c52e7f570eab190a03d0a181ad2fb41` بود. وضعیت push/PR/merge باید از Git ثبت شود؛ merge از 404 unauthenticated نتیجه‌گیری نمی‌شود.
