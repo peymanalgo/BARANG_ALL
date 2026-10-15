@@ -1,0 +1,16 @@
+@using System.Text.Json
+@inject IStringLocalizer<AppStrings> L
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+<section class="panel finance-evidence" aria-label="@L["FinanceStatus"]">
+<h2>@L["FinanceStatus"]</h2>
+@if(Error){<p class="inline-error">@L["GenericError"]</p>}else if(!Loaded){<p class="read-only-note">@L["Loading"]</p>}else{
+<dl class="finance-summary"><dt>@L["Status"]</dt><dd>@Status</dd><dt>@L["SnapshotRevision"]</dt><dd>@(SnapshotId?.ToString()??"—")</dd><dt>@L["DecidedAt"]</dt><dd>@DecidedAt</dd><dt>@L["OrderTotal"]</dt><dd>@Balance("orderTotal") @Balance("currencyCode")</dd><dt>@L["Paid"]</dt><dd>@Balance("paid")</dd><dt>@L["Remaining"]</dt><dd>@Balance("remaining")</dd></dl>
+<h3>@L["Action_Invoice"]</h3>
+@if(Invoices.Count==0){<p class="empty-state">@L["NoInvoices"]</p>}else{<div class="record-list">@foreach(var invoice in Invoices){<article class="record-row"><span><strong>@invoice.Number · @invoice.Type · @invoice.Status</strong><small>@invoice.Customer · @invoice.Currency</small><small>@L["Subtotal"]: @invoice.Subtotal.ToString("N2") · @L["Discount"]: @invoice.Discount.ToString("N2") · @L["Tax"]: @invoice.Tax.ToString("N2") · @L["Amount"]: @invoice.Total.ToString("N2")</small></span></article>}</div>}}
+</section>
+@code{
+ [Parameter]public Guid OrderId{get;set;}private bool Loaded,Error;private string Status="",DecidedAt="";private Guid? SnapshotId;private Dictionary<string,string> Values=[];private List<Invoice> Invoices=[];
+ protected override async Task OnParametersSetAsync(){Loaded=false;Error=false;var u=(await AuthState.GetAuthenticationStateAsync()).User;if(!Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var company)||u.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string token){Error=true;Loaded=true;return;}var state=await Core.GetAsync($"api/v1/orders/{OrderId}/finance/status",token,company,default);var balance=await Core.GetAsync($"api/v1/orders/{OrderId}/finance/balance",token,company,default);var invoices=await Core.GetAsync($"api/v1/orders/{OrderId}/finance/invoices",token,company,default);if(state.IsSuccess){Status=G(state.Value,"status");DecidedAt=G(state.Value,"decidedAtUtc");SnapshotId=state.Value.TryGetProperty("approvedPriceSnapshotId",out var s)&&s.ValueKind==JsonValueKind.String?s.GetGuid():(Guid?)null;}if(balance.IsSuccess)foreach(var k in new[]{"orderTotal","paid","remaining","currencyCode"})Values[k]=G(balance.Value,k);if(invoices.IsSuccess)Invoices=invoices.Value.EnumerateArray().Select(Invoice.Parse).ToList();Error=!state.IsSuccess&&!balance.IsSuccess;Loaded=true;}
+ private string Balance(string key)=>Values.TryGetValue(key,out var value)?value:"—";private static string G(JsonElement x,string n)=>x.TryGetProperty(n,out var p)&&p.ValueKind!=JsonValueKind.Null?p.ToString():"";private static decimal D(JsonElement x,string n)=>x.TryGetProperty(n,out var p)&&p.TryGetDecimal(out var d)?d:0;private sealed record Invoice(string Number,string Type,string Status,string Customer,string Currency,decimal Subtotal,decimal Discount,decimal Tax,decimal Total){public static Invoice Parse(JsonElement x)=>new(G(x,"invoiceNumber"),G(x,"invoiceType"),G(x,"status"),G(x,"customerName"),G(x,"currencyCode"),D(x,"subtotal"),D(x,"discountTotal"),D(x,"taxTotal"),D(x,"finalTotal"));}
+}

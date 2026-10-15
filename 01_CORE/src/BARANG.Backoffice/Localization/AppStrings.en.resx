@@ -43,6 +43,7 @@
   <data name="Actions"><value>Actions</value></data>
   <data name="All"><value>All</value></data>
   <data name="Amount"><value>Amount</value></data>
+  <data name="FinanceStatus"><value>Financial status</value></data><data name="SnapshotRevision"><value>Approved pricing snapshot</value></data><data name="DecidedAt"><value>Decision time</value></data><data name="OrderIdentifier"><value>Order identifier</value></data><data name="Paid"><value>Paid</value></data><data name="Reversed"><value>Reversed</value></data><data name="NetPaid"><value>Net paid</value></data><data name="Remaining"><value>Outstanding</value></data><data name="Overpaid"><value>Overpaid</value></data><data name="NoInvoices"><value>No invoices issued yet.</value></data><data name="Subtotal"><value>Subtotal</value></data><data name="Discount"><value>Discount</value></data><data name="Tax"><value>Tax</value></data>
   <data name="Artwork"><value>Artwork</value></data>
   <data name="AssignRole"><value>Assign role</value></data>
   <data name="Capacity"><value>Capacity</value></data>

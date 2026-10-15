@@ -573,6 +573,7 @@
   <data name="Actions"><value>عملیات</value></data>
   <data name="All"><value>همه</value></data>
   <data name="Amount"><value>مبلغ</value></data>
+  <data name="FinanceStatus"><value>وضعیت مالی</value></data><data name="SnapshotRevision"><value>نسخه قیمت تأییدشده</value></data><data name="DecidedAt"><value>زمان تصمیم</value></data><data name="OrderIdentifier"><value>شناسه سفارش</value></data><data name="Paid"><value>پرداخت‌شده</value></data><data name="Reversed"><value>برگشت‌خورده</value></data><data name="NetPaid"><value>پرداخت خالص</value></data><data name="Remaining"><value>مانده</value></data><data name="Overpaid"><value>اضافه‌پرداخت</value></data><data name="NoInvoices"><value>هنوز فاکتوری صادر نشده است.</value></data><data name="Subtotal"><value>جمع جزء</value></data><data name="Discount"><value>تخفیف</value></data><data name="Tax"><value>مالیات</value></data>
   <data name="Artwork"><value>طرح</value></data>
   <data name="AssignRole"><value>تخصیص نقش</value></data>
   <data name="Capacity"><value>ظرفیت</value></data>

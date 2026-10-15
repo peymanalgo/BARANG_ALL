@@ -572,6 +572,7 @@
   <data name="Actions"><value>الإجراءات</value></data>
   <data name="All"><value>الكل</value></data>
   <data name="Amount"><value>المبلغ</value></data>
+  <data name="FinanceStatus"><value>الحالة المالية</value></data><data name="SnapshotRevision"><value>لقطة التسعير المعتمدة</value></data><data name="DecidedAt"><value>وقت القرار</value></data><data name="OrderIdentifier"><value>معرّف الطلب</value></data><data name="Paid"><value>المدفوع</value></data><data name="Reversed"><value>المعكوس</value></data><data name="NetPaid"><value>صافي المدفوع</value></data><data name="Remaining"><value>المستحق</value></data><data name="Overpaid"><value>المدفوع الزائد</value></data><data name="NoInvoices"><value>لم تصدر فواتير بعد.</value></data><data name="Subtotal"><value>المجموع الفرعي</value></data><data name="Discount"><value>الخصم</value></data><data name="Tax"><value>الضريبة</value></data>
   <data name="Artwork"><value>التصميم</value></data>
   <data name="AssignRole"><value>تعيين دور</value></data>
   <data name="Capacity"><value>السعة</value></data>
