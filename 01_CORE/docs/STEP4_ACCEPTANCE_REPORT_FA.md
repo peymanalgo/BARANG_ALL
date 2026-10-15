@@ -73,6 +73,14 @@ Checkout `step2-clean/01_CORE`، شاخه `codex/step2-inventory-unit-contracts`
 
 **وضعیت فعلی:** هستهٔ assignment server-side و management UI تحویل شده، اما STEP 4 تا ساخت/اعتبارسنجی candidate InventoryIssue واقعی، feature browser acceptance روی deployment جدید، و deploy provenance جدید PASS نهایی نیست. STEP 5 و STEP 4.5 آغاز نشده‌اند.
 
+## نتیجهٔ اجرای نهایی current-source — ۱۵ اکتبر ۲۰۲۶
+
+- full Integration پس از آخرین تغییرات runtime/Designer: **128/128 PASS**، ۳:۱۸، روی PostgreSQL ایزولهٔ `barang-step4-assignment-pg`/`barang_assignment_test`/port `55435`. بنابراین failureهای bootstrap تاریخی جایگزین نتیجهٔ جاری نیستند و در اجرای کامل فعلی مشاهده نشدند.
+- Release API و Backoffice: هر دو PASS، ۰ warning و ۰ error؛ Unit **222/222**؛ Backoffice **184/184**؛ feature issue/adjustment **2/2**.
+- browser check `SharedSortHeadersUserGridAndActionIconsMatchTheGlobalStandard`: **PASS** با Chrome واقعی علیه `http://localhost:5100` پس از deploy جدید. marker فعال `barang-sort-indicator` و فلش `arrow-up/down` در runtime حاضر بود؛ assertion تضعیف نشد.
+- deployment تأییدشده: Compose project `barang-core`، API `barang-core-api:latest` digest `sha256:26672766f24fa1b94c5703e7f12e9f6d5357aa6bf264acf9d40155eee1c87b52`، Backoffice `barang-core-backoffice:latest` digest `sha256:438dbc6bdbfad5dcc1c16b1396d1f48e931c78802f40511dd6b608d1a67ff4e2`، هر دو provenance کامل `7166ac79f690f43c73a1ba65621798518b474d35`. volumeهای business/key و credentials تغییر نکردند؛ migration `20261015062226_WarehouseResponsibilities` روی توسعه با backup/restore verification قبلی اعمال شد.
+- browser mutation acceptance کامل issue/adjustment/return روی development انجام نشد تا business data موجود mutate نشود؛ این سناریوها همچنان باید در disposable authenticated deployment اجرا شوند. بنابراین با وجود regression gate سبز، PASS نهایی STEP 4 برای این نوبت صادر نمی‌شود تا candidate graph و feature acceptance ایزولهٔ مذکور ثبت شود.
+
 ## نتیجه
 
 **STEP 4: FAIL / NOT READY**
