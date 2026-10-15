@@ -60,10 +60,11 @@
 
 ## provenance فعلی و مانع پذیرش
 
-- source testها پس از اصلاح gate nodeهای `FinancialApproval` و نام canonical گراف `FINANCE` اجرا شدند؛ commit نهایی پس از ثبت گزارش تعیین می‌شود.
+- source testها پس از اصلاح gate nodeهای `FinancialApproval` و نام canonical گراف `FINANCE` اجرا شدند؛ commit تست‌شده/تحویل‌شده: `b26f38fc8506835b3e3525e3b2a3ef19ee4f1050`.
 - PostgreSQL ایزوله: `barang-step6-postgres-1`، `127.0.0.1:5546`، database `barang_step6_test`، role migration `barang`؛ fixture در طول اجرا role محدود تصادفی `barang_test_app` ساخت. هیچ اتصال تستی به `barang_core` انجام نشد.
 - backup توسعه قبل از deployment: `D:\00_BARANG\barang_core_step7_predeploy_20261016.backup`؛ backup خارج از Git و حاوی داده حساس است.
+- local development deployment در compose project `barang-core` انجام شد؛ API image digest `sha256:cb9f3ab35e5121665da6446ac714d8d93d34e72a6a2b09301a784f96be300ff3` و Backoffice image digest `sha256:e866b16e6790b4bc9166df91c52917c0b505c57532ed1108817df24f9a85c3a2`، هر دو با `BARANG_BUILD_COMMIT=b26f38f`؛ migration `20261015223227_AddFinancialApprovalSnapshotReference` روی `barang_core` اعمال شد.
 - محیط UI ایزولهٔ قبلی `barang-step6` در دسترس Docker بود، اما کنترل‌گر browser این جلسه هیچ `browser` یا `iab` قابل استفاده‌ای ارائه نکرد؛ بنابراین approval/rejection/payment/invoice UI به‌صورت احراز‌شده اجرا نشده است.
-- تا اجرای authenticated Finance browser و smoke پس از deployment، نتیجهٔ STEP ۷ **CONDITIONAL GO** است، نه PASS.
+- smoke HTTP/health و login shell-level پاسخ‌گو هستند، اما این جایگزین browser acceptance نیست؛ تا اجرای authenticated Finance browser، نتیجهٔ STEP ۷ **CONDITIONAL GO** است، نه PASS.
 
 secrets، backup و trace حساس نباید commit شوند.
