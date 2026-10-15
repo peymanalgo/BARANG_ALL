@@ -103,3 +103,31 @@ Checkout `step2-clean/01_CORE`، شاخه `codex/step2-inventory-unit-contracts`
 - محیط `barang-step4-acceptance` پس از جمع‌آوری این شواهد حذف شد؛ development Compose، volumeها، records، keys، credentials و admin account دست‌نخورده ماندند.
 
 **نتیجهٔ این نوبت: STEP 4 = FAIL / NOT READY.** تنها blocker باقی‌ماندهٔ قابل اقدام برای دو requirement درخواست‌شده: دسترسی/مسیر معتبر برای import یا ایجاد baseline واقعی `BARANG.ORDER` در محیط ایزوله و سپس ساخت candidate فقط با Designer، پس از آن اجرای authenticated browser feature matrix. STEP 4.5 و STEP 5 آغاز نشده‌اند.
+
+## الحاقیهٔ unblock گراف و اجرای پذیرش — ۱۵ اکتبر ۲۰۲۶
+
+### تشخیص access-context
+
+درخواست read واقعی از deployment توسعه با `http://localhost:8080/api/v1/workflows/definition` و هویت `ADMIN` (UserId: `2226b36f-32bb-405e-aa8a-0be102f9d434`) انجام شد. مسیر عادی `POST /api/v1/auth/me/company` بدون header شرکت اجرا و شرکت صحیح انتخاب شد: `DOCKER_A_1787662611` با CompanyId=`42f0e459-6095-45bb-aa13-f38126d91d9c`. خطای قبلی از ارسال CompanyId اشتباه `42f0e459-6095-45bb-aa13-f38126d91c9c` ناشی بود؛ بنابراین `security.company_access.denied` نشانهٔ نبود عضویت نبود. توکن یا credential در گزارش ثبت نشده است و هیچ membership، داده یا workflow توسعه تغییر نکرد.
+
+گراف صادرشدهٔ معتبر `BARANG.ORDER`، Active version شمارهٔ 17 با Id=`ba83e320-e43f-49d9-82d8-7f5c50ca3f9b`، شامل 23 node و 41 transition بود و `InventoryIssue` نداشت.
+
+### محیط disposable و candidate واقعی
+
+- Compose project: `barang-step4-acceptance2`؛ API=`http://localhost:18081`، Backoffice=`http://localhost:15101`، PostgreSQL=`localhost:55437`، DB اصلی ایزوله=`barang_step4_acceptance2` و DB تست fixture=`barang_step4_acceptance2_test`.
+- identity ایزوله: `step4-admin`، UserId=`a40b2469-5339-4a90-8482-87fd82afff40`؛ مسئول انبار فعال برای WarehouseId=`784f60bb-d6cb-44ac-877b-d868d1fb1954`. شناسهٔ Company برابر بودن با توسعه عمدی است، اما DB، volume و identity جدا هستند.
+- baseline graph از graph واقعی صادرشده به‌عنوان seed metadata وارد شد؛ candidate و تغییرات آن فقط با Designer API پشتیبانی‌شده انجام شد، نه SQL runtime یا graph-table mutation. هیچ instance runtime توسعه کپی نشد.
+- draft candidate شمارهٔ 19، Id=`672381c3-a4c9-4f05-8faa-bd4573efd7bb`، با حفظ graph اصلی و افزودن یک node `InventoryIssue` در handover `DECIDE_WAREHOUSE → InventoryIssue → PRINT` ساخته شد؛ transition موافقت قبلی حفظ شد و `positionId` تهی ماند تا warehouse responsibility مبنای assignment باشد.
+- `GET /api/v1/workflows/definition/validate/{candidateId}` با HTTP 200 و body `[]` موفق شد. publish همان candidate در disposable با HTTP 200 موفق شد: Active version 19، 24 node، 42 transition و دقیقاً یک `InventoryIssue`. نسخهٔ 17 به `Superseded` رفت؛ نسخه‌های draft قبلی فقط در disposable باقی ماندند. توسعه publish نشد.
+- در مسیر publish یک defect واقعی در `WorkflowDesignerAdministration.PublishAsync` پیدا و اصلاح شد: validation قبلی اتصال مشترک EF را dispose می‌کرد و publish معتبر را با 500 (`ObjectDisposedException`/`Connection already open`) شکست می‌داد. validation اکنون روی همان connection خوانده می‌شود. همچنین binding پارامترهای `ValueTuple` در draft save اصلاح شد و افزودن warehouse responsibility از `ApplicationUser.IsActive` unmapped به `AccountState == Active` تغییر یافت.
+
+### آزمون‌ها و browser evidence
+
+- Designer browser روی deployment ایزوله: `WorkflowDesignerE2ETests.DesignerLoadsValidatesAndKeepsTheActiveVersion` PASS و `DesignerCreatesAndPersistsAVisualTaskConnection` PASS؛ 2/2 با system Chrome. این شواهد save/reload/validate UI را ثابت می‌کند.
+- Unit: 222/222 PASS؛ Backoffice: 184/184 PASS؛ Release build API و Backoffice: PASS، صفر warning/error.
+- Full Integration current-source با `BARANG_TEST_DB_CONNECTION` روی DB ایزوله اجرا شد، اما PASS نیست. اجرای کامل failureهای واقعی و قابل تکرار داشت: Pricing (`AuthenticatedPricingFlowCalculatesFinalizesAndPreservesHistory`) HTTP 500 از `/api/v1/auth/me/company`؛ UserAccess چند تست HTTP 500 همان endpoint و `54001 stack depth limit exceeded` در `CompanyContextMiddleware`؛ Artwork HTTP 500؛ Supplier/SupplierReference چند تست `54001 stack depth limit exceeded`؛ و STEP4 issue هر دو test هنگام company selection HTTP 500. این اجرای فعلی جایگزین evidence تاریخی 128/128 نیست و assertionها تضعیف نشدند. علت غالب test-host/DB execution context در fixture فعلی است (stack depth در middleware/RLS path و company-selection 500)، اما تا isolation تمیز و علت root-cause اصلاح نشود regression gate سبز نیست.
+- STEP4 browser feature matrix کامل برای issue، cancel، adjustment و return هنوز PASS نیست: فقط Designer browser و API publish/warehouse responsibility در این نوبت اجرا شد. هیچ smoke/health یا SQL read-only به‌جای فرم‌ها و actionهای واقعی ثبت نشده است.
+
+### نتیجهٔ پذیرش
+
+تشخیص دسترسی و ساخت candidate واقعی اکنون PASS است؛ candidate در disposable با policy warehouse responsibility منتشر و validate شد. با این حال STEP 4 نهایی **FAIL / NOT READY** باقی می‌ماند، چون full Integration current-source failureهای توضیح‌داده‌نشده دارد و browser feature matrix issue/adjustment/return/cancellation/claim به‌طور کامل اجرا نشده است. STEP 4.5 و STEP 5 آغاز نشده‌اند. محیط ایزولهٔ `barang-step4-acceptance2` پس از جمع‌آوری evidence حذف می‌شود؛ توسعه، volumeها، business records، keys، credentials و workflow منتشرشدهٔ توسعه حفظ می‌شوند.

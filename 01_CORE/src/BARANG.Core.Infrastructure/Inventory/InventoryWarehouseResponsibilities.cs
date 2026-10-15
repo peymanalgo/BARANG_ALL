@@ -18,7 +18,7 @@ public sealed partial class InventoryAdministration
 
     public Task<Result<WarehouseResponsibilityView>> AddWarehouseResponsibilityAsync(CreateWarehouseResponsibilityCommand command, CancellationToken cancellationToken) => tx.ExecuteAsync(async t =>
     {
-        if (!await db.Warehouses.AnyAsync(x => x.Id == command.WarehouseId && x.IsActive, t) || !await db.ApplicationUsers.AnyAsync(x => x.Id == command.ApplicationUserId && x.IsActive, t) || !await db.UserCompanies.AnyAsync(x => x.UserId == command.ApplicationUserId && x.CompanyId == Company && x.ValidFromUtc <= Now && (x.ValidToUtc == null || x.ValidToUtc > Now), t))
+        if (!await db.Warehouses.AnyAsync(x => x.Id == command.WarehouseId && x.IsActive, t) || !await db.ApplicationUsers.AnyAsync(x => x.Id == command.ApplicationUserId && x.AccountState == BARANG.Core.Domain.Security.UserAccountState.Active, t) || !await db.UserCompanies.AnyAsync(x => x.UserId == command.ApplicationUserId && x.CompanyId == Company && x.ValidFromUtc <= Now && (x.ValidToUtc == null || x.ValidToUtc > Now), t))
             return Result.Failure<WarehouseResponsibilityView>(Error.BusinessRule("inventory.warehouse_responsibility.invalid_scope"));
         Guid id = Guid.NewGuid();
         await using (DbCommand insert = ResponsibilityCommand("insert into barang.warehouse_responsibilities(id,company_id,warehouse_id,application_user_id,is_active,created_at_utc,updated_at_utc,version) values(@id,@company,@warehouse,@user,true,@now,@now,1)", ("id", id), ("company", Company), ("warehouse", command.WarehouseId), ("user", command.ApplicationUserId), ("now", Now)))
