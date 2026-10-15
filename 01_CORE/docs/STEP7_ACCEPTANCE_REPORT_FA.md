@@ -82,7 +82,7 @@
 
 ## provenance فعلی و شواهد محیط
 
-- source testها پس از اصلاح gate nodeهای `FinancialApproval` و نام canonical گراف `FINANCE` اجرا شدند؛ current tested commit: `0bdf2d61a24f673c56e15cd7d9fd5eece507d7dd`؛ baseline implementation commit: `b26f38fc8506835b3e3525e3b2a3ef19ee4f1050`.
+- application source tested/deployed: `0bdf2d61a24f673c56e15cd7d9fd5eece507d7dd`; final acceptance tests and documentation source: `b20815c4b2267543eb78c2765621c70b33ab4f82`; baseline implementation commit: `b26f38fc8506835b3e3525e3b2a3ef19ee4f1050`.
 - PostgreSQL ایزوله: `barang-step6-postgres-1`، `127.0.0.1:5546`، database `barang_step6_test`، role migration `barang`؛ fixture در طول اجرا role محدود تصادفی `barang_test_app` ساخت. هیچ اتصال تستی به `barang_core` انجام نشد.
 - backup توسعه قبل از deployment: `D:\00_BARANG\barang_core_step7_predeploy_20261016.backup`؛ backup خارج از Git و حاوی داده حساس است.
 - local development deployment در compose project `barang-core` با API `localhost:8080` و Backoffice `localhost:5100` انجام شد؛ API image digest `sha256:71640f75f9638bdea642e960dda7aeee350e016b99ab874bffcf0f16c805e576` و Backoffice image digest `sha256:2e39aca7755113fa82b93064a6175d38e5cf787a078a144a0f6816dab21e4a38`، هر دو با `BARANG_BUILD_COMMIT=0bdf2d61a24f673c56e15cd7d9fd5eece507d7dd`؛ API `/` و Backoffice `/login` هر دو 200/operational هستند. migration `20261015223227_AddFinancialApprovalSnapshotReference` قبلاً روی `barang_core` اعمال شده بود؛ این UI-only deploy migration جدیدی نداشت.
