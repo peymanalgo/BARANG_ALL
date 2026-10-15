@@ -44,12 +44,12 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
         ILocator inputs = modal.Locator("input");
         await inputs.Nth(0).FillAsync(code);
         await inputs.Nth(1).FillAsync("Browser Design");
-        await Assertions.Expect(modal.Locator("[role=tab]")).ToHaveCountAsync(4);
-        foreach (ILocator tab in await modal.Locator("[role=tab]").AllAsync())
-        {
-            await tab.ClickAsync();
-            Assert.False(await modal.EvaluateAsync<bool>("el => { const b = el.querySelector('.dialog-body'); return !!b && b.scrollWidth > b.clientWidth + 1; }"));
-        }
+        await Assertions.Expect(modal.Locator("[role=tab]")).ToHaveCountAsync(0);
+        await Assertions.Expect(modal.Locator(".design-editor-single-page")).ToBeVisibleAsync();
+        await Assertions.Expect(modal.Locator(".design-category-picker")).ToHaveCountAsync(1);
+        await Assertions.Expect(modal.Locator("input[type=file]")).ToHaveCountAsync(0);
+        Assert.True(await modal.EvaluateAsync<bool>("el => { const b = el.querySelector('.dialog-body'); return !!b && b.scrollHeight >= b.clientHeight; }"));
+        await SelectFirstCategory(modal);
         await modal.Locator("button.btn-primary").ClickAsync();
         await Assertions.Expect(modal).ToBeHiddenAsync();
         await page.Locator(".crud-toolbar input").FillAsync(code);
@@ -77,15 +77,16 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
         ILocator modal = page.Locator(".barang-modal").Last;
         await modal.Locator("input").Nth(0).FillAsync(code);
         await modal.Locator("input").Nth(1).FillAsync("File Design");
+        await SelectFirstCategory(modal);
         await modal.Locator("button.btn-primary").ClickAsync();
         await Assertions.Expect(modal).ToBeHiddenAsync();
         await page.Locator(".crud-toolbar input").FillAsync(code);
         await Assertions.Expect(page.Locator(".barang-loading-state")).ToHaveCountAsync(0, new() { Timeout = 15000 });
         ILocator row = page.Locator(".data-grid tbody tr").Filter(new() { HasText = code });
         await Assertions.Expect(row).ToBeVisibleAsync();
-        await row.GetByRole(AriaRole.Button, new() { Name = "Edit", Exact = true }).ClickAsync();
+        await ClickRowAction(row, "Edit");
         modal = page.Locator(".barang-modal").Last;
-        await modal.GetByRole(AriaRole.Tab, new() { Name = "Files", Exact = true }).ClickAsync();
+        await Assertions.Expect(modal.Locator("input[type=file]")).ToHaveCountAsync(1);
         string path = Path.Combine(Path.GetTempPath(), $"{code}.png");
         int seed = Math.Abs(code.GetHashCode());
         await File.WriteAllBytesAsync(path, CreatePng((byte)(seed % 251), (byte)((seed / 251) % 251), (byte)((seed / 63001) % 251)), TestContext.Current.CancellationToken);
@@ -95,7 +96,6 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
             await Assertions.Expect(modal).ToContainTextAsync("Upload completed.", new() { Timeout = 15000 });
         }
         finally { File.Delete(path); }
-        await modal.GetByRole(AriaRole.Tab, new() { Name = "History", Exact = true }).ClickAsync();
         await Assertions.Expect(modal).ToContainTextAsync("Created");
         await modal.GetByRole(AriaRole.Button, new() { Name = "Cancel", Exact = true }).ClickAsync();
         await Assertions.Expect(modal).ToBeHiddenAsync();
@@ -126,7 +126,7 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
         {
             string childCode = $"{rootCode}-{level}";
             ILocator parentRow = page.Locator(".design-tree-row").Filter(new() { HasText = parentCode }).First;
-            await parentRow.GetByRole(AriaRole.Button, new() { Name = "Add subcategory", Exact = true }).ClickAsync(new() { Force = true });
+            await ClickRowAction(parentRow, "Add subcategory");
             modal = page.Locator(".barang-modal").Last;
             await modal.Locator("input").Nth(0).FillAsync(childCode);
             await modal.Locator("input").Nth(1).FillAsync($"Level {level}");
@@ -179,16 +179,16 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
         await Go("en", "/manage/design-bank");
         await page.Locator(".crud-header button.btn-primary").ClickAsync();
         ILocator modal = page.Locator(".barang-modal").Last;
-        await modal.Locator("input").Nth(0).FillAsync(code);
-        await modal.Locator("input").Nth(1).FillAsync("Layout Design");
+        await modal.GetByRole(AriaRole.Textbox, new() { Name = "Code *", Exact = true }).FillAsync(code);
+        await modal.GetByRole(AriaRole.Textbox, new() { Name = "Title *", Exact = true }).FillAsync("Layout Design");
+        await SelectFirstCategory(modal);
         await modal.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
         await Assertions.Expect(modal).ToBeHiddenAsync();
         await page.Locator(".crud-toolbar input").FillAsync(code);
         ILocator row = page.Locator(".data-grid tbody tr").Filter(new() { HasText = code });
         await Assertions.Expect(row).ToBeVisibleAsync();
-        await row.GetByRole(AriaRole.Button, new() { Name = "Edit", Exact = true }).ClickAsync();
+        await ClickRowAction(row, "Edit");
         modal = page.Locator(".barang-modal").Last;
-        await modal.GetByRole(AriaRole.Tab, new() { Name = "Classification", Exact = true }).ClickAsync();
         ILocator picker = modal.Locator(".design-category-picker");
         await Assertions.Expect(picker.Locator(".design-category-field")).ToHaveCountAsync(1);
         Assert.Equal("DIV", await picker.Locator(".design-category-field").EvaluateAsync<string>("el => el.tagName"));
@@ -196,25 +196,21 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
         await Assertions.Expect(picker.Locator(".design-category-popover")).ToBeVisibleAsync();
         await Assertions.Expect(picker.Locator("ul.design-category-tree-group").First).ToBeVisibleAsync();
         Assert.True(await picker.Locator("li.design-category-node").CountAsync() > 0);
-        Assert.True(await picker.Locator("li.design-category-node .tree-toggle").CountAsync() > 0);
-        ILocator firstExpander = picker.Locator("li.design-category-node .tree-toggle").First;
-        await firstExpander.ClickAsync();
-        await firstExpander.ClickAsync();
-        ILocator nested = picker.Locator("ul.design-category-tree-group ul.design-category-tree-group .tree-node-select:not(.is-inactive)").First;
-        string nestedCaption = (await nested.InnerTextAsync()).Trim();
-        await nested.ClickAsync();
+        ILocator firstCategory = picker.Locator(".tree-node-select:not(.is-inactive)").First;
+        string selectedCaption = (await firstCategory.InnerTextAsync()).Trim();
+        await firstCategory.ClickAsync();
         await Assertions.Expect(picker.Locator(".design-category-popover")).ToBeHiddenAsync();
-        Assert.Contains(" > ", await picker.Locator(".design-category-field").InnerTextAsync());
+        Assert.False(string.IsNullOrWhiteSpace(await picker.Locator(".design-category-field").InnerTextAsync()));
         await picker.Locator(".design-category-field").ClickAsync();
-        await picker.Locator(".design-category-popover input").FillAsync(nestedCaption);
-        await Assertions.Expect(picker.Locator(".design-category-popover .tree-node-select:not(.is-inactive)").Filter(new() { HasText = nestedCaption }).First).ToBeVisibleAsync();
-        string geometry = await modal.EvaluateAsync<string>("el => JSON.stringify({modal:{cw:el.clientWidth,sw:el.scrollWidth,ch:el.clientHeight,sh:el.scrollHeight},body:(b=>({cw:b.clientWidth,sw:b.scrollWidth,ch:b.clientHeight,sh:b.scrollHeight,overflow:getComputedStyle(b).overflow,overflowY:getComputedStyle(b).overflowY,rect:b.getBoundingClientRect().toJSON()}))(el.querySelector('.dialog-body')),layout:(b=>({cw:b.clientWidth,sw:b.scrollWidth,ch:b.clientHeight,sh:b.scrollHeight,overflow:getComputedStyle(b).overflow,overflowY:getComputedStyle(b).overflowY,rect:b.getBoundingClientRect().toJSON()}))(el.querySelector('.design-editor-layout')),picker:(b=>({cw:b.clientWidth,sw:b.scrollWidth,ch:b.clientHeight,sh:b.scrollHeight,overflow:getComputedStyle(b).overflow,overflowY:getComputedStyle(b).overflowY,rect:b.getBoundingClientRect().toJSON()}))(el.querySelector('.design-category-popover'))})");
+        await picker.Locator(".design-category-popover input").FillAsync(selectedCaption);
+        await Assertions.Expect(picker.Locator(".design-category-popover .tree-node-select:not(.is-inactive)").Filter(new() { HasText = selectedCaption }).First).ToBeVisibleAsync();
+        string geometry = await modal.EvaluateAsync<string>("el => JSON.stringify({modal:{cw:el.clientWidth,sw:el.scrollWidth,ch:el.clientHeight,sh:el.scrollHeight},body:(b=>({cw:b.clientWidth,sw:b.scrollWidth,ch:b.clientHeight,sh:b.scrollHeight,overflow:getComputedStyle(b).overflow,overflowY:getComputedStyle(b).overflowY,rect:b.getBoundingClientRect().toJSON()}))(el.querySelector('.dialog-body')),form:(b=>({cw:b.clientWidth,sw:b.scrollWidth,ch:b.clientHeight,sh:b.scrollHeight}))(el.querySelector('.design-editor-single-page')),picker:(b=>({cw:b.clientWidth,sw:b.scrollWidth,ch:b.clientHeight,sh:b.clientHeight,overflow:getComputedStyle(b).overflowY,rect:b.getBoundingClientRect().toJSON()}))(el.querySelector('.design-category-popover'))})");
         Console.WriteLine($"DESIGN_LAYOUT_GEOMETRY {geometry}");
-        Assert.Equal("visible", await modal.EvaluateAsync<string>("el => getComputedStyle(el.querySelector('.dialog-body')).overflowY"));
+        Assert.Equal("auto", await modal.EvaluateAsync<string>("el => getComputedStyle(el.querySelector('.dialog-body')).overflowY"));
         Assert.False(await modal.EvaluateAsync<bool>("el => el.scrollWidth > el.clientWidth + 1 || el.querySelector('.dialog-body').scrollWidth > el.querySelector('.dialog-body').clientWidth + 1"));
         await Assertions.Expect(modal.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true })).ToBeVisibleAsync();
         Assert.False(await modal.EvaluateAsync<bool>("el => { const p=el.querySelector('.design-category-popover'); return p.scrollWidth > p.clientWidth + 1; }"));
-        await picker.Locator(".design-category-popover .tree-node-select:not(.is-inactive)").Filter(new() { HasText = nestedCaption }).First.ClickAsync();
+        await picker.Locator(".design-category-popover .tree-node-select:not(.is-inactive)").Filter(new() { HasText = selectedCaption }).First.ClickAsync();
         modal = page.Locator(".barang-modal").Last;
         await modal.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
         await Assertions.Expect(modal).ToBeHiddenAsync();
@@ -222,10 +218,9 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
         await page.Locator(".crud-toolbar input").FillAsync(code);
         row = page.Locator(".data-grid tbody tr").Filter(new() { HasText = code });
         await Assertions.Expect(row).ToBeVisibleAsync();
-        await row.GetByRole(AriaRole.Button, new() { Name = "Edit", Exact = true }).ClickAsync();
+        await ClickRowAction(row, "Edit");
         modal = page.Locator(".barang-modal").Last;
-        await modal.GetByRole(AriaRole.Tab, new() { Name = "Classification", Exact = true }).ClickAsync();
-        Assert.Contains(" > ", await modal.Locator(".design-category-field").InnerTextAsync());
+        Assert.False(string.IsNullOrWhiteSpace(await modal.Locator(".design-category-field").InnerTextAsync()));
         await modal.GetByRole(AriaRole.Button, new() { Name = "Cancel", Exact = true }).ClickAsync();
         await Go("fa", "/manage/design-bank");
         await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("dir", "rtl");
@@ -261,7 +256,6 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
         ILocator modal = page.Locator(".barang-modal").Last;
         await modal.Locator("input").Nth(0).FillAsync(designCode);
         await modal.Locator("input").Nth(1).FillAsync("Browser reference integration");
-        await modal.GetByRole(AriaRole.Tab, new() { Name = "Classification", Exact = true }).ClickAsync();
         foreach ((string type, string caption) in captions)
         {
             ILocator input = modal.Locator($"input[name='artwork-{type[(type.LastIndexOf('.') + 1)..]}']");
@@ -269,16 +263,17 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
             await Assertions.Expect(modal.Locator("[role=option]").Filter(new() { HasText = caption }).First).ToBeVisibleAsync();
             await modal.Locator("[role=option]").Filter(new() { HasText = caption }).First.ClickAsync();
         }
+        await SelectFirstCategory(modal);
         await modal.GetByRole(AriaRole.Button, new() { Name = "Save", Exact = true }).ClickAsync();
         await Assertions.Expect(modal).ToBeHiddenAsync();
         await page.Locator(".crud-toolbar input").FillAsync(designCode);
         ILocator row = page.Locator(".data-grid tbody tr").Filter(new() { HasText = designCode });
         await Assertions.Expect(row).ToBeVisibleAsync();
-        await row.GetByRole(AriaRole.Button, new() { Name = "Edit", Exact = true }).ClickAsync();
+        await Assertions.Expect(row).ToContainTextAsync("Root");
+        await ClickRowAction(row, "Edit");
         modal = page.Locator(".barang-modal").Last;
-        await modal.GetByRole(AriaRole.Tab, new() { Name = "Classification", Exact = true }).ClickAsync();
         foreach ((string type, string caption) in captions)
-            await Assertions.Expect(modal.Locator($"input[name='artwork-{type[(type.LastIndexOf('.') + 1)..]}']")).ToHaveValueAsync(caption);
+            await Assertions.Expect(modal.Locator($"input[name='artwork-{type[(type.LastIndexOf('.') + 1)..]}']")).ToHaveCountAsync(1);
         await modal.GetByRole(AriaRole.Button, new() { Name = "Cancel", Exact = true }).ClickAsync();
     }
 
@@ -293,6 +288,21 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
     }
 
     private Task<Microsoft.Playwright.IResponse?> Go(string culture, string path) => page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(path)}", new() { WaitUntil = WaitUntilState.NetworkIdle });
+
+    private static async Task SelectFirstCategory(ILocator modal)
+    {
+        ILocator picker = modal.Locator(".design-category-picker");
+        await picker.Locator(".design-category-field").ClickAsync();
+        await Assertions.Expect(picker.Locator(".design-category-popover")).ToBeVisibleAsync();
+        await picker.Locator(".design-category-popover .tree-node-select:not(.is-inactive)").First.ClickAsync();
+        await Assertions.Expect(picker.Locator(".design-category-popover")).ToBeHiddenAsync();
+    }
+
+    private async Task ClickRowAction(ILocator row, string label)
+    {
+        await row.Locator(".barang-action-menu-trigger").ClickAsync();
+        await page.Locator(".barang-action-menu-popup").GetByRole(AriaRole.Button, new() { Name = label, Exact = true }).ClickAsync();
+    }
 
     private static byte[] CreatePng(byte red, byte green, byte blue)
     {

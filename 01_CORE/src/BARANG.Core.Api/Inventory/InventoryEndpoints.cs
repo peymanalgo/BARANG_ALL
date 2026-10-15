@@ -37,6 +37,8 @@ public static class InventoryEndpoints
   inventory.MapPost("/transfers",async(TransferCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.TransferAsync(c,ct),true)).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapPost("/transfers/{id:guid}/complete",async(Guid id,CompleteTransferCommand c,IInventoryAdministration s,CancellationToken ct)=>Map(await s.CompleteTransferAsync(id,c,ct))).RequireAuthorization(SecurityPermissions.InventoryManage);
   RouteGroupBuilder purchasing=e.MapGroup("/api/v1/purchasing");
+  purchasing.MapGet("/requests",async(IPurchasingAdministration s,CancellationToken ct)=>Map(await s.ListRequestsAsync(ct))).RequireAuthorization(SecurityPermissions.PurchasingRead);
+  purchasing.MapGet("/requests/{id:guid}",async(Guid id,IPurchasingAdministration s,CancellationToken ct)=>Map(await s.GetRequestAsync(id,ct))).RequireAuthorization(SecurityPermissions.PurchasingRead);
   purchasing.MapPost("/requests",async(CreatePurchaseRequestCommand c,IPurchasingAdministration s,CancellationToken ct)=>Map(await s.CreateRequestAsync(c,ct),true)).RequireAuthorization(SecurityPermissions.PurchasingManage);
   purchasing.MapPost("/requests/{id:guid}/submit",async(Guid id,long version,IPurchasingAdministration s,CancellationToken ct)=>Map(await s.SubmitRequestAsync(id,version,ct))).RequireAuthorization(SecurityPermissions.PurchasingManage);
   purchasing.MapGet("/orders",async(IPurchasingAdministration s,CancellationToken ct)=>Map(await s.ListOrdersAsync(ct))).RequireAuthorization(SecurityPermissions.PurchasingRead);

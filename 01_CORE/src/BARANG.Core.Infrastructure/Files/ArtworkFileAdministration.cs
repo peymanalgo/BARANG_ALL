@@ -5,6 +5,7 @@ using BARANG.Core.Application.Abstractions.Companies;
 using BARANG.Core.Application.Abstractions.Transactions;
 using BARANG.Core.Application.Auditing;
 using BARANG.Core.Application.Files;
+using BARANG.Core.Application.Pagination;
 using BARANG.Core.Domain.Common;
 using BARANG.Core.Domain.Files;
 using BARANG.Core.Domain.Orders;
@@ -15,7 +16,7 @@ using Microsoft.Extensions.Options;
 
 namespace BARANG.Core.Infrastructure.Files;
 
-public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExecutor tx, ICompanyContext company, ICurrentActor actor, IAuditWriter audit, IObjectStorage storage, IFileProcessingQueue processingQueue, IOptions<FileStorageOptions> options, TimeProvider time) : IArtworkFileAdministration
+public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExecutor tx, ICompanyContext company, ICurrentActor actor, IAuditWriter audit, IAuditReader auditReader, IObjectStorage storage, IFileProcessingQueue processingQueue, IOptions<FileStorageOptions> options, TimeProvider time) : IArtworkFileAdministration
 {
     private Guid Company => company.RequireCompanyId(); private Guid Actor => Guid.TryParse(actor.Actor.UserId, out Guid id) ? id : throw new InvalidOperationException("An authenticated user is required."); private DateTimeOffset Now => time.GetUtcNow();
     public Task<Result<ArtworkView>> CreateArtworkAsync(ArtworkCommand c, CancellationToken ct) => tx.ExecuteAsync(async t => { Result<Artwork> x = Artwork.Create(Guid.NewGuid(), Company, c.Code, c.Title, c.Description, c.CategoryCode, c.DesignerUserId, Now); if (x.IsFailure) return Result.Failure<ArtworkView>(x.Error); if (await db.Artworks.AnyAsync(a => a.Code == x.Value.Code, t)) return Result.Failure<ArtworkView>(FileErrors.DuplicateCode); db.Artworks.Add(x.Value); Log("artwork.created", "artwork", x.Value.Id); return Result.Success(A(x.Value)); }, ct);
@@ -26,6 +27,23 @@ public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExec
     public Task<Result<ArtworkView>> ArchiveArtworkAsync(Guid id, bool archived, long version, CancellationToken ct) => tx.ExecuteAsync(async t => { Artwork? x = await db.Artworks.SingleOrDefaultAsync(a => a.Id == id, t); if (x is null) return Result.Failure<ArtworkView>(FileErrors.NotFound); if (x.Version != version) return Result.Failure<ArtworkView>(FileErrors.Concurrency); if (archived) x.Archive(Now); else x.Restore(Now); Log(archived ? "artwork.archived" : "artwork.restored", "artwork", id); return Result.Success(A(x)); }, ct);
     public Task<Result<ArtworkVersionView>> CreateArtworkVersionAsync(Guid artworkId, Guid fileVersionId, string? notes, CancellationToken ct) => tx.ExecuteAsync(async t => { Artwork? art = await db.Artworks.SingleOrDefaultAsync(x => x.Id == artworkId, t); FileVersion? file = await db.FileVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == fileVersionId, t); if (art is null || file is null) return Result.Failure<ArtworkVersionView>(FileErrors.CrossCompany); if (art.IsArchived || file.IsArchived) return Result.Failure<ArtworkVersionView>(FileErrors.Archived); int number = (await db.ArtworkVersions.Where(x => x.ArtworkId == artworkId).MaxAsync(x => (int?)x.VersionNumber, t) ?? 0) + 1; Result<ArtworkVersion> x = ArtworkVersion.Create(Guid.NewGuid(), Company, artworkId, number, fileVersionId, notes, Actor, Now); if (x.IsFailure) return Result.Failure<ArtworkVersionView>(x.Error); db.ArtworkVersions.Add(x.Value); art.SetCurrentVersion(x.Value.Id, Now); Log("artwork.version.created", "artwork_version", x.Value.Id); return Result.Success(AV(x.Value)); }, ct);
     public Task<Result<IReadOnlyList<ArtworkVersionView>>> ListArtworkVersionsAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t => await db.Artworks.AnyAsync(x => x.Id == artworkId, t) ? Result.Success<IReadOnlyList<ArtworkVersionView>>((await db.ArtworkVersions.AsNoTracking().Where(x => x.ArtworkId == artworkId).OrderBy(x => x.VersionNumber).ToListAsync(t)).Select(AV).ToArray()) : Result.Failure<IReadOnlyList<ArtworkVersionView>>(FileErrors.NotFound), ct);
+    public Task<Result<IReadOnlyList<ArtworkHistoryView>>> ListArtworkHistoryAsync(Guid artworkId, int pageNumber, int pageSize, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        if (pageNumber < 1 || pageSize is < 1 or > 100) return Result.Failure<IReadOnlyList<ArtworkHistoryView>>(FileErrors.InvalidData);
+        if (!await db.Artworks.AsNoTracking().AnyAsync(x => x.Id == artworkId, t)) return Result.Failure<IReadOnlyList<ArtworkHistoryView>>(FileErrors.NotFound);
+        PagedResult<AuditEventView> events = await auditReader.ListAsync(new AuditQuery(EntityType: "artwork", EntityId: artworkId.ToString(), PageNumber: pageNumber, PageSize: pageSize), t);
+        return Result.Success<IReadOnlyList<ArtworkHistoryView>>(events.Items.Select(x => new ArtworkHistoryView(x.Action, x.OccurredAtUtc, x.ActorUsername)).ToArray());
+    }, ct);
+    public Task<Result<DownloadFile>> GetThumbnailAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        Artwork? artwork = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(x => x.Id == artworkId, t);
+        if (artwork?.CurrentVersionId is not Guid currentVersionId) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        ArtworkVersion? version = await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentVersionId && x.ArtworkId == artworkId, t);
+        FileDerivative? derivative = version is null ? null : await db.FileDerivatives.AsNoTracking().SingleOrDefaultAsync(x => x.SourceFileVersionId == version.FileVersionId && x.DerivativeType == FileDerivativeType.Thumbnail, t);
+        if (derivative is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t);
+        return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.png", derivative.MediaType, derivative.SizeBytes, content));
+    }, ct);
     public Task<Result<ArtworkTagView>> CreateTagAsync(string code, string name, CancellationToken ct) => tx.ExecuteAsync(async t => { Result<ArtworkTag> x = ArtworkTag.Create(Guid.NewGuid(), Company, code, name, Now); if (x.IsFailure) return Result.Failure<ArtworkTagView>(x.Error); if (await db.ArtworkTags.AnyAsync(a => a.Code == x.Value.Code, t)) return Result.Failure<ArtworkTagView>(FileErrors.DuplicateCode); db.ArtworkTags.Add(x.Value); Log("artwork.tag.created", "artwork_tag", x.Value.Id); return Result.Success(T(x.Value)); }, ct);
     public Task<Result<ArtworkTagView>> UpdateTagAsync(Guid id, string name, bool active, long version, CancellationToken ct) => tx.ExecuteAsync(async t => { ArtworkTag? x = await db.ArtworkTags.SingleOrDefaultAsync(a => a.Id == id, t); if (x is null) return Result.Failure<ArtworkTagView>(FileErrors.NotFound); if (x.Version != version) return Result.Failure<ArtworkTagView>(FileErrors.Concurrency); Result r = x.Update(name, active, Now); return r.IsFailure ? Result.Failure<ArtworkTagView>(r.Error) : Result.Success(T(x)); }, ct);
     public Task<Result<ArtworkTagAssignmentView>> AssignTagAsync(Guid artworkId, Guid tagId, CancellationToken ct) => tx.ExecuteAsync(async t => { if (!await db.Artworks.AnyAsync(x => x.Id == artworkId, t) || !await db.ArtworkTags.AnyAsync(x => x.Id == tagId, t)) return Result.Failure<ArtworkTagAssignmentView>(FileErrors.CrossCompany); if (await db.ArtworkTagAssignments.AnyAsync(x => x.ArtworkId == artworkId && x.TagId == tagId, t)) return Result.Failure<ArtworkTagAssignmentView>(FileErrors.DuplicateAssignment); ArtworkTagAssignment x = ArtworkTagAssignment.Create(Company, artworkId, tagId, Actor, Now); db.ArtworkTagAssignments.Add(x); Log("artwork.tag.assigned", "artwork", artworkId); return Result.Success(new ArtworkTagAssignmentView(x.Id, x.ArtworkId, x.TagId, x.IsActive)); }, ct);

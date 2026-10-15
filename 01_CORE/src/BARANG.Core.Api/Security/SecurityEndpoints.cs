@@ -130,6 +130,10 @@ public static class SecurityEndpoints
                     if (linked.IsFailure) return linked;
                 }
                 user.SetActive(true, now);
+                // Development recovery must also clear an expired/active lockout;
+                // otherwise the recovered credential remains unusable until the
+                // old lockout timestamp elapses.
+                user.SetLockoutEnd(null, now);
                 Result reset = await identity.ResetPasswordAsync(user, request.Password, token);
                 if (reset.IsFailure) return reset;
                 foreach (AuthenticationSession session in await db.AuthenticationSessions.Where(x => x.UserId == user.Id && x.RevokedAtUtc == null && x.ExpiresAtUtc > now).ToListAsync(token)) session.Revoke(now);
