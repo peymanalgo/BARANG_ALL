@@ -110,7 +110,13 @@ public sealed partial class InventoryAdministration
         List<StockReservation> reservations = await db.StockReservations
             .Where(x => items.Select(i => i.Id).Contains(x.OrderItemId) && x.Status == ReservationStatus.Active && x.RemainingQuantity == x.RequestedQuantity)
             .ToListAsync(cancellationToken);
-        return items.All(item => reservations.Any(r => r.OrderItemId == item.Id && r.ProductVariantId == item.ProductVariantId && r.RequestedQuantity == item.Quantity && string.Equals(r.UomCode, item.SnapshotUomCode, StringComparison.OrdinalIgnoreCase)));
+        foreach (Domain.Orders.OrderItem item in items)
+        {
+            string uom = await Uom(item.ProductVariantId, cancellationToken);
+            if (!reservations.Any(r => r.OrderItemId == item.Id && r.ProductVariantId == item.ProductVariantId && r.RequestedQuantity == item.Quantity && string.Equals(r.UomCode, uom, StringComparison.OrdinalIgnoreCase)))
+                return false;
+        }
+        return true;
     }
 
     /// <summary>Used by the legacy workflow adapter when no new result is in flight.</summary>
@@ -121,11 +127,15 @@ public sealed partial class InventoryAdministration
         List<StockReservation> reservations = await db.StockReservations.Where(x => items.Select(i => i.Id).Contains(x.OrderItemId)).ToListAsync(cancellationToken);
         List<Guid> reservationIds = reservations.Select(x => x.Id).ToList();
         List<StockTransaction> issues = await db.StockTransactions.Where(x => x.TransactionType == StockTransactionType.Issue && x.SourceType == "WAREHOUSE_ISSUE" && x.SourceId != null && reservationIds.Contains(x.SourceId.Value)).ToListAsync(cancellationToken);
-        return items.All(item =>
+        foreach (Domain.Orders.OrderItem item in items)
         {
+            string uom = await Uom(item.ProductVariantId, cancellationToken);
             List<Guid> ids = reservations.Where(r => r.OrderItemId == item.Id && r.ProductVariantId == item.ProductVariantId).Select(r => r.Id).ToList();
-            return issues.Where(x => x.SourceId != null && ids.Contains(x.SourceId.Value)).Sum(x => Math.Abs(x.QuantityDelta)) >= item.Quantity;
-        });
+            if (reservations.Where(r => ids.Contains(r.Id)).Any(r => r.WarehouseId == Guid.Empty || !string.Equals(InventoryText.Code(r.UomCode), uom, StringComparison.OrdinalIgnoreCase)) ||
+                issues.Where(x => x.SourceId != null && ids.Contains(x.SourceId.Value) && x.WarehouseId == reservations.First(r => r.Id == x.SourceId.Value).WarehouseId && string.Equals(InventoryText.Code(x.UomCode), uom, StringComparison.OrdinalIgnoreCase)).Sum(x => Math.Abs(x.QuantityDelta)) < item.Quantity)
+                return false;
+        }
+        return true;
     }
 
     private sealed record ReservationEvidence(Guid Id, Guid OrderItemId, Guid WarehouseId, Guid ProductVariantId, string UomCode, decimal RequestedQuantity, decimal RemainingQuantity, ReservationStatus Status)
