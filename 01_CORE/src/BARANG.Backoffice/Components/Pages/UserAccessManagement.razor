@@ -70,7 +70,7 @@ else if (ActiveTab == "roles")
             <div class="data-grid-wrap"><table class="data-grid uam-grid"><thead><tr><th><BarangSortHeader Label="@U["RoleName"]" Active="@(RoleSort=="title")" Descending="@RoleDescending" Clicked='() => SortRoles("title")' /></th><th><BarangSortHeader Label="@U["Code"]" Active="@(RoleSort=="code")" Descending="@RoleDescending" Clicked='() => SortRoles("code")' /></th><th>@U["Scope"]</th><th>@U["UserCount"]</th><th>@U["AccountStatus"]</th><th>@U["Actions"]</th></tr></thead><tbody>
             @foreach (RoleRow role in Roles)
             {
-                <tr><td><strong>@role.Title</strong><small class="uam-cell-note">@role.Description</small></td><td dir="ltr"><span class="code-pill">@role.Code</span></td><td><span class="uam-scope">@(role.Scope == "System" ? U["SystemScope"] : U["CompanyScope"])</span></td><td>@role.UserCount</td><td><span class="status-badge @(role.Active ? "active" : "inactive")">@(role.Active ? U["Active"] : U["Inactive"])</span></td><td><BarangIconButton Icon="edit" Label="@U["Edit"]" Clicked="() => OpenRole(role)" /></td></tr>
+                <tr><td><strong>@role.Title</strong><small class="uam-cell-note">@role.Description</small></td><td dir="ltr"><span class="code-pill">@role.Code</span></td><td><span class="uam-scope">@(role.Scope == "System" ? U["SystemScope"] : U["CompanyScope"])</span></td><td>@role.UserCount</td><td><span class="status-badge @(role.Active ? "active" : "inactive")">@(role.Active ? U["Active"] : U["Inactive"])</span></td><td><BarangActionMenu><BarangIconButton Icon="edit" Label="@U["Edit"]" Clicked="() => OpenRole(role)" /></BarangActionMenu></td></tr>
             }
             </tbody></table></div>
         }

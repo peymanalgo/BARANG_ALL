@@ -56,11 +56,11 @@
                             <td dir="ltr">@SkuLabel(row)</td>
                             <td>@row.Quantity</td>
                             <td>@ProductUnit(row.Product)</td>
-                            <td class="row-actions">
+                            <td ><BarangActionMenu>
                                 <BarangIconButton Icon="eye" Semantic="info" Label="@L["View"]" Clicked="@(()=>ViewItem(row))" />
                                 <BarangIconButton Icon="edit" Semantic="edit" Label="@L["Edit"]" Clicked="@(()=>EditItem(row))" />
                                 <BarangIconButton Icon="trash" Semantic="danger" Label="@L["RemoveItem"]" Clicked="@(()=>RequestDeleteItem(row))" />
-                            </td>
+                            </BarangActionMenu></td>
                         </tr>
                     }
                 </tbody>

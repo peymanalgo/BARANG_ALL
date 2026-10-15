@@ -2,4 +2,11 @@
 .barang-action-menu-trigger{display:grid;place-items:center;width:38px;height:38px;padding:0;border:0;border-radius:8px;background:transparent;color:#31574c;font-family:inherit;font-size:24px;font-weight:700;line-height:1;cursor:pointer;box-shadow:none}
 .barang-action-menu-trigger:hover,.barang-action-menu-trigger:active{background:#edf5f1}
 .barang-action-menu-trigger:focus-visible{background:#edf5f1;outline:2px solid #86b8a7;outline-offset:2px}
-.barang-action-menu-popup{position:fixed;z-index:1700;display:flex;flex-direction:column;align-items:stretch;min-width:min(200px,calc(100vw - 16px));width:max-content;max-width:min(320px,calc(100vw - 16px));padding:5px;border:1px solid #cdd9d2;border-radius:10px;background:#fff;box-shadow:0 14px 32px #173c3126}
+.barang-action-menu-popup{position:fixed;z-index:1700;display:flex;flex-direction:column;align-items:stretch;min-width:min(220px,calc(100vw - 16px));width:max-content;max-width:min(340px,calc(100vw - 16px));padding:5px;border:1px solid #cdd9d2;border-radius:10px;background:#fff;box-shadow:0 14px 32px #173c3126}
+.barang-action-menu-popup .barang-icon-button{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:38px;padding:7px 10px;color:#31574c;background:transparent;border:0;border-radius:7px;box-shadow:none;text-align:start;white-space:nowrap}
+.barang-action-menu-popup .barang-icon-button:hover,.barang-action-menu-popup .barang-icon-button:focus-visible{background:#edf5f1;outline:0}
+.barang-action-menu-popup .barang-icon-button .barang-icon{flex:0 0 18px;width:18px;height:18px}
+.barang-action-menu-item-label{overflow:hidden;text-overflow:ellipsis}
+.barang-action-menu-popup .icon-button{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:38px;padding:7px 10px;color:#31574c;background:transparent;border:0;border-radius:7px;box-shadow:none;text-align:start;white-space:nowrap;font:inherit;cursor:pointer}
+.barang-action-menu-popup .icon-button:hover,.barang-action-menu-popup .icon-button:focus-visible{background:#edf5f1;outline:0}
+.barang-action-menu-popup .icon-button::after{content:attr(title);overflow:hidden;text-overflow:ellipsis}

@@ -613,6 +613,14 @@ Mandatory action-menu rule:
 
 > Every grid uses a vertical three-dot dropdown for row actions. Row actions belong to the row menu; legitimate non-creation grid-level actions may belong to a separate toolbar menu. Add/Create/New actions are always standalone visible plus-icon buttons and never belong to either dropdown. Separate row action buttons/icons are not used. Menus preserve permissions, confirmations, localization, accessibility, and outside-click dismissal.
 
+Implementation checklist (mandatory for new and migrated grids):
+
+- One BarangActionMenu trigger is rendered per actionable row; read-only rows with no operation do not render an empty menu.
+- Menu entries are full-width, localized fa/en/ar action rows with one icon and text. Existing handlers, authorization, disabled/loading states, confirmations, and navigation are preserved.
+- Add/Create/New remains a visible standalone button with the shared plus icon and localized label (افزودن, Add, إضافة); it is never a row-menu entry.
+- Portal positioning must use the shared popup lifecycle so menus escape scrolling containers, close on outside pointer/Escape, restore focus, support keyboard navigation, and clean up on disposal.
+- Do not implement this contract by rewriting the DOM at runtime. Razor must own the menu and action markup.
+
 Mandatory implementation details:
 
 - The shared vertical three-dot trigger has no permanent boxed border, native button chrome, shadow, or opaque background; only a subtle hover/pressed state and a visible keyboard focus indicator are allowed.

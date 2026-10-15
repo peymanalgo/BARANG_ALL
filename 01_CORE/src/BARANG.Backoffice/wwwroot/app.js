@@ -105,19 +105,30 @@ window.barangActionMenu = {
             document.body.appendChild(popup);
         }
         const update = () => this.position(trigger, popup);
+        const keydown = event => {
+            if (!popup?.isConnected) return;
+            const items = [...popup.querySelectorAll('button:not([disabled]),a[href],input:not([disabled])')];
+            if (!items.length || !['ArrowDown','ArrowUp','Home','End'].includes(event.key)) return;
+            event.preventDefault();
+            const current = items.indexOf(document.activeElement);
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (current + (event.key === 'ArrowUp' ? -1 : 1) + items.length) % items.length;
+            items[next].focus();
+        };
+        popup?.addEventListener('keydown', keydown);
         update();
         const resizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null;
         resizeObserver?.observe(trigger);
         resizeObserver?.observe(popup);
         window.addEventListener('resize', update, { passive: true });
         window.addEventListener('scroll', update, { passive: true, capture: true });
-        this.watchers.set(id, { update, resizeObserver, popup, placeholder });
+        this.watchers.set(id, { update, resizeObserver, popup, placeholder, keydown });
     },
     unwatch(id) {
         const watcher = this.watchers.get(id);
         if (!watcher) return;
         window.removeEventListener('resize', watcher.update);
         window.removeEventListener('scroll', watcher.update, true);
+        watcher.popup?.removeEventListener('keydown', watcher.keydown);
         watcher.resizeObserver?.disconnect();
         if (watcher.popup?.isConnected && watcher.placeholder?.isConnected) {
             watcher.placeholder.parentNode.insertBefore(watcher.popup, watcher.placeholder.nextSibling);

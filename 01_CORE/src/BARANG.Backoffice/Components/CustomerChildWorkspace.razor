@@ -24,13 +24,13 @@
                 <tr data-id="@Text(row,"id")">
                     @foreach(var field in Columns){<td dir="@(field.Kind is "phone" or "email" or "number"?"ltr":null)">@Cell(row,field)</td>}
                     <td><StatusBadge Active="@Boolean(row,"isActive")" />@if(Boolean(row,DefaultKey)){<span class="status-badge">@C[Kind=="contacts"?"Primary":"Default"]</span>}</td>
-                    <td><div class="row-actions"><BarangIconButton Icon="eye" Label="@T["View"]" Semantic="info" Clicked="()=>Open(row,true)" />
+                    <td><BarangActionMenu><BarangIconButton Icon="eye" Label="@T["View"]" Semantic="info" Clicked="()=>Open(row,true)" />
                     @if(!ReadOnly){
                         <BarangIconButton Icon="edit" Label="@T["Edit"]" Semantic="edit" Clicked="()=>Open(row,false)" />
                         <BarangIconButton Icon="power" Label="@(Boolean(row,"isActive")?T["Deactivate"]:T["Activate"])" Semantic="@(Boolean(row,"isActive")?"warning":"success")" Clicked="()=>Activate(row)" />
                         <BarangIconButton Icon="trash" Label="@T["Delete"]" Semantic="danger" Clicked="()=>AskDelete(row)" />
                         @if(Boolean(row,"isActive")&&!Boolean(row,DefaultKey)){<button type="button" class="btn btn-secondary btn-small" @onclick="()=>SetDefault(row)">@C[Kind=="contacts"?"SetPrimary":"SetDefault"]</button>}
-                    }</div></td>
+                    }</BarangActionMenu></td>
                 </tr>
             }
         </tbody></table></div>

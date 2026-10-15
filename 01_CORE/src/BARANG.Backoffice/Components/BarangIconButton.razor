@@ -6,8 +6,8 @@
 }
 else
 {
-    <button type="button" class="@CssClass" title="@Label" aria-label="@Label" disabled="@Disabled" @attributes="AdditionalAttributes" @onclick="Clicked" @onclick:stopPropagation="StopPropagation">
-        <BarangIcon Name="@Icon" />
+        <button type="button" class="@CssClass" title="@Label" aria-label="@Label" disabled="@Disabled" @attributes="AdditionalAttributes" @onclick="Clicked" @onclick:stopPropagation="StopPropagation">
+        <BarangIcon Name="@Icon" />@if (InActionMenu) { <span class="barang-action-menu-item-label">@Label</span> }
     </button>
 }
 @code {
@@ -19,6 +19,7 @@ else
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public bool StopPropagation { get; set; }
     [Parameter] public EventCallback<MouseEventArgs> Clicked { get; set; }
+    [CascadingParameter(Name = "BarangActionMenuContext")] public bool InActionMenu { get; set; }
     [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
     private string CssClass => $"barang-icon-button barang-action-{ResolvedSemantic} {Class}";

@@ -9,7 +9,9 @@
     <button @ref="_trigger" type="button" class="barang-action-menu-trigger" aria-haspopup="menu" aria-expanded="@(_open ? "true" : "false")" aria-label="@ResolvedLabel" title="@ResolvedLabel" @onclick="Toggle" @onclick:stopPropagation="true" @onkeydown="HandleTriggerKeyDown"><BarangIcon Name="more-vertical" /></button>
     @if (_open)
     {
-        <div @ref="_popup" class="barang-action-menu-popup" role="menu" tabindex="-1" @onclick="CloseAfterAction">@ChildContent</div>
+        <CascadingValue Value="true" Name="BarangActionMenuContext">
+            <div @ref="_popup" class="barang-action-menu-popup" role="menu" tabindex="-1" @onclick="CloseAfterAction">@ChildContent</div>
+        </CascadingValue>
     }
 </div>
 
