@@ -7,7 +7,7 @@
 - checkout: `codex/step2-inventory-unit-contracts`
 - baseline پذیرفته‌شدهٔ UI: `ea08cdf13b54830ec310470229224bb5a3ff1112`
 - گزارش baseline: `e5de12a30c4802daa11fa7cf4bc1e27f597c945f`
-- working source پیش از commit این تغییر: `e5de12a30c4802daa11fa7cf4bc1e27f597c945f` + تغییرات این گزارش
+- tested source / final application commit: `d483f8f0d8346e791672a1f38839616deb416437`
 - working tree قبل از کار فقط artifact/keyهای untracked داشت؛ تغییرات آن‌ها stage نشده‌اند.
 - deployment اولیه هنگام شروع: Compose project `barang-core`، فایل `compose.yaml`، API روی `localhost:8080` و Backoffice روی `localhost:5100`؛ API provenance `71d88a9790ac5af3a3ab70c4a8e3e9316a6b9e75` و Backoffice provenance `ea08cdf13b54830ec310470229224bb5a3ff1112` بود.
 - volumeها و credential/keyهای development دست‌نخورده ماندند. migration جدید لازم نشد؛ زنجیره migration فقط در PostgreSQL ایزوله اعمال شد.
@@ -59,4 +59,13 @@
 
 ## deployment و delivery
 
-در زمان ثبت اولیهٔ این گزارش هنوز development deploy نشده است. deployment مجاز فقط پس از commit نهایی و gateهای بالا، با همان Compose project/volume/key و بدون reset business data انجام می‌شود و SHA/image digest در همین فایل تکمیل خواهد شد.
+deployment محلی development با همان Compose project `barang-core` و بدون reset انجام شد:
+
+- API: `BARANG_BUILD_COMMIT=d483f8f`، image `sha256:f416f3a4004efbb9dd790af65fffcbfec4a0837f40dd5e75498f30210fbf6284`
+- Backoffice: `BARANG_BUILD_COMMIT=d483f8f`، image `sha256:e4758eec8ad6f262299dcd9e90283a9a43a0eb8323bd889dc529c7970ca64b94`
+- API `localhost:8080` و Backoffice `localhost:5100` healthy؛ Postgres/MinIO/Redis و volumeهای development باقی ماندند.
+- deployed browser evidence: `SharedActionMenuItemsKeepIconAndLabelOnOneHorizontalRow` fa/ar/en = 3/3 PASS؛ `EveryExposedNavigationPageRendersTheSharedShellWithoutRuntimeFailure` = PASS؛ `GlobalLanguageSwitchUpdatesLocalizedShellAndDirection` fa/en/ar = 3/3 PASS. تست‌ها با Chrome نصب‌شده و `BARANG_E2E_ALLOW_SHARED_DEV_DB=true` فقط smoke/read-only UI بودند.
+
+## جمع‌بندی پذیرش
+
+از نظر backend و completion-gate، STEP 5 **PASS** است: هر دو Inventory stage و legacy adapter به evidence کامل canonical متصل‌اند و 130/130 Integration، Unit، Backoffice و build سبز هستند. browser mutation acceptance اختصاصی Cartable در این runner اجرا نشد؛ اجرای عمومی E2E به‌علت خطای شناخته‌شدهٔ xUnit/VSTest `Test process did not return valid JSON` قابل اتکا نیست. بنابراین این مورد به‌عنوان blocker برای browser evidence جدا ثبت می‌شود، نه به‌عنوان شکست business gate.
