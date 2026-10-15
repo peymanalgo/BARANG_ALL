@@ -206,3 +206,47 @@ fixture workflow از `tests/Acceptance/fixtures/barang-order-workflow.v17.sanit
 
 **Regression gate جاری: PASS — current source `129/129`; baseline `128/128`.** علت ۸۸/۴۱ قبلی، محیط/DB/role initialization و آلودگی اجرای مجدد بود و با DB clean قابل تکرار نشد. با این حال **STEP 4.5 هنوز PASS نیست**: Design Bank با fixture کامل و nested Purchasing با summary معتبر browser هنوز کامل نشده‌اند و deployment پورت `5100` انجام نشده است.
 
+## الحاقیه نهایی — اجرای جاری پس از اصلاح دو check (2026-10-15)
+
+### provenance و گیت
+
+- checkout: `D:\00_BARANG\step2-clean\01_CORE`
+- branch: `codex/step2-inventory-unit-contracts`
+- tested application source: `fe91800` (`e82635957c6cfecf1e2cccaeb2066e24b23ab427` + اصلاحات این اجرا)
+- report is updated after the source commit; no credentials, tokens, customer data, or traces are included.
+- isolated PostgreSQL: container `barang-step45-postgres`, port `5545`, fresh DB `barang_step45_integration_current_test`; separate browser DB `barang_step45_test`; development `barang_core` was not used for mutation tests.
+
+### regression gate جاری
+
+| check | exact result |
+|---|---|
+| Release API build | PASS — 0 warnings / 0 errors |
+| Release Backoffice build | PASS — 0 warnings / 0 errors |
+| Unit | PASS — 222/222 |
+| Backoffice | PASS — 184/184 |
+| full current-source Integration | PASS — 129/129, 3m48s; clean migration/role setup, no locks |
+
+The earlier `88 passed / 41 failed` run was reproduced as a setup guard failure when the selected DB name did not satisfy the repository `_test` safety contract. A new `_test` database was then created; the supported fixture ran migrations, created the test roles, reset data, and completed `129/129`. No assertions were weakened.
+
+### دو browser check باقی‌مانده
+
+| scenario | result | evidence and cause |
+|---|---|---|
+| `DesignBankE2ETests` full class | PASS — 6/6 | unified single scrollable editor; zero tabs; category picker; create/edit/reload; read-only history; shared row menu; localized direction; upload/history/thumbnail |
+| `PurchaseRequestsE2ETests.PurchaseRequestGridAndSameSessionMultilineDraftWork` | PASS — 1/1 | isolated `BROWSER-WH`/`BROWSER-PRD`/`BROWSER-SKU`; supported GET/list/detail API; request number persistence; Add line/save/reload; View through the nested shared menu |
+
+The Design Bank failures were not solved by restoring obsolete tabs. The real causes were (a) missing `GET /api/v1/artworks/{id}/history`, (b) missing thumbnail download route, and (c) asynchronous derivative creation racing the immediate grid reload. The implementation now reads company-scoped audit history, serves the persisted thumbnail derivative with artwork authorization, and performs a bounded retry in `DesignThumbnail`; the successful test observed history and thumbnail after the actual upload. The development recovery endpoint also now clears an existing lockout timestamp when recovering an isolated development identity; this does not affect ordinary authorization semantics.
+
+### implementation changes
+
+- PurchaseRequest has a durable `RequestNumber`, read list/detail endpoints, EF mapping, and a non-destructive alignment migration. The isolated DB migration was applied before its browser test; development already had the compatible `request_number` column and was not migrated by this task.
+- Design Bank history uses existing `IAuditReader` and current-company filtering; no raw audit-table bypass was added.
+- Thumbnail retrieval uses existing `FileDerivative`/object storage records; unknown or pending derivatives return not-found and the UI retries only for a bounded period.
+- Unified Design Bank acceptance asserts no side tabs, category selection, persisted root category, field availability, history refresh, and upload thumbnail behavior.
+
+### deployment target and acceptance status
+
+The existing development Compose context is `barang-core` with services `api` and `backoffice`; it owns the existing `barang_core` PostgreSQL volume, MinIO/Redis volumes, and API/Backoffice data-protection key volumes. The API is internal at `api:8080` and the Backoffice is exposed at `http://localhost:5100`. The prior running image provenance was `4bd08d0...`; it is being replaced only after the current gate above, with `BARANG_BUILD_COMMIT=fe91800` and the same project/volumes. No database reset, credential change, or production deployment is part of this acceptance.
+
+Final deployment/image IDs, served asset provenance, representative screenshots, and the authenticated GitHub push/merge state are recorded in the next section after the Compose rollout and non-destructive smoke verification.
+
