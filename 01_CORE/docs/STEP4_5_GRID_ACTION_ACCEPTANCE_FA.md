@@ -173,3 +173,36 @@ fixture workflow از `tests/Acceptance/fixtures/barang-order-workflow.v17.sanit
 
 **STEP 4.5 = FAIL / NOT ACCEPTED.** دو defect فنی بازتولیدشده (static asset/SRI در deployment artifact و sort-trigger border) رفع و با تست مرورگر جاری تأیید شدند. اما شرط کامل acceptance هنوز برقرار نیست: full Integration جاری fail/hang دارد و Orders/Design Bank/Pricing/nested Purchasing و STEP4 return با fixture معتبر و deployment واقعی پورت 5100 به‌صورت کامل اجرا نشده‌اند. STEP 5 همچنان paused است.
 
+## الحاقیهٔ مقایسهٔ کنترل‌شده و اجرای پایدار
+
+دو commit و دو DB کاملاً جدا با همان migration/role setup مقایسه شدند:
+
+| source | commit | DB ایزوله | فرمان | نتیجه |
+|---|---|---|---|---|
+| baseline | `12738cf5b0c7200efc15f8a40cbfa595a3c8d811` | `barang_step45_full_baseline_test` روی PostgreSQL port `5545` | `dotnet test tests/BARANG.Core.IntegrationTests/BARANG.Core.IntegrationTests.csproj -c Release --blame-hang --blame-hang-timeout 5m --logger trx` با `BARANG_TEST_DB_CONNECTION` | **128/128 PASS، 3:44** |
+| current | `eca3a5ba01f6e89063112c77109f5c9aad0d48df` | `barang_step45_full_current_test` روی همان container و configuration | همان فرمان با DB جاری | **129/129 PASS، 3:46** |
+
+هر دو اجرا از `PostgreSqlDatabaseFixture.InitializeAsync` استفاده کردند: نام DB با suffix `_test`، migration کامل، ساخت `barang_app` و `barang_test_app`، role application با LOGIN، grantهای schema/table/sequence و سپس `ResetAsync`. هیچ اجرا به `barang_core` یا volume توسعه متصل نبود.
+
+در اجرای آلودهٔ قبلی، failureها شامل `role "barang_app" does not exist`، database/relation missing و FK fixture بود. اجرای clean این موارد را تکرار نکرد. برای stall نیز `pg_stat_activity` و `pg_locks` بررسی شد: lock منتظر وجود نداشت؛ پس از timeout محدود، اجرای clean کامل شد.
+
+### browser fixture جاری
+
+با setup پشتیبانی‌شده، شرکت `STEP45B`، branch `BROWSER-MAIN`، warehouse `BROWSER-WH`، customer/product/variant، موجودی ۲۰ PCS، مسئول warehouse و graph واقعی با مسیر `DECIDE_WAREHOUSE → InventoryIssue → PRINT` ساخته شدند. Order ایزوله دارای دو OrderItem مستقل با variant مشترک و reservationهای ۲ و ۳ PCS بود.
+
+| تست جاری | نتیجه |
+|---|---|
+| `Step3ReservationAcceptanceE2ETests.InventoryReservationTaskCanBeCompletedThroughAuthenticatedUi` | **PASS** — Claim/issue واقعی و retry بدون duplicate |
+| `Step4InventoryReturnE2ETests.UsableReturnIsPostedFromTheRealWarehouseReturnFormAndReloads` | **PASS** — return usable و reload persisted |
+| `OrdersE2ETests.OrdersWorkspaceIsCanonicalAndExposesOperationalActions` | **PASS** پس از اصلاح assertion برای منوی `Actions → Order 360` |
+| `PricingTariffE2ETests.PricingWorkspaceIsOperationalAndHasNoHorizontalOverflow` | **PASS** |
+| `DeployedInteractivityTests.SharedSortHeadersUserGridAndActionIconsMatchTheGlobalStandard` | **PASS** |
+| `DesignBankE2ETests.DesignBankCreateReloadTabsAndLocalizedDirection` | **FAIL** — چهار tab مورد انتظار پس از create expose نشد؛ نیازمند seed معتبر Design Bank/classification |
+| `PurchaseRequestsE2ETests.PurchaseRequestGridAndSameSessionMultilineDraftWork` | timeout runner؛ summary معتبر تولید نشد و PASS اعلام نمی‌شود |
+
+شکست اولیهٔ Orders یک stale expectation بود، نه defect UI: test دکمهٔ مستقل `Order 360` می‌خواست، در حالی‌که UI آن را داخل trigger واحد `Actions` render می‌کند. test اکنون همان action واقعی را dispatch می‌کند و assertionهای navigation/Order 360 حفظ شده‌اند.
+
+### نتیجهٔ مقایسه
+
+**Regression gate جاری: PASS — current source `129/129`; baseline `128/128`.** علت ۸۸/۴۱ قبلی، محیط/DB/role initialization و آلودگی اجرای مجدد بود و با DB clean قابل تکرار نشد. با این حال **STEP 4.5 هنوز PASS نیست**: Design Bank با fixture کامل و nested Purchasing با summary معتبر browser هنوز کامل نشده‌اند و deployment پورت `5100` انجام نشده است.
+
