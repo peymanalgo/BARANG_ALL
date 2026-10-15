@@ -24,8 +24,7 @@ public sealed class InventorySectionE2ETests : IAsyncLifetime
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         if (new Uri(page.Url).AbsolutePath == "/company")
         {
-            await page.Locator(".company-list form:has(input[name=companyId][value='42f0e459-6095-45bb-aa13-f38126d91d9c']) button[type=submit]").ClickAsync();
-            await page.WaitForURLAsync(url => new Uri(url).AbsolutePath != "/company");
+            await BrowserCompanyContext.SelectIfRequiredAsync(page);
         }
     }
 

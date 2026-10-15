@@ -289,9 +289,7 @@ public sealed class DesignBankE2ETests : IAsyncLifetime
         await page.Locator("#password").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_PASSWORD") ?? "BarangDev@2026");
         await page.Locator("button[type=submit]").ClickAsync();
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        if (new Uri(page.Url).AbsolutePath == "/company")
-            await page.Locator($".company-list form:has(input[name=companyId][value='{Company}']) button[type=submit]").ClickAsync();
-        await page.WaitForURLAsync(u => new Uri(u).AbsolutePath != "/company");
+        await BrowserCompanyContext.SelectIfRequiredAsync(page);
     }
 
     private Task<Microsoft.Playwright.IResponse?> Go(string culture, string path) => page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(path)}", new() { WaitUntil = WaitUntilState.NetworkIdle });

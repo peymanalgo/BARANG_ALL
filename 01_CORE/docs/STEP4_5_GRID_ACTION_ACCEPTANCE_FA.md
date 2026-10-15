@@ -2,7 +2,7 @@
 
 ## وضعیت جاری
 
-- منبع بررسی‌شده: commit جاری checkout روی branch `codex/step2-inventory-unit-contracts`؛ provenance نهایی پس از commit ثبت می‌شود.
+- منبع بررسی‌شده: commit جاری checkout روی branch `codex/step2-inventory-unit-contracts`؛ SHA دقیق در انتهای این گزارش ثبت می‌شود.
 - Release build برای solution و Backoffice/API موفق شد؛ صفر warning و error.
 - محیط توسعه، volumeها، کلیدها، داده‌ها و حساب مدیر تغییر نکردند. فایل محلی `.keys/` untracked است و commit نمی‌شود.
 - برای تست PostgreSQL از container جداگانه `barang-step45-postgres`، port `5545`، database `barang_step45_test` و volume `barang_step45_pgdata` استفاده شد؛ database توسعه `barang_core` و volumeهای Compose توسعه target نبودند.
@@ -41,11 +41,28 @@ Base Data و lookupها؛ organization/warehouses/persons/equipment؛ User/RBAC�
 | Browser: shared sort/action standard | PASS — current published source, isolated API `5511` / Backoffice `5512`; `SharedSortHeadersUserGridAndActionIconsMatchTheGlobalStandard` passed after the scoped sort-header reset |
 | Browser: exposed navigation smoke | PASS — `EveryExposedNavigationPageRendersTheSharedShellWithoutRuntimeFailure` passed on the same isolated pair; no `#blazor-error-ui` or `.blazor-error-boundary` observed |
 | Browser setup/provenance | PASS — published outputs were served from their own content roots; isolated PostgreSQL `barang_step45_test` on `5545`, company `42f0e459-6095-45bb-aa13-f38126d91c9c`, system Chrome |
-| Browser mutation matrix | PARTIAL — representative isolated sort/navigation and menu-shell checks passed; full mutation matrix across every module/family and STEP 3/4 feature E2E was not rerun in this turn |
+| Browser: readiness evidence | PASS — `ReadinessBrowserEvidenceE2ETests`: 4/4 (fa/ar/en shell + navigation), current isolated pair; screenshots/traces در `.artifacts/step45-evidence/` تولید شد |
+| Browser: Base/System representative | PASS — shared sort/action test و exposed-navigation test؛ menu trigger، popup و shell بدون Blazor error |
+| Browser: Inventory family | PASS — `InventoryBalanceGridLocalizesAndSwitchesDirection`; read-only grid بدون menu خالی و RTL/LTR صحیح |
+| Browser: Orders family | FAIL (fixture) — `OrdersWorkspaceIsCanonicalAndExposesOperationalActions`; با انتخاب شرکت ایزوله به Orders رسید، اما fixture ایزوله order ندارد و assertion `Order 360` روی ردیف نخست قابل اجرا نیست؛ application regression اثبات نشد |
+| Browser: Design Bank family | NOT COMPLETED — اجرای قبلی به company selector ثابت وابسته بود؛ helper انتخاب company بر اساس `BARANG_E2E_COMPANY_ID` اضافه شد و تست کامل پس از rebuild این ماتریس هنوز باید اجرا شود |
+| Browser: Pricing family | NOT COMPLETED — همان fixture/setup selector ثابت در اجرای گروهی؛ اجرای مستقل پس از اصلاح setup هنوز نتیجه نهایی ندارد |
+| Browser: nested purchasing | NOT COMPLETED — PurchaseRequest/PurchaseOrder fixtureهای business-specific به داده‌های development وابسته‌اند و در این run mutation آن‌ها اجرا نشد |
+| Browser: STEP 3 reservation | FAIL (fixture) — صفحه task به‌جای `#reservation-warehouse` پیام «دریافت کارتابل انجام نشد» برای task شناسه ثابت داد؛ داده/runtime task معتبر در ایزوله وجود نداشت |
+| Browser: STEP 4 return | FAIL (fixture) — فرم authenticated هیچ issue قابل برگشتی expose نکرد؛ «No returnable issue was exposed by the authenticated form» |
+| Browser mutation matrix | NOT READY — شواهد فعلی برای PASS کامل کافی نیست؛ تست‌های شکست‌خورده setup/fixture هستند اما هنوز acceptance feature را ثابت نمی‌کنند |
 
 ## نتیجه
 
-**STEP 4.5 = CONDITIONAL / NOT READY FOR PASS.** The two previously reproduced browser defects are fixed and pass on a current-source isolated deployment. Current Release, Unit `222/222`, Backoffice `184/184`, and isolated Integration `128/128` pass. Remaining acceptance work is the full per-family authenticated mutation matrix, including STEP 3/4 feature browser regressions; no development deployment was performed. STEP 5 شروع نشده است.
+**STEP 4.5 = FAIL / NOT ACCEPTED.** The two previously reproduced browser defects are fixed and pass on a current-source isolated deployment. Current Release, Unit `222/222`, Backoffice `184/184`, and isolated Integration `128/128` pass. Source coverage audit reports ۵۰ family/file entries and no remaining raw row-action marker in the audited source; however, the required authenticated per-family mutation matrix and STEP 3/4 browser regressions are not green because the isolated fixture lacks orders, a valid reservation task, and a returnable issue. Therefore no deployment was made to development port `5100`; it still serves the old UI assets. STEP 5 شروع نشده است.
+
+## شواهد اجرای فعلی و استقرار
+
+- tested source: commit جاری پس از اعمال فقط اصلاح setup تست browser؛ `git status`/SHA در تحویل نهایی ثبت می‌شود.
+- isolated API/Backoffice: `127.0.0.1:5511` / `127.0.0.1:5512`، PostgreSQL `barang-step45-postgres:5545`، DB `barang_step45_test`، شرکت `STEP45`، Chrome سیستم. volume و database توسعه استفاده نشد.
+- screenshot/trace: `.artifacts/step45-evidence/culture-fa.png/.trace.zip`, `culture-ar`, `culture-en`, `shell`.
+- deployment comparison: پورت `5100` هنوز assetهای قدیمی (`barang-design-system.3jyrdzij42.css` و `BARANG.Backoffice.rj0owjlmhu.styles.css`) را سرو می‌کند؛ محیط ایزوله assetهای current publish (`barang-design-system.b9shrc4ic5.css` و `BARANG.Backoffice.r4weykjsws.styles.css`) را سرو می‌کند. بنابراین پورت ۵۱۰۰ عمداً deploy نشد.
+- remaining exact blocker: provision کردن fixtureهای واقعیِ ایزوله برای order/task/issue و اجرای دوبارهٔ Design Bank، Pricing، nested purchasing و STEP 3/4 feature browser tests؛ این blocker تست/دادهٔ ایزوله است، نه مجوز تغییر دادهٔ توسعه.
 
 ## checklist تفصیلی source/grid
 

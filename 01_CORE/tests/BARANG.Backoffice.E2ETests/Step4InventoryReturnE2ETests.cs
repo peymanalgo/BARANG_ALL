@@ -22,7 +22,7 @@ public sealed class Step4InventoryReturnE2ETests : IAsyncLifetime
         await page.Locator("#password").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_PASSWORD") ?? "BarangDev@2026");
         await page.Locator("button[type=submit]").ClickAsync();
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        if (new Uri(page.Url).AbsolutePath == "/company") await page.Locator(".company-list form button[type=submit]").First.ClickAsync();
+        await BrowserCompanyContext.SelectIfRequiredAsync(page);
     }
 
     [Fact]
