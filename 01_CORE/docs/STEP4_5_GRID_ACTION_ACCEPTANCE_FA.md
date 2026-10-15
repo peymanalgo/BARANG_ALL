@@ -250,3 +250,47 @@ The existing development Compose context is `barang-core` with services `api` an
 
 Final deployment/image IDs, served asset provenance, representative screenshots, and the authenticated GitHub push/merge state are recorded in the next section after the Compose rollout and non-destructive smoke verification.
 
+## الحاقیهٔ تحویل نهایی UI روی `:5100` (2026-10-15)
+
+### اصلاحات نهایی بازتولیدشده
+
+- assertion قدیمی `GlobalGridCellStyleE2ETests` هنوز به آیکون مستقل `eye` تکیه داشت؛ آن به بازکردن `barang-action-menu-trigger` و اجرای اولین action منوی واقعی اصلاح شد. assertionهای cell/style و dialog حفظ شدند.
+- در screenshot واقعی Customer مشخص شد `BarangIcon` برای نام `more-vertical` mapping نداشت و به fallbackِ info می‌افتاد. mapping محدود به سه نقطهٔ عمودی اضافه شد؛ border/focus و رفتار shared menu تغییری نکرد.
+
+### اجرای browser روی deployment واقعی
+
+منبع و سرویس‌ها پس از اصلاح با commit زیر build/deploy شدند:
+
+- tested/deployed provenance: `71d88a9790ac5af3a3ab70c4a8e3e9316a6b9e75`
+- Compose project: `barang-core`
+- API: `http://localhost:8080`, image manifest `sha256:00be3475a7f2deacb3b43a2689cf9dd62466317ebb8b4263818ba12405e037b8`
+- Backoffice: `http://localhost:5100`, image manifest `sha256:3d03e84fe307b2f8293ecff381fea847b602e29842eeef54aedca7e47ae29384`
+- هر دو container healthy؛ `BARANG_BUILD_COMMIT` هر دو برابر provenance بالا؛ volumeهای PostgreSQL/MinIO/Redis، data-protection keys، credentials و admin دست‌نخورده ماندند.
+
+نتایج واقعی با `BARANG_E2E_ALLOW_SHARED_DEV_DB=true` (فلگ صریح موردنیاز guard برای تست روی deployment توسعه):
+
+| تست | نتیجه | TRX |
+|---|---:|---|
+| `ReadinessBrowserEvidenceE2ETests` — shell و fa/ar/en | **4/4 PASS** | `tests/BARANG.Backoffice.E2ETests/TestResults/step45-deployed-readiness-final.trx` |
+| `DeployedInteractivityTests.SharedSortHeadersUserGridAndActionIconsMatchTheGlobalStandard` | **1/1 PASS** | `tests/BARANG.Backoffice.E2ETests/TestResults/step45-deployed-menu-final.trx` |
+| `GlobalGridCellStyleE2ETests.OrdinaryCellsAreUnframedAndInteractionsAndSemanticsSurvive` | **12/12 PASS** | `tests/BARANG.Backoffice.E2ETests/TestResults/step45-deployed-grids-final2.trx` |
+
+ماتریس ۱۲تایی شامل `persons/customers/users/products × fa/en/ar` بود و روی deployment واقعی، با dialog/view، sort، search، shared menu، RTL/LTR، و بدون browser error اجرا شد. اسکرین‌شات‌های مورد بازبینی:
+
+- [Customer / English](../.artifacts/step45-deployed-grids-final/customers-en-desktop.png)
+- [Persons / Persian](../.artifacts/step45-deployed-grids-final/persons-fa-desktop.png)
+- [User Access / Arabic](../.artifacts/step45-deployed-grids-final/users-ar-desktop.png)
+- [Deployment shell / English](../.artifacts/step45-evidence/culture-en.png)
+
+در screenshot Customer، trigger یک نقطهٔ عمودی سه‌تاییِ بدون border دائمی است و `New Customer` به‌صورت دکمهٔ مستقلِ plus باقی مانده است. این checkها non-destructive بودند و هیچ order/stock موجودی را mutation نکردند.
+
+### جمع‌بندی نهایی
+
+- Design Bank unified-form acceptance: **6/6 PASS** در isolated environment.
+- PurchaseRequest nested-grid acceptance: **1/1 PASS** در isolated environment.
+- Current clean Integration: **129/129 PASS**؛ Unit: **222/222**؛ Backoffice: **184/184**؛ Release builds: PASS.
+- Actual `barang-core` deployment اکنون از commit بالا سرو می‌شود؛ دیگر old UI روی port `5100` نیست.
+- Remaining gap: این نوبت browser matrix نمایندهٔ gridهای populated توسعه را پوشش داد؛ مسیرهای read-only که action ندارند عمداً menu ندارند. هیچ blocker فنی برای STEP 4.5 در شواهد جاری باقی نمانده است.
+
+STEP 4.5 با این شواهد **PASS / ACCEPTED** است. STEP 5 همچنان paused است.
+
