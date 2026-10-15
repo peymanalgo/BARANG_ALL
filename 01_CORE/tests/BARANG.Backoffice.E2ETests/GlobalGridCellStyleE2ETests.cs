@@ -89,7 +89,14 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
         }
         else
         {
-            await table.Locator("tbody .barang-icon-button:has(svg[data-icon='eye'])").First.ClickAsync();
+            // Row actions are intentionally exposed through the shared vertical menu.
+            // Keep this semantic action check aligned with the STEP 4.5 standard rather
+            // than looking for the retired standalone eye button.
+            ILocator rowMenu = table.Locator("tbody .barang-action-menu-trigger").First;
+            await rowMenu.ClickAsync();
+            ILocator popup = page.Locator(".barang-action-menu-popup").Last;
+            await Assertions.Expect(popup).ToBeVisibleAsync();
+            await popup.Locator("button").First.ClickAsync();
         }
         ILocator dialog = page.Locator(".dialog-backdrop .crud-dialog");
         await Assertions.Expect(dialog).ToBeVisibleAsync();
@@ -144,7 +151,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
             await Assertions.Expect(table.Locator("tbody tr").First).ToBeVisibleAsync();
             await AssertOrdinaryCells(table);
             Assert.False(await page.Locator("body").EvaluateAsync<bool>("el => el.scrollWidth > el.clientWidth + 1"), $"{grid}/{culture} overflows the mobile page.");
-            ILocator action = table.Locator("tbody .barang-icon-button:has(svg[data-icon='eye'])").First;
+            ILocator action = table.Locator("tbody .barang-action-menu-trigger").First;
             await action.ScrollIntoViewIfNeededAsync();
             await Assertions.Expect(action).ToBeInViewportAsync();
             await AssertSemanticElements(table);
