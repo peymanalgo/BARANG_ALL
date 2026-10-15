@@ -90,6 +90,12 @@ Failureهای بررسی‌شده:
 
 ## deployment و GitHub
 
-محیط ایزوله با imageهای بالا سالم بود. deployment محیط توسعه فقط پس از commit نهایی و در صورت نیاز باید با همان pair coherent و با حفظ volume، کلید، credential و داده انجام شود؛ در این گزارش image توسعهٔ جدید ادعا نمی‌شود.
+پس از عبور regression gate، pair محیط توسعهٔ `barang-core` بدون حذف یا reset volumeها با commit `a2f78f1a9835c1a69074c0035e45dfcfe20dc878` build و deploy شد. API در `localhost:8080/health` و Backoffice در `localhost:5100/login` هر دو HTTP 200 و containerها healthy هستند:
 
-SHA نهایی تست‌شده: `1edb804ae826e69e9ecfca81c016a054329f63f0`؛ این commit شامل اصلاحات API/UI، test-host و تست browser ایزوله است. پیش از آن، مبنای application `937454328c52e7f570eab190a03d0a181ad2fb41` بود. وضعیت push/PR/merge باید از Git ثبت شود؛ merge از 404 unauthenticated نتیجه‌گیری نمی‌شود.
+- development API image: `sha256:ebc0234eacac2423a183190a8afb19319b77992c03f537210cf752f27a251d0f`
+- development Backoffice image: `sha256:8e86c7c8af42412f89c3fe1e91af9b6fe65e214d38ef807a4b8ef9cf51492cb5`
+- هر دو container مقدار `BARANG_BUILD_COMMIT=a2f78f1a9835c1a69074c0035e45dfcfe20dc878` را اعلام می‌کنند. PostgreSQL/Redis/MinIO، key volumeها، داده‌ها و administrator credentials حفظ شدند.
+
+commit نهایی تست‌شده و deploy‌شده: `a2f78f1a9835c1a69074c0035e45dfcfe20dc878`. commit application مبنا `937454328c52e7f570eab190a03d0a181ad2fb41` بود.
+
+این commit به `origin/codex/step2-inventory-unit-contracts` push شد. وضعیت merge/PR باید از GitHub احراز‌شده بررسی شود؛ از 404 unauthenticated نتیجه‌گیری نشده است.
