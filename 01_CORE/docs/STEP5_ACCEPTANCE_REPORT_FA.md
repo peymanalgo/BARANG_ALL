@@ -55,7 +55,7 @@
 
 - رفتار مصوب return حفظ شد: return usable compensating movement است و issue evidence تاریخی را برای taskی که قبلاً complete شده باطل نمی‌کند؛ return damaged/unknown وارد usable stock نمی‌شود. reopen/reissue یک policy آینده است و در STEP 5 ساخته نشد.
 - taskهای قدیمی و inconsistent بازنویسی یا auto-migrate نمی‌شوند؛ completion جدید آن‌ها فقط با evidence کامل ممکن است و reconciliation موجود می‌تواند inconsistency را گزارش کند.
-- قبل از rollout production، browser acceptance اختصاصی Cartable با fixture واقعی STEP 3/4 باید در runner پشتیبانی‌شدهٔ جاری اجرا شود؛ این کار خارج از mutation تست integration است.
+- در snapshot اولیه، browser acceptance اختصاصی Cartable با fixture واقعی STEP 3/4 هنوز اجرا نشده بود؛ addendum انتهای گزارش آن را در runner پشتیبانی‌شده و محیط disposable پوشش می‌دهد.
 
 ## deployment و delivery
 
@@ -68,4 +68,35 @@ deployment محلی development با همان Compose project `barang-core` و �
 
 ## جمع‌بندی پذیرش
 
-از نظر backend و completion-gate، STEP 5 **PASS** است: هر دو Inventory stage و legacy adapter به evidence کامل canonical متصل‌اند و 130/130 Integration، Unit، Backoffice و build سبز هستند. browser mutation acceptance اختصاصی Cartable در این runner اجرا نشد؛ اجرای عمومی E2E به‌علت خطای شناخته‌شدهٔ xUnit/VSTest `Test process did not return valid JSON` قابل اتکا نیست. بنابراین این مورد به‌عنوان blocker برای browser evidence جدا ثبت می‌شود، نه به‌عنوان شکست business gate.
+از نظر backend و completion-gate، STEP 5 **PASS** است: هر دو Inventory stage و legacy adapter به evidence کامل canonical متصل‌اند و 130/130 Integration، Unit، Backoffice و build سبز هستند. در snapshot اولیهٔ این گزارش browser mutation acceptance اختصاصی Cartable هنوز اجرا نشده بود؛ این gap در addendum زیر با runner پشتیبانی‌شده و fixture ایزوله بسته شد. اجرای عمومی E2E به‌علت خطای شناخته‌شدهٔ xUnit/VSTest `Test process did not return valid JSON` قابل اتکا نیست؛ آن خطای runner قدیمی با acceptance اختصاصی جایگزین نشد و به‌عنوان نتیجهٔ feature گزارش نمی‌شود.
+
+## تکمیل پذیرش مرورگری Cartable در محیط disposable
+
+در اجرای جاری، browser acceptance روی یک محیط کاملاً جدا از `barang-core` انجام شد:
+
+- PostgreSQL: `barang-step45-postgres`، دیتابیس `barang_step5_browser_test`، پورت `5545`، role برنامهٔ ایزوله؛ volume توسعه استفاده نشد.
+- API: `http://127.0.0.1:58080`؛ Backoffice: `http://127.0.0.1:55100`؛ Redis ایزوله روی `6385` و MinIO ایزوله روی `5900`.
+- شرکت، شعبه، مشتری، محصول، variant، انبار، مسئولیت warehouse و سفارش‌ها با مدل دامنه و APIهای رسمی ساخته شدند. گراف از fixture sanitize‌شدهٔ `tests/Acceptance/fixtures/barang-order-workflow.v17.sanitized.json` از مسیر Designer import/draft/validate/publish ساخته شد.
+- گراف منتشرشدهٔ ایزوله version `2` است و مسیر واقعی آن `DECIDE_WAREHOUSE → InventoryReservation → InventoryIssue → PRINT` است. instanceهای قبلی به version قبلی bind ماندند؛ سفارش‌های acceptance به version 2 bind شدند.
+- Chrome: `C:\Program Files\Google\Chrome\Application\chrome.exe`.
+
+| سناریوی UI | نتیجهٔ جاری | شواهد persisted |
+|---|---:|---|
+| shortage برای دو OrderItem هم‌کلید | PASS | متن `Shortage; task remains open.`؛ task در همان URL باقی ماند؛ reservation جدید ایجاد نشد |
+| رزرو موفق دو OrderItem مستقل | PASS | دو reservation مستقل با OrderItemIdهای `5dacdf7e-72b3-441f-b962-042e2072163a` و `05d60753-de2b-4ff3-a778-7731505745f4` |
+| issue موفق از Cartable | PASS | UI به `/cartable` برگشت؛ سپس reload Cartable بدون خطای Blazor انجام شد |
+| retry همان task | PASS | HTTP 200 idempotent؛ `WAREHOUSE_ISSUE` همچنان ۲ رکورد، بدون duplicate |
+| ledger/balance پس از issue | PASS | `onHand=45`, `reserved=0`, `available=45` |
+| issue بدون evidence کامل، generic/legacy bypass | PASS | تست `Step5WorkflowInventoryGateTests.RuntimeInventoryStagesRequireCompleteEvidenceAndAreRetrySafe`؛ issue ناقص 422 و task باز |
+| Claim قبل از عملیات | PASS | warehouse user دارای responsibility توانست task را Claim کند؛ claim به evidence تکمیل‌شدهٔ inventory وابسته نشد |
+
+تست‌های مرورگری reproducible در `tests/BARANG.Backoffice.E2ETests/Step5CartableMutationAcceptanceE2ETests.cs` اضافه شدند و با selectorهای فعلی UI اجرا شدند:
+
+- `ReservationShortageKeepsTaskOpenWithPreciseUiError` — PASS، 5.99s
+- `PostedIssueCompletesInventoryTaskAndReloadsToCartable` — PASS، 6.73s
+
+اجرای قدیمی `Step3ReservationAcceptanceE2ETests` دو failure ظاهری داشت: یکی بعد از shortage هنوز redirect موفق را assert می‌کرد و دیگری بعد از completion مستقیم UI منتظر dialog منسوخ `.dialog-card .form-actions` می‌ماند. هر دو با شواهد UI/HTTP مشخصاً test expectation قدیمی بودند، نه failure برنامه؛ assertionهای جدید رفتار approved فعلی را می‌سنجند و تضعیف نشده‌اند.
+
+## نتیجهٔ نهایی STEP 5
+
+با تکمیل browser mutation acceptance، گیت‌های reservation/issue، shortage، claim، idempotency، persisted reload و عدم bypass در محیط ایزولهٔ واقعی تأیید شدند. development application تغییر نکرد و همان deployment قبلی با provenance `604c0f3` محفوظ ماند. STEP 5 **PASS** است؛ STEP 6 شروع نشده است.
