@@ -133,3 +133,35 @@ Checkout `step2-clean/01_CORE`، شاخه `codex/step2-inventory-unit-contracts`
 تشخیص دسترسی و ساخت candidate واقعی اکنون PASS است؛ candidate در disposable با policy warehouse responsibility منتشر و validate شد. با این حال STEP 4 نهایی **FAIL / NOT READY** باقی می‌ماند، چون full Integration current-source failureهای توضیح‌داده‌نشده دارد و browser feature matrix issue/adjustment/return/cancellation/claim به‌طور کامل اجرا نشده است. STEP 4.5 و STEP 5 آغاز نشده‌اند. محیط ایزولهٔ `barang-step4-acceptance2` پس از جمع‌آوری evidence حذف می‌شود؛ توسعه، volumeها، business records، keys، credentials و workflow منتشرشدهٔ توسعه حفظ می‌شوند.
 
 **provenance تحویل:** tested source مبنا `2892323468d833252980dfe4bff73949af2f583a` با اصلاحات ثبت‌شده در commit نهایی `f352c27b421723eaf76245db39161661bc421260` بود. image API disposable digest=`sha256:d9d1daa6883cefb33ee3a66e380a8a8d11833275a64c97237c915db30ac77459` و image Backoffice digest=`sha256:a00281de55c027432c37d7a9ef2a4d639c49fefc0e64e60b48f55baaf4e31065`. imageها و منابع `barang-step4-acceptance2` پس از جمع‌آوری evidence حذف شدند؛ container/volumeهای `barang-core` توسعه باقی ماندند. commit روی remote branch push شد؛ وضعیت PR/merge از این محیط احراز نشد.
+
+## الحاقیهٔ company-context recursion و اجرای جاری — ۱۵ اکتبر ۲۰۲۶
+
+### بازتولید و علت دقیق
+
+در Compose ایزولهٔ `barang-step4-diag` با PostgreSQL 17.6، database=`barang_step4_diag` و نقش درخواست=`barang_app`، درخواست authenticated به `POST /api/v1/auth/me/company` با کاربر فعال و شرکت انتخاب‌شده بازتولید شد. برای بازتولید شرایطی که در fixture مهاجرت رخ داده بود، مالک تابع `barang.reference_global_admin()` همان نقش اپلیکیشن قرار گرفت؛ پرس‌وجوی `SELECT id,user_id,company_id FROM barang.user_companies` با تنظیمات `barang.user_id` و `barang.company_id` شکست خورد:
+
+`ERROR 54001: stack depth limit exceeded`، `HINT: Increase ... max_stack_depth` و PostgreSQL CONTEXT شامل تکرار متوالی `SQL function "reference_global_admin" during startup` و `SQL function "reference_global_admin" statement 1` بود. نقش، session role و context در همان اتصال به‌ترتیب `barang_app`، `barang_app`، user فعال و company انتخاب‌شده ثبت شد. SQL اجرایی middleware ابتدا `SELECT c.id FROM barang.companies ...` و سپس مسیر `CompanyContextMiddleware → SecurityStore.HasEffectiveCompanyAccessAsync → EfTransactionExecutor.SetSecurityContextAsync` بود.
+
+علت، timeout یا کمبود عضویت نبود: policy `user_companies_system_administrator_management` تابع `reference_global_admin()` را برای `USING/WITH CHECK` صدا می‌زد؛ تابع قدیمی برای تشخیص مدیر، دوباره `barang.user_companies` را می‌خواند؛ جدول `user_companies` نیز `FORCE ROW LEVEL SECURITY` داشت و همان policy را دوباره ارزیابی می‌کرد. زنجیرهٔ دقیق `user_companies policy → reference_global_admin() → user_companies → policy` علت 54001 بود. policyهای `user_companies_authenticated_self_read` و `user_companies_company_isolation`، policyهای `user_roles`، owner function و `rolbypassrls` نیز با SQL read-only ثبت شدند؛ درخواست عادی هرگز با superuser/BYPASSRLS اجرا نشد.
+
+### اصلاح محدود و ایمن
+
+تابع همچنان `SECURITY DEFINER STABLE` با `SET search_path=pg_catalog,barang` است، اما دیگر جدول policy‌دارِ خودش را نمی‌خواند. مدیر فقط وقتی شناخته می‌شود که application user فعال باشد و یک `system.administrator` فعال با بازهٔ معتبر در `user_roles` داشته باشد؛ `user_roles_authenticated_self_read` این fact را برای همان actor قابل مشاهده می‌کند و وابستگی بازگشتی حذف شده است. migration forward-only `20261015110000_FixGlobalAdminRlsRecursion` همین تغییر را روی پایگاه‌های موجود اعمال می‌کند؛ RLS حذف/خاموش نشده و query filter عمومی هم bypass نشده است.
+
+همچنین SaveDraft Designer در مسیر خطای definition/version، reader را پیش از rollback می‌بندد. پیش از اصلاح، محیط final candidate با `NpgsqlOperationInProgressException` و 500 شکست می‌خورد؛ پس از اصلاح همان درخواست معتبر روی definition موجود به 404 دقیق `workflow.definition.not_found` تبدیل شد.
+
+### شواهد تست جاری
+
+- Integration کامل روی PostgreSQL تازه و migration جاری، DB=`barang_step4_full2_test`: **128/128 PASS** در 3:47؛ اجرای قبلی کامل نیز 128/128 در 3:46 بود.
+- UserAccess روی DB تازه: **6/6 PASS**؛ Pricing/Artwork/Supplier: **20/20 PASS**؛ آزمون‌های STEP4 و concurrency انتخاب‌شده: **19/19 PASS**.
+- Unit: **222/222 PASS**؛ Backoffice: **184/184 PASS**؛ Release solution build: **PASS** با صفر warning/error.
+- SQL بازتولید پس از migration: خواندن `user_companies` و `user_roles` با app role بدون stack overflow انجام شد. مسیرهای active/inactive/locked، انتخاب شرکت، cross-company و محدودیت‌های administrator در UserAccess جاری سبز هستند.
+- محیط پذیرش جدید `barang-step4-final`: API=`http://localhost:18091`، Backoffice=`http://localhost:15111`، PostgreSQL=`55447`، database=`barang_step4_final`، volumeها project-scoped و image API digest=`sha256:8a6ec02399d5d5de5d1e086f26af73094727f2abf783c38352df842065600bd9`.
+
+### وضعیت candidate و browser
+
+گراف واقعی توسعه با identity مجاز، company صحیح `42f0e459-6095-45bb-aa13-f38126d91d9c` و API read صادر شد؛ گراف 17 همان شواهد قبلی را دارد. candidate منتشرشدهٔ قبلی در `barang-step4-acceptance2` همچنان تنها candidate واقعی ثبت‌شده است: version 19، 24 node، 42 transition و `DECIDE_WAREHOUSE → InventoryIssue → PRINT`؛ publish توسعه انجام نشد.
+
+در اجرای جدید، محیط مستقل `barang-step4-final` از migration تازه ساخته شد، اما schema فعلی endpoint پشتیبانی‌شدهٔ ایجاد/import definition ندارد: `PUT /api/v1/workflows/definition/draft` فقط definition موجود را ویرایش می‌کند و در محیط خالی پس از اصلاح، عمداً `404 workflow.definition.not_found` می‌دهد. ایجاد definition یا کپی graph با SQL برای دورزدن Designer مجاز نبود؛ بنابراین browser feature matrix واقعی issue/cancel/adjustment/return/claim در این run قابل انتساب نشد. اجرای پروژه Playwright نیز در discovery با `Test process did not return valid JSON` متوقف شد و آن failure به رفتار برنامه نسبت داده نشد. این دو مورد blocker باقی‌مانده‌اند، نه PASS پنهان‌شده.
+
+**نتیجهٔ جاری:** recursion fix و regression gate **PASS**؛ STEP 4 کلی **FAIL / NOT READY** تا یک مسیر پشتیبانی‌شده برای import/create گراف واقعی در disposable و سپس browser acceptance کامل issue، cancellation، adjustment، return، retry و warehouse assignment اجرا شود. development database، published definition، credentials و business data تغییر نکردند. STEP 4.5 و STEP 5 آغاز نشده‌اند.

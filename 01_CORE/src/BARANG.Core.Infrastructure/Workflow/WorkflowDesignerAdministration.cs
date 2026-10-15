@@ -39,11 +39,49 @@ public sealed class WorkflowDesignerAdministration(CoreDbContext db, ICompanyCon
         List<object> issues = Validate(command); if (issues.Count > 0) return Result.Failure<object>(Error.Validation("workflow.definition.invalid_graph"));
         await using DbConnection c = db.Database.GetDbConnection(); await c.OpenAsync(ct); await SetCompany(c, ct); await using DbTransaction tx = await c.BeginTransactionAsync(ct);
         Guid definition; Guid version; int number; long expected = 0;
+        bool definitionFound;
         await using (DbCommand q = CmdTx(c, "select id,active_version_id from barang.workflow_definitions where company_id=@company and code='BARANG.ORDER' for update", ("company", Company), tx))
-        await using (DbDataReader r = await q.ExecuteReaderAsync(ct)) { if (!await r.ReadAsync(ct)) { await tx.RollbackAsync(ct); return Result.Failure<object>(Error.NotFound("workflow.definition.not_found")); } definition = r.GetGuid(0); Guid? active = r.IsDBNull(1) ? null : r.GetGuid(1); version = command.VersionId ?? active ?? Guid.Empty; }
+        await using (DbDataReader r = await q.ExecuteReaderAsync(ct))
+        {
+            definitionFound = await r.ReadAsync(ct);
+            if (definitionFound)
+            {
+                definition = r.GetGuid(0);
+                Guid? active = r.IsDBNull(1) ? null : r.GetGuid(1);
+                version = command.VersionId ?? active ?? Guid.Empty;
+            }
+            else
+            {
+                definition = Guid.Empty;
+                version = Guid.Empty;
+            }
+        }
+        if (!definitionFound) { await tx.RollbackAsync(ct); return Result.Failure<object>(Error.NotFound("workflow.definition.not_found")); }
         if (version == Guid.Empty) { await tx.RollbackAsync(ct); return Result.Failure<object>(Error.NotFound("workflow.definition.version_not_found")); }
+        bool versionFound;
+        string status = string.Empty;
         await using (DbCommand v = CmdTx(c, "select version_number,status,version from barang.workflow_definition_versions where company_id=@company and definition_id=@definition and id=@id for update", ("company", Company), ("definition", definition), ("id", version), tx))
-        await using (DbDataReader vr = await v.ExecuteReaderAsync(ct)) { if (!await vr.ReadAsync(ct)) { await tx.RollbackAsync(ct); return Result.Failure<object>(Error.NotFound("workflow.definition.version_not_found")); } number = vr.GetInt32(0); string status = vr.GetString(1); expected = vr.GetInt64(2); if (status != "Draft") { version = Guid.NewGuid(); await vr.DisposeAsync(); await using DbCommand next = CmdTx(c, "select coalesce(max(version_number),0)+1 from barang.workflow_definition_versions where company_id=@company and definition_id=@definition", ("company", Company), ("definition", definition), tx); number = Convert.ToInt32(await next.ExecuteScalarAsync(ct), System.Globalization.CultureInfo.InvariantCulture); await using DbCommand create = CmdTx(c, "insert into barang.workflow_definition_versions(id,company_id,definition_id,version_number,status,change_note_json,created_at_utc,created_by_user_id,version) values(@id,@company,@definition,@number,'Draft','{}'::jsonb,@now,@actor,1)", ("id", version), ("company", Company), ("definition", definition), ("number", number), ("now", Now), ("actor", Actor), tx); await create.ExecuteNonQueryAsync(ct); expected = 1; } }
+        await using (DbDataReader vr = await v.ExecuteReaderAsync(ct))
+        {
+            versionFound = await vr.ReadAsync(ct);
+            if (versionFound)
+            {
+                number = vr.GetInt32(0);
+                status = vr.GetString(1);
+                expected = vr.GetInt64(2);
+            }
+            else number = 0;
+        }
+        if (!versionFound) { await tx.RollbackAsync(ct); return Result.Failure<object>(Error.NotFound("workflow.definition.version_not_found")); }
+        if (status != "Draft")
+        {
+            version = Guid.NewGuid();
+            await using DbCommand next = CmdTx(c, "select coalesce(max(version_number),0)+1 from barang.workflow_definition_versions where company_id=@company and definition_id=@definition", ("company", Company), ("definition", definition), tx);
+            number = Convert.ToInt32(await next.ExecuteScalarAsync(ct), System.Globalization.CultureInfo.InvariantCulture);
+            await using DbCommand create = CmdTx(c, "insert into barang.workflow_definition_versions(id,company_id,definition_id,version_number,status,change_note_json,created_at_utc,created_by_user_id,version) values(@id,@company,@definition,@number,'Draft','{}'::jsonb,@now,@actor,1)", ("id", version), ("company", Company), ("definition", definition), ("number", number), ("now", Now), ("actor", Actor), tx);
+            await create.ExecuteNonQueryAsync(ct);
+            expected = 1;
+        }
         await using (DbCommand delT = CmdTx(c, "delete from barang.workflow_definition_transitions where company_id=@company and definition_version_id=@version", ("company", Company), ("version", version), tx)) await delT.ExecuteNonQueryAsync(ct);
         await using (DbCommand delN = CmdTx(c, "delete from barang.workflow_definition_nodes where company_id=@company and definition_version_id=@version", ("company", Company), ("version", version), tx)) await delN.ExecuteNonQueryAsync(ct);
         Dictionary<string, Guid> ids = new(StringComparer.OrdinalIgnoreCase); foreach (WorkflowGraphNode n in command.Nodes) { Guid id = Guid.NewGuid(); ids[n.Key] = id; await using DbCommand ins = CmdTx(c, "insert into barang.workflow_definition_nodes(id,company_id,definition_version_id,node_key,type,title_json,description_json,position_id,x,y,version) values(@id,@company,@version,@key,@type,@title::jsonb,@description::jsonb,@position,@x,@y,1)", ("id", id), ("company", Company), ("version", version), ("key", n.Key.Trim()), ("type", TypeName(n.Type)), ("title", JsonSerializer.Serialize(n.Title ?? new("", "", ""))), ("description", JsonSerializer.Serialize(n.Description ?? new("", "", ""))), ("position", (object?)(n.PositionId is { } p && p != Guid.Empty ? p : null)), ("x", n.X), ("y", n.Y), tx); await ins.ExecuteNonQueryAsync(ct); }
