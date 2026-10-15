@@ -20,8 +20,10 @@ public sealed class WorkflowBusinessCompletionAdapter(CoreDbContext db, IFinance
         if(stage==WorkflowStage.FinancialApproval)
         {
             var state=await finance.GetFinancialStateAsync(orderId,ct);if(state.IsFailure)return Result.Failure(state.Error);
-            if(state.Value.Status==FinancialStatus.Approved)return Result.Success();
-            var decided=await finance.DecideAsync(orderId,new(FinancialStatus.Approved,null,state.Value.Version),ct);return decided.IsSuccess?Result.Success():Result.Failure(decided.Error);
+            Guid? currentSnapshot=await db.OrderPriceSnapshots.AsNoTracking().Where(x=>x.OrderId==orderId&&x.IsCurrent&&x.IsFinalized).Select(x=>(Guid?)x.Id).SingleOrDefaultAsync(ct);
+            if(outcome==WorkflowTaskOutcome.Approved&&state.Value.Status==FinancialStatus.Approved&&state.Value.ApprovedPriceSnapshotId is Guid approvedSnapshot&&approvedSnapshot==currentSnapshot)return Result.Success();
+            if(outcome==WorkflowTaskOutcome.Rejected&&state.Value.Status==FinancialStatus.Rejected)return Result.Success();
+            return Result.Failure(FinanceErrors.ApprovalRequired);
         }
         if(stage==WorkflowStage.ProductionPlanning){var generated=await production.GenerateAsync(new(orderId),ct);return generated.IsSuccess?Result.Success():Result.Failure(generated.Error);}
         return await tx.ExecuteAsync(async token=>

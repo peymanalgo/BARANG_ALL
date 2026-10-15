@@ -4322,6 +4322,10 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<Guid?>("ApprovedPriceSnapshotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_price_snapshot_id");
+
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("company_id");
@@ -4363,6 +4367,8 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("version");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "ApprovedPriceSnapshotId");
 
                     b.HasIndex("CompanyId", "OrderId")
                         .IsUnique();
@@ -10550,6 +10556,12 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("BARANG.Core.Domain.Finance.OrderFinancialState", b =>
                 {
+                    b.HasOne("BARANG.Core.Domain.Pricing.OrderPriceSnapshot", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ApprovedPriceSnapshotId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BARANG.Core.Domain.Orders.Order", null)
                         .WithMany()
                         .HasForeignKey("CompanyId", "OrderId")

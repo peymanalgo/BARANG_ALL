@@ -23,6 +23,10 @@ public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExec
     private DateTimeOffset Now => clock.GetUtcNow();
     private static readonly object[] Empty = [];
     private static readonly string[] Outcomes = ["Approve", "Reject"];
+    private static bool IsFinancialApprovalNode(string nodeKey) =>
+        nodeKey.Contains("FinancialApproval", StringComparison.OrdinalIgnoreCase)
+        || nodeKey.Equals("FINANCE", StringComparison.OrdinalIgnoreCase)
+        || nodeKey.Contains("Finance", StringComparison.OrdinalIgnoreCase);
 
     public Task<Result<object>> StartAsync(StartDefinitionWorkflowCommand command, CancellationToken ct) => tx.ExecuteAsync(t => StartInsideTransactionAsync(command.OrderId, t), ct);
     public async Task<Result<object>> StartInsideTransactionAsync(Guid orderId, CancellationToken ct)
@@ -46,6 +50,16 @@ public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExec
         if (nodeKey.Contains("InventoryIssue", StringComparison.OrdinalIgnoreCase) && !await WarehouseIssueEligible(c, tr, orderId, ct)) return Result.Failure<object>(Error.BusinessRule("inventory.issue.warehouse_responsible_not_configured"));
         JsonDocument? result = null; try { if (!string.IsNullOrWhiteSpace(resultJson)) result = JsonDocument.Parse(resultJson); } catch (JsonException) { return Result.Failure<object>(Error.Validation("workflow.task.invalid_result")); }
         string? outcome = result?.RootElement.TryGetProperty("outcome", out var outcomeValue) == true && outcomeValue.ValueKind == JsonValueKind.String ? outcomeValue.GetString() : null;
+        if (IsFinancialApprovalNode(nodeKey))
+        {
+            await using DbCommand finance = CmdTx(c, "select fs.status,fs.approved_price_snapshot_id,p.id from barang.order_financial_states fs left join barang.order_price_snapshots p on p.company_id=fs.company_id and p.order_id=fs.order_id and p.is_current and p.is_finalized where fs.company_id=@company and fs.order_id=@order_id", ("company", Company), ("order_id", orderId), tr);
+            await using DbDataReader financial = await finance.ExecuteReaderAsync(ct);
+            if (!await financial.ReadAsync(ct)) return Result.Failure<object>(Error.BusinessRule("finance.approval.required"));
+            string statusValue = financial.GetString(0); Guid? approvedSnapshot = financial.IsDBNull(1) ? null : financial.GetGuid(1); Guid? currentSnapshot = financial.IsDBNull(2) ? null : financial.GetGuid(2);
+            bool accepted = string.Equals(outcome, "Approve", StringComparison.OrdinalIgnoreCase) && string.Equals(statusValue, "Approved", StringComparison.OrdinalIgnoreCase) && approvedSnapshot is Guid approved && approved == currentSnapshot;
+            bool rejected = string.Equals(outcome, "Reject", StringComparison.OrdinalIgnoreCase) && string.Equals(statusValue, "Rejected", StringComparison.OrdinalIgnoreCase);
+            if (!accepted && !rejected) return Result.Failure<object>(Error.BusinessRule("finance.approval.required"));
+        }
         if (nodeKey.Contains("InventoryReservation", StringComparison.OrdinalIgnoreCase))
         {
             if (result is null || !result.RootElement.TryGetProperty("warehouseId", out var warehouse) || warehouse.ValueKind != JsonValueKind.String || !Guid.TryParse(warehouse.GetString(), out Guid warehouseId)) return Result.Failure<object>(Error.Validation("inventory.reservation.warehouse_required"));

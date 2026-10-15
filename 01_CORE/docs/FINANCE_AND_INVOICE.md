@@ -18,7 +18,7 @@ Overpayment is intentionally allowed and reported rather than silently capped. U
 
 ## Financial decision
 
-Each submitted Order has a lazily created mutable `OrderFinancialState`: Pending, Approved, Rejected, or Suspended. `FinancialStatusTransitionService` is the only transition authority. Reject and Suspend require a reason. Mutable state uses optimistic concurrency; stale decisions return HTTP 409. These decisions do not directly implement a later workflow engine.
+Each submitted Order has a lazily created mutable `OrderFinancialState`: Pending, Approved, Rejected, or Suspended. `FinancialStatusTransitionService` is the only transition authority. Reject and Suspend require a reason. Mutable state uses optimistic concurrency; stale decisions return HTTP 409. Approval records the exact finalized price snapshot. Legacy and definition-runtime FinancialApproval task completion accepts only matching persisted approval evidence; it never auto-approves. A changed finalized snapshot requires a new approval.
 
 ## Invoices and snapshots
 

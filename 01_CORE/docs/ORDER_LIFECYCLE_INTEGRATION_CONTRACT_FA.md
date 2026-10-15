@@ -179,6 +179,10 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 | quantity change بعد از reserve | ممنوع در ordinary edit؛ change request/compensation | UX پیچیده‌تر ولی audit و stock امن‌تر |
 | finance approval | task باید Finance state واقعی را approve کند، نه auto-approve | approval انسانی حفظ می‌شود؛ invoice بعد از آن |
 | invoice creation | final invoice فقط approved finance + finalized snapshot؛ payment شرط جدا | invoice ≠ payment |
+
+### STEP ۷ Finance enforcement
+
+تکمیل FinancialApproval در مسیر legacy و WorkflowDefinitionRuntime فقط وقتی مجاز است که actor مجاز، تصمیم persisted و snapshot نهایی فعلی را داشته باشد؛ generic completion تصمیم مالی ایجاد نمی‌کند. Invoice نهایی همان snapshot approved را مصرف می‌کند و revision جدید بدون approval مجدد صادر نمی‌شود. صدور invoice، payment یا settlement نیست؛ balance از Payment/Reversalهای immutable محاسبه می‌شود.
 | shortage→purchasing | PR پیشنهادی با link، approval دستی | از auto-PO ناخواسته جلوگیری می‌کند |
 | customer group | گروه از Customer به pricing request نهایی پاس شود | discount قابل ردیابی و snapshot می‌شود |
 | tax | استفاده از `ResolveTaxAsync` واحد | tax status و specificity یکسان می‌شود |
