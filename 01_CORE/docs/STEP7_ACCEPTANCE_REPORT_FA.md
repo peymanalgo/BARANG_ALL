@@ -5,7 +5,7 @@
 
 ## نتیجه
 
-وضعیت فعلی: **CONDITIONAL GO**. مسیرهای API/persistence و UI Finance در محیط disposable با Chrome احراز‌شده اجرا شدند و gateهای فعلی source pass هستند. تصمیم کسب‌وکاری automatic در برابر explicit invoice issuance هنوز صادر نشده است؛ این گزارش آن را اختراع نمی‌کند.
+وضعیت فعلی: **PASS**. سیاست کسب‌وکاری صدور صریح invoice اکنون مصوب است و مسیر API/persistence و UI Finance در محیط disposable با Chrome احراز‌شده اجرا شده است.
 
 ## سیاست‌های reused
 
@@ -14,6 +14,7 @@
 - Invoice نهایی فقط پس از Order Submitted، finalized pricing snapshot و approval صادر می‌شود؛ Proforma شرط approval ندارد.
 - Payment و reversal رکوردهای immutable جدا هستند؛ invoice به‌تنهایی paid نیست. `Net paid = payments - reversals` و balance طبق سند موجود محاسبه می‌شود.
 - correction/reversal به‌جای ویرایش مستقیم invoice/payment است.
+- صدور invoice **صریح** است: approval معتبر هرگز به‌صورت خودکار invoice نمی‌سازد؛ actor مالی مجاز باید `Issue Invoice` را اجرا کند.
 
 ## اصلاحات STEP ۷
 
@@ -59,11 +60,20 @@
 | Finance UI payment از فرم و persisted reload | **PASS**؛ POST payment با 201 و GET balance/evidence بعد از reload، payment idempotency با reference ایزوله |
 | Invoice قبل از approval از UI | **PASS**؛ action اجرا شد و inline error نمایش داده شد؛ invoice جدیدی ساخته نشد |
 | Isolated migration chain | **PASS**؛ fresh `barang_step7_test` روی port 5547، همهٔ migrationها تا `20261015223227_AddFinancialApprovalSnapshotReference` |
-| Current full Integration rerun | **130/130 PASS، 0 failure، 0 skipped، 3:48**؛ `barang_step6_test` و API/backoffice ایزوله قبل از run متوقف شدند تا Hangfire رقابت نکند |
+| Previous full Integration baseline | **130/130 PASS، 0 failure، 0 skipped، 3:48**؛ `barang_step6_test` و API/backoffice ایزوله قبل از run متوقف شدند تا Hangfire رقابت نکند |
+| Current full Integration rerun | **131/131 PASS، 0 failure، 0 skipped، 3:53**؛ شامل تست explicit issuance جدید روی همان PostgreSQL ایزوله |
+| Current explicit-issuance Finance integration rerun | **2/2 PASS**؛ هر دو تست Finance با setup تکرارپذیر؛ approval بدون invoice خودکار، صدور صریح، retry idempotent، unpaid state و snapshot-bound approval بررسی شد |
+| Current snapshot/reapproval unit rerun | **9/9 PASS**؛ شامل عدم reuse approval برای همان snapshot و الزام snapshot جدید برای reapproval |
+
+### پذیرش مسیر موفق صدور صریح
+
+تست موجود `FinanceE2ETests.PaymentReversalApprovalInvoiceHistoryAndIsolationFlow` روی PostgreSQL ایزوله این توالی را به‌صورت فعلی اجرا می‌کند: سفارش submitted و snapshot finalized، رد شدن invoice قبل از approval، approval موفق با `ApprovedPriceSnapshotId`، بررسی نبود invoice نهایی بلافاصله پس از approval، صدور Proforma و سپس صدور صریح Invoice از endpoint رسمی، retry همان Invoice با همان شناسه، status برابر `Issued` و بررسی مبلغ نهایی و اقلام snapshot. مسیر payment/reversal و balance نیز در همان تست با referenceهای یکتا اجرا می‌شود؛ invoice status مستقل از پرداخت باقی می‌ماند. تست‌های unit مربوط به `FinanceFoundationTests` نیز reapproval را فقط برای snapshot جدید و رد شدن reuse snapshot قبلی اثبات می‌کنند.
+
+سیاست جدید این evidence را روشن می‌کند: بعد از approval هیچ trigger خودکاری برای Invoice وجود ندارد؛ تنها درخواست `POST /api/v1/orders/{orderId}/finance/invoices/Invoice` با permission `invoice.manage` صدور را انجام می‌دهد. retry این درخواست رکورد جدید نمی‌سازد. invoice صادرشده `Issued` است و paid شدن فقط از Payment allocation/reversalهای immutable حاصل می‌شود.
 
 ## تصمیم‌های خارج از scope یا unresolved
 
-- automatic در برابر explicit invoice issuance: implementation موجود explicit `/finance/invoices/{type}` است؛ trigger خودکار جدید اضافه نشده است. Business approval باید مشخص کند آیا همین دکمه/endpoint trigger رسمی است یا invoice باید پس از approval خودکار صادر شود؛ این بخش تا آن تصمیم **مشروط** است.
+- automatic در برابر explicit invoice issuance: **مصوب و بسته‌شده**؛ صدور فقط explicit است و approval به‌تنهایی invoice ایجاد نمی‌کند.
 - invoice numbering فعلی PostgreSQL sequence با prefix مستند را reuse می‌کند؛ accounting/statutory e-invoicing خارج از STEP ۷ است.
 - prepayment/full settlement، approval threshold، allocation به چند invoice، credit-limit enforcement و currency conversion سیاست مصوب این STEP نیستند.
 - STEP ۸ procurement و Finance/Accounting integrationهای بعدی اجرا نشده‌اند.

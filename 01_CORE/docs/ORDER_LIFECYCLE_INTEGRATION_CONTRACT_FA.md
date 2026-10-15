@@ -183,6 +183,8 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 ### STEP ۷ Finance enforcement
 
 تکمیل FinancialApproval در مسیر legacy و WorkflowDefinitionRuntime فقط وقتی مجاز است که actor مجاز، تصمیم persisted و snapshot نهایی فعلی را داشته باشد؛ generic completion تصمیم مالی ایجاد نمی‌کند. Invoice نهایی همان snapshot approved را مصرف می‌کند و revision جدید بدون approval مجدد صادر نمی‌شود. صدور invoice، payment یا settlement نیست؛ balance از Payment/Reversalهای immutable محاسبه می‌شود.
+
+**تصمیم مصوب تکمیلی:** صدور invoice صریح است. پس از approval معتبر actor مالی مجاز، approval به‌تنهایی هیچ invoiceای ایجاد نمی‌کند؛ همان actor باید عملیات `Issue Invoice` را صریحاً اجرا کند. این عملیات فقط از snapshot finalized فعلی که همان approval به آن متصل است invoice می‌سازد، retry آن idempotent است، و صدور invoice به معنی پرداخت نیست.
 | shortage→purchasing | PR پیشنهادی با link، approval دستی | از auto-PO ناخواسته جلوگیری می‌کند |
 | customer group | گروه از Customer به pricing request نهایی پاس شود | discount قابل ردیابی و snapshot می‌شود |
 | tax | استفاده از `ResolveTaxAsync` واحد | tax status و specificity یکسان می‌شود |
