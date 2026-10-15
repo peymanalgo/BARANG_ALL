@@ -45,19 +45,22 @@ Checkout `step2-clean/01_CORE`، شاخه `codex/step2-inventory-unit-contracts`
 
 - issue، deduction on-hand، کاهش reservation، idempotent reference و release هنگام cancel در backend موجود و feature-test مستقل است.
 - graph منتشرشدهٔ فعلی node واقعی `InventoryIssue` ندارد. Designer/versioning از مسیر draft پشتیبانی می‌شود، اما routing/assignment این stage در policy تأیید نشده است؛ publish حدسی انجام نشد.
-- adjustment اتمیک pre-issue شامل variant/warehouse/quantity و pricing revision هنوز end-to-end کامل و پذیرفته نشده است.
-- return API وجود دارد، اما return-document form واقعی با permission، انتخاب issue/item، disposition صریح و reload persisted در Backoffice کامل نیست.
+- adjustment اتمیک pre-issue شامل variant/warehouse/quantity، pricing revision، stale version و rollback اکنون در endpoint canonical و تست isolated موجود است.
+- return API و return-document form واقعی در Backoffice اکنون انتخاب issue/item، disposition صریح، quantity limit و reload persisted را پوشش می‌دهند.
 
 ## الحاقیهٔ اجرای فعلی — ۱۴ اکتبر ۲۰۲۶
 
-- adjustment canonical اضافه شد: endpoint `POST /api/v1/inventory/orders/{orderId}/adjustments` با قفل سفارش، قفل deterministic balance/reservation، version، ownership، variant/product، warehouse، UOM، aggregate stock-key، rollback transaction و idempotency key. issue قبلی با `inventory.adjustment.issued_item_immutable` رد می‌شود.
+- adjustment canonical اضافه شد: endpoint `POST /api/v1/inventory/orders/{orderId}/adjustments` با قفل سفارش، قفل deterministic balance/reservation، version، ownership، variant/product، warehouse، UOM، aggregate stock-key، rollback transaction و idempotency key. issue قبلی با `inventory.adjustment.issued_item_immutable` رد می‌شود. برای Submitted order، snapshot finalized قبلی immutable می‌ماند و pricing revision جدید در همان transaction ساخته می‌شود.
 - `InventoryReturnSection.razor` به workspace اضافه شد: انتخاب issue، مقدار باقی‌مانده، UOM، disposition صریح، reference، duplicate-submit prevention و reload. فقط `USABLE` به stock برمی‌گردد؛ `DAMAGED/UNKNOWN` خودکار usable نمی‌شوند.
 - API و Backoffice Release build: PASS، صفر warning/error. Unit: 222/222. `WarehouseIssueIsAtomicAndRetrySafeWithoutDuplicatingLedgerEntries`: PASS، 1/1 روی `barang-step4-impl-postgres` / `barang_step4_impl_test` / port 55433.
-- `PreIssueAdjustmentIsAtomicVersionedAndRollsBackOnShortage`: FAIL واقعی در اولین adjustment، HTTP 422، `inventory.adjustment.pricing_reapproval_required`. علت: Submit فعلی snapshot قیمت را finalized می‌کند و Pricing فقط Draft را recalculate می‌کند؛ revision/reapproval برای Submitted در قرارداد فعلی وجود ندارد. snapshot عمداً mutate نشد.
+- `PreIssueAdjustmentIsAtomicVersionedAndRollsBackOnShortage`: PASS، 2/2 پس از افزودن pricing revision داخل همان transaction؛ snapshot finalized قبلی immutable باقی می‌ماند، revision current/non-finalized ساخته می‌شود، stale version رد می‌شود و shortage هیچ تغییر reservation/stock باقی نمی‌گذارد.
 - Full Integration current-source در این نوبت خروجی نهایی نداد و PASS اعلام نمی‌شود. آخرین browser evidence همچنان ۳/۴ با sort assertion ناسازگار با `barang-sort-indicator` است.
+- endpoint `GET /api/v1/inventory/returnable-issues` اکنون issue، OrderId/OrderItemId، issued/returned/remaining و UOM را از ledger canonical برمی‌گرداند و UI return از آن استفاده می‌کند.
+- گروه‌های failure تاریخی در اجرای جداگانهٔ current-source روی همان host/role پاس شدند: Pricing 1/1، UserAccess 6/6، Artwork 1/1، SupplierSourcing 8/8. بنابراین 404/409های قبلی به fixture/full-suite execution context مربوط‌اند، نه regression endpoint در اجرای منفرد.
+- اجرای full Integration current-source با `--blame-hang-timeout 90s` قبل از خروجی نهایی طولانی/بی‌خروجی ماند و متوقف شد؛ full suite هنوز PASS محسوب نمی‌شود.
 - گراف published هنوز `InventoryIssue` و routing/assignment نهایی ندارد؛ publish حدسی انجام نشد. تصمیم لازم: warehouse manager، position مشخص، یا assignment مبتنی بر warehouse.
 
-**STEP 4 فعلی: FAIL / NOT READY**؛ adjustment برای Submitted orders، full Integration evidence، browser sort و workflow assignment blocker هستند. STEP 5 آغاز نشده است.
+**STEP 4 فعلی: FAIL / NOT READY**؛ full Integration evidence، browser sort و workflow assignment blocker هستند. adjustment backend اکنون implemented/tested است. STEP 5 آغاز نشده است.
 
 ## نتیجه
 

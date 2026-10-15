@@ -12,7 +12,7 @@ public sealed record ManualDiscountCommand(DiscountType Type,decimal Value,strin
 public sealed record PriceComponentView(Guid Id,Guid? OrderItemId,Guid? OrderPrintOperationId,PriceComponentType Type,string TariffCode,decimal UnitAmount,decimal Quantity,decimal TotalAmount);
 public sealed record OrderItemPricingView(Guid OrderItemId,decimal RawProductTotal,decimal PrintTotal,decimal AdditionalServiceTotal,decimal Subtotal,decimal DiscountAllocated,decimal TaxableAmount,decimal TaxAmount,decimal FinalTotal);
 public sealed record OrderPricingView(Guid Id,Guid OrderId,string CurrencyCode,decimal RawProductTotal,decimal PrintTotal,decimal AdditionalServiceTotal,decimal PackagingTotal,decimal ShippingTotal,decimal Subtotal,decimal DiscountTotal,decimal TaxableTotal,decimal TaxTotal,decimal FinalTotal,decimal TaxRatePercent,bool IsTaxExempt,bool IsFinalized,DateTimeOffset CalculatedAtUtc,long Version,IReadOnlyList<OrderItemPricingView> Items,IReadOnlyList<PriceComponentView> Components);
-public interface IOrderPricingEngine { Task<Result<OrderPricingView>> CalculateInsideTransactionAsync(Order order,bool finalize,ManualDiscountCommand? manual,CancellationToken cancellationToken); }
+public interface IOrderPricingEngine { Task<Result<OrderPricingView>> CalculateInsideTransactionAsync(Order order,bool finalize,ManualDiscountCommand? manual,CancellationToken cancellationToken,bool allowSubmittedRevision=false); }
 public interface IPricingAdministration
 {
     Task<Result<TariffView>> CreateTariffAsync(TariffCommand command,CancellationToken cancellationToken);

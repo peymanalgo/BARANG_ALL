@@ -16,6 +16,7 @@ public static class InventoryEndpoints
   RouteGroupBuilder inventory=e.MapGroup("/api/v1/inventory");
   inventory.MapGet("/balances",async(Guid?warehouseId,Guid?variantId,IInventoryAdministration s,CancellationToken ct)=>Map(await s.BalancesAsync(warehouseId,variantId,ct))).RequireAuthorization(SecurityPermissions.InventoryRead);
   inventory.MapGet("/transactions",async(Guid?warehouseId,Guid?variantId,IInventoryAdministration s,CancellationToken ct)=>Map(await s.TransactionsAsync(warehouseId,variantId,ct))).RequireAuthorization(SecurityPermissions.InventoryRead);
+  inventory.MapGet("/returnable-issues",async(IInventoryAdministration s,CancellationToken ct)=>Map(await s.ReturnableIssuesAsync(ct))).RequireAuthorization(SecurityPermissions.InventoryManage);
   inventory.MapGet("/shortages",async(bool?includeClosed,int?limit,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ShortagesAsync(includeClosed??false,Math.Clamp(limit??100,1,200),ct))).RequireAuthorization(SecurityPermissions.InventoryRead);
   inventory.MapGet("/reservations",async(bool?includeClosed,int?limit,IInventoryAdministration s,CancellationToken ct)=>Map(await s.ReservationsAsync(includeClosed??false,Math.Clamp(limit??100,1,200),ct))).RequireAuthorization(SecurityPermissions.InventoryRead);
   inventory.MapGet("/warehouses",async(IOrganizationAdministration s,CancellationToken ct)=>Map(await s.ListWarehousesAsync(ct))).RequireAuthorization(SecurityPermissions.InventoryManage);
