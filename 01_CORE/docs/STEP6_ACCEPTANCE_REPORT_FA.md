@@ -10,7 +10,7 @@
 ## provenance و baseline
 
 - baseline پذیرفته‌شده: application `604c0f3c3d37b6bc648597609825ede6e0254158`، report `8f7b290d599fcdef07bc7bd0bb0508888e8874ca`.
-- source تغییر‌یافته بر پایهٔ HEAD فعلی `8f7b290d599fcdef07bc7bd0bb0508888e8874ca` بررسی و build شد؛ SHA نهایی commit در همین گزارش پس از commit ثبت می‌شود.
+- source تست‌شده و deploy‌شده: `937454328c52e7f570eab190a03d0a181ad2fb41`.
 - backup توسعه پیش از migration: `D:\00_BARANG\barang_core_step6_predeploy.backup`؛ archive با `pg_restore --list` خوانده شد (TOC=1734، حدود ۵MB). این فایل خارج از repository و خارج از commit است.
 - migration توسعه: `20261015211147_AddCanonicalPricingResolution` با موفقیت روی `barang_core` اعمال شد؛ DB volume و داده‌های قبلی حفظ شدند.
 
@@ -53,6 +53,6 @@ Unitهای جدید به‌طور مشخص هم‌خوانی customer-group را
 
 ## deployment و GitHub
 
-در زمان این گزارش، migration توسعه اعمال شده ولی image جدید API/Backoffice هنوز deploy نشده است؛ imageهای فعلی همان baseline هستند و نباید به‌عنوان provenance این تغییر معرفی شوند. پس از commit نهایی، build/deploy محلی فقط در صورت تکمیل gate browser انجام می‌شود.
+deployment محلی پس از build از همین SHA انجام شد: API image manifest `sha256:bda96f8099e9605ffbf8aa40ee542ff07326239da91202340370553b6249d34c` و Backoffice image manifest `sha256:6638c997487528cf8e40eaa7a3e2575ee38accff8bbcc0eade45daba99ae8d97`. لاگ هر دو سرویس همین SHA را اعلام می‌کند؛ API health و Backoffice `/login` با HTTP 200 تأیید شدند. volumeهای PostgreSQL/Redis/MinIO و key volumeها حفظ شدند.
 
 وضعیت push/PR/merge باید با خروجی Git پس از commit نهایی ثبت شود؛ merge از روی 404 unauthenticated نتیجه‌گیری نمی‌شود.
