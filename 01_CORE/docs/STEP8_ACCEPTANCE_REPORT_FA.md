@@ -103,3 +103,50 @@ branch نسبت به `origin/main` در شروع بررسی `90` commit جلو �
 ### محدودیت پذیرش
 
 نتایج browser متمرکز approval و SKU سبز است و full Integration سبز است، اما اجرای کامل browser matrix برای همهٔ receipt/warehouse mutationها در این نوبت انجام نشده است؛ بنابراین release-level نتیجه **CONDITIONAL، نه PASS نهایی** باقی می‌ماند. هیچ blocker بازتولیدشده‌ای در approval endpoint/UI یا SKU selector باقی نیست. این محدودیت به‌عنوان عدم اجرای شواهد گزارش شده و به‌عنوان موفقیت تاریخی جایگزین نشده است.
+
+## ثبت تکمیل receipt→recheck→reservation retry — ۱۴۰۵/۰۷/۲۴
+
+این بخش نتیجهٔ اجرای واقعی acceptance روی source فعلی است و محدودیت browser receipt ثبت‌شده در بخش‌های قبلی را supersede می‌کند. application source آزموده‌شده پس از commit زیر است:
+
+- tested application commit: `09f5a65` (`fix(step8): complete receipt workflow acceptance`)
+- isolated Compose project: `barang-step8-test`
+- isolated PostgreSQL: `barang_step8_test`، port `5549`؛ API `5831`؛ Backoffice `5830`
+- company fixture: `55596178-ba6c-4f9b-a819-7b0d1498d2b1`
+- browser: installed system Chrome، اجرای Playwright با `BARANG_E2E_ISOLATED=true` و fixture سفارش خرید `PO-2026-0000000007`
+- development `barang-core` و volumeهای آن در این acceptance استفاده یا mutation نشدند.
+
+### سناریوهای authenticated UI و persistence
+
+| سناریو | نتیجه و evidence |
+|---|---|
+| shortage→proposal و conversion به یک PR، بدون PO خودکار | PASS؛ شواهد قبلی `Step8PurchasingProposalE2ETests.ShortageConversionIsPersistedAndRetryIsIdempotentWithoutPo` و full Integration جاری حفظ شد. |
+| approval مجاز PR/PO و ارسال صریح PO | PASS؛ `PurchaseRequestsE2ETests.PurchasingApprovalWorkspaceShowsSubmittedRequestAndRecordsDecision` و approval browser قبلی حفظ شد. |
+| ثبت partial receipt از فرم واقعی | PASS؛ `GoodsReceiptsE2ETests.GoodsReceiptPartialPostOverreceiptAndCompletionAreRealWorkflow`، مرحلهٔ اول `3 PCS` با مرجع یکتا persisted شد. |
+| over-receipt در UI | PASS؛ ثبت `6` برای سفارش 8 پس از دریافت 3، alert محلی‌شدهٔ `مقدار رسید از مقدار باقیمانده بیشتر است` را نگه داشت و receipt جدید ایجاد نکرد. |
+| ثبت remainder از UI | PASS؛ مرحلهٔ دوم `5 PCS` persisted شد و PO به `Received` رسید. |
+| duplicate receipt | PASS؛ درخواست تکراری با همان reference، همان نتیجهٔ persisted را برگرداند و movement دوم نساخت. |
+| over-receipt از API | PASS؛ درخواست مستقل با مقدار بیشتر از remainder با HTTP `422` و code `purchasing.over_receipt` رد شد. |
+| تغییر خودکار reservation/task پس از receipt | PASS؛ پس از receipt، reservation فعال `0` و `workflow_runtime_tasks` خالی ماند؛ receipt فقط shortage را برای recheck به‌روزرسانی کرد. |
+| shortage recheck | PASS؛ ردیف `Resolved` با `required=8`, `available=8`, `shortage=0` و `last_rechecked_at_utc` ثبت شد. |
+
+برای سفارش `PO-2026-0000000007`، دو receipt با مقادیر `3` و `5`، هر دو `PCS`، company یکسان و `purchase_order_id` یکسان ثبت شدند. دو `stock_transactions` متناظر با `transaction_type=Receipt`, `source_type=PURCHASE_ORDER`, و deltaهای `+3` و `+5` وجود دارد؛ `stock_balances` پس از fixture مقدار `on_hand=51`, `reserved=0` نشان داد. این مقادیر مستقل از resolver با queryهای persistence بررسی شدند.
+
+### علت defect و اصلاحات
+
+پیش‌نیاز receipt در UI به endpointهای قدیمی و موجود نبود (`/api/v1/purchasing/receipts` و GET detail) ارجاع می‌داد، پاسخ list را به‌عنوان object parse می‌کرد، و وضعیت `Sent` را eligible نمی‌دانست. UI به endpoint canonical سفارش (`POST /api/v1/purchasing/orders/{id}/receipts`) منتقل شد، list/detail loading با قرارداد واقعی هم‌تراز شد، `Sent/Submitted/PartiallyReceived` پشتیبانی شد، و `ReceiptNumber` durable و یکتا به مدل/پیکربندی/migration هم‌ترازکننده افزوده شد. مقدار ورودی receipt نیز با `@bind:event="oninput"` به‌صورت پایدار به state متصل شد.
+
+در اجرای اول browser، failure از application assertion پنهان نشده بود: مرجع ثابت `UI-STEP8-PARTIAL` قبلاً در همان company استفاده شده بود و idempotency عمداً نتیجهٔ قبلی را برمی‌گرداند. fixture به سفارش مشخص و reference یکتا تغییر کرد؛ پس از آن همان تست کامل `1/1 PASS` شد. این اصلاح نه idempotency را تضعیف می‌کند و نه assertion over-receipt را حذف می‌کند.
+
+### gateهای جاری
+
+- Full Integration روی PostgreSQL تازهٔ ایزوله، با migration chain کامل، `-m:1 --blame-hang-timeout 90s`: **133/133 PASS**.
+- Unit: **229/229 PASS**.
+- Backoffice: **184/184 PASS**.
+- Core API و Backoffice Release build: **PASS، صفر warning/error**.
+- Receipt browser feature: **1/1 PASS** با current source، system Chrome و isolated API/Backoffice.
+
+### deployment و نتیجه
+
+درخواست جاری فقط acceptance ایزوله را تکمیل کرد؛ `barang-core` توسعه deploy یا mutate نشد. deployed application commit/images توسعه در این نوبت تغییر نکردند و provenance قبلی همان است. migration جدید `20261016080912_AlignReceiptModel` در محیط ایزوله idempotent و با schema موجود سازگار verify شد؛ backup توسعه و credentials حفظ شدند.
+
+با توجه به approval/SKU browser evidence قبلی، full Integration جاری، و receipt-to-recheck browser evidence بالا، receipt acceptance باقی‌مانده بسته شد. وضعیت نهایی این scope: **STEP 8 PASS**. هیچ تغییر STEP 9 انجام نشد.
