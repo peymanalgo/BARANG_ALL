@@ -52,3 +52,18 @@
 ## migration و recovery
 
 business schema جدیدی برای این اصلاح لازم نبود؛ migration 20261016085258_AddStep9ProductionWorkflowGates snapshot-alignment است و migration قبلی 20261016080912_AlignReceiptModel مالک receipt schema باقی ماند. migration chain کامل روی DB تازهٔ ایزوله اعمال شد. هیچ migration، reset، تغییر credential یا mutation روی development انجام نشد. برای rollout بعدی، backup و restore validation توسعه باید قبل از هر migration عملیاتی انجام شود.
+
+## تحویل local development
+
+پس از backup مالک دیتابیس در `artifacts/barang_core_step9_delivery_20261016.dump`، migrationهای pending از مسیر رسمی EF CLI و با role مهاجرت privileged اجرا شدند. migration history توسعه اکنون به `20261016085258_AddStep9ProductionWorkflowGates` رسیده است؛ runtime همچنان با role کم‌اختیار `barang_app` اجرا می‌شود. volumeهای PostgreSQL، MinIO، Redis و کلیدهای Data Protection، داده‌های business و credentialهای administrator حفظ شدند.
+
+Compose project موجود `barang-core` با pair هم‌نسخهٔ source `e4463181d006a66b277221a7e7c3ae5768ee65d7` بازسازی شد:
+
+- API image: `sha256:e96a25beb4b74603c69587012d134e929d8c436c1e3555d8dba4798e28837c5e`
+- Backoffice image: `sha256:06eb0e9fb0a7e06ee3470c660b8341320efba882088ab9f0079fa93e55f8e1dd`
+- هر دو کانتینر مقدار `BARANG_BUILD_COMMIT=e4463181d006a66b277221a7e7c3ae5768ee65d7` دارند.
+- API readiness روی `:8080` و login روی `http://localhost:5100` هر دو HTTP 200 هستند.
+
+Smoke احراز‌شدهٔ UI login، شرکت جاری و navigation پایه موفق شد. Production stages فعلی definition `BARANG.ORDER` همچنان به version فعال `17` متصل‌اند و nodeهای `WAREHOUSE` و `PRODUCTION` موجودند؛ هیچ graph یا instance توسعه‌ای import، publish یا migrate نشد. candidate version 4 فقط در محیط ایزوله باقی ماند و برای instanceهای جدید نیازمند تصمیم/rollout جداگانه است؛ instanceهای جاری روی version 17 می‌مانند.
+
+محدودیت کشف‌شده در smoke توسعه: صفحهٔ مدیریتی تجهیزات برای فهرست/جزئیات به `/api/v1/company-equipment` درخواست می‌فرستد، در حالی که API فعلی route canonical `/api/v1/equipment` و `/api/v1/equipment/options` دارد؛ بنابراین این درخواست در deployment فعلی 404 می‌شود. این ناسازگاری در این تحویل اصلاح نشده چون خارج از بستهٔ accepted STEP 9 است و اصلاح آن نیازمند تغییر مستقل Backoffice/API و regression جداگانه است. همچنین دیتابیس توسعه رکورد تجهیزات مناسب برای assertion جدولی نداشت؛ در نتیجه test localization وابسته به row با empty-state شکست خورد و به‌عنوان PASS ثبت نشده است. این مورد blocker صریح برای پذیرش کامل صفحهٔ مدیریت تجهیزات است، نه نشانهٔ شکست image provenance یا migration.
