@@ -149,3 +149,18 @@ recipient resolution broadcast نیست: membership فعال همان شرکت،
 ### نتیجهٔ پذیرش
 
 زیرساخت Outbox، Order producer، worker retry/dedup/dead-letter و Notification Center **PASS** هستند. با وجود آن، به‌دلیل نبود assertion مستقل persistence برای producerهای Quality/Logistics/SLA و برخی approval/recheck producerها در این اجرای نهایی، وضعیت کلی STEP 12 فعلاً **CONDITIONAL / NOT FINAL PASS** است؛ این یک gap evidence است، نه failure عملکردی مشاهده‌شده. برای PASS نهایی، همان transitionهای واقعی باید با query صریح event type، company، recipient، template و source reference در تست integration assert شوند. STEP 13 شروع نشده است.
+
+### وضعیت واقعی development در پایان این اجرا
+
+به‌علت همین gap evidence، rollout جدید انجام نشد و شرط «عدم deploy با acceptance ناقص» رعایت شد. `barang-core` همچنان از imageهای قبلی با provenance زیر استفاده می‌کند:
+
+- API image `sha256:e797a7a01b37947e748ec311bef9ab811054499866662d6eb67bbd252c2be674`، `BARANG_BUILD_COMMIT=aa0d65c09a8f51940bb8abe487a78d15047e03be`.
+- Backoffice image `sha256:b8a5efd2993f848ea4c3038bb1d879078757075265829428a271ad52795caf44`، `BARANG_BUILD_COMMIT=aa0d65c09a8f51940bb8abe487a78d15047e03be`.
+- پروژهٔ Compose: `barang-core`، API روی `127.0.0.1:8080`، Backoffice روی `http://localhost:5100`، worker درون API با Hangfire؛ volumeهای توسعه دست‌نخورده ماندند.
+- بنابراین این گزارش عمداً ادعای «development deployed at 714671b» نمی‌کند. پس از تکمیل assertionهای producerهای باقی‌مانده، pair هماهنگ از source جدید build و با همین Compose project به‌صورت non-destructive rollout خواهد شد.
+
+### Git delivery
+
+- Tested/documentation source after this run: `714671b1be779e1d3a922350ce98e52ef1403f7f`.
+- Branch بدون force-push به `origin/codex/step2-inventory-unit-contracts` push شد (`b129232..714671b`).
+- `origin/main...HEAD`: قبل از این commit `2` behind و `123` ahead بود؛ PR/merge status با tooling authenticated قابل تأیید نیست و **unknown** باقی می‌ماند، نه merged فرض شده است.
