@@ -87,7 +87,7 @@ API و Backoffice از همین checkout با Release Docker build و deploy م�
 - Price موجود: `PricingAdministration.CalculateInsideTransactionAsync`, `ResolveDiscountsAsync`, `ResolveTaxAsync`; دو مسیر باید یک contract واحد شوند.
 - Workflow واقعی Order: `OrderAdministration` → `IWorkflowDefinitionRuntime`; `WorkflowDefinitionRuntime.CompleteTaskAsync` → `AdvanceAfterTask`/`Traverse`.
 - Workflow adapter فعلی اما خارج از مسیر واقعی: `WorkflowBusinessCompletionAdapter`؛ باید یا به definition runtime متصل یا deprecate شود، نه اینکه دو orchestration موازی باقی بماند.
-- Background: `BackgroundSchedulers` برای outbox/SLA/file؛ باید notification business producers به outbox اضافه شوند.
+- Background: `BackgroundSchedulers` برای outbox/SLA/file؛ producer واقعی `order.submitted` اکنون در همان transaction به Outbox وصل است. اتصال producerهای دامنه‌های دیگر باید با recipient policy صریح هر دامنه تکمیل شود.
 
 ## مواردی که نباید در مراحل بعد انجام شوند
 

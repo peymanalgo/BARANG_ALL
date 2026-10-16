@@ -114,7 +114,7 @@ Packaging و Shipping/Delivery فقط با evidence persisted مرحله‌ی ow
 
 ### ۶. Notifications/background/outbox
 
-`NotificationAdministration.QueueAsync` فقط با درخواست صریح notification، `OutboxMessage` با event=`notification.requested` می‌سازد. `BackgroundSchedulers` outbox dispatch، SLA scheduler و file processing را ثبت می‌کند. producer صریح برای order submit، task completion، finance decision، shortage، production، QC یا delivery در مسیر بررسی پیدا نشد. DB نیز `notifications=0` و `outbox_messages=0` داشت.
+`NotificationAdministration.QueueAsync` همچنان برای درخواست صریح notification، `OutboxMessage` با event=`notification.requested` می‌سازد. علاوه بر آن، مسیر واقعی `OrderAdministration.SubmitAsync` همین event را داخل transaction سفارش و فقط برای کاربران فعال همان company با permission `workflow.task.claim` منتشر می‌کند؛ stable key از event و order identity و recipient ساخته می‌شود. producerهای task assignment، finance، shortage، production، QC و delivery هنوز به mapping مسئولیت صریح نیاز دارند و نباید به Admin fallback تبدیل شوند.
 
 ## جدول رفتار فعلی در برابر رفتار موردنیاز
 

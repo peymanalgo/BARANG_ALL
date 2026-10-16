@@ -1,12 +1,33 @@
 @page "/workspace/notifications"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Auth
 @inject IStringLocalizer<NavigationStrings> N
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
 
 <PageTitle>@N["Nav_Notifications"] · BARANG</PageTitle>
 <main class="page-shell" aria-labelledby="notifications-heading">
-    <header class="page-header">
-        <h1 id="notifications-heading">@N["Nav_Notifications"]</h1>
-    </header>
-    <section class="panel"><p class="empty-state">—</p></section>
+    <header class="page-header"><h1 id="notifications-heading">@N["Nav_Notifications"]</h1><button type="button" class="btn btn-secondary" @onclick="MarkAllRead" disabled="@Loading">@T("همه را خوانده‌شده کن","Mark all read","تحديد الكل كمقروء")</button></header>
+    @if (Loading) { <section class="panel"><p class="loading-state">@T("در حال بارگذاری…","Loading…","جار التحميل…")</p></section> }
+    else if (!string.IsNullOrWhiteSpace(Error)) { <section class="panel"><p class="inline-error">@Error</p><button type="button" class="btn btn-secondary" @onclick="Load">Retry</button></section> }
+    else if (Rows.Count==0) { <section class="panel"><p class="empty-state">@T("اعلانی وجود ندارد.","No notifications.","لا توجد إشعارات.")</p></section> }
+    else { <section class="panel notification-list" aria-label="@N["Nav_Notifications"]">@foreach (Row row in Rows) { <article class="notification-card @(row.ReadAt is null ? "is-unread" : "")"><div><strong>@Label(row.TemplateCode)</strong><p>@Payload(row.Payload)</p><small>@row.CreatedAt</small></div>@if(row.ReadAt is null){<button type="button" class="btn btn-link" @onclick="()=>MarkRead(row)">@T("خواندم","Mark read","تحديد كمقروء")</button>}</article> }</section> }
 </main>
+
+@code {
+    private bool Loading=true; private string? Error; private List<Row> Rows=[];
+    protected override async Task OnInitializedAsync()=>await Load();
+    private async Task Load(){Loading=true;Error=null;var s=await Session();if(s is null){Error=T("نشست منقضی شده است.","Session expired.","انتهت الجلسة.");Loading=false;return;}var r=await Core.GetAsync("api/v1/notifications/mine?page=1&pageSize=100",s.Value.Token,s.Value.Company,default);if(!r.IsSuccess){Error=r.ProblemDescription??r.ProblemCode??T("خطا در بارگذاری اعلان‌ها.","Could not load notifications.","تعذر تحميل الإشعارات.");}else{Rows=r.Value.TryGetProperty("items",out var a)&&a.ValueKind==JsonValueKind.Array?a.EnumerateArray().Select(Parse).ToList():[];}Loading=false;}
+    private async Task MarkRead(Row row){var s=await Session();if(s is null)return;var r=await Core.SendAsync(HttpMethod.Post,$"api/v1/notifications/{row.Id}/read",new{version=row.Version},s.Value.Token,s.Value.Company,default);if(r.IsSuccess)await Load();}
+    private async Task MarkAllRead(){var s=await Session();if(s is null)return;var r=await Core.SendAsync(HttpMethod.Post,"api/v1/notifications/read-all",null,s.Value.Token,s.Value.Company,default);if(r.IsSuccess)await Load();}
+    private async Task<(string Token,Guid Company)?> Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t?(t,c):null;}
+    private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"ar"=>ar,_=>fa};
+    private string Label(string code)=>code switch{"order.submitted"=>T("ثبت سفارش","Order submitted","تم تسجيل الطلب"),"shipment.dispatched"=>T("ارسال مرسوله","Shipment dispatched","تم شحن الشحنة"),_=>code};
+    private static string Payload(string value){try{using JsonDocument d=JsonDocument.Parse(value);return d.RootElement.TryGetProperty("payload",out var p)?p.ToString():value;}catch{return value;}}
+    private static Row Parse(JsonElement x)=>new(x.GetProperty("id").GetGuid(),x.GetProperty("templateCode").GetString()??"notification",x.GetProperty("payload").GetString()??"{}",x.GetProperty("createdAtUtc").ToString(),x.TryGetProperty("readAtUtc",out var read)&&read.ValueKind!=JsonValueKind.Null?read.ToString():null,x.GetProperty("version").GetInt64());
+    private sealed record Row(Guid Id,string TemplateCode,string Payload,string CreatedAt,string? ReadAt,long Version);
+}
