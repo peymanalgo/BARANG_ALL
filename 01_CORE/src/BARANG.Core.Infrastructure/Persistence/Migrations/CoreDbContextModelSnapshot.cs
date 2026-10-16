@@ -4626,6 +4626,12 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(18,4)")
                         .HasColumnName("quantity");
 
+                    b.Property<string>("ReceiptNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("receipt_number");
+
                     b.Property<DateTimeOffset>("ReceivedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("received_at_utc");
@@ -4647,6 +4653,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId", "PurchaseOrderItemId");
+
+                    b.HasIndex("CompanyId", "ReceiptNumber")
+                        .IsUnique();
 
                     b.HasIndex("CompanyId", "Reference")
                         .IsUnique();

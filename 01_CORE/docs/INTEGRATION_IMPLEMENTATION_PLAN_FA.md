@@ -151,3 +151,11 @@ stacking تخفیف، معافیت خارج از TaxStatusCode، تبدیل ار
 # الحاقیهٔ اجرای STEP ۸
 
 shortage proposal باید بیرون از rollback رزرو durable باشد و با `SourceShortageId`، exact `OrderItemId`، warehouse، variant، UOM و required/available/missing ثبت شود. تبدیل proposal به PR صریح، مجاز، transaction-safe و idempotent است؛ PO خودکار ممنوع است. receipt جزئی فقط quantity واقعی را به ledger/balance وارد می‌کند و recheck را بر اساس موجودی فعلی منتشر می‌کند، بدون auto-reserve یا task completion. قبل از نهایی‌کردن این مرحله، actor/threshold/routing approval PR/PO و browser matrix باید مستند و verify شوند.
+
+# الحاقیه STEP ۹ — production و equipment
+
+تولید از `ProductionAdministration` canonical استفاده می‌کند. برای هر `OrderItem` job مستقل و برای هر `OrderPrintOperation` job چاپ جدا با `PrintOperationId` تولید می‌شود؛ `GenerationKey` و قفل ردیف سفارش، retry و درخواست هم‌زمان را idempotent می‌کند. job چاپ همان `ArtworkVersionId` و `FileVersionId` عملیات سفارش را frozen نگه می‌دارد.
+
+شروع job فقط با operator فعال همان شرکت و مجوز `production.execute`، تجهیز فعال در وضعیت `AVAILABLE` یا `READY` و capability صریح `EquipmentTypeCode` منطبق با operation، و evidence معتبر issue انبار برای همان order/item مجاز است. وضعیت تجهیز در زمان start دوباره بررسی می‌شود. تکمیل فقط مقدار persisted حداقل برابر مقدار OrderItem را می‌پذیرد. adapter قدیمی و `WorkflowDefinitionRuntime` نیز برای DesignPreparation، Printing و HeatPress تمام jobهای لازم، هویت item/operation و artwork/file version را کنترل می‌کنند؛ completion عمومی نمی‌تواند outcome ساختگی بسازد.
+
+در این مرحله business field جدیدی لازم نبود؛ migration snapshot-alignment بدون عملیات schema برای رفع اختلاف model/snapshot ثبت شد و migration قبلی `AlignReceiptModel` مالک تغییر receipt باقی ماند. published definitionها و instanceهای جاری مهاجرت داده نشدند؛ graph candidate و routing/assignment باید در acceptance ایزولهٔ workflow بررسی شوند.

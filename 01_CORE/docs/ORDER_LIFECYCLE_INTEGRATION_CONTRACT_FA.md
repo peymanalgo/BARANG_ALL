@@ -292,6 +292,12 @@ shortage یک proposal durable و company-scoped است و به PR فقط با a
 
 در گام پنجم، تکمیل هر مرحلهٔ Inventory فقط با نتیجهٔ persisted و معتبر سرویس canonical Inventory مجاز است. `InventoryReservation` باید برای همهٔ OrderItemهای فعال reservation مستقل با OrderItemId، variant، warehouse، quantity و UOM صحیح داشته باشد. `InventoryIssue` باید برای همهٔ همان اقلام movement ثبت‌شدهٔ `WAREHOUSE_ISSUE` با مقدار لازم داشته باشد؛ issue ناقص task را باز نگه می‌دارد. گیت، claim/list و adapter قدیمی نیز همین قرارداد را اجرا می‌کنند و generic completion نمی‌تواند آن را دور بزند. release/adjustment/return همچنان مالکیت Inventory را حفظ می‌کنند و return compensating، issue تاریخی را خودکار باطل نمی‌کند.
 
+## الحاقیه STEP ۹ — گیت Production
+
+ProductionPlanning در runtime واقعی به `ProductionAdministration.GenerateInsideTransactionAsync` canonical متصل است و generation را برای هر OrderItem و هر PrintOperation با `GenerationKey` پایدار و قفل order انجام می‌دهد. DesignPreparation، Printing و HeatPress فقط با evidence تکمیل همه jobهای لازم و quantity کافی می‌توانند task را جلو ببرند؛ چاپ باید همان operation و Artwork/File version ثبت‌شده را داشته باشد.
+
+شروع job از مسیر API نیز مجوز operator، شرکت، تجهیز active/capability/status و issue انبار همان OrderItem را دوباره بررسی می‌کند. تکمیل بدون quantity کافی رد می‌شود. این gateها در adapter legacy و runtime definition اعمال شده‌اند؛ UI فقط نمایش/عملیات canonical است و منبع امنیت نیست. QC و reproduction در STEP ۱۰ عمداً تغییر نکرده‌اند.
+
 ## الحاقیه STEP ۶ — قرارداد محاسبه قیمت canonical
 
 برآورد و نهایی‌سازی هر دو از resolver canonical قیمت استفاده می‌کنند. `CustomerGroupId` از Customer به context محاسبه منتقل می‌شود؛ ترتیب انتخاب یک قانون تخفیف فعال و معتبر، بدون stacking، به‌ترتیب Customer، CustomerGroup، source/partner و general است. قانون گروه فقط با شناسه پایدار گروه سنجیده می‌شود و caption ترجمه‌شده هویت نیست.

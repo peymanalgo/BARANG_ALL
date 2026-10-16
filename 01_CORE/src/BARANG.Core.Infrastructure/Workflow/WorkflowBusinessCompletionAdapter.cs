@@ -35,10 +35,10 @@ public sealed class WorkflowBusinessCompletionAdapter(CoreDbContext db, IFinance
         bool ready=stage switch
         {
             WorkflowStage.AdministrativeReview=>true,
-            WorkflowStage.DesignPreparation=>await db.ProductionJobs.AnyAsync(x=>x.OrderId==orderId&&x.JobType==Domain.Production.ProductionJobType.DesignPreparation&&x.Status==Domain.Production.ProductionJobStatus.Completed,token),
+            WorkflowStage.DesignPreparation=>(await production.ValidateWorkflowCompletionAsync(orderId,Domain.Production.ProductionJobType.DesignPreparation,token)).IsSuccess,
             WorkflowStage.InventoryReservation=>await inventory.HasCompleteReservationEvidenceAsync(orderId,token),
-            WorkflowStage.Printing=>await db.ProductionJobs.AnyAsync(x=>x.OrderId==orderId&&x.JobType==Domain.Production.ProductionJobType.Print&&x.Status==Domain.Production.ProductionJobStatus.Completed,token),
-            WorkflowStage.HeatPress=>await db.ProductionJobs.AnyAsync(x=>x.OrderId==orderId&&x.JobType==Domain.Production.ProductionJobType.HeatPress&&x.Status==Domain.Production.ProductionJobStatus.Completed,token),
+            WorkflowStage.Printing=>(await production.ValidateWorkflowCompletionAsync(orderId,Domain.Production.ProductionJobType.Print,token)).IsSuccess,
+            WorkflowStage.HeatPress=>(await production.ValidateWorkflowCompletionAsync(orderId,Domain.Production.ProductionJobType.HeatPress,token)).IsSuccess,
             WorkflowStage.QualityControl=>await db.QCInspections.AnyAsync(x=>x.OrderId==orderId&&x.Outcome==Domain.Quality.QCOutcome.Approved,token),
             WorkflowStage.Packaging=>await db.Packages.AnyAsync(x=>x.OrderId==orderId&&x.Status!=Domain.Logistics.PackageStatus.Draft,token),
             WorkflowStage.Shipping=>await db.Shipments.AnyAsync(x=>x.OrderId==orderId&&x.Status!=Domain.Logistics.ShipmentStatus.Ready,token),
