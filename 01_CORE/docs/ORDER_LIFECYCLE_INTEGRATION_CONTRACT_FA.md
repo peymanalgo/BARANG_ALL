@@ -1,5 +1,11 @@
 # قرارداد یکپارچگی چرخه عمر سفارش BARANG — STEP 1
 
+## الحاقیه مصوب STEP ۱۱
+
+Packaging و Shipping/Delivery فقط با evidence persisted مرحله‌ی owner خود معتبرند: allocation بسته باید در محدوده‌ی QC پذیرفته‌شده باشد، dispatch نیازمند tracking است و Delivery از مقدار تجمعی دقیق OrderItem در shipmentهای تحویل‌شده استفاده می‌کند. تکمیل عمومی یا legacy Workflow نمی‌تواند این گیت‌ها را دور بزند.
+
+`ShipmentReturn` بازگشت traceable مشتری را مستقل از return انبار ثبت می‌کند و شامل shipment، OrderItem، مقدار، UOM، علت، actor، زمان و کلید idempotency است. بازگشت به‌طور خودکار stock قابل‌استفاده، refund، payment یا balance را تغییر نمی‌دهد؛ disposition انبار و Finance اقدام‌های بعدی و صریح‌اند.
+
 تاریخ: ۱۴۰۵/۰۷/۲۰ برابر با ۲۰۲۶-۱۰-۱۲
 
 ## وضعیت و دامنه

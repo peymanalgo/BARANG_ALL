@@ -1,5 +1,11 @@
 # برنامه پیاده‌سازی یکپارچگی BARANG — مراحل ۲ تا ۱۵
 
+## الحاقیه STEP ۱۱
+
+گیت Logistics برای Packaging مقدار allocation را با مقدار QC پذیرفته‌شده‌ی persisted و بدون rejected/reproduction-required مقایسه می‌کند. Shipping بدون tracking رد می‌شود و تکمیل عمومی Workflow برای Packaging، Shipping و Delivery بدون evidence معتبر عبور نمی‌کند. Delivery مقدار تجمعی هر `OrderItemId` را از shipmentهای Delivered محاسبه می‌کند و فقط پس از تکمیل همه‌ی اقلام، Order را به `Delivered` می‌برد.
+
+بازگشت مشتری سند مستقل `ShipmentReturn` است: shipment، order، OrderItem، مقدار، UOM، علت، actor، زمان و idempotency key را ثبت می‌کند؛ مقدار آن از allocation تحویل‌شده منهای بازگشت‌های قبلی بیشتر نمی‌شود. این سند هیچ افزایش خودکار stock، refund، payment یا balance ایجاد نمی‌کند. disposition انبار و آثار Finance خارج از STEP ۱۱ و صریح باقی می‌ماند.
+
 این برنامه بر اساس `docs/ORDER_LIFECYCLE_INTEGRATION_CONTRACT_FA.md` و شواهد source/runtime فعلی نوشته شده است. STEP 1 فقط قرارداد و validation است؛ هیچ‌یک از مراحل زیر در این commit پیاده‌سازی نمی‌شوند.
 
 ## اصول مشترک

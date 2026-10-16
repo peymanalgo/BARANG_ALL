@@ -5491,6 +5491,93 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("shipment_packages", "barang");
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Logistics.ShipmentReturn", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("IdempotencyKey");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_item_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("reason_code");
+
+                    b.Property<string>("ReasonText")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason_text");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<Guid>("ShipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shipment_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("UomCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("uom_code");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("CompanyId", "Id");
+
+                    b.HasIndex("CompanyId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "OrderId");
+
+                    b.HasIndex("CompanyId", "OrderItemId");
+
+                    b.HasIndex("CompanyId", "ShipmentId", "OrderItemId");
+
+                    b.ToTable("shipment_returns", "barang");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Logistics.ShipmentStatusHistory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -10930,6 +11017,30 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.HasOne("BARANG.Core.Domain.Logistics.Package", null)
                         .WithMany()
                         .HasForeignKey("CompanyId", "PackageId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Logistics.Shipment", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ShipmentId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Logistics.ShipmentReturn", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Orders.Order", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "OrderId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BARANG.Core.Domain.Orders.OrderItem", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "OrderItemId")
                         .HasPrincipalKey("CompanyId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();

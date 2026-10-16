@@ -4,7 +4,7 @@ using BARANG.Core.Domain.Common;
 
 namespace BARANG.Core.Domain.Orders;
 
-[JsonConverter(typeof(JsonStringEnumConverter<OrderStatus>))] public enum OrderStatus { Draft, Submitted, Cancelled }
+[JsonConverter(typeof(JsonStringEnumConverter<OrderStatus>))] public enum OrderStatus { Draft, Submitted, Cancelled, Delivered }
 [JsonConverter(typeof(JsonStringEnumConverter<OrderSource>))] public enum OrderSource { Internal, Web, Mobile, Partner }
 [JsonConverter(typeof(JsonStringEnumConverter<OrderChangeRequestStatus>))] public enum OrderChangeRequestStatus { Pending, Approved, Rejected, Cancelled }
 
@@ -58,6 +58,7 @@ public sealed class Order
     public Result Cancel(string reasonCode, string? reasonText, Guid actor, DateTimeOffset now) { if (!OrderStatusTransitionService.CanTransition(Status, OrderStatus.Cancelled)) return Result.Failure(OrderErrors.InvalidTransition); string? code = OrderText.Code(reasonCode, 50), text = OrderText.Text(reasonText, 500); if (code is null) return Result.Failure(OrderErrors.CancellationReasonRequired); Status = OrderStatus.Cancelled; CancellationReasonCode = code; CancellationReasonText = text; CancelledByUserId = actor; CancelledAtUtc = now; Touch(now); return Result.Success(); }
     public Result MarkPricingRecalculated(DateTimeOffset now) { if (Status != OrderStatus.Draft) return Result.Failure(OrderErrors.NotDraft); Touch(now); return Result.Success(); }
     public Result MarkInventoryAdjusted(DateTimeOffset now) { if (Status != OrderStatus.Submitted) return Result.Failure(OrderErrors.InvalidTransition); Touch(now); return Result.Success(); }
+    public Result MarkDelivered(DateTimeOffset now) { if (Status == OrderStatus.Delivered) return Result.Success(); if (Status != OrderStatus.Submitted) return Result.Failure(OrderErrors.InvalidTransition); Status = OrderStatus.Delivered; Touch(now); return Result.Success(); }
     private void Touch(DateTimeOffset now) { UpdatedAtUtc = now; Version++; }
 }
 

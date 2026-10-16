@@ -75,7 +75,7 @@ public sealed class BackofficeDesignSystemTests
             .Where(file => File.ReadAllText(file).Contains("@page ", StringComparison.Ordinal))
             .ToArray();
 
-        Assert.Equal(46, routedPages.Length); // WarehouseResponsibilityPage is the approved assignment-management route.
+        Assert.Equal(47, routedPages.Length); // ShipmentReturnWorkspace is the traceable customer-return route added in STEP 11.
         foreach (string file in Directory.GetFiles(components, "*.razor", SearchOption.AllDirectories))
         {
             string source = File.ReadAllText(file);
