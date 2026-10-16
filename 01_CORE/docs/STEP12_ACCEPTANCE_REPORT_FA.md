@@ -93,3 +93,10 @@ recipient resolution broadcast نیست: membership فعال همان شرکت،
 پذیرش order producer، transaction، authorization، notification list/read و dedup در محیط ایزوله **PASS** است. اما STEP 12 کلی هنوز **CONDITIONAL GO / NOT FINAL PASS** است، چون matrix مرورگر/پایداری برای همهٔ producerهای دامنه‌ای (shortage/recheck، PR/PO، Finance، Quality، Logistics و SLA) و سناریوهای worker restart، dead-letter exhaustion و authorized retry به‌صورت representative end-to-end اجرا نشده‌اند؛ کد اتصال آن‌ها اکنون در source است ولی نبود evidence را نمی‌توان با full Integration جایگزین کرد. این‌ها موارد باقی‌ماندهٔ پذیرش هستند.
 
 هیچ migration جدیدی برای این اصلاحات لازم نشد؛ backup/migration chain موجود دست‌نخورده است. deployment توسعه‌ای انجام نشد، چون الزام کار «پیش از عبور gateها عدم deployment» بود. image Docker جدیدی ساخته نشده و provenance با source SHA و publish paths مشخص است.
+
+### provenance نهایی
+
+- source/test commit: `b49d0051622f96ac9e7d6c506ebd81c58385d9cb`؛ remote branch نیز همین SHA را دارد.
+- API/Backoffice برای پذیرش، هر دو از همین source Release build/publish شدند؛ image Docker جدید ساخته یا به development deploy نشد.
+- شاخه نسبت به `origin/main`: `122` commit جلو و `2` commit عقب؛ merge-base بررسی شد، ادغام خودکار یا force-push انجام نشد.
+- PR/merge status با ابزار authenticated قابل احراز نبود (`gh` در محیط نصب نیست)؛ بنابراین وضعیت PR را unknown گزارش می‌کنیم.
