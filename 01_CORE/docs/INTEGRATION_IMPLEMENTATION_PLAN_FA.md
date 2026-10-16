@@ -1,5 +1,9 @@
 # برنامه پیاده‌سازی یکپارچگی BARANG — مراحل ۲ تا ۱۵
 
+## الحاقیه STEP ۱۴ — قرارداد audit و گزارش
+
+تمام mutationهای مهم باید از writer canonical owner استفاده کنند؛ ثبت موفق audit با business transaction اتمیک است و rollback event موفق را باقی نمی‌گذارد. audit read فقط با company context، RLS و `audit.read` انجام می‌شود؛ بازهٔ زمانی از شروع شامل و پایان غیرشامل است و خروجی read-only/paginated است. گزارش‌ها از persisted owner source استفاده می‌کنند و cancellation/return/reversal/revision را دوباره جمع نمی‌زنند. currency و UOM جدا می‌مانند تا policy conversion تصویب شود. وضعیت پوشش و تصمیم‌های باز در `docs/STEP14_ACCEPTANCE_REPORT_FA.md` آمده است.
+
 ## الحاقیه STEP ۱۱
 
 گیت Logistics برای Packaging مقدار allocation را با مقدار QC پذیرفته‌شده‌ی persisted و بدون rejected/reproduction-required مقایسه می‌کند. Shipping بدون tracking رد می‌شود و تکمیل عمومی Workflow برای Packaging، Shipping و Delivery بدون evidence معتبر عبور نمی‌کند. Delivery مقدار تجمعی هر `OrderItemId` را از shipmentهای Delivered محاسبه می‌کند و فقط پس از تکمیل همه‌ی اقلام، Order را به `Delivered` می‌برد.

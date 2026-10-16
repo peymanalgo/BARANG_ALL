@@ -1,12 +1,109 @@
 @page "/workspace/audit"
+@using System.Text.Json
 @rendermode InteractiveServer
 @attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
 @inject IStringLocalizer<AppStrings> L
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
-<PageTitle>@L["Timeline"]</PageTitle><div class="page-heading"><h1>@L["Timeline"]</h1></div>
-@if(Message is not null){<div class="inline-error">@L[Message]</div>}
-<section class="toolbar"><label><span>@L["Search"]</span><input @bind="Action" /></label><label><span>@L["EntityId"]</span><input @bind="Entity" /></label><label><span>@L["PageSize"]</span><select @bind="PageSize"><option>20</option><option>50</option><option>100</option></select></label><button type="button" @onclick="Refresh">@L["Refresh"]</button></section>
-<section class="panel">@if(Loading){<div class="state-box">@L["Loading"]</div>}else{<JsonDataView Value="Data" />}</section>
-<nav class="toolbar" aria-label="@L["Pagination"]"><button type="button" disabled="@(Page==1)" @onclick="Previous">@L["Previous"]</button><span>@L["Page"] @Page</span><button type="button" @onclick="Next">@L["Next"]</button></nav>
-@code{private System.Text.Json.JsonElement Data;private string Action="",Entity="";private int Page=1,PageSize=20;private bool Loading=true;private string?Message;protected override async Task OnInitializedAsync()=>await Load();private async Task Refresh(){Page=1;await Load();}private async Task Previous(){if(Page>1)Page--;await Load();}private async Task Next(){Page++;await Load();}private async Task Load(){Loading=true;var s=await Session();if(s is null)return;var p=$"api/v1/audit/events?pageNumber={Page}&pageSize={PageSize}";if(!string.IsNullOrWhiteSpace(Action))p+=$"&action={Uri.EscapeDataString(Action)}";if(!string.IsNullOrWhiteSpace(Entity))p+=$"&entityId={Uri.EscapeDataString(Entity)}";var r=await Core.GetAsync(p,s.Value.Token,s.Value.Company,default);Message=r.IsSuccess?null:r.Failure switch{ApiFailure.Unauthorized=>"SessionExpired",ApiFailure.Forbidden=>"Unauthorized",ApiFailure.Validation=>"ValidationError",_=>"GenericError"};if(r.IsSuccess)Data=r.Value;Loading=false;}private async Task<(string Token,Guid Company)?>Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t?(t,c):null;}}
+
+<PageTitle>@L["Timeline"]</PageTitle>
+<main class="page-shell audit-page" aria-labelledby="audit-heading">
+    <header class="page-header"><h1 id="audit-heading">@L["Timeline"]</h1></header>
+    <section class="toolbar audit-filters" aria-label="@L["Search"]">
+        <label><span>@AuditLabel("action")</span><input @bind="Action" placeholder="order.submitted" /></label>
+        <label><span>@L["EntityId"]</span><input @bind="Entity" /></label>
+        <label><span>@AuditLabel("from")</span><input type="text" @bind="FromUtc" placeholder="2026-10-16T00:00:00Z" /></label>
+        <label><span>@AuditLabel("to")</span><input type="text" @bind="ToUtc" placeholder="2026-10-17T00:00:00Z" /></label>
+        <button type="button" class="btn btn-primary" @onclick="Refresh" disabled="@Loading">@L["Refresh"]</button>
+    </section>
+    <p class="audit-time-hint">@AuditLabel("hint")</p>
+    @if (Message is not null) { <div class="inline-error" role="alert">@L[Message]</div> }
+    <section class="panel audit-panel">
+        @if (Loading) { <div class="state-box">@L["Loading"]</div> }
+        else if (Rows.Length == 0) { <div class="state-box">@AuditLabel("empty")</div> }
+        else {
+            <div class="table-wrap">
+                <table class="data-grid audit-grid">
+                    <thead><tr><th>@L["Date"]</th><th>@AuditLabel("action")</th><th>@AuditLabel("actor")</th><th>@L["EntityType"]</th><th>@L["EntityId"]</th><th>@AuditLabel("outcome")</th><th>@L["Details"]</th></tr></thead>
+                    <tbody>
+                    @foreach (JsonElement row in Rows)
+                    {
+                        <tr>
+                            <td dir="ltr">@Value(row, "occurredAtUtc")</td>
+                            <td><code>@Value(row, "action")</code></td>
+                            <td>@Value(row, "actorUsername", Value(row, "actorType"))</td>
+                            <td>@Value(row, "entityType")</td>
+                            <td dir="ltr" class="audit-entity-id">@Value(row, "entityId")</td>
+                            <td><span class="audit-outcome audit-outcome-@Value(row, "outcome").ToLowerInvariant()">@Value(row, "outcome")</span></td>
+                            <td>
+                                <details>
+                                    <summary>@L["Details"]</summary>
+                                    <dl class="audit-details">
+                                        <dt>@AuditLabel("correlation")</dt><dd dir="ltr">@Value(row, "correlationId")</dd>
+                                        <dt>@L["Source"]</dt><dd>@Value(row, "source")</dd>
+                                        <dt>@AuditLabel("failure")</dt><dd>@Value(row, "failureCode")</dd>
+                                    </dl>
+                                    @if (row.TryGetProperty("changes", out JsonElement changes) && changes.ValueKind == JsonValueKind.Object || row.TryGetProperty("metadata", out JsonElement metadata) && metadata.ValueKind == JsonValueKind.Object)
+                                    {
+                                        <JsonDataView Value="row" />
+                                    }
+                                </details>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+    <nav class="toolbar audit-pagination" aria-label="@L["Pagination"]">
+        <label><span>@L["PageSize"]</span><select @bind="PageSize" @bind:after="Refresh"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label>
+        <button type="button" disabled="@(Page == 1 || Loading)" @onclick="Previous">@L["Previous"]</button>
+        <span>@L["Page"] @Page</span>
+        <button type="button" disabled="@(Rows.Length < PageSize || Loading)" @onclick="Next">@L["Next"]</button>
+    </nav>
+</main>
+
+@code {
+    private JsonElement[] Rows = [];
+    private string Action = "", Entity = "", FromUtc = "", ToUtc = "";
+    private int Page = 1, PageSize = 20;
+    private bool Loading = true;
+    private string? Message;
+
+    protected override async Task OnInitializedAsync() => await Load();
+    private async Task Refresh() { Page = 1; await Load(); }
+    private async Task Previous() { if (Page > 1) Page--; await Load(); }
+    private async Task Next() { if (Rows.Length == PageSize) { Page++; await Load(); } }
+
+    private async Task Load()
+    {
+        Loading = true; Message = null; Rows = [];
+        var session = await Session();
+        if (session is null) { Message = "SessionExpired"; Loading = false; return; }
+        string path = $"api/v1/audit/events?pageNumber={Page}&pageSize={PageSize}";
+        if (!string.IsNullOrWhiteSpace(Action)) path += $"&action={Uri.EscapeDataString(Action.Trim())}";
+        if (!string.IsNullOrWhiteSpace(Entity)) path += $"&entityId={Uri.EscapeDataString(Entity.Trim())}";
+        if (DateTimeOffset.TryParse(FromUtc, out DateTimeOffset from)) path += $"&fromUtc={Uri.EscapeDataString(from.ToUniversalTime().ToString("O"))}";
+        if (DateTimeOffset.TryParse(ToUtc, out DateTimeOffset to)) path += $"&toUtc={Uri.EscapeDataString(to.ToUniversalTime().ToString("O"))}";
+        var response = await Core.GetAsync(path, session.Value.Token, session.Value.Company, default);
+        if (!response.IsSuccess) Message = response.Failure switch { ApiFailure.Unauthorized => "SessionExpired", ApiFailure.Forbidden => "Unauthorized", ApiFailure.Validation => "ValidationError", _ => "GenericError" };
+        else if (response.Value.TryGetProperty("items", out JsonElement items) && items.ValueKind == JsonValueKind.Array) Rows = items.EnumerateArray().ToArray();
+        Loading = false;
+    }
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid company) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? (token, company) : null;
+    }
+
+    private static string Value(JsonElement row, string name, string fallback = "—") => row.TryGetProperty(name, out JsonElement value) && value.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined && !string.IsNullOrWhiteSpace(value.ToString()) ? value.ToString() : fallback;
+
+    private static string AuditLabel(string key) => (System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, key) switch
+    {
+        ("en", "action") => "Audit action", ("en", "actor") => "Actor", ("en", "outcome") => "Outcome", ("en", "correlation") => "Correlation ID", ("en", "failure") => "Failure code", ("en", "from") => "From UTC", ("en", "to") => "To UTC", ("en", "hint") => "Start is inclusive and end is exclusive; values are UTC.", ("en", "empty") => "No audit events to display.",
+        ("ar", "action") => "إجراء التدقيق", ("ar", "actor") => "المنفذ", ("ar", "outcome") => "النتيجة", ("ar", "correlation") => "معرّف الارتباط", ("ar", "failure") => "رمز الخطأ", ("ar", "from") => "من UTC", ("ar", "to") => "حتى UTC", ("ar", "hint") => "البداية مشمولة والنهاية غير مشمولة؛ القيم بتوقيت UTC.", ("ar", "empty") => "لا توجد أحداث تدقيق لعرضها.",
+        (_, "action") => "عمل ممیزی", (_, "actor") => "عامل", (_, "outcome") => "نتیجه", (_, "correlation") => "شناسه همبستگی", (_, "failure") => "کد خطا", (_, "from") => "از زمان UTC", (_, "to") => "تا زمان UTC", (_, "hint") => "شروع شامل و پایان غیرشامل است؛ زمان‌ها UTC هستند.", (_, "empty") => "رویدادی برای نمایش وجود ندارد.", _ => key
+    };
+}

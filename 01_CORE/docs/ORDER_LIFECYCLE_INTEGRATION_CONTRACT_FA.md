@@ -1,5 +1,9 @@
 # قرارداد یکپارچگی چرخه عمر سفارش BARANG — STEP 1
 
+## الحاقیه STEP ۱۴ — Audit و گزارش‌های عملیاتی
+
+Audit canonical با `IAuditWriter` فقط به‌صورت opt-in در owner service ثبت می‌شود و در همان transaction mutation ذخیره می‌گردد؛ actor، company، UTC timestamp، correlation/request، action و entity identity را نگه می‌دارد. RLS و permission `audit.read` هر دو برای read لازم‌اند و API هیچ update/delete audit ندارد. `FromUtc` شامل و `ToUtc` غیرشامل است. گزارش‌های عملیاتی باید از snapshot، ledger، history و read model مالک استفاده کنند؛ currency/UOM متفاوت نباید بدون policy conversion جمع شوند. جزئیات و شواهد STEP ۱۴ در `docs/STEP14_ACCEPTANCE_REPORT_FA.md` و ماتریس coverage آن ثبت شده است.
+
 ## الحاقیه مصوب STEP ۱۱
 
 Packaging و Shipping/Delivery فقط با evidence persisted مرحله‌ی owner خود معتبرند: allocation بسته باید در محدوده‌ی QC پذیرفته‌شده باشد، dispatch نیازمند tracking است و Delivery از مقدار تجمعی دقیق OrderItem در shipmentهای تحویل‌شده استفاده می‌کند. تکمیل عمومی یا legacy Workflow نمی‌تواند این گیت‌ها را دور بزند.

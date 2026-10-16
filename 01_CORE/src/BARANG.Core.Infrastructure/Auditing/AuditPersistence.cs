@@ -77,16 +77,21 @@ public static class AuditRedactor
     }
 }
 
-public sealed class AuditReader(CoreDbContext db) : IAuditReader
+public sealed class AuditReader(CoreDbContext db, ICompanyContext company) : IAuditReader
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public async Task<PagedResult<AuditEventView>> ListAsync(AuditQuery query, CancellationToken ct)
     {
         PagedRequest page = new(query.PageNumber, query.PageSize);
-        IQueryable<AuditEvent> events = db.AuditEvents.AsNoTracking();
+        // Keep the tenant predicate in the application query as well as PostgreSQL RLS.
+        // This prevents a future privileged DbContext/query-filter change from widening
+        // the audit read surface accidentally.
+        Guid companyId = company.RequireCompanyId();
+        IQueryable<AuditEvent> events = db.AuditEvents.AsNoTracking().Where(x => x.CompanyId == companyId);
         if (query.FromUtc is not null) events = events.Where(x => x.OccurredAtUtc >= query.FromUtc.Value);
-        if (query.ToUtc is not null) events = events.Where(x => x.OccurredAtUtc <= query.ToUtc.Value);
+        // The upper bound is exclusive, so adjacent time windows cannot double-count an event.
+        if (query.ToUtc is not null) events = events.Where(x => x.OccurredAtUtc < query.ToUtc.Value);
         if (query.ActorUserId is not null) events = events.Where(x => x.ActorUserId == query.ActorUserId);
         if (query.Action is not null) events = events.Where(x => x.Action == query.Action);
         if (query.EntityType is not null) events = events.Where(x => x.EntityType == query.EntityType);
@@ -101,7 +106,9 @@ public sealed class AuditReader(CoreDbContext db) : IAuditReader
 
     public async Task<AuditEventView?> FindAsync(Guid id, CancellationToken ct)
     {
-        AuditEvent? value = await db.AuditEvents.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, ct);
+        Guid companyId = company.RequireCompanyId();
+        AuditEvent? value = await db.AuditEvents.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId, ct);
         return value is null ? null : View(value);
     }
 

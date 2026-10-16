@@ -82,6 +82,20 @@ public sealed class AuditFoundationTests(PostgreSqlDatabaseFixture database)
         Assert.True(item.GetProperty("occurredAtUtc").GetDateTimeOffset() >= before);
         Assert.Equal("Success", item.GetProperty("outcome").GetString());
 
+        DateTimeOffset selectedAt;
+        await using (CoreDbContext boundaryContext = database.CreateAdministrationCoreDbContext())
+            selectedAt = await boundaryContext.AuditEvents.IgnoreQueryFilters()
+                .Where(x => x.CorrelationId == correlation).Select(x => x.OccurredAtUtc)
+                .SingleAsync(TestContext.Current.CancellationToken);
+        string exactWindow = $"/api/v1/audit/events?fromUtc={Uri.EscapeDataString(selectedAt.ToString("O"))}&toUtc={Uri.EscapeDataString(selectedAt.ToString("O"))}&pageNumber=1&pageSize=10";
+        using JsonDocument exactJson = JsonDocument.Parse(await (await client.SendAsync(
+            Request(HttpMethod.Get, exactWindow, admin.AccessToken, companyA), TestContext.Current.CancellationToken)).Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Empty(exactJson.RootElement.GetProperty("items").EnumerateArray());
+        string adjacentWindow = $"/api/v1/audit/events?fromUtc={Uri.EscapeDataString(selectedAt.ToString("O"))}&toUtc={Uri.EscapeDataString(selectedAt.AddTicks(10).ToString("O"))}&pageNumber=1&pageSize=10";
+        using JsonDocument adjacentJson = JsonDocument.Parse(await (await client.SendAsync(
+            Request(HttpMethod.Get, adjacentWindow, admin.AccessToken, companyA), TestContext.Current.CancellationToken)).Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Single(adjacentJson.RootElement.GetProperty("items").EnumerateArray());
+
         await using (CoreDbContext auditContext = database.CreateAdministrationCoreDbContext())
         {
             string[] actions = await auditContext.AuditEvents.IgnoreQueryFilters()
