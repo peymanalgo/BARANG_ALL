@@ -81,3 +81,25 @@ branch نسبت به `origin/main` در شروع بررسی `90` commit جلو �
 علت دقیق SKU failure قبلی: پاسخ API شامل SKU8 بود، اما callback وابستهٔ Product→Variant قبل از refresh render به‌صورت قطعی اجرا نمی‌شد؛ selector با تغییر value/options کلیددار و preload از endpoint رسمی variant اصلاح شد. SKU hard-code، wait مصنوعی یا bypass UI استفاده نشده است.
 
 **وضعیت جاری:** approval backend/domain/UI و اصلاح SKU با اجرای فعلی API/persistence و browser fixture تأیید شدند. مسیر shortage proposal، conversion idempotent، partial receipt/recheck نیز در full Integration سبز است. با این حال full browser matrix همهٔ سناریوهای receipt/warehouse mutation در این اجرای نهایی تکرار نشده است؛ بنابراین وضعیت release-level STEP 8 را **CONDITIONAL** نگه می‌دارم، نه PASS کاذب. blocker اجرایی approval یا SKU باقی نمانده؛ پذیرش نهایی گستردهٔ receipt/recheck و deployment development باید در gate مستقل ثبت شود.
+
+## ثبت نهایی اجرای فعلی — ۱۴۰۵/۰۷/۲۴
+
+این بخش جایگزین provenance و نتیجهٔ پیگیری قبلی است و به commit کامل `d2deee14ed9729d6d843b3a5b3da49c9f09cc5ee` مربوط است.
+
+- Unit: `229/229` PASS؛ Backoffice unit/component: `184/184` PASS؛ Release buildهای Core و Backoffice PASS.
+- Integration ایزوله PostgreSQL: `133/133` PASS در `barang_step6_test` روی port `5546`، با `--blame-hang-timeout 30s -m:1` و migration chain کامل.
+- browser SKU: `PurchaseRequestsE2ETests.PurchaseRequestGridAndSameSessionMultilineDraftWork`، `1/1` PASS با system Chrome، API `5821` و Backoffice `5820`.
+- browser approval: `PurchaseRequestsE2ETests.PurchasingApprovalWorkspaceShowsSubmittedRequestAndRecordsDecision`، `1/1` PASS؛ approver غیرسازنده از workspace واقعی PR را تأیید کرد، نتیجه و status پس از reload persisted بود.
+- علت SKU قبلی: API مقدار `SKU8` را برمی‌گرداند اما refresh وابستهٔ Product→Variant قبل از render قطعی نبود؛ preload رسمی variant و refresh/key اصلاح شد. hard-code یا wait مصنوعی استفاده نشد.
+- علت خطای approval قبلی: query روی property محاسباتی unmapped `ApplicationUser.IsActive` به‌جای `AccountState` ترجمه می‌شد و HTTP 500 می‌داد؛ query به وضعیت persisted تغییر کرد.
+
+### توسعه و migration
+
+- قبل از تغییر schema، dump معتبر `D:\00_BARANG\step2-clean\01_CORE\.artifacts\step8_dev_before_purchasing_approval.dump` با حجم `5,043,003` بایت و `1742` TOC entry تهیه و داخل کانتینر با `pg_restore --list` بررسی شد.
+- migrationهای `20261016012212_Step8PurchasingApproval` و `20261016014209_Step8PurchasingApprovalPermissions` با EF Core روی `barang_core` اعمال شدند؛ دو migration آخر در `barang.__ef_migrations_history` ثبت‌اند. migration permission seed idempotent است و `ON CONFLICT (code) DO NOTHING` دارد.
+- deployment فقط API و Backoffice پروژهٔ Compose `barang-core` را recreate کرد؛ PostgreSQL/Redis/MinIO، volumeها، کلیدها، داده‌ها و credentials حفظ شدند. `/health/ready` و `/login` روی توسعه HTTP `200` هستند.
+- API build provenance در log: `BARANG API build commit d2deee1`؛ image API: `sha256:66793e1a4a7f223ee35ef1a2c0748475eb2a4ab251d3ee37dd43f51eda40e7ab`؛ image Backoffice: `sha256:8470d28cdd7cec4b400e2a2a8101ca16c4540a69e56cad16542b3ebc64393358`.
+
+### محدودیت پذیرش
+
+نتایج browser متمرکز approval و SKU سبز است و full Integration سبز است، اما اجرای کامل browser matrix برای همهٔ receipt/warehouse mutationها در این نوبت انجام نشده است؛ بنابراین release-level نتیجه **CONDITIONAL، نه PASS نهایی** باقی می‌ماند. هیچ blocker بازتولیدشده‌ای در approval endpoint/UI یا SKU selector باقی نیست. این محدودیت به‌عنوان عدم اجرای شواهد گزارش شده و به‌عنوان موفقیت تاریخی جایگزین نشده است.
