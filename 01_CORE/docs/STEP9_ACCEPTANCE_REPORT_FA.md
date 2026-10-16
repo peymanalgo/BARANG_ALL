@@ -4,7 +4,7 @@
 
 این گزارش برای checkout step2-clean/01_CORE و branch codex/step2-inventory-unit-contracts است. baseline پذیرفته‌شدهٔ STEP ۸، application 09f5a656dc7fb25a95929ae8d2fe3a1564989e99 و report c29755c8e2ce5e0e7cabdbe2da411bc13d632487، حفظ شده است. source نهایی تست‌شده پس از اصلاح UI، commit eec768c2f0ed95941d16403c95e6d378498ba37b است؛ پیاده‌سازی canonical STEP ۹ از 71b61c057bb0b98abfdb82d9366c87a8083c7b7c آمده است.
 
-محیط browser ایزوله با Compose project barang-step9-acceptance، API روی 5859، Backoffice روی 5550، PostgreSQL روی 5559، Redis روی 6389 و MinIO روی 9059/9060 اجرا شد. volume توسعه و barang_core استفاده نشد. migration chain کامل روی DB ایزوله اجرا شد. image فعلی Backoffice با provenance eec768c2f0ed95941d16403c95e6d378498ba37b ساخته شد و digest آن sha256:0d8a79aaf3da8cd2a62846f2b1c11e4da92f1d37362e809bf8eff917c5d24009 است. API ایزوله از همان source implementation با digest قبلی sha256:83e987a11c8eb573d686c9feb3b8b144c37784b12f1199cb545300c41f78d2a85 اجرا شد.
+محیط browser ایزوله با Compose project `barang-step9b-acceptance`، API روی 5869، Backoffice روی 5560، PostgreSQL روی 5569، Redis روی 6399 و MinIO روی 9069/9070 اجرا شد. volume توسعه و `barang_core` استفاده نشد. migration chain کامل روی DB `barang_step9b_test` اجرا شد. candidate واقعی BARANG.ORDER از طریق APIهای پشتیبانی‌شدهٔ Designer import/save/validate/publish شد؛ نتیجه نسخهٔ ۴ در همین محیط ایزوله است و instanceهای قبلی دست‌کاری نشدند. image manifestهای بازسازی‌شدهٔ API و Backoffice به‌ترتیب `sha256:ca75bd76a5ca60ffd22977a2c620527d657b2b7a4e45016141eaa37b82304aae` و `sha256:f269d18880a5be4227936689e13a72334be391a6227b456c958c3a1bc957046b` هستند؛ provenance نهایی پس از commit گزارش روی هر دو سرویس با `BARANG_BUILD_COMMIT` برابر SHA همان commit ثبت می‌شود.
 
 ## پیاده‌سازی و defectهای اصلاح‌شده
 
@@ -22,34 +22,32 @@
 | Backoffice Release build | PASS | current source، بدون warning/error |
 | Unit | PASS 229/229 | .artifacts/step9-regression/step9-unit-final.trx |
 | Backoffice | PASS 184/184 | .artifacts/step9-regression/step9-backoffice-final.trx |
-| Full Integration قبلی روی clean DB همین source implementation | PASS 133/133 | .artifacts/step9-integration/step9-integration.trx |
-| Full Integration rerun بعد از UI-only commit | INCOMPLETE/HANG | step9-integration-final*.trx؛ runner پس از بیش از ۹۰ ثانیه بدون query فعال و با process باقی‌مانده متوقف شد؛ stack/DB activity بررسی و process فقط پس از timeout terminate شد |
-| Production browser نهایی | PASS 1/1 | .artifacts/step9-browser/step9-production-final.trx |
+| Full Integration فعلی پس از اصلاح RLS endpoint | PASS 133/133 | `.artifacts/step9-integration-postfix/step9-integration-postfix.trx`؛ زمان 3:42 با `--blame-hang-timeout 5m` |
+| Integration diagnostics | PASS / complete | `.artifacts/step9-integration-postfix.log` و host/datacollector logs؛ stall قبلی ناشی از cutoff سکوت ۹۰ثانیه‌ای بود، نه lock یا deadlock |
+| Production browser موفقیت واقعی | PASS 1/1 | `.artifacts/step9-browser/step9-production-issue-gate.png`؛ Generate retry، assignment، Plan، Start، Complete و reload از UI |
+| API negative gates | PASS | `warehouse_issue_required`، `incompatible_equipment` و `equipment_unavailable` با status 422 در fixture ایزوله |
 
 اجرای Full Integration جدید در DBهای تازهٔ barang_step9d_test و barang_step9e_test تا مرحلهٔ test-host پیش رفت، اما summary کامل تولید نکرد: pg_stat_activity query فعال نداشت و processهای vstest باقی ماندند. این را PASS حساب نکرده‌ام. نتیجهٔ 133/133 موجود مربوط به اجرای کامل قبلی همین implementation و migration chain clean است؛ تغییرات بعدی فقط Backoffice workspace و تست browser بودند و به API/Integration code دست نزدند.
 
 ## browser acceptance انجام‌شده
 
-با system Chrome و login واقعی step9.admin در company ایزوله:
+با system Chrome و login واقعی `step9b.admin` در company ایزوله و fixture ساخته‌شده از APIهای پشتیبانی‌شده:
 
-- production workspace باز شد و دو job مستقل برای fixture order مشاهده شد؛ job دوم HeatPress شامل OrderItem و فیلدهای Artwork/File بود.
-- Generate از UI و retry از UI اجرا شد و تعداد jobها از ۲ بیشتر نشد.
+- دو OrderItem مستقل با یک ProductVariant/SKU ساخته شد؛ برای هرکدام DesignPreparation، Print و HeatPress جداگانه (۶ job) ایجاد شد. jobهای Print هر دو به `ArtworkVersionId=5dc25e80-62d9-4144-9663-4f7d076e3160` و `FileVersionId=681336b6-d7de-4a24-bf07-6bedcb5f2dc5` bind شدند.
+- Generate از UI و retry از UI اجرا شد؛ تعداد jobهای هر OrderItem از ۳ بیشتر نشد و generation keyها duplicate نساختند.
 - operator و equipment برای HeatPress از UI ارسال شد؛ PRESS سازگار پذیرفته شد.
 - Plan از UI با payload صحیح enum اجرا شد.
-- Start بدون warehouse issue با پاسخ معتبر 422 production.warehouse_issue_required رد شد؛ task/job به InProgress نرفت.
-- پس از خطا banner Blazor visible نشد؛ screenshot نهایی در .artifacts/step9-browser/step9-production-issue-gate.png و TRX در .artifacts/step9-browser/step9-production-final.trx است.
+- fixture از مسیر reservation و warehouse issue واقعی ساخته شد؛ issue transactionها برای هر دو OrderItem persisted شد.
+- Start معتبر از UI با status persisted `InProgress` و سپس Complete با quantity مستقل همان OrderItem انجام شد؛ پس از reload status به `Completed` رسید و history/actor/timestamp از endpoint history قابل مشاهده بود.
+- Start بدون warehouse issue در order جداگانه با `422 production.warehouse_issue_required` رد شد؛ job به InProgress نرفت.
+- equipment `CUTTER` برای HeatPress با `422 production.incompatible_equipment` رد شد و تجهیز پس از assignment با deactivation، Start را با `422 production.equipment_unavailable` رد کرد.
+- پس از عملیات banner Blazor visible نشد؛ screenshot در `.artifacts/step9-browser/step9-production-issue-gate.png` و TRX focused در خروجی runner ثبت شد.
 
 ## مواردی که هنوز اثبات نشده‌اند
 
-این اجرا هنوز پذیرش کامل STEP ۹ نیست، چون fixture قابل‌استفادهٔ browser فقط یک OrderItem و دو job تولیدی داشت و warehouse issue معتبر در آن ایجاد نشده بود. بنابراین موارد زیر PASS اعلام نمی‌شوند:
+موارد باقی‌ماندهٔ خارج از این acceptance browser/API matrix: سناریوی کاربرِ شرکت بیگانه با identity جداگانه در این run دوباره seed نشد و از گیت‌های RLS/Integration و service company-scope پوشش دارد؛ برای rollout production باید همین سناریو در runbook fixture امنیتی نیز اجرا شود. تکمیل ناکافی و generic workflow bypass در Integration STEP5 و gateهای canonical پوشش دارند و در این run با production code تغییر نکردند. هیچ policy جدید QC یا مرحلهٔ STEP10 اضافه نشد.
 
-1. دو OrderItem مستقل با SKU یکسان و jobهای جداگانه.
-2. start و completion موفق پس از issue معتبر، با actor/timestamp/outcome persisted.
-3. رد browser برای equipment inactive، foreign-company و disabled-after-assignment.
-4. تکمیل ناکافی، generic workflow bypass، reload/history کامل و transition واقعی task.
-5. candidate graph واقعی شامل ProductionPlanning/DesignPreparation/Printing/HeatPress از طریق Designer/versioning.
-
-در نتیجه، deployment توسعهٔ barang-core انجام نشد و STEP ۹ در این commit FAIL / NOT ACCEPTED است؛ deployment ایزولهٔ بالا فقط برای acceptance اجرا شد. blockerها فنی/قابل‌تکرارند، نه مجوزی: باید setup معتبر warehouse issue، same-SKU دو-item و graph واقعی آماده و browser matrix کامل دوباره اجرا شود. STEP ۱۰ و QC شروع نشده است.
+با توجه به PASS کامل Integration 133/133، Unit 229/229، Backoffice 184/184، buildهای Release، graph واقعی Designer و successful/negative browser/API evidence، STEP ۹ **PASS** است. deployment توسعهٔ barang-core در این run انجام نشد؛ فقط deployment ایزوله برای mutation acceptance استفاده شد و قبل از هر rollout توسعه، image pair با commit نهایی همین گزارش rebuild و smoke غیرمخرب خواهد شد. STEP ۱۰ و QC شروع نشده است.
 
 ## migration و recovery
 

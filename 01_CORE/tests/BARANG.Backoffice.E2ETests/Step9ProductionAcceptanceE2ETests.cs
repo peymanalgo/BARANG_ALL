@@ -31,6 +31,10 @@ public sealed class Step9ProductionAcceptanceE2ETests : IAsyncLifetime
         string orderId = Required("BARANG_STEP9_ORDER_ID");
         string equipmentId = Required("BARANG_STEP9_EQUIPMENT_ID");
         string userId = Required("BARANG_STEP9_USER_ID");
+        string item1Id = Required("BARANG_STEP9_ITEM1_ID");
+        string item2Id = Required("BARANG_STEP9_ITEM2_ID");
+        bool expectSuccess = string.Equals(Environment.GetEnvironmentVariable("BARANG_STEP9_EXPECT_SUCCESS"), "true", StringComparison.OrdinalIgnoreCase);
+        int expectedJobsPerItem = int.TryParse(Environment.GetEnvironmentVariable("BARANG_STEP9_EXPECTED_JOBS_PER_ITEM"), out int configuredJobs) ? configuredJobs : 3;
         await page.GotoAsync($"{baseUrl}/workspace/production", new() { WaitUntil = WaitUntilState.NetworkIdle });
 
         // The application may be rendered in fa/en depending on the persisted user preference.
@@ -39,15 +43,17 @@ public sealed class Step9ProductionAcceptanceE2ETests : IAsyncLifetime
         await fields.Nth(0).FillAsync(orderId);
         ILocator actions = page.Locator(".form-actions button");
         await actions.Nth(0).ClickAsync();
-        await Assertions.Expect(page.Locator(".record-row")).ToHaveCountAsync(2);
+        await Assertions.Expect(page.Locator(".record-row").Filter(new() { HasText = item1Id })).ToHaveCountAsync(expectedJobsPerItem);
+        await Assertions.Expect(page.Locator(".record-row").Filter(new() { HasText = item2Id })).ToHaveCountAsync(expectedJobsPerItem);
 
         // The retry uses the same canonical generation key and must not add another job.
         await actions.Nth(0).ClickAsync();
-        await Assertions.Expect(page.Locator(".record-row")).ToHaveCountAsync(2);
+        await Assertions.Expect(page.Locator(".record-row").Filter(new() { HasText = item1Id })).ToHaveCountAsync(expectedJobsPerItem);
+        await Assertions.Expect(page.Locator(".record-row").Filter(new() { HasText = item2Id })).ToHaveCountAsync(expectedJobsPerItem);
 
-        // The second generated job is the HeatPress operation and PRESS is compatible
-        // with it; keep the DesignPreparation job visible as evidence.
-        ILocator firstJob = page.Locator(".record-row").Nth(1);
+        // Select the actual HeatPress row.  The fixture has two independent same-SKU
+        // items and a print operation bound to the same artwork/file version.
+        ILocator firstJob = page.Locator(".record-row").Filter(new() { HasText = $"2 · Status0" }).Filter(new() { HasText = item1Id }).First;
         await Assertions.Expect(firstJob).ToContainTextAsync("OrderItem:");
         await Assertions.Expect(firstJob).ToContainTextAsync("Artwork:");
         await Assertions.Expect(firstJob).ToContainTextAsync("File:");
@@ -55,17 +61,31 @@ public sealed class Step9ProductionAcceptanceE2ETests : IAsyncLifetime
         fields = page.Locator("input:not([type=hidden])");
         await fields.Nth(2).FillAsync(userId);
         await actions.Nth(2).ClickAsync();
+        Assert.NotEqual("0", await page.Locator("input[type=number]").InputValueAsync());
         fields = page.Locator("input:not([type=hidden])");
         await fields.Nth(3).FillAsync(equipmentId);
         await actions.Nth(3).ClickAsync();
+        Assert.NotEqual("0", await page.Locator("input[type=number]").InputValueAsync());
         await page.Locator("input[placeholder='2026-01-01T08:00:00Z']").FillAsync("2026-10-16T08:00:00Z");
         await page.Locator("input[placeholder='2026-01-01T09:00:00Z']").FillAsync("2026-10-16T09:00:00Z");
         await actions.Nth(1).ClickAsync();
 
-        // No warehouse issue is present in this fixture. Start must be rejected by the canonical service.
         await actions.Nth(4).ClickAsync();
-        await Assertions.Expect(page.Locator(".inline-error")).ToBeVisibleAsync();
-        await Assertions.Expect(page.Locator(".record-row").First).Not.ToContainTextAsync("InProgress");
+        if (expectSuccess)
+        {
+            await Assertions.Expect(page.Locator(".inline-success")).ToBeVisibleAsync();
+            await Assertions.Expect(page.Locator(".record-row").Filter(new() { HasText = "2 · Status2" }).First).ToBeVisibleAsync();
+            string completionQuantity = Environment.GetEnvironmentVariable("BARANG_STEP9_COMPLETE_QUANTITY") ?? "2";
+            await page.Locator("input:not([type=hidden])").Nth(5).FillAsync(completionQuantity);
+            await actions.Nth(5).ClickAsync();
+            await Assertions.Expect(page.Locator(".inline-success")).ToBeVisibleAsync();
+            await Assertions.Expect(page.Locator(".record-row").Filter(new() { HasText = "2 · Status4" }).First).ToBeVisibleAsync();
+        }
+        else
+        {
+            await Assertions.Expect(page.Locator(".inline-error")).ToBeVisibleAsync();
+            await Assertions.Expect(page.Locator(".record-row").First).Not.ToContainTextAsync("InProgress");
+        }
         // The shared layout always renders the banner; a healthy circuit keeps it hidden.
         await Assertions.Expect(page.Locator("#blazor-error-ui")).Not.ToBeVisibleAsync();
         await page.ScreenshotAsync(new() { Path = Path.Combine(Environment.GetEnvironmentVariable("BARANG_E2E_ARTIFACTS") ?? ".artifacts", "step9-production-issue-gate.png"), FullPage = true });

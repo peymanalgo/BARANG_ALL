@@ -186,7 +186,29 @@ public sealed class WorkflowDesignerAdministration(CoreDbContext db, ICompanyCon
         await using DbCommand u = Cmd(c, "update barang.workflow_definition_versions set status='Superseded',published_at_utc=coalesce(published_at_utc,now()),published_by_user_id=@actor where company_id=@company and definition_id=@definition and status='Active'; update barang.workflow_definition_versions set status='Active',published_at_utc=now(),published_by_user_id=@actor,version=version+1 where company_id=@company and id=@id and version=@version; update barang.workflow_definitions set active_version_id=@id,updated_at_utc=now(),version=version+1 where company_id=@company and id=@definition", ("actor", Actor), ("company", Company), ("definition", definition), ("id", versionId), ("version", version));
         await u.ExecuteNonQueryAsync(ct); await c.CloseAsync(); return await GetAsync(versionId, ct);
     }
-    public async Task<Result<IReadOnlyList<object>>> PositionsAsync(string? search, int limit, CancellationToken ct) { List<object> rows = []; await foreach (var x in db.Positions.AsNoTracking().Where(x => string.IsNullOrWhiteSpace(search) || EF.Functions.ILike(x.Code, "%" + search + "%") || EF.Functions.ILike(x.Title, "%" + search + "%")).OrderBy(x => x.Title).Take(Math.Clamp(limit, 1, 100)).AsAsyncEnumerable().WithCancellation(ct)) rows.Add(new { id = x.Id, code = x.Code, title = x.Title }); return Result.Success<IReadOnlyList<object>>(rows); }
+    public async Task<Result<IReadOnlyList<object>>> PositionsAsync(string? search, int limit, CancellationToken ct)
+    {
+        // The positions endpoint is used while constructing a definition and is
+        // itself responsible for resolving company-scoped references.  Establish
+        // the same transaction-local RLS context used by import/save/validate
+        // before EF starts enumerating the protected table.
+        await using DbConnection c = db.Database.GetDbConnection();
+        await c.OpenAsync(ct);
+        await SetCompany(c, ct);
+
+        List<object> rows = [];
+        await foreach (var x in db.Positions.AsNoTracking()
+            .Where(x => string.IsNullOrWhiteSpace(search) || EF.Functions.ILike(x.Code, "%" + search + "%") || EF.Functions.ILike(x.Title, "%" + search + "%"))
+            .OrderBy(x => x.Title)
+            .Take(Math.Clamp(limit, 1, 100))
+            .AsAsyncEnumerable()
+            .WithCancellation(ct))
+        {
+            rows.Add(new { id = x.Id, code = x.Code, title = x.Title });
+        }
+
+        return Result.Success<IReadOnlyList<object>>(rows);
+    }
 
     private async Task<object?> ReadVersion(DbConnection c, Guid definition, Guid id, CancellationToken ct) { await using DbCommand v = Cmd(c, "select version_number,status,created_at_utc,version from barang.workflow_definition_versions where company_id=@company and definition_id=@definition and id=@id", ("company", Company), ("definition", definition), ("id", id)); await using DbDataReader r = await v.ExecuteReaderAsync(ct); if (!await r.ReadAsync(ct)) return null; int number = r.GetInt32(0); string status = r.GetString(1); DateTimeOffset created = r.GetFieldValue<DateTimeOffset>(2); long version = r.GetInt64(3); await r.DisposeAsync(); List<object> nodes = []; await using DbCommand n = Cmd(c, "select id,node_key,type,title_json,description_json,position_id,x,y,version from barang.workflow_definition_nodes where company_id=@company and definition_version_id=@version order by y,x,node_key", ("company", Company), ("version", id)); await using DbDataReader nr = await n.ExecuteReaderAsync(ct); while (await nr.ReadAsync(ct)) { using JsonDocument title = JsonDocument.Parse(nr.GetString(3)); using JsonDocument desc = JsonDocument.Parse(nr.GetString(4)); nodes.Add(new { id = nr.GetGuid(0), key = nr.GetString(1), type = nr.GetString(2), title = title.RootElement.Clone(), description = desc.RootElement.Clone(), positionId = nr.IsDBNull(5) ? (Guid?)null : nr.GetGuid(5), x = nr.GetDecimal(6), y = nr.GetDecimal(7), version = nr.GetInt64(8) }); } await nr.DisposeAsync(); List<object> transitions = []; await using DbCommand t = Cmd(c, "select tr.id,f.node_key,to_node.node_key,condition_json,is_default,sort_order,tr.version from barang.workflow_definition_transitions tr join barang.workflow_definition_nodes f on f.id=tr.from_node_id join barang.workflow_definition_nodes to_node on to_node.id=tr.to_node_id where tr.company_id=@company and tr.definition_version_id=@version order by sort_order,tr.id", ("company", Company), ("version", id)); await using DbDataReader tr = await t.ExecuteReaderAsync(ct); while (await tr.ReadAsync(ct)) { using JsonDocument condition = JsonDocument.Parse(tr.GetString(3)); JsonElement cnd = condition.RootElement; JsonElement? op = cnd.TryGetProperty("operator", out var opValue) ? opValue.Clone() : null; JsonElement? title = cnd.TryGetProperty("title", out var titleValue) ? titleValue.Clone() : null; transitions.Add(new { id = tr.GetGuid(0), fromKey = tr.GetString(1), toKey = tr.GetString(2), fieldCode = StringValue(cnd, "fieldCode"), @operator = op, value = StringValue(cnd, "value"), isDefault = tr.GetBoolean(4), sortOrder = tr.GetInt32(5), outcomeCode = StringValue(cnd, "outcome"), sourceAnchor = StringValue(cnd, "sourceAnchor") ?? "Auto", targetAnchor = StringValue(cnd, "targetAnchor") ?? "Auto", title, version = tr.GetInt64(6) }); } return new { id, number, status, createdAtUtc = created, isReadOnly = status != "Draft", nodes, transitions, version }; }
     private static string? StringValue(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
