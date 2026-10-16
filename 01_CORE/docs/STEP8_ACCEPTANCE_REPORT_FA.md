@@ -49,7 +49,7 @@ receipt canonical فعلی duplicate reference و over-receipt را رد می‌
 
 پس از build و gateهای backend، migrationهای Step8 با backup قبلی روی `barang_core` اعمال و فقط API/Backoffice همین Compose project `barang-core` recreate شدند. volumeهای PostgreSQL/Redis/MinIO و key volumeها حفظ شدند؛ شمارش کنترل‌شدهٔ توسعه پس از migration: companies=5، orders=60، stock_transactions=0، purchase_requests=0، purchase_orders=0. API image `sha256:283b703ac7ef7e2d86e98f718e8b103e18ef141efcedfd8b81b4192f66116671` و Backoffice image `sha256:fe81ab8a55a91c2c758bb163959d28173bad3ec1628ce4d83c33f5541e299314` هر دو `BARANG_BUILD_COMMIT=df3a26144b95c176d0ff68e1cbc4d89c38f58bf3` دارند؛ readiness و `/login` هر دو HTTP 200 هستند. این deployment business mutation انجام نداد.
 
-branch نسبت به `origin/main` در شروع بررسی `90` commit جلو و `2` commit عقب بود؛ fetch انجام شد و merge/reset/force-push انجام نشد. وضعیت PR/merge باید با remote authenticated tooling بررسی شود و از 404 unauthenticated نتیجه‌گیری نشود.
+branch نسبت به `origin/main` در شروع بررسی `90` commit جلو و `2` commit عقب بود؛ اکنون پس از سه commit تحویل STEP 8، `93` جلو و `2` عقب است. `origin/codex/step2-inventory-unit-contracts` دقیقاً روی `df34913e0ecc1bdabf1eb48e0c72786fc94ffaf9` است و push بدون force موفق شد. `gh` در محیط نصب نیست، پس PR/merge status از authenticated tooling قابل‌خواندن نبود؛ از نبود ابزار یا 404 unauthenticated نتیجه‌گیری دربارهٔ merge نشده است.
 
 ## نتیجه
 
