@@ -64,7 +64,10 @@ public static class ReferenceConsumerTraceability
         .. DefinitionsFor("equipment", "Equipment", new Dictionary<string, (string Entity, string Field, string Api, string Ui)>
         {
             ["equipment.type"] = ("Equipment", "EquipmentTypeCode", "equipment", "Equipment > General"),
-            ["equipment.status"] = ("Equipment", "LifecycleStatusCode", "equipment", "Equipment > Lifecycle")
+            // The catalog is intentionally shared by the two persisted concepts:
+            // operational eligibility and lifecycle/history. They remain separate
+            // fields and are never treated as one state machine.
+            ["equipment.status"] = ("Equipment", "OperationalStatusCode (eligibility); LifecycleStatusCode (lifecycle/history)", "equipment", "Equipment > General/Lifecycle")
         }),
         .. DefinitionsFor("orders", "Orders", new Dictionary<string, (string Entity, string Field, string Api, string Ui)>
         {

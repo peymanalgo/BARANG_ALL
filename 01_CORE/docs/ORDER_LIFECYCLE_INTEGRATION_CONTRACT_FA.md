@@ -306,6 +306,14 @@ Quality فقط بر خروجی persisted و تکمیل‌شدهٔ یک `Producti
 در `WorkflowDefinitionRuntime`، هر node کیفیت پیش از completion، وجود inspection نهایی Approved/Rejected و disposition کامل برای همهٔ jobهای تکمیل‌شدهٔ سفارش را از `IQualityAdministration` می‌گیرد؛ completion عمومی، legacy و administrative بدون این evidence مجاز نیست. Approved فقط با outcome `Approve` و بدون rejected/reproduction quantity پذیرفته می‌شود؛ mixed outcome routing خودکار ندارد و تصمیم صریح به مسیر Reject/انجام reproduction نیاز دارد. reproduction به inspection و source job و lineage اصلی متصل، retry-safe و بدون stock/payment/refund side effect است؛ اجرای job جدید همچنان گیت‌های Production و warehouse issue را طی می‌کند. انتشار یا مهاجرت خودکار graphهای جاری انجام نمی‌شود.
 
 در سیاست نهایی mixed outcome، rejected یا reproduction-required unresolved، task کیفیت را باز نگه می‌دارد و progression خودکار به shipping را ممنوع می‌کند. خروجی جایگزین به Job جدید با همان OrderItem و lineage صریح تعلق دارد و جداگانه بازرسی می‌شود؛ پذیرش آن فقط obligation متناظر reproduction را resolve می‌کند و تاریخچهٔ inspection/job اصلی را تغییر نمی‌دهد. reinspection مستقیم همان Job رد می‌شود و مسیر correction مصوب در این مرحله تعریف یا حدس زده نشده است.
+
+## الحاقیهٔ STEP ۱۳ — یکپارچگی Master Data
+
+در STEP ۱۳، `DomainReferenceCatalog` با `ReferenceConsumerTraceability` تطبیق داده شد: ۴۳ نوع Lookup و دو adapter (`artwork.tag` و `defect.type`) در مجموع ۴۵ مصرف‌کنندهٔ مستند دارند. کد فنی/شناسهٔ پایدار از caption ترجمه‌شده جدا می‌ماند؛ scope شرکت/Global، RLS، parent hierarchy دسته‌های طرح، active/inactive و version concurrency تغییر نکرده‌اند.
+
+دو ناهماهنگی metadata اصلاح شد: `equipment.type` و `equipment.status` دامنهٔ canonical `equipment` را نیز دارند و alias قدیمی `inventory` برای سازگاری مسیر حفظ شده است؛ و مصرف `equipment.status` هر دو فیلد مستقل `OperationalStatusCode` (eligibility) و `LifecycleStatusCode` (lifecycle/history) را ثبت می‌کند. این اصلاح، دو مفهوم را به یک state machine تبدیل نمی‌کند و هیچ داده، status یا reference موجودی را تغییر نمی‌دهد.
+
+وضعیت‌های داخلی workflow/order/inventory/finance/quality/logistics و permissionها همچنان قرارداد ثابت‌اند و به Lookup تبدیل نشده‌اند. catalog یا موجودیت master-data حذف/مخفی/غیرفعال نشد؛ پیشنهادهای cleanup در گزارش مستقل STEP ۱۳ و منوط به تصمیم صاحب محصول هستند.
 # الحاقیه STEP 5 — گیت عملیات Inventory
 
 در گام پنجم، تکمیل هر مرحلهٔ Inventory فقط با نتیجهٔ persisted و معتبر سرویس canonical Inventory مجاز است. `InventoryReservation` باید برای همهٔ OrderItemهای فعال reservation مستقل با OrderItemId، variant، warehouse، quantity و UOM صحیح داشته باشد. `InventoryIssue` باید برای همهٔ همان اقلام movement ثبت‌شدهٔ `WAREHOUSE_ISSUE` با مقدار لازم داشته باشد؛ issue ناقص task را باز نگه می‌دارد. گیت، claim/list و adapter قدیمی نیز همین قرارداد را اجرا می‌کنند و generic completion نمی‌تواند آن را دور بزند. release/adjustment/return همچنان مالکیت Inventory را حفظ می‌کنند و return compensating، issue تاریخی را خودکار باطل نمی‌کند.

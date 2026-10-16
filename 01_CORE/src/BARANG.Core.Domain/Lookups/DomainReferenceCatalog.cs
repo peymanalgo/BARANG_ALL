@@ -65,8 +65,10 @@ public static class DomainReferenceCatalog
         new("artwork.usage", ["artwork"], "Design Usage Types", "انواع کاربرد طرح", "أنواع استخدام التصميم", LookupScope.Company),
         new("order.type", ["orders"], "Order Types", "انواع سفارش", "أنواع الطلبات", LookupScope.Company),
         new("inventory.adjustment.reason", ["inventory"], "Inventory Adjustment Reasons", "دلایل تعدیل موجودی", "أسباب تسوية المخزون", LookupScope.Company),
-        new("equipment.type", ["inventory"], "Equipment Types", "انواع تجهیزات", "أنواع المعدات", LookupScope.Company),
-        new("equipment.status", ["inventory"], "Equipment Operational Statuses", "وضعیت‌های عملیاتی تجهیزات", "الحالات التشغيلية للمعدات", LookupScope.Company),
+        // `inventory` is retained as a compatibility alias for the existing route;
+        // equipment is the owning master-data domain and the canonical consumer.
+        new("equipment.type", ["equipment", "inventory"], "Equipment Types", "انواع تجهیزات", "أنواع المعدات", LookupScope.Company),
+        new("equipment.status", ["equipment", "inventory"], "Equipment Operational Statuses", "وضعیت‌های عملیاتی تجهیزات", "الحالات التشغيلية للمعدات", LookupScope.Company),
         new("print.method", ["production"], "Print Methods", "روش‌های چاپ", "طرق الطباعة", LookupScope.Company),
         new("print.direction", ["production"], "Print Directions", "جهت‌های چاپ", "اتجاهات الطباعة", LookupScope.Company),
         new("print.size", ["production"], "Print Sizes", "اندازه‌های چاپ", "مقاسات الطباعة", LookupScope.Company),
