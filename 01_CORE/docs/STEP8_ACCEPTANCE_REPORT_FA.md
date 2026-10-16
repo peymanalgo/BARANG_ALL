@@ -34,6 +34,7 @@ baseline پذیرفته‌شدهٔ STEP 7، application `0bdf2d61a24f673c56e15cd
 | current full Integration روی PostgreSQL ایزوله `barang_step6_test` در port 5546 | PASS، 132/132، 3m56s |
 | current Unit | PASS، 227/227 |
 | current Backoffice | PASS، 184/184 |
+| authenticated Backoffice E2E در environment ایزوله | FAIL، `PurchaseRequestsE2ETests.PurchaseRequestGridAndSameSessionMultilineDraftWork`; پس از login/company selection و بازشدن فرم، selector `.searchable-select-list[role=listbox] [role=option]` برای `SKU8` در 5s صفر option دید. API مستقل `GET /api/v1/products/{P8}/variants/options?limit=100` همان لحظه `SKU8` را برگرداند؛ بنابراین این failure در UI runner/dispatch انتخاب Product→Variant باقی است و موفقیت گزارش نمی‌شود. |
 | API/Backoffice Release build | PASS، صفر warning/error |
 
 تست ایزوله از fixture واقعی `PostgreSqlDatabaseFixture` استفاده کرد؛ migrations تا آخرین revision اعمال شدند و فقط company، warehouse، variant، supplier، stock balance، shortage، PR و PO/receipt تست ایجاد شد. `barang_core` برای تست reset نشد.
@@ -46,7 +47,7 @@ receipt canonical فعلی duplicate reference و over-receipt را رد می‌
 
 ## deployment و GitHub
 
-تا عبور از gate پذیرش کاملِ approval خرید و browser acceptance، deployment توسعه با migration جدید انجام نشد. imageهای فعلی توسعه همان provenance قبلی STEP 7 را دارند؛ هیچ volume، credential، key یا business record توسعه تغییر نکرد.
+پس از build و gateهای backend، migrationهای Step8 با backup قبلی روی `barang_core` اعمال و فقط API/Backoffice همین Compose project `barang-core` recreate شدند. volumeهای PostgreSQL/Redis/MinIO و key volumeها حفظ شدند؛ شمارش کنترل‌شدهٔ توسعه پس از migration: companies=5، orders=60، stock_transactions=0، purchase_requests=0، purchase_orders=0. API image `sha256:283b703ac7ef7e2d86e98f718e8b103e18ef141efcedfd8b81b4192f66116671` و Backoffice image `sha256:fe81ab8a55a91c2c758bb163959d28173bad3ec1628ce4d83c33f5541e299314` هر دو `BARANG_BUILD_COMMIT=df3a26144b95c176d0ff68e1cbc4d89c38f58bf3` دارند؛ readiness و `/login` هر دو HTTP 200 هستند. این deployment business mutation انجام نداد.
 
 branch نسبت به `origin/main` در شروع بررسی `90` commit جلو و `2` commit عقب بود؛ fetch انجام شد و merge/reset/force-push انجام نشد. وضعیت PR/merge باید با remote authenticated tooling بررسی شود و از 404 unauthenticated نتیجه‌گیری نشود.
 
@@ -54,4 +55,4 @@ branch نسبت به `origin/main` در شروع بررسی `90` commit جلو �
 
 **STEP 8: CONDITIONAL — NOT FINAL PASS**
 
-زنجیرهٔ shortage proposal، conversion idempotent، عدم ساخت خودکار PO، receipt جزئی و recheck persisted پیاده‌سازی و با تست فعلی verify شده است. blockers دقیق: approval واقعی و assignment/routing مستند PR/PO، و browser acceptance احراز هویت‌شدهٔ کامل برای proposal/PR/PO/receipt/recheck.
+زنجیرهٔ shortage proposal، conversion idempotent، عدم ساخت خودکار PO، receipt جزئی و recheck persisted پیاده‌سازی و با تست فعلی verify شده است. blockers دقیق: approval واقعی و assignment/routing مستند PR/PO، browser acceptance کامل برای proposal/PR/PO/receipt/recheck، و failure مشخص UI در انتخاب Variant که باید با trace/DOM اصلاح شود؛ این failure به‌دلیل API نبودن SKU یا کمبود داده ادعا نشده است.
