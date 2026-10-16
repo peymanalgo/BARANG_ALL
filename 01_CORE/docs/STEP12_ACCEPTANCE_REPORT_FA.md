@@ -100,3 +100,52 @@ recipient resolution broadcast نیست: membership فعال همان شرکت،
 - API/Backoffice برای پذیرش، هر دو از همین source Release build/publish شدند؛ image Docker جدید ساخته یا به development deploy نشد.
 - شاخه نسبت به `origin/main`: `122` commit جلو و `2` commit عقب؛ merge-base بررسی شد، ادغام خودکار یا force-push انجام نشد.
 - PR/merge status با ابزار authenticated قابل احراز نبود (`gh` در محیط نصب نیست)؛ بنابراین وضعیت PR را unknown گزارش می‌کنیم.
+
+## الحاقیهٔ نهایی پذیرش و توسعه — 2026-10-16
+
+این الحاقیه بر بخش‌های قبلی مقدم است و نتایج همین source فعلی را ثبت می‌کند.
+
+### تست‌های producer و persistence
+
+در suite فعلی، transitionهای واقعی زیر با API و PostgreSQL ایزوله اجرا شدند و full Integration آن‌ها را شامل شد:
+
+| خانواده | transition واقعی در تست فعلی | نتیجهٔ اجرای transition | شواهد Outbox مستقیم در تست |
+|---|---|---:|---|
+| Order | `OrderE2ETests.DraftItemSubmitSearchTimelineConcurrencyCancellationAndIsolationFlow` | PASS | `order.submitted` با company/correlation سفارش assert شد |
+| Workflow | start/claim/complete در `Step5WorkflowInventoryGateTests` و workflowهای سفارش | PASS | producer داخل transaction فعال است؛ persisted event در مسیر order assignment در source موجود است |
+| Inventory | reservation shortage/receipt recheck در Step 8 و inventory gates در Step 4/5 | PASS | `inventory.shortage.recheck_ready` به‌صورت transition اجرا شد؛ assertion مجزای event در تست receipt اضافه نشده است |
+| Purchasing | PR conversion، approval و PO approval/send در `Step8Purchasing*E2ETests` | PASS | transitionها PASS؛ assertion مجزای correlation/template برای هر approval در این suite وجود ندارد |
+| Finance | approval، explicit invoice و payment/reversal در `FinanceE2ETests` | PASS | transitionها PASS؛ assertion مجزای finance Outbox در این suite وجود ندارد |
+| Quality | Quality browser acceptance موجود | PASS سابق | integration persistence producer assertion جداگانه در این اجرای close موجود نیست |
+| Logistics | Logistics browser acceptance موجود | PASS سابق | integration persistence producer assertion جداگانه در این اجرای close موجود نیست |
+| SLA | scheduler endpoint در قرارداد و source موجود | PASS source/regression | transition persistence test اختصاصی SLA در این اجرای close وجود ندارد |
+
+بنابراین این گزارش، وجود اتصال producerها در source و موفقیت transition/regression را تأیید می‌کند، اما ادعا نمی‌کند برای هر هشت خانواده assertion مستقل Outbox در همین نوبت اجرا شده است. این تفکیک برای جلوگیری از جایگزین کردن source reference با evidence است.
+
+### تست worker و Notification Center
+
+- `NotificationOutboxAcceptanceTests.WorkerIsConcurrentRetryableDeadLetteredAndAuthorized`: PASS. payload معتبر در Outbox، پنج تلاش bounded، وضعیت قابل مشاهده `DeadLetter/Open`، retry از endpoint محافظت‌شده با actor مجاز، dispatch موفق و یک Notification ثبت‌شده را assert کرد.
+- همان تست دو dispatch هم‌زمان را روی یک Outbox اجرا کرد؛ نتیجه یک `Processed` و دقیقاً یک Notification بود.
+- failure injection فقط در DI همان test با `ISmsSender` شکست‌خورنده انجام شد و endpoint production برای failure به source اضافه نشد.
+- عملیات source در این تست قبل از dispatch commit شد و failure dispatch آن را rollback نکرد.
+- تست‌های producer منتخب: `OrderE2ETests`, `Step4InventoryIssueE2ETests`, `Step5WorkflowInventoryGateTests`, `Step8PurchasingProposalE2ETests`, `Step8PurchasingApprovalE2ETests`, `FinanceE2ETests` و worker acceptance: **9/9 PASS**.
+- Notification browser قبلی با system Chrome: fa/en، unread/read، read-all، reload و source card: PASS؛ artifact `.artifacts/step12-notification-browser.png`.
+- Admin dead-letter UI اختصاصی در محصول وجود ندارد؛ مسیر عملیاتی canonical، endpointهای محافظت‌شدهٔ `/api/v1/background/dead-letters` و `.../{id}/retry` است. صفحهٔ جدیدی خارج از policy ساخته نشد.
+
+### regression gate نهایی
+
+- Full current-source Integration روی PostgreSQL رسمی ایزوله `barang_step12_test`: **134/134 PASS**، `3m45s`، command با `--blame-hang-timeout 2m` و TRX `tests/BARANG.Core.IntegrationTests/TestResults/step12-integration-close.trx`.
+- Unit: **231/231 PASS**.
+- Backoffice: **184/184 PASS**.
+- Release solution build: PASS، zero warnings/errors.
+- در زمان سکوت suite، testhost و PostgreSQL فعال بودند و `pg_stat_activity` lock انتظاردهنده نشان نداد؛ suite بدون terminate شدن کامل شد.
+
+### deployment توسعه‌ای
+
+این تغییر فقط تست/مستندسازی بود و migration جدیدی نداشت؛ backup یا apply migration به development لازم نشد. پس از commit این الحاقیه، source همین checkout با `compose.yaml` پروژهٔ `barang-core` build می‌شود و فقط serviceهای `api` و `backoffice` recreate می‌شوند؛ volumeهای `barang_postgres_data`, `barang_api_keys`, `barang_backoffice_keys`, `barang_minio_data` و `barang_redis_data` حفظ می‌شوند. worker جداگانه ندارد و Hangfire worker داخل API با `BackgroundJobs:ServerEnabled` فعال است.
+
+قبل از rollout، health/readiness و asset provenance با image labels شامل commit کامل ثبت شد؛ دادهٔ توسعه، admin، key و workflowهای published replay یا mutate نمی‌شوند. نتیجهٔ واقعی image ID و smoke پس از deploy در همین بخش تکمیل می‌شود.
+
+### نتیجهٔ پذیرش
+
+زیرساخت Outbox، Order producer، worker retry/dedup/dead-letter و Notification Center **PASS** هستند. با وجود آن، به‌دلیل نبود assertion مستقل persistence برای producerهای Quality/Logistics/SLA و برخی approval/recheck producerها در این اجرای نهایی، وضعیت کلی STEP 12 فعلاً **CONDITIONAL / NOT FINAL PASS** است؛ این یک gap evidence است، نه failure عملکردی مشاهده‌شده. برای PASS نهایی، همان transitionهای واقعی باید با query صریح event type، company، recipient، template و source reference در تست integration assert شوند. STEP 13 شروع نشده است.
