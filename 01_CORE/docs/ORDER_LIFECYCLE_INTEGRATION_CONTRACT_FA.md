@@ -173,6 +173,10 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 
 `order.submitted`, `order.workflow.started`, `inventory.reservation.requested`, `inventory.reserved`, `inventory.shortage.created`, `inventory.reservation.released`, `inventory.reservation.consumed`, `production.jobs.generated`, `quality.inspection.approved/rejected`, `package.completed`, `shipment.delivered/returned`, `finance.approved`, `invoice.issued`, `order.cancelled`.
 
+### الحاقیه STEP 11 — customer return
+
+بازگشت مشتری (`ShipmentReturn`) از return انبارِ issue/production مستقل است و به shipment، order و `OrderItemId` دقیق، مقدار و UOM canonical، علت، actor و idempotency key متصل می‌شود. delivery evidence و status تاریخی `Delivered` immutable می‌ماند. وضعیت بازگشت جداگانه از مجموع posted returnهای معتبر نسبت به مقدار تحویل‌شده محاسبه می‌شود: `None`، `Partial` یا `Full`. بازگشت نه order را reopen می‌کند، نه replacement obligation می‌سازد و نه خودکار stock قابل‌استفاده، payment یا refund ایجاد می‌کند. Over-return، cross-company، UOM ناهماهنگ و retry با payload متفاوت رد می‌شوند.
+
 هر event باید `CompanyId`, `OrderId`, optional `OrderItemId`, aggregate/version، correlation، actor، occurred-at UTC، source reference و idempotency key داشته باشد. Event outbox باید در همان transaction aggregate ذخیره شود. consumerها dedupe key داشته باشند و retry/dead-letter قابل مشاهده باشد؛ payload نباید secret یا credential داشته باشد.
 
 ## تصمیم‌های لازم از کسب‌وکار

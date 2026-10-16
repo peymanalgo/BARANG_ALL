@@ -32,6 +32,18 @@ public static class Order360Endpoints
             .Select(x => x.Id).ToArrayAsync(ct);
         Guid[] shipmentIds = await db.Shipments.AsNoTracking().Where(x => x.OrderId == orderId)
             .Select(x => x.Id).ToArrayAsync(ct);
+        var deliveredAllocations = await (from sp in db.ShipmentPackages
+            join pi in db.PackageItems on new { sp.CompanyId, sp.PackageId } equals new { pi.CompanyId, pi.PackageId }
+            join sh in db.Shipments on new { sp.CompanyId, Id = sp.ShipmentId } equals new { sh.CompanyId, sh.Id }
+            where sh.OrderId == orderId && sh.Status == Domain.Logistics.ShipmentStatus.Delivered
+            select new { pi.OrderItemId, pi.Quantity }).ToListAsync(ct);
+        var customerReturns = await db.Set<Domain.Logistics.ShipmentReturn>().AsNoTracking()
+            .Where(x => x.OrderId == orderId).OrderBy(x => x.RecordedAtUtc)
+            .Select(x => new { x.Id, x.ShipmentId, x.OrderItemId, x.Quantity, x.UomCode, x.ReasonCode, x.ReasonText, x.Status, x.RecordedByUserId, x.RecordedAtUtc, x.IdempotencyKey }).ToListAsync(ct);
+        var deliveredByItem = deliveredAllocations.GroupBy(x => x.OrderItemId).ToDictionary(x => x.Key, x => x.Sum(y => y.Quantity));
+        var returnedByItem = customerReturns.GroupBy(x => x.OrderItemId).ToDictionary(x => x.Key, x => x.Sum(y => y.Quantity));
+        var returnRows = itemIds.Select(itemId => { decimal delivered = deliveredByItem.GetValueOrDefault(itemId); decimal returned = returnedByItem.GetValueOrDefault(itemId); return new { orderItemId = itemId, deliveredQuantity = delivered, returnedQuantity = returned, remainingReturnableQuantity = Math.Max(0, delivered - returned), status = returned <= 0 ? "None" : returned >= delivered && delivered > 0 ? "Full" : "Partial" }; }).ToArray();
+        string returnStatus = returnRows.All(x => x.status == "None") ? "None" : returnRows.All(x => x.status == "Full" || x.deliveredQuantity == 0) ? "Full" : "Partial";
 
         var customer = await db.Customers.AsNoTracking().Where(x => x.Id == order.CustomerId)
             .Select(x => new { x.Id, x.CustomerCode, x.CustomerType, x.DisplayName, x.EconomicCode, x.PrimaryMobile, x.PrimaryEmail, x.IsActive })
@@ -91,6 +103,9 @@ public static class Order360Endpoints
                 packageItems = await db.PackageItems.AsNoTracking().Where(x => packageIds.Contains(x.PackageId)).Select(x => new { x.PackageId, x.OrderItemId, x.Quantity }).ToListAsync(ct),
                 shipments = await db.Shipments.AsNoTracking().Where(x => x.OrderId == orderId).OrderBy(x => x.CreatedAtUtc).Select(x => new { x.Id, x.ShipmentNumber, x.CarrierCode, x.ShippingMethodCode, x.TrackingCode, x.ShipmentDateUtc, x.ExpectedDeliveryDate, x.DeliveredAtUtc, x.Status, x.LastReasonCode, x.LastReasonText, x.Version }).ToListAsync(ct),
                 shipmentHistory = await db.ShipmentStatusHistory.AsNoTracking().Where(x => shipmentIds.Contains(x.ShipmentId)).OrderBy(x => x.OccurredAtUtc).Select(x => new { x.ShipmentId, x.Status, x.OccurredAtUtc, x.ActorUserId, x.SourceCode, x.ReasonCode, x.ReasonText }).ToListAsync(ct)
+                , deliveredQuantities = returnRows
+                , returnStatus
+                , returns = customerReturns
             },
             workflow = new
             {

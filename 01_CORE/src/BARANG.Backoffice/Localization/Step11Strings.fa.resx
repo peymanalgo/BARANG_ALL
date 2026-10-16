@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0</value></resheader>
+  <data name="ReturnStatusNone"><value>بدون مرجوعی</value></data>
+  <data name="ReturnStatusPartial"><value>مرجوعی جزئی</value></data>
+  <data name="ReturnStatusFull"><value>مرجوعی کامل</value></data>
+  <data name="DeliveredQuantity"><value>مقدار تحویل‌شده</value></data>
+  <data name="RemainingReturnable"><value>باقی‌مانده قابل مرجوعی</value></data>
+  <data name="ReturnHistory"><value>تاریخچه مرجوعی</value></data>
+</root>
