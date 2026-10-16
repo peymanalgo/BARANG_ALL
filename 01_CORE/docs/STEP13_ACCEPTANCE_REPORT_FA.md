@@ -3,6 +3,7 @@
 تاریخ: ۱۴۰۵/۰۷/۲۴ (۲۰۲۶-۱۰-۱۶)  
 شاخه: `codex/step2-inventory-unit-contracts`  
 Commit مبنای بررسی پیش از تغییر: `b09e2a07b943c8d49f5aa82e18a99d5beb3fb5f4`  
+Commit منبع تست/استقرار فعلی: `58e3538fad517f494c9da5be03144eb288058a55`
 تغییر STEP ۱۳ در این گزارش: metadata catalog، تست invariant و اسناد؛ migration schema ندارد.
 
 ## نتیجهٔ اجرایی
@@ -46,7 +47,16 @@ Integration به database توسعه `barang_core` وصل نشد؛ fixture رس�
 
 ### Browser evidence
 
-در این تغییر، هیچ Razor/JS/DTO یا رفتار business/UI تغییر نکرده است. شواهد browser معتبر قبلی برای DomainReference، Equipment، Product، Customer، Supplier، Organization و Notification Center روی source/deploymentهای پذیرفته‌شده حفظ شد. اجرای standalone E2E از checkout جاری با system Chrome به دلیل نبود محیط browser ایزولهٔ current-source و fixture credentials جدید در این نوبت دوباره انجام نشد؛ اجرای E2E روی `localhost:5100` توسعه برای master-data mutation مجاز نبود. بنابراین browser این نوبت **reused evidence، نه اجرای mutation جدید** است. آزمون‌های route/component و Backoffice 184/184 سبز هستند.
+در این تغییر، هیچ Razor/JS/DTO یا رفتار business/UI تغییر نکرده است. برای current-source، standalone xUnit v3 in-process runner (به‌جای مسیر ناسازگار dotnet/vstest که خطای `Test process did not return valid JSON` می‌دهد) با system Chrome روی `http://localhost:5100` اجرا شد. نتیجهٔ جاری:
+
+| سناریو | نتیجه و شواهد |
+|---|---|
+| `EveryExposedNavigationPageRendersTheSharedShellWithoutRuntimeFailure` | PASS؛ همهٔ routeهای permission-visible، shell، heading، نبود Blazor error و نبود overflow بررسی شد. |
+| `GlobalDesignSystemShellUsesLoginPaletteAndRemainsCompactResponsive` | PASS؛ shell دسکتاپ/موبایل و نبود overflow بررسی شد. |
+| `GlobalLanguageSwitchUpdatesLocalizedShellAndDirection` | PASS برای fa/rtl، ar/rtl و en/ltr؛ greeting و زبان انتخاب‌شده بررسی شد. |
+| `SharedSortHeadersUserGridAndActionIconsMatchTheGlobalStandard` | PASS؛ sorting، منوی vertical action و ابعاد trigger بررسی شد. |
+
+جمع اجرای جاری: **۶/۶ PASS، ۰ failure، ۰ error، ۰ skip**؛ TRX: `.artifacts/step13-browser/step13-readonly.trx`. اجرای قبلی dotnet/vstest به خطای زیر پیش از شروع test case متوقف می‌شد و defect محصول نیست: `Test process did not return valid JSON (non-object)`؛ به همین دلیل runner رسمی in-process xUnit v3 استفاده شد. این‌ها آزمون‌های read-only/route هستند؛ هیچ mutation روی دادهٔ توسعه انجام نشد. آزمون‌های mutation مربوط به master-data همچنان فقط با fixture ایزوله مجازند و شواهد پذیرفتهٔ قبلی آن‌ها حفظ شده است.
 
 این محدودیت برای اصلاح metadata صرفاً مستنداتی است؛ اگر rollout آینده catalog equipment در مسیر جدید لازم باشد، یک acceptance browser read-only در محیط disposable باید قبل از تغییر دادهٔ master اجرا شود.
 
@@ -70,11 +80,14 @@ Integration به database توسعه `barang_core` وصل نشد؛ fixture رس�
 ## Migration، backup و deployment
 
 - تغییر STEP ۱۳ migration ندارد؛ fresh/restored migration chain با اجرای Integration روی PostgreSQL ایزولهٔ موجود تا آخرین migration موفق بود.
-- backup توسعه و volumeهای `barang-core` در این task دست‌نخورده ماندند؛ هیچ reset، delete، deactivate، remap یا business mutation روی `barang_core` انجام نشد.
-- چون تغییر source در metadata و تست/اسناد است، deployment application در این پذیرش لازم نیست و image جاری توسعه همچنان provenance STEP12 یعنی application `4b6105072f92df02fecec0bdacd0ae5395565b25` را دارد. این image شامل اصلاح STEP13 نیست؛ rollout آن فقط پس از commit/push و gateهای فوق مجاز است.
+- backup توسعه و volumeهای `barang-core` در این task دست‌نخورده ماندند؛ هیچ reset، delete، deactivate، remap یا business mutation روی `barang_core` انجام نشد و migration جدیدی اعمال نشد.
+- پس از gateها، جفت API/Backoffice جاری با Compose پروژهٔ `barang-core` از source همین checkout build/deploy شد؛ سرویس‌های postgres، redis و minio و volumeهایشان حفظ شدند. هر دو container مقدار provenance `BARANG_BUILD_COMMIT=58e3538fad517f494c9da5be03144eb288058a55` دارند:
+  - API image: `sha256:0ff4b348cf30a2d6b3e66617a665eb0e4a004be7f8e34b3ab7a82a11c811a411`؛ `http://127.0.0.1:8080/health/ready` = 200.
+  - Backoffice image: `sha256:6237384e38a4370b0fcecdd8c324301bb5fc7b55a317591122b7844fd3c3f74e`؛ `http://localhost:5100/login` = 200.
+  این rollout فقط local development است؛ workflow definition، credentials، کلیدها و business data تغییر نکردند.
 
 ## GitHub و تصمیم‌های باز
 
-وضعیت divergence و refهای remote باید پس از commit نهایی با `git rev-list --left-right --count origin/main...HEAD` و `git ls-remote` ثبت شود. PR/merge فقط با ref یا tooling authenticated اعلام می‌شود؛ 404 unauthenticated proof نیست.
+در زمان ثبت این گزارش، branch جاری روی remote با SHA `58e3538fad517f494c9da5be03144eb288058a55` موجود است؛ `origin/main` برابر `09afbe3a60ba7e12bdb2e01edf5228e9f5269a37` و divergence برابر **۲ commit عقب / ۱۲۹ commit جلو** (`origin/main...HEAD`) است. ref branch push شده، اما وضعیت PR/merge با ابزار authenticated در این محیط قابل اثبات نیست؛ بنابراین merge را اعلام نمی‌کنم.
 
 تصمیم‌های باز STEP ۱۳ فقط cleanup اختیاری جدول بالا و تفکیک احتمالی equipment status است. هیچ‌کدام مجوز حذف/پنهان‌سازی یا تغییر policy قیمت، موجودی، مالی، approval یا workflow نیستند. STEP ۱۴ شروع نشده است.
