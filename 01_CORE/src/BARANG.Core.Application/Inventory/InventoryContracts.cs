@@ -34,7 +34,7 @@ public sealed record IssueOrderInventoryResult(Guid OrderId,Guid WarehouseId,str
 public sealed record AdjustOrderInventoryResult(Guid OrderId,long OrderVersion,IReadOnlyList<ReservationView> Reservations);
 public sealed record WarehouseResponsibilityView(Guid Id,Guid WarehouseId,Guid ApplicationUserId,string UserName,string DisplayName,bool IsActive,long Version);
 public sealed record CreateWarehouseResponsibilityCommand(Guid WarehouseId,Guid ApplicationUserId);
-public sealed record StockShortageView(Guid Id,Guid OrderItemId,Guid WarehouseId,Guid ProductVariantId,decimal RequiredQuantity,decimal AvailableQuantity,decimal ShortageQuantity,bool IsActive,DateTimeOffset CreatedAtUtc,long Version);
+public sealed record StockShortageView(Guid Id,Guid OrderItemId,Guid WarehouseId,Guid ProductVariantId,decimal RequiredQuantity,decimal AvailableQuantity,decimal ShortageQuantity,bool IsActive,DateTimeOffset CreatedAtUtc,long Version,ShortageProposalStatus ProposalStatus,Guid? PurchaseRequestId,DateTimeOffset? LastRecheckedAtUtc);
 public sealed record TransferView(Guid Id,Guid SourceWarehouseId,Guid DestinationWarehouseId,Guid ProductVariantId,decimal Quantity,StockTransferStatus Status,long Version);
 public sealed record PurchaseRequestView(Guid Id,Guid WarehouseId,string Reason,PurchaseRequestStatus Status,long Version);
 public sealed record PurchaseRequestListView(Guid Id,string RequestNumber,Guid WarehouseId,string WarehouseName,string Reason,int LineCount,PurchaseRequestStatus Status,DateTimeOffset CreatedAtUtc,long Version);

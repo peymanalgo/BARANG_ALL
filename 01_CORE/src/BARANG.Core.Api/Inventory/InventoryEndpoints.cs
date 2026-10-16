@@ -4,6 +4,7 @@ using BARANG.Core.Domain.Common;
 using BARANG.Core.Domain.Inventory;
 using BARANG.Core.Domain.Security;
 using BARANG.Core.Application.Organization;
+using BARANG.Core.Infrastructure.Inventory;
 
 namespace BARANG.Core.Api.Inventory;
 public sealed record ReserveOrderInventoryRequest(Guid WarehouseId,string IdempotencyKey,DateTimeOffset? ExpiresAtUtc=null);
@@ -40,6 +41,7 @@ public static class InventoryEndpoints
   purchasing.MapGet("/requests",async(IPurchasingAdministration s,CancellationToken ct)=>Map(await s.ListRequestsAsync(ct))).RequireAuthorization(SecurityPermissions.PurchasingRead);
   purchasing.MapGet("/requests/{id:guid}",async(Guid id,IPurchasingAdministration s,CancellationToken ct)=>Map(await s.GetRequestAsync(id,ct))).RequireAuthorization(SecurityPermissions.PurchasingRead);
   purchasing.MapPost("/requests",async(CreatePurchaseRequestCommand c,IPurchasingAdministration s,CancellationToken ct)=>Map(await s.CreateRequestAsync(c,ct),true)).RequireAuthorization(SecurityPermissions.PurchasingManage);
+  purchasing.MapPost("/shortages/{shortageId:guid}/convert",async(Guid shortageId,InventoryAdministration s,CancellationToken ct)=>Map(await s.ConvertShortageToRequestAsync(shortageId,ct),true)).RequireAuthorization(SecurityPermissions.PurchasingManage);
   purchasing.MapPost("/requests/{id:guid}/submit",async(Guid id,long version,IPurchasingAdministration s,CancellationToken ct)=>Map(await s.SubmitRequestAsync(id,version,ct))).RequireAuthorization(SecurityPermissions.PurchasingManage);
   purchasing.MapGet("/orders",async(IPurchasingAdministration s,CancellationToken ct)=>Map(await s.ListOrdersAsync(ct))).RequireAuthorization(SecurityPermissions.PurchasingRead);
   purchasing.MapPost("/orders",async(CreatePurchaseOrderCommand c,IPurchasingAdministration s,CancellationToken ct)=>Map(await s.CreateOrderAsync(c,ct),true)).RequireAuthorization(SecurityPermissions.PurchasingManage);

@@ -147,3 +147,7 @@ stacking تخفیف، معافیت خارج از TaxStatusCode، تبدیل ار
 # الحاقیهٔ اجرای STEP 5
 
 مسیر اجرای Workflow/Cartable باید به `InventoryAdministration` canonical متکی باشد: عملیات و transition در یک transaction، با idempotency و lockهای موجود. قبل از transition، gate authoritative پوشش کامل itemها و انطباق CompanyId/WarehouseId/ProductVariantId/OrderItemId/UOM/quantity را بررسی می‌کند. مسیرهای legacy و generic نیز حق completion بدون evidence را ندارند. تست ایزولهٔ گام پنجم graph واقعی reservation→issue، rollback issue ناقص، ledger/on-hand/reservation invariants و retry را پوشش می‌دهد. return usable فقط compensating movement است و damaged/unknown usable نمی‌شود؛ consumption/cancellation policyهای گام‌های قبل تغییر نمی‌کنند.
+
+# الحاقیهٔ اجرای STEP ۸
+
+shortage proposal باید بیرون از rollback رزرو durable باشد و با `SourceShortageId`، exact `OrderItemId`، warehouse، variant، UOM و required/available/missing ثبت شود. تبدیل proposal به PR صریح، مجاز، transaction-safe و idempotent است؛ PO خودکار ممنوع است. receipt جزئی فقط quantity واقعی را به ledger/balance وارد می‌کند و recheck را بر اساس موجودی فعلی منتشر می‌کند، بدون auto-reserve یا task completion. قبل از نهایی‌کردن این مرحله، actor/threshold/routing approval PR/PO و browser matrix باید مستند و verify شوند.

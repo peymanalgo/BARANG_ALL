@@ -4698,6 +4698,10 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CompanyId", "SourceShortageId")
+                        .IsUnique()
+                        .HasFilter("source_shortage_id IS NOT NULL");
+
                     b.HasIndex("CompanyId", "WarehouseId");
 
                     b.ToTable("purchase_requests", "barang");
@@ -4959,6 +4963,10 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<DateTimeOffset?>("LastRecheckedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_rechecked_at_utc");
+
                     b.Property<Guid>("OrderItemId")
                         .HasColumnType("uuid")
                         .HasColumnName("order_item_id");
@@ -4966,6 +4974,16 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("ProductVariantId")
                         .HasColumnType("uuid")
                         .HasColumnName("product_variant_id");
+
+                    b.Property<string>("ProposalStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("proposal_status");
+
+                    b.Property<Guid?>("PurchaseRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("purchase_request_id");
 
                     b.Property<decimal>("RequiredQuantity")
                         .HasPrecision(18, 4)
@@ -4987,6 +5005,10 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnName("warehouse_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "PurchaseRequestId")
+                        .IsUnique()
+                        .HasFilter("purchase_request_id IS NOT NULL");
 
                     b.HasIndex("CompanyId", "OrderItemId", "WarehouseId")
                         .IsUnique()

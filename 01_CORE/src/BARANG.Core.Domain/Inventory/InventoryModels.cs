@@ -8,6 +8,7 @@ public enum ReservationStatus{Active,PartiallyReleased,Released,Consumed,Expired
 public enum StockTransferStatus{InTransit,Completed,Cancelled}
 public enum PurchaseRequestStatus{Draft,Submitted,Closed,Cancelled}
 public enum PurchaseOrderStatus{Draft,Submitted,PartiallyReceived,Received,Closed,Cancelled}
+public enum ShortageProposalStatus{Open,Converted,Resolved}
 
 public static class InventoryErrors
 {
@@ -38,7 +39,7 @@ public sealed class StockTransfer
 }
 public sealed class StockShortage
 {
- private StockShortage(){}public Guid Id{get;private set;}public Guid CompanyId{get;private set;}public Guid OrderItemId{get;private set;}public Guid WarehouseId{get;private set;}public Guid ProductVariantId{get;private set;}public decimal RequiredQuantity{get;private set;}public decimal AvailableQuantity{get;private set;}public decimal ShortageQuantity{get;private set;}public bool IsActive{get;private set;}public DateTimeOffset CreatedAtUtc{get;private set;}public long Version{get;private set;}public static StockShortage Create(Guid company,Guid item,Guid warehouse,Guid variant,decimal required,decimal available,DateTimeOffset now)=>new(){Id=Guid.NewGuid(),CompanyId=company,OrderItemId=item,WarehouseId=warehouse,ProductVariantId=variant,RequiredQuantity=required,AvailableQuantity=available,ShortageQuantity=Math.Max(0,required-available),IsActive=true,CreatedAtUtc=now,Version=1};public void Close(){IsActive=false;Version++;}
+ private StockShortage(){}public Guid Id{get;private set;}public Guid CompanyId{get;private set;}public Guid OrderItemId{get;private set;}public Guid WarehouseId{get;private set;}public Guid ProductVariantId{get;private set;}public decimal RequiredQuantity{get;private set;}public decimal AvailableQuantity{get;private set;}public decimal ShortageQuantity{get;private set;}public bool IsActive{get;private set;}public ShortageProposalStatus ProposalStatus{get;private set;}public Guid? PurchaseRequestId{get;private set;}public DateTimeOffset? LastRecheckedAtUtc{get;private set;}public DateTimeOffset CreatedAtUtc{get;private set;}public long Version{get;private set;}public static StockShortage Create(Guid company,Guid item,Guid warehouse,Guid variant,decimal required,decimal available,DateTimeOffset now)=>new(){Id=Guid.NewGuid(),CompanyId=company,OrderItemId=item,WarehouseId=warehouse,ProductVariantId=variant,RequiredQuantity=required,AvailableQuantity=available,ShortageQuantity=Math.Max(0,required-available),IsActive=true,ProposalStatus=ShortageProposalStatus.Open,CreatedAtUtc=now,Version=1};public Result MarkConverted(Guid purchaseRequestId){if(purchaseRequestId==Guid.Empty||!IsActive||ProposalStatus!=ShortageProposalStatus.Open)return Result.Failure(InventoryErrors.InvalidTransition);PurchaseRequestId=purchaseRequestId;ProposalStatus=ShortageProposalStatus.Converted;Version++;return Result.Success();}public void Refresh(decimal available,DateTimeOffset now){AvailableQuantity=available;ShortageQuantity=Math.Max(0,RequiredQuantity-available);LastRecheckedAtUtc=now;if(ShortageQuantity<=0){IsActive=false;ProposalStatus=ShortageProposalStatus.Resolved;}Version++;}public void Close(){IsActive=false;ProposalStatus=ShortageProposalStatus.Resolved;Version++;}
 }
 public sealed class PurchaseRequest
 {
