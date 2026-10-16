@@ -90,8 +90,12 @@ public sealed class Step8PurchasingProposalE2ETests(PostgreSqlDatabaseFixture da
         {
             using IDisposable scope = database.CompanyContext.BeginScope(company);
             OutboxMessage eventRow = await evidence.OutboxMessages.IgnoreQueryFilters().SingleAsync(x => x.EventType == "notification.requested" && x.CompanyId == company && x.CorrelationId!.StartsWith("inventory.shortage.recheck_ready:"), TestContext.Current.CancellationToken);
+            Guid recipient = await evidence.ApplicationUsers.IgnoreQueryFilters().Where(x => x.Username == "STEP8-ADMIN").Select(x => x.Id).SingleAsync(TestContext.Current.CancellationToken);
+            Assert.Contains(recipient.ToString(), eventRow.Payload, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("inventory.shortage.recheck_ready", eventRow.Payload, StringComparison.Ordinal);
             Assert.Contains(purchaseOrderId.ToString(), eventRow.Payload, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(variant.Id.ToString(), eventRow.Payload, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(warehouseId.ToString(), eventRow.Payload, StringComparison.OrdinalIgnoreCase);
         }
     }
 

@@ -209,3 +209,7 @@ recipient resolution broadcast نیست: membership فعال همان شرکت،
 ### نتیجهٔ STEP 12
 
 با assertionهای persistence برای producerهای فاقد evidence مستقل، full regression جاری و rollout pair هماهنگ، STEP 12 از نظر source/test/development delivery **PASS** است. Outbox فقط eventهای committed را dispatch می‌کند، recipient dedup و bounded retry/dead-letter برقرار است، و notification/read هیچ business operation را approve یا complete نمی‌کند. تنها gap عملیاتی باقی‌مانده، runner dotnet browser در این محیط است؛ failure آن دقیقاً infrastructure-level ثبت شده و evidence browser پذیرفته‌شدهٔ قبلی را invalid نمی‌کند. سیاست recipient shortage/recheck همچنان permission-based (`inventory.manage`) است؛ warehouse-responsibility-specific notification policy تصویب نشده و عمداً تغییر نکرده است. STEP 13 شروع نشده است.
+
+### rerun نهایی پس از تقویت assertion Inventory
+
+پس از اضافه‌کردن assertion صریح recipient، template، PO، variant و warehouse برای `inventory.shortage.recheck_ready` در `Step8PurchasingProposalE2ETests`، targeted Purchasing **1/1 PASS** و full current Integration دوباره **135/135 PASS** شد؛ زمان `3m48s` و TRX نهایی `tests/BARANG.Core.IntegrationTests/TestResults/step12-integration-final.trx`. این تغییر فقط test evidence است؛ image pair توسعه همان application commit `4b6105072f92df02fecec0bdacd0ae5395565b25` باقی ماند و نیازی به redeploy application نداشت.
