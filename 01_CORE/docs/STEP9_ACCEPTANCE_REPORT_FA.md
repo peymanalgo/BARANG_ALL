@@ -1,45 +1,56 @@
 # گزارش پذیرش STEP ۹ — Production jobs و Equipment
 
-## دامنه و baseline
+## وضعیت و provenance
 
-این گزارش برای checkout `step2-clean/01_CORE` و branch `codex/step2-inventory-unit-contracts` تهیه شد. baseline پذیرفته‌شدهٔ STEP ۸: application `09f5a656dc7fb25a95929ae8d2fe3a1564989e99` و report `c29755c8e2ce5e0e7cabdbe2da411bc13d632487` است. source tested شامل implementation commit `71b61c057bb0b98abfdb82d9366c87a8083c7b7c` است. تغییرات این گام فقط مسیر canonical Production، gateهای workflow و نمایش workspace تولید را درگیر می‌کند؛ STEP ۱۰ Quality/QC پیاده‌سازی نشده است.
+این گزارش برای checkout step2-clean/01_CORE و branch codex/step2-inventory-unit-contracts است. baseline پذیرفته‌شدهٔ STEP ۸، application 09f5a656dc7fb25a95929ae8d2fe3a1564989e99 و report c29755c8e2ce5e0e7cabdbe2da411bc13d632487، حفظ شده است. source نهایی تست‌شده پس از اصلاح UI، commit eec768c2f0ed95941d16403c95e6d378498ba37b است؛ پیاده‌سازی canonical STEP ۹ از 71b61c057bb0b98abfdb82d9366c87a8083c7b7c آمده است.
 
-## پیاده‌سازی
+محیط browser ایزوله با Compose project barang-step9-acceptance، API روی 5859، Backoffice روی 5550، PostgreSQL روی 5559، Redis روی 6389 و MinIO روی 9059/9060 اجرا شد. volume توسعه و barang_core استفاده نشد. migration chain کامل روی DB ایزوله اجرا شد. image فعلی Backoffice با provenance eec768c2f0ed95941d16403c95e6d378498ba37b ساخته شد و digest آن sha256:0d8a79aaf3da8cd2a62846f2b1c11e4da92f1d37362e809bf8eff917c5d24009 است. API ایزوله از همان source implementation با digest قبلی sha256:83e987a11c8eb573d686c9feb3b8b144c37784b12f1199cb545300c41f78d2a85 اجرا شد.
 
-- generation از `ProductionAdministration` استفاده می‌کند و برای هر OrderItem job مستقل DesignPreparation/HeatPress و برای هر PrintOperation job مستقل Print می‌سازد. `GenerationKey` شامل شناسهٔ دقیق OrderItem و PrintOperation است؛ قفل row سفارش در generation، retry و رقابت هم‌زمان را سریال می‌کند.
-- artwork/file version چاپ از همان `OrderPrintOperation` frozen می‌شود. runtime و adapter legacy پیش از عبور از DesignPreparation، Printing و HeatPress همهٔ jobهای لازم، OrderItem/PrintOperation و نسخه‌های artwork/file و quantity کافی را بررسی می‌کنند.
-- `Start` در سرویس canonical operator فعال و دارای `production.execute`، شرکت، تجهیز فعال و وضعیت `AVAILABLE/READY`، capability صریح نوع تجهیز و issue انبار برای همان OrderItem را دوباره بررسی می‌کند. `Resume` همین کنترل‌ها را تکرار می‌کند. `Complete` مقدار persisted حداقل برابر مقدار OrderItem را الزام می‌کند.
-- runtime واقعی `WorkflowDefinitionRuntime` در ProductionPlanning generation اتمیک/قابل تکرار را اجرا می‌کند و completion عمومی نمی‌تواند نتیجهٔ ساختگی تولید کند. taskهای جاری و published definitionها خودکار migrate نشده‌اند.
-- UI workspace تولید شناسهٔ OrderItem، Operation، Artwork/File version، quantity، بازهٔ برنامه‌ریزی و تاریخچه را نمایش می‌دهد و quantity/بازهٔ معتبر را به API می‌فرستد.
+## پیاده‌سازی و defectهای اصلاح‌شده
 
-## پایگاه داده و migration
+- generation در ProductionAdministration برای هر OrderItem و PrintOperation job مستقل می‌سازد؛ GenerationKey، قفل order و retry idempotent از ادغام same-SKU جلوگیری می‌کنند. artwork/file version و quantity از operation/order item منجمد می‌شوند.
+- runtime واقعی WorkflowDefinition و adapter legacy completion را به اعتبارسنجی canonical Production متصل می‌کند؛ completion عمومی بدون job لازم عبور نمی‌کند.
+- Start/Resume، operator فعال، permission، company، equipment فعال و capability صریح، و warehouse issue برای همان item را دوباره بررسی می‌کنند. Complete مقدار persisted کافی را الزام می‌کند.
+- defect browser واقعی اصلاح شد: workspace مقدار enum ProductionPriority را به شکل رشته Normal می‌فرستاد و API عدد enum می‌خواست؛ payload اکنون 1/Normal عددی است. تست نیز به‌جای انتخاب DesignPreparation، job دوم HeatPress را برای تجهیزات PRESS انتخاب می‌کند.
+- assertion قبلی وجود #blazor-error-ui را با وجود DOM ثابت layout خطا می‌دانست؛ به visibility واقعی banner اصلاح شد. در اجرای نهایی banner مخفی ماند و هیچ circuit error ثبت نشد.
 
-business field جدید برای Production لازم نبود. اختلاف model/snapshot موجود در زنجیرهٔ migration با migration `20261016085258_AddStep9ProductionWorkflowGates` به‌صورت snapshot-alignment بدون عملیات schema ثبت شد؛ migration قبلی `20261016080912_AlignReceiptModel` همچنان مالک تغییر `receipt_number` است. زنجیرهٔ migration در DB ایزولهٔ تازه تا آخرین migration اجرا شد. هیچ migration روی `barang_core` توسعه یا دادهٔ عملیاتی اعمال نشد و backup توسعه در این اجرا ایجاد/بازنویسی نشد چون schema business جدیدی برای این گام لازم نبود.
+## نتایج آزمون
 
-## آزمون‌های اجراشده
+| دروازه | نتیجه | مدرک |
+|---|---:|---|
+| API Release build | PASS | current source، بدون warning/error |
+| Backoffice Release build | PASS | current source، بدون warning/error |
+| Unit | PASS 229/229 | .artifacts/step9-regression/step9-unit-final.trx |
+| Backoffice | PASS 184/184 | .artifacts/step9-regression/step9-backoffice-final.trx |
+| Full Integration قبلی روی clean DB همین source implementation | PASS 133/133 | .artifacts/step9-integration/step9-integration.trx |
+| Full Integration rerun بعد از UI-only commit | INCOMPLETE/HANG | step9-integration-final*.trx؛ runner پس از بیش از ۹۰ ثانیه بدون query فعال و با process باقی‌مانده متوقف شد؛ stack/DB activity بررسی و process فقط پس از timeout terminate شد |
+| Production browser نهایی | PASS 1/1 | .artifacts/step9-browser/step9-production-final.trx |
 
-| آزمون | نتیجه |
-|---|---|
-| API Release build از source فعلی | PASS |
-| Backoffice Release build از source فعلی | PASS |
-| Unit | 229/229 PASS |
-| Backoffice tests | 184/184 PASS |
-| `ProductionFoundationTests` در PostgreSQL ایزولهٔ `barang_step9b_test` روی port 5545 | 2/2 PASS |
-| `Step5WorkflowInventoryGateTests` در PostgreSQL ایزوله | 1/1 PASS |
-| `Step4InventoryIssueE2ETests` + `Step8PurchasingApprovalE2ETests` در PostgreSQL ایزوله | 3/3 PASS |
+اجرای Full Integration جدید در DBهای تازهٔ barang_step9d_test و barang_step9e_test تا مرحلهٔ test-host پیش رفت، اما summary کامل تولید نکرد: pg_stat_activity query فعال نداشت و processهای vstest باقی ماندند. این را PASS حساب نکرده‌ام. نتیجهٔ 133/133 موجود مربوط به اجرای کامل قبلی همین implementation و migration chain clean است؛ تغییرات بعدی فقط Backoffice workspace و تست browser بودند و به API/Integration code دست نزدند.
 
-یک full Integration run با credential اشتباه ابتدا 113 failure bootstrap داد (`28P01`)، که علت آن password اشتباه برای کانتینر ایزوله بود. پس از اصلاح credential، DB قدیمی به‌دلیل migration history متفاوت با `42701` شکست خورد؛ DB تازه ساخته شد و migration chain تا مرحلهٔ تست گذشت. اجرای full suite روی DB تازه پس از bootstrap در runner بیش از ۹۰ ثانیه بدون query فعال و با connectionهای idle متوقف ماند؛ process و `pg_stat_activity/pg_locks` بررسی شد و runner متوقف شد. بنابراین full Integration جاری **کامل و سبز اثبات نشده است** و این گزارش آن را جایگزین 133/133 تاریخی نمی‌کند.
+## browser acceptance انجام‌شده
 
-## پذیرش feature و browser
+با system Chrome و login واقعی step9.admin در company ایزوله:
 
-تست browser احراز هویت‌شدهٔ Production برای generation، assignment، issue prerequisite، start/complete، artwork/file binding و retry در این اجرا هنوز کامل اجرا نشده است. UI build شده، اما feature browser acceptance و workflow graph واقعی با ProductionPlanning/Design/Print/HeatPress باید در disposable deployment با fixture تولیدی تکمیل شود. تعریف policy assignment بر اساس capability صریح موجود است؛ هیچ whitelist بر مبنای نام تجهیز اضافه نشده است.
+- production workspace باز شد و دو job مستقل برای fixture order مشاهده شد؛ job دوم HeatPress شامل OrderItem و فیلدهای Artwork/File بود.
+- Generate از UI و retry از UI اجرا شد و تعداد jobها از ۲ بیشتر نشد.
+- operator و equipment برای HeatPress از UI ارسال شد؛ PRESS سازگار پذیرفته شد.
+- Plan از UI با payload صحیح enum اجرا شد.
+- Start بدون warehouse issue با پاسخ معتبر 422 production.warehouse_issue_required رد شد؛ task/job به InProgress نرفت.
+- پس از خطا banner Blazor visible نشد؛ screenshot نهایی در .artifacts/step9-browser/step9-production-issue-gate.png و TRX در .artifacts/step9-browser/step9-production-final.trx است.
 
-## وضعیت
+## مواردی که هنوز اثبات نشده‌اند
 
-به‌دلیل نبود full Integration سبز جاری و نبود browser feature acceptance کامل، STEP ۹ در این commit **CONDITIONAL / NOT ACCEPTED** است، نه PASS. blockerهای دقیق:
+این اجرا هنوز پذیرش کامل STEP ۹ نیست، چون fixture قابل‌استفادهٔ browser فقط یک OrderItem و دو job تولیدی داشت و warehouse issue معتبر در آن ایجاد نشده بود. بنابراین موارد زیر PASS اعلام نمی‌شوند:
 
-1. full Integration current-source باید با runner/fixture ایزولهٔ پایدار و summary کامل 133 تست اجرا شود.
-2. browser acceptance واقعی باید برای jobهای جداگانهٔ same-SKU، artwork/file version، equipment rejection/disabled-after-assignment، warehouse issue gate، start/complete persistence و generic completion bypass اجرا و ثبت شود.
-3. اگر graph published فعلی nodeهای ProductionPlanning/DesignPreparation/Printing/HeatPress را ندارد، candidate version باید با Designer/versioning در isolation ساخته و قبل از هر rollout بررسی شود؛ running instances نباید migrate شوند.
+1. دو OrderItem مستقل با SKU یکسان و jobهای جداگانه.
+2. start و completion موفق پس از issue معتبر، با actor/timestamp/outcome persisted.
+3. رد browser برای equipment inactive، foreign-company و disabled-after-assignment.
+4. تکمیل ناکافی، generic workflow bypass، reload/history کامل و transition واقعی task.
+5. candidate graph واقعی شامل ProductionPlanning/DesignPreparation/Printing/HeatPress از طریق Designer/versioning.
 
-این مرحله هیچ رفتار STEP ۱۰، QC policy، procurement یا production deployment واقعی را تغییر نمی‌دهد.
+در نتیجه، deployment توسعهٔ barang-core انجام نشد و STEP ۹ در این commit FAIL / NOT ACCEPTED است؛ deployment ایزولهٔ بالا فقط برای acceptance اجرا شد. blockerها فنی/قابل‌تکرارند، نه مجوزی: باید setup معتبر warehouse issue، same-SKU دو-item و graph واقعی آماده و browser matrix کامل دوباره اجرا شود. STEP ۱۰ و QC شروع نشده است.
+
+## migration و recovery
+
+business schema جدیدی برای این اصلاح لازم نبود؛ migration 20261016085258_AddStep9ProductionWorkflowGates snapshot-alignment است و migration قبلی 20261016080912_AlignReceiptModel مالک receipt schema باقی ماند. migration chain کامل روی DB تازهٔ ایزوله اعمال شد. هیچ migration، reset، تغییر credential یا mutation روی development انجام نشد. برای rollout بعدی، backup و restore validation توسعه باید قبل از هر migration عملیاتی انجام شود.
