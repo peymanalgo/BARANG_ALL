@@ -2,9 +2,9 @@
 
 ## وضعیت و provenance
 
-این گزارش برای checkout step2-clean/01_CORE و branch codex/step2-inventory-unit-contracts است. baseline پذیرفته‌شدهٔ STEP ۸، application 09f5a656dc7fb25a95929ae8d2fe3a1564989e99 و report c29755c8e2ce5e0e7cabdbe2da411bc13d632487، حفظ شده است. source نهایی تست‌شده و image pair ایزوله، commit `e4463181d006a66b277221a7e7c3ae5768ee65d7` است؛ پیاده‌سازی canonical STEP ۹ از 71b61c057bb0b98abfdb82d9366c87a8083c7b7c آمده است.
+این گزارش برای checkout step2-clean/01_CORE و branch codex/step2-inventory-unit-contracts است. baseline پذیرفته‌شدهٔ STEP ۸، application 09f5a656dc7fb25a95929ae8d2fe3a1564989e99 و report c29755c8e2ce5e0e7cabdbe2da411bc13d632487، حفظ شده است. source فعلی تست‌شده commit `31153344a3be65f89d295b7aa7b3b286a074acbc` است؛ این commit قرارداد canonical تجهیزات را در API و Backoffice هم‌تراز می‌کند و تغییر lifecycle جست‌وجو را نیز شامل می‌شود.
 
-محیط browser ایزوله با Compose project `barang-step9b-acceptance`، API روی 5869، Backoffice روی 5560، PostgreSQL روی 5569، Redis روی 6399 و MinIO روی 9069/9070 اجرا شد. volume توسعه و `barang_core` استفاده نشد. migration chain کامل روی DB `barang_step9b_test` اجرا شد. candidate واقعی BARANG.ORDER از طریق APIهای پشتیبانی‌شدهٔ Designer import/save/validate/publish شد؛ نتیجه نسخهٔ ۴ در همین محیط ایزوله است و instanceهای قبلی دست‌کاری نشدند. image manifestهای نهایی API و Backoffice به‌ترتیب `sha256:19e0fd9cc74b49fbdb62d557cbaf392d68dda4a4a3efaada1d8b7f8aaa3cabe0` و `sha256:8dcea62e2fbef80e0a6855e17c401307ecac5507a0c9167f017c45e3afb94bc2` هستند؛ هر دو کانتینر `BARANG_BUILD_COMMIT=e4463181d006a66b277221a7e7c3ae5768ee65d7` را گزارش می‌کنند.
+محیط browser ایزوله با Compose project `barang-step9b-acceptance`، API روی 5869، Backoffice روی 5560، PostgreSQL روی 5569، Redis روی 6399 و MinIO روی 9069/9070 اجرا شد. volume توسعه و `barang_core` استفاده نشد. migration chain کامل روی DB `barang_step9b_test` اجرا شد. candidate واقعی BARANG.ORDER از طریق APIهای پشتیبانی‌شدهٔ Designer import/save/validate/publish شد؛ نتیجه نسخهٔ ۴ در همین محیط ایزوله است و instanceهای قبلی دست‌کاری نشدند. image manifestهای نهایی پس از اصلاح API `sha256:cedf3019d50f9406a38bec1f09269b0a62a9a78faf2b57614143dc8866f4c632` و Backoffice `sha256:d08b9278bca628f69a0971b61ccde7f975d2997eaba2cd8ad20195787a2ff00a` هستند؛ هر دو کانتینر `BARANG_BUILD_COMMIT=31153344a3be65f89d295b7aa7b3b286a074acbc` را گزارش می‌کنند.
 
 ## پیاده‌سازی و defectهای اصلاح‌شده
 
@@ -22,16 +22,18 @@
 | Backoffice Release build | PASS | current source، بدون warning/error |
 | Unit | PASS 229/229 | .artifacts/step9-regression/step9-unit-final.trx |
 | Backoffice | PASS 184/184 | .artifacts/step9-regression/step9-backoffice-final.trx |
-| Full Integration فعلی پس از اصلاح RLS endpoint | PASS 133/133 | `.artifacts/step9-integration-postfix/step9-integration-postfix.trx`؛ زمان 3:42 با `--blame-hang-timeout 5m` |
-| Integration diagnostics | PASS / complete | `.artifacts/step9-integration-postfix.log` و host/datacollector logs؛ stall قبلی ناشی از cutoff سکوت ۹۰ثانیه‌ای بود، نه lock یا deadlock |
-| Production browser موفقیت واقعی | PASS 1/1 | `.artifacts/step9-browser/step9-production-issue-gate.png`؛ Generate retry، assignment، Plan، Start، Complete و reload از UI |
+| Full Integration فعلی پس از اصلاح تجهیزات | PASS 133/133 | `.artifacts/step9-equipment-full/step9-equipment-full.trx`؛ زمان 3:43 با `--blame-hang-timeout 5m` |
+| Integration diagnostics | PASS / complete | `.artifacts/step9-equipment-full/step9-equipment-full.trx` و blame/host logs؛ stall قبلی ناشی از cutoff سکوت ۹۰ثانیه‌ای بود، نه lock یا deadlock |
+| Production browser موفقیت واقعی | PASS 1/1 | `.artifacts/step9-equipment-browser/step9-production-issue-gate.png`؛ fixture تازه از `tests/Acceptance/Step9ProductionFixture.ps1` و Generate retry، assignment، Plan، Start، Complete و reload از UI |
+| Equipment browser CRUD/status/localization | PASS 4/4 | `EquipmentLocalizationE2ETests`؛ fa/ar RTL، en LTR، create/edit/deactivate، canonical option lookup و reload |
+| Equipment API↔Backoffice contract | PASS | `CatalogFoundationTests.AuthenticatedCatalogFlowPersistsRelationshipsAuditAndConcurrency`؛ list/detail/create/update/activation/options، full Equipment fields و optimistic concurrency |
 | API negative gates | PASS | `warehouse_issue_required`، `incompatible_equipment` و `equipment_unavailable` با status 422 در fixture ایزوله |
 
 اجرای مقایسه‌ای قبلی در DBهای تازهٔ barang_step9d_test و barang_step9e_test تا مرحلهٔ test-host پیش رفت، اما summary کامل تولید نکرد: pg_stat_activity query فعال نداشت و processهای vstest باقی ماندند. آن اجرا PASS محسوب نشده است. اجرای نهایی با setup clean PostgreSQL، role initialization پشتیبانی‌شده، `-m:1`، logger کنسول/TRX، diag و `--blame-hang-timeout 5m` کامل شد و نتیجهٔ 133/133 را برای source فعلی ثبت کرد؛ cutoff سکوت ۹۰ثانیه‌ای علت توقف گزارش قبلی بود، نه lock یا deadlock.
 
 ## browser acceptance انجام‌شده
 
-با system Chrome و login واقعی `step9b.admin` در company ایزوله و fixture ساخته‌شده از APIهای پشتیبانی‌شده:
+با system Chrome و login واقعی `step9b.admin` در company ایزوله و fixture تازه ساخته‌شده از APIهای پشتیبانی‌شده:
 
 - دو OrderItem مستقل با یک ProductVariant/SKU ساخته شد؛ برای هرکدام DesignPreparation، Print و HeatPress جداگانه (۶ job) ایجاد شد. jobهای Print هر دو به `ArtworkVersionId=5dc25e80-62d9-4144-9663-4f7d076e3160` و `FileVersionId=681336b6-d7de-4a24-bf07-6bedcb5f2dc5` bind شدند.
 - Generate از UI و retry از UI اجرا شد؛ تعداد jobهای هر OrderItem از ۳ بیشتر نشد و generation keyها duplicate نساختند.
@@ -42,6 +44,8 @@
 - Start بدون warehouse issue در order جداگانه با `422 production.warehouse_issue_required` رد شد؛ job به InProgress نرفت.
 - equipment `CUTTER` برای HeatPress با `422 production.incompatible_equipment` رد شد و تجهیز پس از assignment با deactivation، Start را با `422 production.equipment_unavailable` رد کرد.
 - پس از عملیات banner Blazor visible نشد؛ screenshot در `.artifacts/step9-browser/step9-production-issue-gate.png` و TRX focused در خروجی runner ثبت شد.
+- صفحهٔ Equipment Management دیگر به `company-equipment` وابسته نیست: list و search از `GET /api/v1/equipment/`، detail از `GET /api/v1/equipment/{id}`، create/update از `POST/PUT /api/v1/equipment/`، status از `POST /api/v1/equipment/{id}/activation` و lookup از `GET /api/v1/equipment/options` استفاده می‌کند. API پاسخ canonical را بدون wrapper `equipment` برمی‌گرداند و تمام فیلدهای مدل Equipment در DTO/request حفظ شده‌اند.
+- در مرورگر، lookupهای `equipment.type/status` با API مدیریت lookup در محیط ایزوله ایجاد/تأیید شدند؛ create، edit، status filter و reload واقعی با شناسه‌های تازه موفق شد. اصلاح lifecycle باعث شد پس از جست‌وجو spinner روی حالت loading نماند.
 
 ## مواردی که هنوز اثبات نشده‌اند
 
@@ -55,15 +59,20 @@ business schema جدیدی برای این اصلاح لازم نبود؛ migrat
 
 ## تحویل local development
 
-پس از backup مالک دیتابیس در `artifacts/barang_core_step9_delivery_20261016.dump`، migrationهای pending از مسیر رسمی EF CLI و با role مهاجرت privileged اجرا شدند. migration history توسعه اکنون به `20261016085258_AddStep9ProductionWorkflowGates` رسیده است؛ runtime همچنان با role کم‌اختیار `barang_app` اجرا می‌شود. volumeهای PostgreSQL، MinIO، Redis و کلیدهای Data Protection، داده‌های business و credentialهای administrator حفظ شدند.
+پس از backup مالک دیتابیس در `artifacts/barang_core_step9_delivery_20261016.dump`، migrationهای pending از مسیر رسمی EF CLI و با role مهاجرت privileged اجرا شدند. migration history توسعه اکنون به `20261016085258_AddStep9ProductionWorkflowGates` رسیده است؛ runtime همچنان با role کم‌اختیار `barang_app` اجرا می‌شود. این اصلاح equipment migration جدیدی ندارد؛ همهٔ ستون‌های موردنیاز در schema فعلی موجود بودند. volumeهای PostgreSQL، MinIO، Redis و کلیدهای Data Protection، داده‌های business و credentialهای administrator حفظ شدند.
 
-Compose project موجود `barang-core` با pair هم‌نسخهٔ source `e4463181d006a66b277221a7e7c3ae5768ee65d7` بازسازی شد:
+Compose project موجود `barang-core` پس از گذر regression gate با pair هم‌نسخهٔ source `31153344a3be65f89d295b7aa7b3b286a074acbc` بازسازی شد:
 
-- API image: `sha256:e96a25beb4b74603c69587012d134e929d8c436c1e3555d8dba4798e28837c5e`
-- Backoffice image: `sha256:06eb0e9fb0a7e06ee3470c660b8341320efba882088ab9f0079fa93e55f8e1dd`
-- هر دو کانتینر مقدار `BARANG_BUILD_COMMIT=e4463181d006a66b277221a7e7c3ae5768ee65d7` دارند.
+- API image: `sha256:607dd5d895c5456a229dca5fde2578ecf0a5e70b25d80654a7221003f3aa2de5`
+- Backoffice image: `sha256:8294cc7a3b28d4549fa2cced0fc9fd269e150f141b0e46ab26296e42992f7b8c`
 - API readiness روی `:8080` و login روی `http://localhost:5100` هر دو HTTP 200 هستند.
 
 Smoke احراز‌شدهٔ UI login، شرکت جاری و navigation پایه موفق شد. Production stages فعلی definition `BARANG.ORDER` همچنان به version فعال `17` متصل‌اند و nodeهای `WAREHOUSE` و `PRODUCTION` موجودند؛ هیچ graph یا instance توسعه‌ای import، publish یا migrate نشد. candidate version 4 فقط در محیط ایزوله باقی ماند و برای instanceهای جدید نیازمند تصمیم/rollout جداگانه است؛ instanceهای جاری روی version 17 می‌مانند.
 
-محدودیت کشف‌شده در smoke توسعه: صفحهٔ مدیریتی تجهیزات برای فهرست/جزئیات به `/api/v1/company-equipment` درخواست می‌فرستد، در حالی که API فعلی route canonical `/api/v1/equipment` و `/api/v1/equipment/options` دارد؛ بنابراین این درخواست در deployment فعلی 404 می‌شود. این ناسازگاری در این تحویل اصلاح نشده چون خارج از بستهٔ accepted STEP 9 است و اصلاح آن نیازمند تغییر مستقل Backoffice/API و regression جداگانه است. همچنین دیتابیس توسعه رکورد تجهیزات مناسب برای assertion جدولی نداشت؛ در نتیجه test localization وابسته به row با empty-state شکست خورد و به‌عنوان PASS ثبت نشده است. این مورد blocker صریح برای پذیرش کامل صفحهٔ مدیریت تجهیزات است، نه نشانهٔ شکست image provenance یا migration.
+ناسازگاری قبلی `company-equipment` یک defect واقعی و task-related بود و در commit `31153344...` اصلاح شد؛ دیگر blocker صفحهٔ Equipment Management نیست. برای historyهای خرابی/تعمیر/نگهداری/بازرسی، در source فعلی entity/service canonical و route متناظر وجود ندارد؛ این commit endpoint جعلی ایجاد نکرد و این تب‌ها خارج از CRUD/status/capability/options قرارداد فعلی باقی مانده‌اند. این موضوع یک تصمیم/بستهٔ مستقل برای گسترش canonical Equipment history است، نه مانع مسیر تولید STEP 9.
+
+## شواهد image و smoke پس از اصلاح
+
+در محیط ایزوله، هر دو سرویس پس از rebuild مقدار `BARANG_BUILD_COMMIT=31153344a3be65f89d295b7aa7b3b286a074acbc` را گزارش کردند. image manifestها: API `sha256:cedf3019d50f9406a38bec1f09269b0a62a9a78faf2b57614143dc8866f4c632` و Backoffice `sha256:d08b9278bca628f69a0971b61ccde7f975d2997eaba2cd8ad20195787a2ff00a`. health/login و مرورگر Equipment روی همین pair موفق شدند.
+
+در development rollout، هیچ graph/instance/workflow definitionی تغییر داده نشد. نسخهٔ فعال `BARANG.ORDER` همچنان 17 است و nodeهای `WAREHOUSE` و `PRODUCTION` را دارد؛ سرویس‌های canonical مرحله‌های STEP 3–5/9 در مسیرهای runtime اعمال می‌شوند، اما این گزارش publish شدن یک graph جدید یا مهاجرت instanceها را ادعا نمی‌کند. اگر rollout نسخهٔ candidate لازم باشد، برای instanceهای جدید باید جداگانه تصمیم و publish supported انجام شود؛ instanceهای جاری روی binding نسخهٔ 17 باقی می‌مانند.
