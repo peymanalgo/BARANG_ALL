@@ -1,6 +1,7 @@
 using BARANG.Core.Application.Finance;
 using BARANG.Core.Application.Production;
 using BARANG.Core.Application.Workflow;
+using BARANG.Core.Application.Quality;
 using BARANG.Core.Infrastructure.Inventory;
 using BARANG.Core.Domain.Common;
 using BARANG.Core.Domain.Finance;
@@ -13,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 namespace BARANG.Core.Infrastructure.Workflow;
 #pragma warning disable CA1725
 
-public sealed class WorkflowBusinessCompletionAdapter(CoreDbContext db, IFinanceAdministration finance, IProductionAdministration production, InventoryAdministration inventory, ITransactionExecutor tx) : IWorkflowBusinessCompletionAdapter
+public sealed class WorkflowBusinessCompletionAdapter(CoreDbContext db, IFinanceAdministration finance, IProductionAdministration production, InventoryAdministration inventory, IQualityAdministration quality, ITransactionExecutor tx) : IWorkflowBusinessCompletionAdapter
 {
     public async Task<Result> ExecuteAsync(WorkflowStage stage,Guid orderId,WorkflowTaskOutcome outcome,string? reason,CancellationToken ct)
     {
@@ -30,7 +31,7 @@ public sealed class WorkflowBusinessCompletionAdapter(CoreDbContext db, IFinance
         {
         Order? order=await db.Orders.AsNoTracking().SingleOrDefaultAsync(x=>x.Id==orderId,token);
         if(order is null||order.Status!=OrderStatus.Submitted)return Result.Failure(WorkflowErrors.BusinessRejected);
-        if(outcome==WorkflowTaskOutcome.Rejected)return Result.Success();
+        if(outcome==WorkflowTaskOutcome.Rejected&&stage!=WorkflowStage.QualityControl)return Result.Success();
         // Later-stage services own their transitions. Their persisted evidence is validated before orchestration advances.
         bool ready=stage switch
         {
@@ -39,7 +40,7 @@ public sealed class WorkflowBusinessCompletionAdapter(CoreDbContext db, IFinance
             WorkflowStage.InventoryReservation=>await inventory.HasCompleteReservationEvidenceAsync(orderId,token),
             WorkflowStage.Printing=>(await production.ValidateWorkflowCompletionAsync(orderId,Domain.Production.ProductionJobType.Print,token)).IsSuccess,
             WorkflowStage.HeatPress=>(await production.ValidateWorkflowCompletionAsync(orderId,Domain.Production.ProductionJobType.HeatPress,token)).IsSuccess,
-            WorkflowStage.QualityControl=>await db.QCInspections.AnyAsync(x=>x.OrderId==orderId&&x.Outcome==Domain.Quality.QCOutcome.Approved,token),
+            WorkflowStage.QualityControl=>(await quality.ValidateWorkflowCompletionAsync(orderId,outcome==WorkflowTaskOutcome.Approved?"Approve":"Reject",token)).IsSuccess,
             WorkflowStage.Packaging=>await db.Packages.AnyAsync(x=>x.OrderId==orderId&&x.Status!=Domain.Logistics.PackageStatus.Draft,token),
             WorkflowStage.Shipping=>await db.Shipments.AnyAsync(x=>x.OrderId==orderId&&x.Status!=Domain.Logistics.ShipmentStatus.Ready,token),
             WorkflowStage.Delivery=>await db.Shipments.AnyAsync(x=>x.OrderId==orderId&&x.Status==Domain.Logistics.ShipmentStatus.Delivered,token),

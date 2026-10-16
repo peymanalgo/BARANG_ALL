@@ -25,7 +25,7 @@ Migration غیرمخرب `20261016113647_AddQualityInspectionDispositions` جد�
 
 ## محیط و شواهد پذیرش
 
-محیط: Compose project `barang-step9b-acceptance`، PostgreSQL روی `127.0.0.1:5569`، API روی `5869`، Backoffice روی `5560`، DB `barang_step10_quality_test` و شرکت تست `c245b203-be93-443a-ab31-de49c1ba4d98`. این volume و identity مستقل از `barang-core` است. graph واقعی `BARANG.ORDER` از fixture sanitized وارد شد، با positionهای company-scoped نگاشت، validate و در isolation publish شد: candidate version `4`، شامل node `InventoryIssue` بین `DECIDE_WAREHOUSE` و `PRINT`.
+محیط: Compose project `barang-step9b-acceptance`، PostgreSQL روی `127.0.0.1:5569`، API روی `5869`، Backoffice روی `5560`، DB `barang_step10_quality_test` و شرکت تست فعلی `fb915a6a-f989-4992-a4eb-6b7b3cf4d8ca`. این volume و identity مستقل از `barang-core` است. graph واقعی `BARANG.ORDER` از fixture sanitized وارد شد، با positionهای company-scoped نگاشت، validate و در isolation publish شد: candidate version `4`، شامل node `InventoryIssue` بین `DECIDE_WAREHOUSE` و `PRINT`.
 
 fixture reproducible: `tests/Acceptance/Step10QualityFixture.ps1`؛ graph setup: `tests/Acceptance/Step4WorkflowSetup.ps1`؛ browser test: `tests/BARANG.Backoffice.E2ETests/Step10QualityAcceptanceE2ETests.cs`. fixture با APIهای پشتیبانی‌شده branch/warehouse/customer/product/variant/tariff/stock/order/دو OrderItem هم‌SKU/reservation/issue/production output/template را ساخت؛ هیچ SQL برای ایجاد دادهٔ کسب‌وکار استفاده نشد.
 
@@ -69,6 +69,31 @@ fixture reproducible: `tests/Acceptance/Step10QualityFixture.ps1`؛ graph setup:
 - `BARANG_BUILD_COMMIT` در هر دو container برابر source بالا ثبت شد.
 - `http://127.0.0.1:8080/health` و `http://127.0.0.1:5100/login` هر دو HTTP 200؛ این‌ها smoke/provenance هستند و جای پذیرش feature ایزوله را نمی‌گیرند.
 - graph توسعه و instanceهای موجود تغییر نکردند؛ graph candidate ایزوله version `4` است و برای rollout آن به instanceهای جدید، انتشار جداگانه از Designer لازم است. instanceهای جاری به version خودشان bind می‌مانند.
+
+## تکمیل پذیرش mixed outcome و reinspection
+
+سیاست مصوب در این اجرا اعمال و با مسیرهای canonical سرویس/Workflow تکمیل شد: پذیرش کامل فقط با resolve شدن همهٔ obligationهای دقیق OrderItem/Job مجاز است؛ rejected یا reproduction-required unresolved، Quality را ناقص نگه می‌دارد و progression خودکار به shipping ندارد. reproduction به Job جدید با source inspection، source Job و lineage متصل ساخته شد و خروجی جایگزین جداگانه inspect و approve شد؛ فقط obligation متناظر را رفع کرد و inspection/job اصلی immutable ماند. reinspection مستقیم همان Job با خطای `qc.inspection.reinspection_not_allowed` رد شد.
+
+اجرای reproducible API در محیط ایزوله با اسکریپت `tests/Acceptance/Step10QualityPolicyAcceptance.ps1` موفق شد: mixed disposition با accepted=1 و reproduction-required=1، reproduction request، replacement completion/inspection/approval، retry generation با همان `replacementJobId` و رد reinspection مستقیم ثبت شد. این ابزار پس از رفع دو نقص setup (enum عددی برای requestedStage و reload disposition پس از ایجاد inspection) و یک نقص واقعی در Production completion (خواندن quantity از `ReproductionRequest`) به نتیجه رسید. هیچ SQL برای ایجاد دادهٔ کسب‌وکار استفاده نشد.
+
+| سناریوی نهایی | نتیجه | شاهد |
+|---|---|---|
+| mixed outcome و نگه‌داشتن obligation | PASS | policy runner؛ original status=5، accepted=1، reproduction-required=1 |
+| reproduction Job مستقل و lineage | PASS | `reproductionRequestId` و `replacementJobId` در JSON runner |
+| replacement output با quantity خودش | PASS | completion موفق پس از اصلاح `ProductionAdministration` |
+| retry بدون Job تکراری | PASS | retry همان `replacementJobId` را برگرداند |
+| reinspection مستقیم همان Job | PASS (rejected) | `sameJobReinspectionRejected=true` و کد دقیق سرویس |
+| browser Quality workspace روی source فعلی | PASS 1/1 | `Step10QualityAcceptanceE2ETests.QualityInspectionIsRecordedAndReloadedThroughWorkspace`؛ `.artifacts/step10-quality-browser-final/step10-quality-browser-final-4.trx` و screenshot همان پوشه |
+
+## گیت نهایی source فعلی
+
+- Release solution build: PASS، ۰ warning و ۰ error.
+- Unit: `230/230` PASS؛ `.artifacts/step10-mixed-unit/step10-mixed-unit.trx`.
+- Backoffice: `184/184` PASS؛ `.artifacts/step10-mixed-backoffice/step10-mixed-backoffice.trx`.
+- Full Integration روی PostgreSQL ایزوله، runner تک‌پردازه و hang timeout پنج‌دقیقه‌ای: `133/133` PASS در `3m 43s`؛ `.artifacts/step10-mixed-policy-final/step10-mixed-policy-final.trx`.
+- focused browser runner روی source فعلی پس از بازسازی graph/identity و fixture معتبر: `1/1` PASS؛ failureهای قبلی فقط setup drift ناشی از reset Integration بودند و در run نهایی تکرار نشدند.
+
+اصلاحات source فعلی migration جدید ندارد؛ backup و volumeهای توسعه untouched باقی ماندند. mixed/reproduction policy اکنون در `QUALITY_CONTROL_AND_REPRODUCTION.md` و قرارداد lifecycle ثبت شده است.
 
 ## وضعیت GitHub
 

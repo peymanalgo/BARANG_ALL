@@ -167,3 +167,7 @@ shortage proposal باید بیرون از rollback رزرو durable باشد و
 fixture قابل بازتولید `tests/Acceptance/Step10QualityFixture.ps1` است: بر روی PostgreSQL ایزوله، شرکت/هویت/warehouse/product/variant/stock/order/reservation/issue/production output/template را فقط از APIهای پشتیبانی‌شده می‌سازد. graph واقعی `BARANG.ORDER` از fixture sanitized و API Designer وارد و در همان محیط validate/publish می‌شود. سناریوی مرورگر `Step10QualityAcceptanceE2ETests` با Chrome سیستم اجرا و screenshot/TRX در artifacts ثبت می‌کند.
 
 تصمیم‌های باز: reinspection برای همان Job در قرارداد فعلی یک inspection دومِ مستقیم نیست؛ reproduction باید source inspection و source Job جدید بسازد و سپس با همان گیت‌ها ادامه دهد. برای mixed disposition، runtime routing خودکار تعریف نشده و actor باید تصمیم صریح Reject/reproduction را ثبت کند. هیچ سیاست جدیدی برای QC receipt، stock، refund یا payment اضافه نشده است.
+
+## تکمیل پذیرش STEP ۱۰
+
+گیت Quality از مسیر canonical `IQualityAdministration.ValidateWorkflowCompletionAsync` برای runtime و adapterهای generic/legacy استفاده می‌کند. inspection مختلط با مقدار accepted همراه با rejected/reproduction-required تا زمان resolve شدن obligation تکمیل نمی‌شود؛ replacement Job پس از تکمیل باید بازرسی و پذیرفته شود و فقط مقدار linked را رفع می‌کند. generation تکراری همان Job را برمی‌گرداند، و ساخت inspection دوم مستقیم برای Job نهایی‌شده با خطای دقیق `qc.inspection.reinspection_not_allowed` رد می‌شود. مقدار تکمیل Production برای reproduction از مقدار persisted همان `ReproductionRequest` خوانده می‌شود، نه مقدار اصلی OrderItem. هیچ migration جدیدی لازم نبود.

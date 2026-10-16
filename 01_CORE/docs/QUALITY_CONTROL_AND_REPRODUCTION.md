@@ -27,3 +27,9 @@ Permissions are `qc.read`, `qc.inspect`, `qc.review`, `qc.manage`, and `reproduc
 Mutations, concise `QCHistory`, and Phase 06 audit records share the PostgreSQL transaction. Audit actions cover template/catalog changes, inspection/result/defect decisions, reproduction requests, and job generation. Timeline records are business-facing and do not duplicate large technical audit payloads.
 
 The API is rooted at `/api/v1/quality`. Future Workflow may call these commands and react to their outcomes; it must not bypass their state, permission, company, or idempotency rules.
+
+## Approved mixed-outcome and reinspection policy (STEP 10)
+
+Full acceptance is allowed only when every inspectable obligation for the exact OrderItem and Job is resolved. A disposition containing rejected or reproduction-required quantity keeps Quality incomplete and cannot progress automatically to shipping. A reproduction request creates a new, linked Job; its output is inspected independently and an accepted replacement resolves only the linked reproduction obligation. Original inspections, results, defects, and production history remain immutable, and original rejected quantity is never double-counted as replacement output.
+
+Reinspection of the same Job is not an ordinary action. The canonical service rejects a second direct inspection with `qc.inspection.reinspection_not_allowed`; corrections must use a separately approved traceable process, which is outside this step. Quality inspection has no stock, payment, refund, or purchasing-receipt-QC side effects. Workflow completion uses the same Quality service for runtime, generic, legacy, and administrative paths.
