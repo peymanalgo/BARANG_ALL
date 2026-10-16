@@ -64,7 +64,7 @@
 
 ## نتیجه‌ی پذیرش
 
-جریان کامل isolated package→shipment→delivery→customer return با assertions مستقل انجام شد و policy مصوب customer return **PASS** است. deployment توسعه‌ای باید پس از commit حاضر با provenance جدید انجام شود؛ این گزارش ادعای production deployment ندارد. خارج از scope: carrier خارجی، replacement، refund/payment خودکار، usable-stock disposition و receipt-QC hold.
+جریان isolated package→shipment→partial delivery→customer return با assertions مستقل انجام شد و policy مصوب customer return در این بخش **PASS** است. سناریوی تکمیل تحویل همه‌ی اقلام و مشاهده‌ی انتقال Order به `Delivered` در این نوبت اجرا نشد؛ بنابراین پذیرش کامل STEP ۱۱ هنوز **CONDITIONAL / NOT PASS** است. deployment توسعه‌ای انجام شده، اما این کمبود پذیرش را جایگزین نمی‌کند. خارج از scope: carrier خارجی، replacement، refund/payment خودکار، usable-stock disposition و receipt-QC hold.
 
 ## تحویل نهایی توسعه‌ای
 
@@ -73,3 +73,4 @@
 - Compose project `barang-core` بدون reset یا تعویض volumeها به‌روزرسانی شد. API روی `127.0.0.1:8080` با image `sha256:e797a7a01b37947e748ec311bef9ab811054499866662d6eb67bbd252c2be674` و Backoffice روی `localhost:5100` با image `sha256:b8a5efd2993f848ea4c3038bb1d879078757075265829428a271ad52795caf44` اجرا شد؛ هر دو `BARANG_BUILD_COMMIT` دقیق بالا را در environment/log دارند.
 - API و Backoffice healthy هستند. smoke احراز‌شده‌ی غیرتغییردهنده روی `http://localhost:5100/workspace/logistics/returns` PASS شد؛ database، credentials، keys و published workflowهای development تغییر داده نشدند.
 - محیط ایزوله‌ی task-owned `barang-step11-flow` و database regression موقت پس از جمع‌آوری evidence حذف شدند؛ Compose project قدیمی `barang-step9b-acceptance` دست‌نخورده باقی ماند.
+- محدودیت دقیق باقی‌مانده: برای اثبات `Delivered` باید در یک محیط disposable همان order، اقلام تحویل‌نشده‌ی مستقل نیز dispatch و delivery شوند و سپس status/order history و return status دوباره خوانده شود؛ هیچ داده‌ی development برای این کار mutate نشده است.
