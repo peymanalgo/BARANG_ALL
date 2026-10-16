@@ -79,6 +79,13 @@ public sealed class Step5WorkflowInventoryGateTests(PostgreSqlDatabaseFixture da
         Assert.Equal(0, after.Single().Reserved);
         Transaction[] movements = await Send<Transaction[]>(client, Request(HttpMethod.Get, $"/api/v1/inventory/transactions?warehouseId={warehouse}&variantId={variant.Id}", login.AccessToken, company));
         Assert.Equal(2, movements.Count(x => x.SourceType == "WAREHOUSE_ISSUE"));
+        JsonElement order360 = await Send<JsonElement>(client, Request(HttpMethod.Get, $"/api/v1/orders/{submitted.Id}/360", login.AccessToken, company));
+        JsonElement[] order360Items = order360.GetProperty("items").EnumerateArray().ToArray();
+        Assert.Equal(2, order360Items.Length);
+        Assert.Equal(first.Id, order360Items[0].GetProperty("id").GetGuid());
+        Assert.Equal(second.Id, order360Items[1].GetProperty("id").GetGuid());
+        Assert.Equal(2m, order360Items[0].GetProperty("quantity").GetDecimal());
+        Assert.Equal(3m, order360Items[1].GetProperty("quantity").GetDecimal());
         _ = submitted;
     }
 
