@@ -78,6 +78,6 @@ deployment فقط local development است؛ production، workflow definition، 
 
 ## GitHub و وضعیت STEP
 
-Application tested/deployed: `127b0f6a322a7cb95b4bc58f9adadcc805f7f906`؛ browser/test source نهایی شامل test-only commit `62f171e` است و pair application همان commit application را serve می‌کند. ref branch و divergence نسبت به `origin/main` بعد از push نهایی ثبت خواهند شد. merge فقط در صورت evidence authenticated اعلام خواهد شد؛ 404 بدون authentication proof نیست.
+Application tested/deployed: `127b0f6a322a7cb95b4bc58f9adadcc805f7f906`؛ browser/test source شامل test-only commit `62f171e` و report final commit `6170b2bce2adfe131707e18855fd78374e28a255` است و pair application همان application commit را serve می‌کند. remote branch با همین report commit push شده؛ divergence نسبت به `origin/main` برابر ۲ commit عقب / ۱۳۳ commit جلو است. merge فقط در صورت evidence authenticated اعلام خواهد شد؛ 404 بدون authentication proof نیست.
 
 STEP ۱۵ شروع نشده است.
