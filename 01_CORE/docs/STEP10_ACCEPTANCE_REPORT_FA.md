@@ -2,7 +2,7 @@
 
 تاریخ اجرا: ۱۴۰۵/۰۷/۲۴  
 شاخه: `codex/step2-inventory-unit-contracts`  
-مبنای شروع: `62944e8220563f9ee0cb6b1ddf5fd35359659b65` (گزارش STEP ۹)؛ source نهایی بررسی‌شده: `441c3e996e45343246ce34adcaaf0db4f222c58e`
+مبنای شروع: `62944e8220563f9ee0cb6b1ddf5fd35359659b65` (گزارش STEP ۹)؛ source نهایی بررسی‌شده: `4c7828cddf9c2894cef8590f66af305786762cdb`
 
 ## نتیجهٔ اجرایی
 
@@ -62,10 +62,10 @@ fixture reproducible: `tests/Acceptance/Step10QualityFixture.ps1`؛ graph setup:
 
 ## provenance و استقرار توسعه
 
-- source و application deployed: `441c3e996e45343246ce34adcaaf0db4f222c58e`
+- source و application deployed: `4c7828cddf9c2894cef8590f66af305786762cdb`
 - Compose project: `barang-core`؛ فقط سرویس‌های `api` و `backoffice` بازسازی شدند؛ PostgreSQL/Redis/MinIO و volumeهای موجود حفظ شدند.
-- API image: `barang-core-api@sha256:088b40c7f328ed77bdeb0344f288c32e42c9dee766ba8a95f48939513f27f3ef`
-- Backoffice image: `barang-core-backoffice@sha256:d8b3c2cd1f6180a70ad04c29fead7e2d8a3629c846cf6455ffbfaea978b22571`
+- API image: `barang-core-api@sha256:44408429171eb31ca83e06e9620abd4c6a9f577332a70e194aafba2450577ea3`
+- Backoffice image: `barang-core-backoffice@sha256:ebe47b7410a8f64a70fad185a3bfaff4b63fc91c1e37782549288e88d98a8ad5`
 - `BARANG_BUILD_COMMIT` در هر دو container برابر source بالا ثبت شد.
 - `http://127.0.0.1:8080/health` و `http://127.0.0.1:5100/login` هر دو HTTP 200؛ این‌ها smoke/provenance هستند و جای پذیرش feature ایزوله را نمی‌گیرند.
 - graph توسعه و instanceهای موجود تغییر نکردند؛ graph candidate ایزوله version `4` است و برای rollout آن به instanceهای جدید، انتشار جداگانه از Designer لازم است. instanceهای جاری به version خودشان bind می‌مانند.
