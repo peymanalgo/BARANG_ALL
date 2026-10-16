@@ -48,3 +48,17 @@
 ## وضعیت نهایی
 
 تا زمان اجرای authenticated browser matrix، وضعیت STEP ۱۱ **CONDITIONAL / NOT ACCEPTED** است. هیچ deployment توسعه‌ای یا mutation روی business data توسعه در این مرحله از گزارش انجام نشده است. پس از اجرای matrix و regression کامل، همین فایل باید با commit/imageهای واقعی و نتیجه‌ی PASS/FAIL نهایی تکمیل شود.
+
+## به‌روزرسانی اجرای نهایی این نوبت
+
+- Source/deployment commit: `b781cd6cea8b50719756cd497789bfc5712f3f4c`.
+- API image: `sha256:c013c5f5b307deaa3ed3a4934b6543ecc4ec1050a4991fc76fb1252f4b1c6d5d`؛ Backoffice image: `sha256:e7b5729013e161e331c7d7828c3fdb4fe7f7da23195070abdcfcf9d6a8818fe0`؛ هر دو با `BARANG_BUILD_COMMIT` همین SHA ساخته و در Compose project `barang-core` روی پورت‌های 8080/5100 مستقر شدند.
+- Backup توسعه: `D:\00_BARANG\20261016_step11_predeploy.dump`، PostgreSQL custom archive، 5,057,718 bytes؛ `pg_restore --list` با 1,750 TOC entries معتبر بود.
+- Migration chain از DB خالی `barang_step11_test` روی PostgreSQL ایزوله‌ی port 5569 تا `20261016140407_AlignShipmentReturnIdempotency` موفق شد. همان دو migration پس از backup روی development schema با مسیر EF رسمی اعمال شد؛ business records/volumes/keys تغییر داده نشدند.
+- Release build: PASS، 0 warning/0 error. Unit `231/231` و Backoffice `184/184` PASS. Integration current-source `133/133` PASS در `4m 03s` با `BARANG_TEST_DB_CONNECTION` و hang diagnostics پنج‌دقیقه‌ای؛ TRX: `tests/BARANG.Core.IntegrationTests/TestResults/step11-integration-final.trx`.
+- Browser route acceptance با runner مستقل Playwright و Chrome سیستم PASS: `http://localhost:5100/workspace/logistics/returns`، login و company selection واقعی، فرم با 8 input و actions localized، بدون inline error؛ screenshot: `.artifacts/step11-browser/logistics-return-workspace.png`. خروجی دکمه‌ها در اجرای فعلی شامل `خروج|راهبری اصلی|ذخیره|به‌روزرسانی|Retry|Resume` بود.
+- پروژه‌ی xUnit E2E رسمی قبل از discovery با خطای زیرساختی قبلی `Test process did not return valid JSON` متوقف شد؛ این نتیجه جایگزین runner مستقل نشد. Runner مستقل فقط UI/navigation/form acceptance را اثبات می‌کند و عملیات business mutation را روی development انجام نداد.
+
+## نتیجه‌ی پذیرش
+
+Backend gates، migration/deployment و UI form acceptance سبز هستند. سناریوهای mutation کامل package→shipment→partial delivery→customer return با رکوردهای disposable و assertions مستقلِ stock/quantity در این نوبت اجرا نشدند؛ بنابراین STEP ۱۱ برای ادعای کامل business acceptance همچنان **CONDITIONAL GO / NOT PASS** است، نه PASS. گلوگاه باقی‌مانده فقط اجرای همین matrix authenticated mutation در محیط disposable با quality-accepted fixtures است؛ هیچ policy جدیدی برای refund، payment، stock-return یا carrier لازم نیست.
