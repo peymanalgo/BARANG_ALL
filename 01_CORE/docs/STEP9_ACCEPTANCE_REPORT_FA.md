@@ -2,7 +2,7 @@
 
 ## دامنه و baseline
 
-این گزارش برای checkout `step2-clean/01_CORE` و branch `codex/step2-inventory-unit-contracts` تهیه شد. baseline پذیرفته‌شدهٔ STEP ۸: application `09f5a656dc7fb25a95929ae8d2fe3a1564989e99` و report `c29755c8e2ce5e0e7cabdbe2da411bc13d632487` است. تغییرات این گام فقط مسیر canonical Production، gateهای workflow و نمایش workspace تولید را درگیر می‌کند؛ STEP ۱۰ Quality/QC پیاده‌سازی نشده است.
+این گزارش برای checkout `step2-clean/01_CORE` و branch `codex/step2-inventory-unit-contracts` تهیه شد. baseline پذیرفته‌شدهٔ STEP ۸: application `09f5a656dc7fb25a95929ae8d2fe3a1564989e99` و report `c29755c8e2ce5e0e7cabdbe2da411bc13d632487` است. source tested شامل تغییرات delivery commit `71b61c0` (`71b61c0`؛ full SHA در Git ثبت شده) است. تغییرات این گام فقط مسیر canonical Production، gateهای workflow و نمایش workspace تولید را درگیر می‌کند؛ STEP ۱۰ Quality/QC پیاده‌سازی نشده است.
 
 ## پیاده‌سازی
 
