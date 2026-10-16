@@ -4,7 +4,7 @@
 
 این مرحله بر مبنای policy مصوب اجرا شد: shortage فقط یک purchase-request proposal پایدار می‌سازد؛ تبدیل به PR صریح و مجاز است؛ PO خودکار ساخته نمی‌شود؛ receipt می‌تواند جزئی باشد؛ و receipt فقط recheck کمبود را آشکار می‌کند و reservation یا task را خودکار کامل نمی‌کند.
 
-baseline پذیرفته‌شدهٔ STEP 7، application `0bdf2d61a24f673c56e15cd7d9fd5eece507d7dd` و acceptance source `b20815c4b2267543eb78c2765621c70b33ab4f82` بود. source این بررسی از `d7c807a` شروع شد و تغییرات STEP 8 در commit تحویل نهایی ثبت می‌شوند.
+baseline پذیرفته‌شدهٔ STEP 7، application `0bdf2d61a24f673c56e15cd7d9fd5eece507d7dd` و acceptance source `b20815c4b2267543eb78c2765621c70b33ab4f82` بود. current tested implementation commit `df3a26144b95c176d0ff68e1cbc4d89c38f58bf3` است؛ report-only follow-up commit `4bfa43c7604ed80adfe96457919a9b5769a4c8d6` است و روی imageهای application اعمال نشده.
 
 ## تغییرات پیاده‌سازی
 
