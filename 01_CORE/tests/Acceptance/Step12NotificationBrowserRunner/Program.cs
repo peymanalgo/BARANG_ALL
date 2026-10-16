@@ -1,0 +1,23 @@
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.Playwright;
+
+string baseUrl=Environment.GetEnvironmentVariable("BARANG_E2E_BASE_URL")??"http://127.0.0.1:5812";
+string apiUrl=Environment.GetEnvironmentVariable("BARANG_E2E_API_URL")??"http://127.0.0.1:5872";
+string browserPath=Environment.GetEnvironmentVariable("BARANG_E2E_BROWSER_PATH")??@"C:\Program Files\Google\Chrome\Application\chrome.exe";
+string username=Environment.GetEnvironmentVariable("BARANG_E2E_USERNAME")??"order-admin";
+string password=Environment.GetEnvironmentVariable("BARANG_E2E_PASSWORD")??"StrongOrderPassword123";
+string company=Environment.GetEnvironmentVariable("BARANG_E2E_COMPANY_ID")??throw new InvalidOperationException("BARANG_E2E_COMPANY_ID is required");
+using HttpClient http=new(){BaseAddress=new Uri(apiUrl)};
+using HttpResponseMessage loginResponse=await http.PostAsJsonAsync("/api/v1/auth/login",new{username,password});
+loginResponse.EnsureSuccessStatusCode(); using JsonDocument login=JsonDocument.Parse(await loginResponse.Content.ReadAsStringAsync()); string token=login.RootElement.GetProperty("accessToken").GetString()!;
+using HttpRequestMessage select=new(HttpMethod.Post,"/api/v1/auth/me/company"){Content=JsonContent.Create(new{companyId=company})}; select.Headers.Authorization=new AuthenticationHeaderValue("Bearer",token); (await http.SendAsync(select)).EnsureSuccessStatusCode();
+using HttpRequestMessage dispatch=new(HttpMethod.Post,"/api/v1/background/outbox/dispatch"); dispatch.Headers.Authorization=new AuthenticationHeaderValue("Bearer",token); dispatch.Headers.Add("X-Company-Id",company); (await http.SendAsync(dispatch)).EnsureSuccessStatusCode(); using HttpRequestMessage retryDispatch=new(HttpMethod.Post,"/api/v1/background/outbox/dispatch"); retryDispatch.Headers.Authorization=new AuthenticationHeaderValue("Bearer",token); retryDispatch.Headers.Add("X-Company-Id",company); (await http.SendAsync(retryDispatch)).EnsureSuccessStatusCode();
+using IPlaywright pw=await Playwright.CreateAsync(); await using IBrowser browser=await pw.Chromium.LaunchAsync(new(){Headless=true,ExecutablePath=browserPath}); await using IBrowserContext context=await browser.NewContextAsync(new(){Locale="en-US",ViewportSize=new(){Width=1440,Height=1000}}); context.SetDefaultTimeout(10000); IPage page=await context.NewPageAsync();
+await page.GotoAsync($"{baseUrl}/login",new(){WaitUntil=WaitUntilState.NetworkIdle}); await page.Locator("#username").FillAsync(username); await page.Locator("#password").FillAsync(password); await page.Locator("button[type=submit]").ClickAsync(); await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+if(new Uri(page.Url).AbsolutePath=="/company"){ILocator choice=page.Locator(".company-list form button[type=submit]"); if(await choice.CountAsync()==0)throw new InvalidOperationException("No company choice available"); await choice.First.ClickAsync(); await page.WaitForLoadStateAsync(LoadState.NetworkIdle);}
+await page.GotoAsync($"{baseUrl}/workspace/notifications",new(){WaitUntil=WaitUntilState.NetworkIdle}); await page.Locator("#notifications-heading").WaitForAsync(new(){State=WaitForSelectorState.Visible,Timeout=10000});
+if(await page.Locator(".notification-card").CountAsync()<1)throw new InvalidOperationException($"Expected a submitted-order notification; body={await page.Locator("body").InnerTextAsync()}");
+await page.ScreenshotAsync(new(){Path=".artifacts/step12-notification-browser.png",FullPage=true}); ILocator markAll=page.GetByRole(AriaRole.Button,new(){Name="Mark all read",Exact=true}); if(await markAll.CountAsync()==0)markAll=page.GetByRole(AriaRole.Button,new(){Name="همه را خوانده‌شده کن",Exact=true}); if(await markAll.CountAsync()!=1)throw new InvalidOperationException("Mark-all-read control was not uniquely rendered"); await markAll.ClickAsync(); await page.WaitForTimeoutAsync(500); if(await page.Locator(".notification-card.is-unread").CountAsync()!=0)throw new InvalidOperationException("Mark-all-read left unread notifications"); await page.ReloadAsync(new(){WaitUntil=WaitUntilState.Commit}); await page.Locator("#notifications-heading").WaitForAsync(new(){State=WaitForSelectorState.Visible}); if(await page.Locator(".notification-card").CountAsync()<1)throw new InvalidOperationException("Notification disappeared after reload");
+Console.WriteLine($"PASS notification-center url={page.Url} notifications={await page.Locator(".notification-card").CountAsync()} unread={await page.Locator(".notification-card.is-unread").CountAsync()} screenshot=.artifacts/step12-notification-browser.png");

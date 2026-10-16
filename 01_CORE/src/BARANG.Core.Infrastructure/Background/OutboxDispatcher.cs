@@ -9,8 +9,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BARANG.Core.Infrastructure.Background;
 
-public sealed class OutboxDispatcher(CoreDbContext db, ITransactionExecutor transactions, CompanyContext companies, ISmsSender sms, IEmailSender email, IPushSender push, TimeProvider time) : IOutboxDispatcher
+public sealed class OutboxDispatcher(CoreDbContext db, ITransactionExecutor transactions, CompanyContext companies, ISmsSender sms, IEmailSender email, IPushSender push, TimeProvider time, Microsoft.Extensions.Logging.ILogger<OutboxDispatcher> logger) : IOutboxDispatcher
 {
+    private static readonly JsonSerializerOptions WebJson = new(JsonSerializerDefaults.Web);
+    private static readonly Action<Microsoft.Extensions.Logging.ILogger, string, Guid?, Guid, Exception?> DispatchFailed = Microsoft.Extensions.Logging.LoggerMessage.Define<string, Guid?, Guid>(Microsoft.Extensions.Logging.LogLevel.Error, new Microsoft.Extensions.Logging.EventId(1201, "OutboxDispatchFailed"), "Outbox dispatch failed. EventType={EventType} CompanyId={CompanyId} OutboxMessageId={OutboxMessageId}");
     public async Task<int> DispatchAllAsync(CancellationToken ct)
     {
         int processed = 0;
@@ -36,7 +38,7 @@ public sealed class OutboxDispatcher(CoreDbContext db, ITransactionExecutor tran
             try
             {
                 if (message.EventType != "notification.requested") { await MoveToDeadLetterAsync(message, "outbox.unsupported_event", transactionToken); return Result.Success(false); }
-                NotificationAdministration.DispatchPayload? payload = JsonSerializer.Deserialize<NotificationAdministration.DispatchPayload>(message.Payload);
+                NotificationAdministration.DispatchPayload? payload = JsonSerializer.Deserialize<NotificationAdministration.DispatchPayload>(message.Payload, WebJson);
                 if (payload is null) { await MoveToDeadLetterAsync(message, "outbox.invalid_payload", transactionToken); return Result.Success(false); }
                 Result<Notification> creation = Notification.Create(companyId, payload.RecipientUserId, payload.Channel, payload.TemplateCode, payload.Payload, time.GetUtcNow());
                 if (creation.IsFailure) { await MoveToDeadLetterAsync(message, creation.Error.Code, transactionToken); return Result.Success(false); }
@@ -58,10 +60,10 @@ public sealed class OutboxDispatcher(CoreDbContext db, ITransactionExecutor tran
                 db.Add(notification); notification.Sent(time.GetUtcNow()); message.Succeed(time.GetUtcNow()); return Result.Success(true);
             }
             catch (JsonException) { await MoveToDeadLetterAsync(message, "outbox.invalid_payload", transactionToken); return Result.Success(false); }
-            catch (Exception)
+            catch (Exception exception)
             {
                 if (message.Attempts >= BackgroundRetryPolicy.MaximumAttempts) await MoveToDeadLetterAsync(message, "outbox.handler_failed", transactionToken);
-                else message.Retry("outbox.handler_failed", time.GetUtcNow() + BackgroundRetryPolicy.Backoff(message.Attempts));
+                else { DispatchFailed(logger, message.EventType, message.CompanyId, message.Id, exception); message.Retry("outbox.handler_failed", time.GetUtcNow() + BackgroundRetryPolicy.Backoff(message.Attempts)); }
                 return Result.Success(false);
             }
         }, cancellationToken);

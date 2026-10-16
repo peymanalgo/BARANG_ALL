@@ -18,7 +18,7 @@ public sealed partial class InventoryAdministration
             Result decision = approve ? request.Approve(Actor, command.Version, Now) : request.Reject(command.Version, command.Reason ?? string.Empty, Now);
             if (decision.IsFailure) return Result.Failure<PurchaseRequestView>(decision.Error);
             History("PURCHASE_REQUEST", id, approve ? "Approved" : "Rejected", command.Reason);
-            Log(approve ? "purchasing.request.approved" : "purchasing.request.rejected", id);
+            Log(approve ? "purchasing.request.approved" : "purchasing.request.rejected", id);await notifications.PublishBusinessEventInsideTransactionAsync(approve?"purchasing.request.approved":"purchasing.request.rejected",id.ToString("N"),approve?"purchasing.request.approved":"purchasing.request.rejected",new{purchaseRequestId=id,reason=command.Reason},BARANG.Core.Domain.Security.SecurityPermissions.PurchasingManage,t);
             return Result.Success(RequestView(request));
         }, cancellationToken);
 
@@ -33,7 +33,7 @@ public sealed partial class InventoryAdministration
             Result decision = approve ? order.Approve(Actor, command.Version, Now) : order.Reject(command.Version, command.Reason ?? string.Empty, Now);
             if (decision.IsFailure) return Result.Failure<PurchaseOrderView>(decision.Error);
             History("PURCHASE_ORDER", id, approve ? "Approved" : "Rejected", command.Reason);
-            Log(approve ? "purchasing.order.approved" : "purchasing.order.rejected", id);
+            Log(approve ? "purchasing.order.approved" : "purchasing.order.rejected", id);await notifications.PublishBusinessEventInsideTransactionAsync(approve?"purchasing.order.approved":"purchasing.order.rejected",id.ToString("N"),approve?"purchasing.order.approved":"purchasing.order.rejected",new{purchaseOrderId=id,reason=command.Reason},BARANG.Core.Domain.Security.SecurityPermissions.PurchasingManage,t);
             return Result.Success(await PurchaseOrderView(order, t));
         }, cancellationToken);
 
@@ -45,7 +45,7 @@ public sealed partial class InventoryAdministration
             Result sent = order.Send(version, Now);
             if (sent.IsFailure) return Result.Failure<PurchaseOrderView>(sent.Error);
             History("PURCHASE_ORDER", id, "Sent", null);
-            Log("purchasing.order.sent", id);
+            Log("purchasing.order.sent", id);await notifications.PublishBusinessEventInsideTransactionAsync("purchasing.order.sent",id.ToString("N"),"purchasing.order.sent",new{purchaseOrderId=id},BARANG.Core.Domain.Security.SecurityPermissions.PurchasingManage,t);
             return Result.Success(await PurchaseOrderView(order, t));
         }, cancellationToken);
 

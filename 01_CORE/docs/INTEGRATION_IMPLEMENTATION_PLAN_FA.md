@@ -179,3 +179,9 @@ fixture قابل بازتولید `tests/Acceptance/Step10QualityFixture.ps1` ا
 ## تکمیل پذیرش STEP ۱۰
 
 گیت Quality از مسیر canonical `IQualityAdministration.ValidateWorkflowCompletionAsync` برای runtime و adapterهای generic/legacy استفاده می‌کند. inspection مختلط با مقدار accepted همراه با rejected/reproduction-required تا زمان resolve شدن obligation تکمیل نمی‌شود؛ replacement Job پس از تکمیل باید بازرسی و پذیرفته شود و فقط مقدار linked را رفع می‌کند. generation تکراری همان Job را برمی‌گرداند، و ساخت inspection دوم مستقیم برای Job نهایی‌شده با خطای دقیق `qc.inspection.reinspection_not_allowed` رد می‌شود. مقدار تکمیل Production برای reproduction از مقدار persisted همان `ReproductionRequest` خوانده می‌شود، نه مقدار اصلی OrderItem. هیچ migration جدیدی لازم نبود.
+
+## الحاقیهٔ STEP ۱۲ — برنامه و معیار Outbox
+
+هر business transition باید producer canonical خود را در همان transaction داشته باشد و event را با stable identity، company scope و recipient permission صریح در Outbox ثبت کند. Dispatcher با `FOR UPDATE SKIP LOCKED`، retry/backoff محدود، dead-letter و dedupe durable کار می‌کند؛ ارسال اعلان هرگز approval یا completion نیست. producerهای order submit، task assignment/claim/forward، shortage/recheck، purchasing، finance/invoice، quality/reproduction، shipment/delivery و SLA در source متصل شده‌اند.
+
+معیار پذیرش شامل rollback بدون event، dispatch/retry بدون duplicate، company/permission isolation، recipient culture fa/en/ar، Notification Center read/unread و source navigation است. full current Integration `133/133`، Unit `231/231`، Backoffice `184/184` و browser order→Outbox→Notification Center در محیط ایزوله ثبت شده‌اند؛ پذیرش representative تمام producerهای دامنه‌ای و worker dead-letter/restart هنوز evidence مستقل می‌خواهد و تا آن زمان STEP ۱۲ نهایی PASS نیست. recipient warehouse-specific برای shortage/recheck نیز تصمیم باز است و Admin fallback مجاز نیست.
