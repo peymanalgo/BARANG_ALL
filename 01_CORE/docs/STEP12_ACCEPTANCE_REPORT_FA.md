@@ -199,12 +199,13 @@ recipient resolution broadcast نیست: membership فعال همان شرکت،
 
 نتیجهٔ verification بعد از rollout:
 
-- source/deployed commit: `<DEPLOYED_COMMIT>`
-- API image digest: `<API_IMAGE_DIGEST>`؛ `BARANG_BUILD_COMMIT=<DEPLOYED_COMMIT>`
-- Backoffice image digest: `<BACKOFFICE_IMAGE_DIGEST>`؛ `BARANG_BUILD_COMMIT=<DEPLOYED_COMMIT>`
-- API `http://localhost:8080` و Backoffice `http://localhost:5100`؛ readiness و login page باید پس از rollout با همین provenance بررسی شوند.
+- source/deployed commit: `4b6105072f92df02fecec0bdacd0ae5395565b25`
+- API image digest: `sha256:5305eadc1c73dd192b1cec0deb69361b9c75a4f0d583111f35b501b2ca24803d`؛ `BARANG_BUILD_COMMIT=4b6105072f92df02fecec0bdacd0ae5395565b25`
+- Backoffice image digest: `sha256:2288a8aa39a5939597f7ab8d87d4572f3f70841cc0ae28bbaeed57b27dcd5f01`؛ `BARANG_BUILD_COMMIT=4b6105072f92df02fecec0bdacd0ae5395565b25`
+- API `http://localhost:8080/health/ready`: HTTP 200 `Healthy`; Backoffice `http://localhost:5100/login`: HTTP 200. API log علاوه بر provenance، Hangfire server با دو worker و queue `default` را ثبت کرد.
+- اجرای dotnet browser E2E روی development با runner فعلی به خطای infrastructure `Test process did not return valid JSON (non-object)` در `TestProcessLauncherAdapter.GetAssemblyInfo` رسید و هیچ test case اجرا نشد؛ این failure از assertion/UI نیست. چون این close تغییر UI ندارد، browser Notification Center evidence پذیرفته‌شدهٔ قبلی (`.artifacts/step12-notification-browser.png`) بدون تغییر باقی است؛ login page و asset serving همین pair روی portهای توسعهٔ واقعی بررسی شدند.
 - business records، admin credentials/permissions، published definitions و running instances mutate/replay نشدند.
 
 ### نتیجهٔ STEP 12
 
-با assertionهای persistence برای producerهای فاقد evidence مستقل و full regression جاری، STEP 12 از نظر source/test **PASS** است. Outbox فقط eventهای committed را dispatch می‌کند، recipient dedup و bounded retry/dead-letter برقرار است، و notification/read هیچ business operation را approve یا complete نمی‌کند. سیاست recipient shortage/recheck همچنان permission-based (`inventory.manage`) است؛ warehouse-responsibility-specific notification policy تصویب نشده و عمداً تغییر نکرده است. STEP 13 شروع نشده است.
+با assertionهای persistence برای producerهای فاقد evidence مستقل، full regression جاری و rollout pair هماهنگ، STEP 12 از نظر source/test/development delivery **PASS** است. Outbox فقط eventهای committed را dispatch می‌کند، recipient dedup و bounded retry/dead-letter برقرار است، و notification/read هیچ business operation را approve یا complete نمی‌کند. تنها gap عملیاتی باقی‌مانده، runner dotnet browser در این محیط است؛ failure آن دقیقاً infrastructure-level ثبت شده و evidence browser پذیرفته‌شدهٔ قبلی را invalid نمی‌کند. سیاست recipient shortage/recheck همچنان permission-based (`inventory.manage`) است؛ warehouse-responsibility-specific notification policy تصویب نشده و عمداً تغییر نکرده است. STEP 13 شروع نشده است.
