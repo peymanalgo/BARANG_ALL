@@ -53,7 +53,7 @@
 | Backoffice کامل current source | **184/184 PASS**؛ TRX: `tests/BARANG.Backoffice.Tests/TestResults/step14-backoffice.trx` |
 | Integration کامل current source | **135/135 PASS**؛ `BARANG_TEST_DB_CONNECTION` به DB ایزوله `barang_step10_quality_test` روی port 5569؛ TRX: `tests/BARANG.Core.IntegrationTests/TestResults/step14-integration.trx` |
 | Release build | PASS، ۰ warning و ۰ error |
-| Browser acceptance | پس از deployment current source باید با system Chrome اجرا شود؛ سناریوی اختصاصی Audit صفحه، فیلتر، table/empty state و نبود Blazor error در E2E اضافه شده است |
+| Browser acceptance | **7/7 PASS** با standalone xUnit v3 و system Chrome روی `http://localhost:5100`؛ route shell، fa/en/ar، RTL/LTR، sorting/action menu و Audit filters/table/empty state/hidden Blazor error؛ TRX: `.artifacts/step14-browser/step14-ui-final.trx` |
 
 تست rollback نشان می‌دهد audit موفق داخل transaction شکست‌خورده باقی نمی‌ماند. تست security نیز actor/company/correlation، failed-login redaction، denied access و عدم مشاهدهٔ شرکت دیگر را بررسی می‌کند.
 
@@ -61,7 +61,12 @@
 
 این تغییر migration schema ندارد. تست‌ها با migration chain رسمی روی PostgreSQL ایزوله اجرا شدند؛ volume و business data توسعه دست‌نخورده است. قبل از deployment هیچ reset، delete، deactivation، remap یا replay تاریخی انجام نشد.
 
-پس از سبز شدن browser و build، API/Backoffice فعلی با Compose پروژهٔ `barang-core` از همین source deploy می‌شود و provenance/image digest نهایی در همین گزارش ثبت خواهد شد. deployment فقط local development است؛ production، workflow definition، keys و admin permissions تغییر نمی‌کنند.
+پس از سبز شدن browser و build، API/Backoffice با Compose پروژهٔ `barang-core` از source application commit `127b0f6` build/deploy شد؛ migration جدیدی اعمال نشد و volumeهای PostgreSQL/Redis/MinIO حفظ شدند. provenance هر دو container `BARANG_BUILD_COMMIT=127b0f6` است:
+
+- API image: `sha256:497656f9fe07442125f4f1dba21ebcda450db1d01c58e622d36f5e6105e712c0`؛ readiness روی پورت 8080 سالم.
+- Backoffice image: `sha256:002abdd446966c1c3ce1584bccd7afe967d66a2d54018c25d9834e644c4d659b`؛ UI روی `http://localhost:5100` با login و browser acceptance تأیید شد.
+
+deployment فقط local development است؛ production، workflow definition، keys، admin permissions و business records تغییر نکردند. تست E2E assertion در commit بعدی `62f171e` اصلاح شد و روی همین application pair دوباره 7/7 سبز اجرا شد.
 
 ## تصمیم‌های باز و محدودیت‌ها
 
@@ -73,6 +78,6 @@
 
 ## GitHub و وضعیت STEP
 
-پس از commit نهایی، SHA تست و deployment، ref branch، divergence نسبت به `origin/main` و وضعیت PR/merge با refهای Git ثبت می‌شوند. merge فقط در صورت evidence authenticated اعلام خواهد شد؛ 404 بدون authentication proof نیست.
+Application tested/deployed: `127b0f6a322a7cb95b4bc58f9adadcc805f7f906`؛ browser/test source نهایی شامل test-only commit `62f171e` است و pair application همان commit application را serve می‌کند. ref branch و divergence نسبت به `origin/main` بعد از push نهایی ثبت خواهند شد. merge فقط در صورت evidence authenticated اعلام خواهد شد؛ 404 بدون authentication proof نیست.
 
 STEP ۱۵ شروع نشده است.
