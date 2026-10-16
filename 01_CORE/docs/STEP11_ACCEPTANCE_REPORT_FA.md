@@ -65,3 +65,11 @@
 ## نتیجه‌ی پذیرش
 
 جریان کامل isolated package→shipment→delivery→customer return با assertions مستقل انجام شد و policy مصوب customer return **PASS** است. deployment توسعه‌ای باید پس از commit حاضر با provenance جدید انجام شود؛ این گزارش ادعای production deployment ندارد. خارج از scope: carrier خارجی، replacement، refund/payment خودکار، usable-stock disposition و receipt-QC hold.
+
+## تحویل نهایی توسعه‌ای
+
+- Source/deployed commit: `aa0d65c09a8f51940bb8abe487a78d15047e03be`.
+- Backup پیش از rollout: `D:\00_BARANG\20261016_step11_customer_return_predeploy.dump`، PostgreSQL custom archive، 5,067,393 bytes؛ `pg_restore --list` دارای 1,762 TOC entry بود.
+- Compose project `barang-core` بدون reset یا تعویض volumeها به‌روزرسانی شد. API روی `127.0.0.1:8080` با image `sha256:e797a7a01b37947e748ec311bef9ab811054499866662d6eb67bbd252c2be674` و Backoffice روی `localhost:5100` با image `sha256:b8a5efd2993f848ea4c3038bb1d879078757075265829428a271ad52795caf44` اجرا شد؛ هر دو `BARANG_BUILD_COMMIT` دقیق بالا را در environment/log دارند.
+- API و Backoffice healthy هستند. smoke احراز‌شده‌ی غیرتغییردهنده روی `http://localhost:5100/workspace/logistics/returns` PASS شد؛ database، credentials، keys و published workflowهای development تغییر داده نشدند.
+- محیط ایزوله‌ی task-owned `barang-step11-flow` و database regression موقت پس از جمع‌آوری evidence حذف شدند؛ Compose project قدیمی `barang-step9b-acceptance` دست‌نخورده باقی ماند.
