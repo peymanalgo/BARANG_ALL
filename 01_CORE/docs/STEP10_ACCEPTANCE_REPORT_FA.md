@@ -2,11 +2,11 @@
 
 تاریخ اجرا: ۱۴۰۵/۰۷/۲۴  
 شاخه: `codex/step2-inventory-unit-contracts`  
-مبنای شروع: `62944e8220563f9ee0cb6b1ddf5fd35359659b65` (گزارش STEP ۹؛ تغییرات STEP ۱۰ در working tree بررسی و سپس commit شد)
+مبنای شروع: `62944e8220563f9ee0cb6b1ddf5fd35359659b65` (گزارش STEP ۹)؛ source نهایی بررسی‌شده: `441c3e996e45343246ce34adcaaf0db4f222c58e`
 
 ## نتیجهٔ اجرایی
 
-STEP ۱۰ از نظر پیاده‌سازی و پذیرش ایزوله **PASS** است. هیچ production deployment یا mutation روی دادهٔ توسعه انجام نشد. استقرار توسعه پس از commit نهایی و migration backup باید جداگانه انجام شود؛ این گزارش آن را به‌عنوان rollout محلی ثبت می‌کند.
+STEP ۱۰ از نظر پیاده‌سازی، پذیرش ایزوله و استقرار توسعهٔ محلی **PASS** است. هیچ production deployment یا mutation کسب‌وکاری روی دادهٔ توسعه انجام نشد؛ فقط migration غیرمخرب پس از backup روی schema توسعه اعمال شد.
 
 ## رفتار پیاده‌سازی‌شده
 
@@ -21,7 +21,7 @@ STEP ۱۰ از نظر پیاده‌سازی و پذیرش ایزوله **PASS** 
 
 ## migration و امنیت
 
-Migration غیرمخرب `20261016113647_AddQualityInspectionDispositions` جدول، FK، index، RLS policy، grant و عدم‌دسترسی delete برای app/test role را اضافه می‌کند. زنجیرهٔ migration روی دیتابیس ایزولهٔ تازه/موجود اعمال شد و تست ساختار QC آن را تأیید کرد. backup توسعهٔ STEP ۹ در `D:\00_BARANG\artifacts\barang_core_step9_delivery_20261016.dump` حفظ شد؛ migration توسعه در این نوبت روی دادهٔ توسعه اعمال نشد.
+Migration غیرمخرب `20261016113647_AddQualityInspectionDispositions` جدول، FK، index، RLS policy، grant و عدم‌دسترسی delete برای app/test role را اضافه می‌کند. زنجیرهٔ migration روی دیتابیس ایزولهٔ تازه/موجود اعمال شد و تست ساختار QC آن را تأیید کرد. backup پیش از migration توسعه در `D:\00_BARANG\artifacts\barang_core_step10_quality_pre_migration_20261016.dump` حفظ شد و backup قبلی STEP ۹ در `D:\00_BARANG\artifacts\barang_core_step9_delivery_20261016.dump` نیز باقی است؛ migration با `dotnet ef database update` روی schema توسعه اعمال و سپس health/smoke بررسی شد.
 
 ## محیط و شواهد پذیرش
 
@@ -60,6 +60,16 @@ fixture reproducible: `tests/Acceptance/Step10QualityFixture.ps1`؛ graph setup:
 2. reinspection برای همان Job در مدل فعلی inspection دوم مستقیم نیست؛ reproduction باید source inspection و source Job جدید بسازد و سپس با گیت‌های قبلی ادامه دهد. این تصمیم باید در قرارداد نهایی کسب‌وکار STEP ۱۶ تثبیت شود.
 3. QC receipt hold، اصلاحات مالی و stock disposition خارج از این مرحله‌اند و intentionally پیاده‌سازی نشدند.
 
-## provenance و GitHub
+## provenance و استقرار توسعه
 
-source tested در این گزارش، working tree بر پایهٔ `62944e8` است و commit نهایی بعد از تکمیل تست ساخته می‌شود. image ایزولهٔ API در این نوبت با label محلی `step10-current-quality` ساخته شد؛ deployment توسعهٔ `barang-core` تا عبور commit/report نهایی انجام نشد. وضعیت PR/merge باید با Git refs/احراز هویت GitHub پس از push نهایی گزارش شود؛ 404 بدون احراز هویت merge state محسوب نمی‌شود.
+- source و application deployed: `441c3e996e45343246ce34adcaaf0db4f222c58e`
+- Compose project: `barang-core`؛ فقط سرویس‌های `api` و `backoffice` بازسازی شدند؛ PostgreSQL/Redis/MinIO و volumeهای موجود حفظ شدند.
+- API image: `barang-core-api@sha256:088b40c7f328ed77bdeb0344f288c32e42c9dee766ba8a95f48939513f27f3ef`
+- Backoffice image: `barang-core-backoffice@sha256:d8b3c2cd1f6180a70ad04c29fead7e2d8a3629c846cf6455ffbfaea978b22571`
+- `BARANG_BUILD_COMMIT` در هر دو container برابر source بالا ثبت شد.
+- `http://127.0.0.1:8080/health` و `http://127.0.0.1:5100/login` هر دو HTTP 200؛ این‌ها smoke/provenance هستند و جای پذیرش feature ایزوله را نمی‌گیرند.
+- graph توسعه و instanceهای موجود تغییر نکردند؛ graph candidate ایزوله version `4` است و برای rollout آن به instanceهای جدید، انتشار جداگانه از Designer لازم است. instanceهای جاری به version خودشان bind می‌مانند.
+
+## وضعیت GitHub
+
+پس از ثبت این به‌روزرسانی، commit گزارش push می‌شود. merge/PR فقط بر اساس ref یا ابزار احراز هویت‌شده گزارش خواهد شد؛ 404 unauthenticated به‌عنوان نبود repository یا merge تلقی نمی‌شود.
