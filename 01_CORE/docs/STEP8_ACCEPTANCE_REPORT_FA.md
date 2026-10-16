@@ -98,7 +98,7 @@ branch نسبت به `origin/main` در شروع بررسی `90` commit جلو �
 - قبل از تغییر schema، dump معتبر `D:\00_BARANG\step2-clean\01_CORE\.artifacts\step8_dev_before_purchasing_approval.dump` با حجم `5,043,003` بایت و `1742` TOC entry تهیه و داخل کانتینر با `pg_restore --list` بررسی شد.
 - migrationهای `20261016012212_Step8PurchasingApproval` و `20261016014209_Step8PurchasingApprovalPermissions` با EF Core روی `barang_core` اعمال شدند؛ دو migration آخر در `barang.__ef_migrations_history` ثبت‌اند. migration permission seed idempotent است و `ON CONFLICT (code) DO NOTHING` دارد.
 - deployment فقط API و Backoffice پروژهٔ Compose `barang-core` را recreate کرد؛ PostgreSQL/Redis/MinIO، volumeها، کلیدها، داده‌ها و credentials حفظ شدند. `/health/ready` و `/login` روی توسعه HTTP `200` هستند.
-- API build provenance در log: `BARANG API build commit d2deee1`؛ image API: `sha256:66793e1a4a7f223ee35ef1a2c0748475eb2a4ab251d3ee37dd43f51eda40e7ab`؛ image Backoffice: `sha256:8470d28cdd7cec4b400e2a2a8101ca16c4540a69e56cad16542b3ebc64393358`.
+- API build provenance در log: `BARANG API build commit d8be370546fd469669df4d59795931e38735b8ce`؛ image API: `sha256:6dbd253bfaadd012e890357fec1e93d468058796f42bd33798ab8806e1d61f0a`؛ image Backoffice: `sha256:b0705435e708b795a71de59a44f1241505ee16ce43529e4ec18d9cd12a7c6917`.
 
 ### محدودیت پذیرش
 
