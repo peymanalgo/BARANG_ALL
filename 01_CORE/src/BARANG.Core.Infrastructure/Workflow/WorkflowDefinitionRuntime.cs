@@ -8,6 +8,7 @@ using BARANG.Core.Application.Files;
 using BARANG.Core.Application.Workflow;
 using BARANG.Core.Application.Production;
 using BARANG.Core.Application.Inventory;
+using BARANG.Core.Application.Quality;
 using BARANG.Core.Domain.Common;
 using BARANG.Core.Domain.Production;
 using BARANG.Core.Infrastructure.Persistence;
@@ -18,7 +19,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace BARANG.Core.Infrastructure.Workflow;
 
-public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExecutor tx, ICompanyContext company, ICurrentActor actor, IArtworkFileAdministration files, InventoryAdministration inventory, IProductionAdministration production, TimeProvider clock) : IWorkflowDefinitionRuntime
+public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExecutor tx, ICompanyContext company, ICurrentActor actor, IArtworkFileAdministration files, InventoryAdministration inventory, IProductionAdministration production, IQualityAdministration quality, TimeProvider clock) : IWorkflowDefinitionRuntime
 {
     private static readonly JsonSerializerOptions WebJson = new(JsonSerializerDefaults.Web);
     private Guid Company => company.CompanyId is { } id && id != Guid.Empty ? id : throw new InvalidOperationException("Company context is required.");
@@ -34,6 +35,7 @@ public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExec
     private static bool IsDesignNode(string nodeKey) => nodeKey.Contains("DesignPreparation", StringComparison.OrdinalIgnoreCase) || nodeKey.Contains("DESIGN", StringComparison.OrdinalIgnoreCase);
     private static bool IsPrintNode(string nodeKey) => nodeKey.Contains("Printing", StringComparison.OrdinalIgnoreCase) || nodeKey.Contains("PRINT", StringComparison.OrdinalIgnoreCase);
     private static bool IsHeatPressNode(string nodeKey) => nodeKey.Contains("HeatPress", StringComparison.OrdinalIgnoreCase) || nodeKey.Contains("PRESS", StringComparison.OrdinalIgnoreCase);
+    private static bool IsQualityNode(string nodeKey) => nodeKey.Contains("Quality", StringComparison.OrdinalIgnoreCase) || nodeKey.Contains("Inspection", StringComparison.OrdinalIgnoreCase) || nodeKey.Contains("QC", StringComparison.OrdinalIgnoreCase);
 
     public Task<Result<object>> StartAsync(StartDefinitionWorkflowCommand command, CancellationToken ct) => tx.ExecuteAsync(t => StartInsideTransactionAsync(command.OrderId, t), ct);
     public async Task<Result<object>> StartInsideTransactionAsync(Guid orderId, CancellationToken ct)
@@ -66,6 +68,11 @@ public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExec
             bool accepted = string.Equals(outcome, "Approve", StringComparison.OrdinalIgnoreCase) && string.Equals(statusValue, "Approved", StringComparison.OrdinalIgnoreCase) && approvedSnapshot is Guid approved && approved == currentSnapshot;
             bool rejected = string.Equals(outcome, "Reject", StringComparison.OrdinalIgnoreCase) && string.Equals(statusValue, "Rejected", StringComparison.OrdinalIgnoreCase);
             if (!accepted && !rejected) return Result.Failure<object>(Error.BusinessRule("finance.approval.required"));
+        }
+        if (IsQualityNode(nodeKey))
+        {
+            Result qualityGate = await quality.ValidateWorkflowCompletionAsync(orderId, outcome, ct);
+            if (qualityGate.IsFailure) return Result.Failure<object>(qualityGate.Error);
         }
         if (IsProductionPlanningNode(nodeKey))
         {

@@ -8237,6 +8237,84 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("qc_inspections", "barang");
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCInspectionDisposition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("AcceptedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("accepted_quantity");
+
+                    b.Property<string>("AcceptedReason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("accepted_reason");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<decimal>("InspectableQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("inspectable_quantity");
+
+                    b.Property<Guid>("InspectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("inspection_id");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<decimal>("RejectedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("rejected_quantity");
+
+                    b.Property<string>("RejectedReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("rejected_reason");
+
+                    b.Property<string>("ReproductionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reproduction_reason");
+
+                    b.Property<decimal>("ReproductionRequiredQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("reproduction_required_quantity");
+
+                    b.Property<string>("UomCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("uom_code");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "InspectionId")
+                        .IsUnique();
+
+                    b.ToTable("qc_inspection_dispositions", "barang");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Quality.ReproductionRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -11451,6 +11529,16 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.HasOne("BARANG.Core.Domain.Quality.QCChecklistTemplate", null)
                         .WithMany()
                         .HasForeignKey("CompanyId", "TemplateId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Quality.QCInspectionDisposition", b =>
+                {
+                    b.HasOne("BARANG.Core.Domain.Quality.QCInspection", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "InspectionId")
                         .HasPrincipalKey("CompanyId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();

@@ -159,3 +159,11 @@ shortage proposal باید بیرون از rollback رزرو durable باشد و
 شروع job فقط با operator فعال همان شرکت و مجوز `production.execute`، تجهیز فعال در وضعیت `AVAILABLE` یا `READY` و capability صریح `EquipmentTypeCode` منطبق با operation، و evidence معتبر issue انبار برای همان order/item مجاز است. وضعیت تجهیز در زمان start دوباره بررسی می‌شود. تکمیل فقط مقدار persisted حداقل برابر مقدار OrderItem را می‌پذیرد. adapter قدیمی و `WorkflowDefinitionRuntime` نیز برای DesignPreparation، Printing و HeatPress تمام jobهای لازم، هویت item/operation و artwork/file version را کنترل می‌کنند؛ completion عمومی نمی‌تواند outcome ساختگی بسازد.
 
 در این مرحله business field جدیدی لازم نبود؛ migration snapshot-alignment بدون عملیات schema برای رفع اختلاف model/snapshot ثبت شد و migration قبلی `AlignReceiptModel` مالک تغییر receipt باقی ماند. published definitionها و instanceهای جاری مهاجرت داده نشدند؛ graph candidate و routing/assignment باید در acceptance ایزولهٔ workflow بررسی شوند.
+
+# الحاقیهٔ اجرای STEP ۱۰ — Quality inspection و reproduction
+
+این مرحله به جای ایجاد ledger موازی، `IQualityAdministration` و `ProductionAdministration` موجود را گسترش می‌دهد. migration غیرمخرب `20261016113647_AddQualityInspectionDispositions` جدول company-scoped و uniqueِ `qc_inspection_dispositions` را با RLS و محدودیت‌های immutable history اضافه می‌کند. inspection از job تکمیل‌شده و template فعال شروع می‌شود، disposition با version/actor ذخیره می‌گردد و گیت completion در runtime همان نتیجهٔ persisted را می‌خواند.
+
+fixture قابل بازتولید `tests/Acceptance/Step10QualityFixture.ps1` است: بر روی PostgreSQL ایزوله، شرکت/هویت/warehouse/product/variant/stock/order/reservation/issue/production output/template را فقط از APIهای پشتیبانی‌شده می‌سازد. graph واقعی `BARANG.ORDER` از fixture sanitized و API Designer وارد و در همان محیط validate/publish می‌شود. سناریوی مرورگر `Step10QualityAcceptanceE2ETests` با Chrome سیستم اجرا و screenshot/TRX در artifacts ثبت می‌کند.
+
+تصمیم‌های باز: reinspection برای همان Job در قرارداد فعلی یک inspection دومِ مستقیم نیست؛ reproduction باید source inspection و source Job جدید بسازد و سپس با همان گیت‌ها ادامه دهد. برای mixed disposition، runtime routing خودکار تعریف نشده و actor باید تصمیم صریح Reject/reproduction را ثبت کند. هیچ سیاست جدیدی برای QC receipt، stock، refund یا payment اضافه نشده است.
