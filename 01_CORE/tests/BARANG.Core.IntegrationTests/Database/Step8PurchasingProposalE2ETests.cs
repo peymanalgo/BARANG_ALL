@@ -2,9 +2,11 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using BARANG.Core.Domain.Catalog;
+using BARANG.Core.Domain.Background;
 using BARANG.Core.Domain.Inventory;
 using BARANG.Core.Domain.Organization;
 using BARANG.Core.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace BARANG.Core.IntegrationTests.Database;
@@ -84,6 +86,13 @@ public sealed class Step8PurchasingProposalE2ETests(PostgreSqlDatabaseFixture da
         Assert.Equal(5m, rechecked.AvailableQuantity);
         Assert.Equal(3m, rechecked.ShortageQuantity);
         Assert.NotNull(rechecked.LastRecheckedAtUtc);
+        await using (CoreDbContext evidence = database.CreateAdministrationCoreDbContext())
+        {
+            using IDisposable scope = database.CompanyContext.BeginScope(company);
+            OutboxMessage eventRow = await evidence.OutboxMessages.IgnoreQueryFilters().SingleAsync(x => x.EventType == "notification.requested" && x.CompanyId == company && x.CorrelationId!.StartsWith("inventory.shortage.recheck_ready:"), TestContext.Current.CancellationToken);
+            Assert.Contains("inventory.shortage.recheck_ready", eventRow.Payload, StringComparison.Ordinal);
+            Assert.Contains(purchaseOrderId.ToString(), eventRow.Payload, StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     private static HttpRequestMessage Request(HttpMethod method, string uri, string token, Guid? company, object? body = null)

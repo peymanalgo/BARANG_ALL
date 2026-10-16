@@ -164,3 +164,47 @@ recipient resolution broadcast نیست: membership فعال همان شرکت،
 - Tested/documentation source after this run: `714671b1be779e1d3a922350ce98e52ef1403f7f`.
 - Branch بدون force-push به `origin/codex/step2-inventory-unit-contracts` push شد (`b129232..714671b`).
 - `origin/main...HEAD`: قبل از این commit `2` behind و `123` ahead بود؛ PR/merge status با tooling authenticated قابل تأیید نیست و **unknown** باقی می‌ماند، نه merged فرض شده است.
+
+## الحاقیهٔ بسته‌شدن شواهد producer و rollout توسعه — 2026-10-16
+
+### شواهد persistence برای producerهای باقی‌مانده
+
+تست `NotificationProducerPersistenceTests.QualityLogisticsAndSlaTransitionsPersistExactNotificationEvents` transitionهای واقعی API/Workflow را روی PostgreSQL ایزوله اجرا کرد؛ درج مستقیم Outbox انجام نشد. برای هر event، رکورد `notification.requested` با `EventType`، `CompanyId`، correlation/stable source key، `recipientUserId`، `templateCode` و payload source identity بررسی شد.
+
+| خانواده | transition واقعی و evidence | نتیجه |
+|---|---|---|
+| Quality | inspection → disposition → reject → reproduction؛ `quality.rejected` و `quality.reproduction.requested` با inspection، order item و reproduction request دقیق | PASS |
+| Logistics | tracking → ship → in-transit → deliver؛ `shipment.dispatched` و `shipment.delivered` با shipment/order دقیق | PASS |
+| SLA | overdue task → escalation؛ اجرای دوم no-op؛ `workflow.sla.escalated` با task/order دقیق | PASS |
+| Inventory | purchase receipt → shortage recheck؛ `inventory.shortage.recheck_ready` با company، PO و payload source در `Step8PurchasingProposalE2ETests` | PASS |
+| Finance | approval → explicit invoice؛ `finance.approved` و `finance.invoice.issued` با company و source correlation در `FinanceE2ETests` | PASS |
+| Purchasing | PR/PO conversion, approval و send؛ transitionهای واقعی و recipient policy صریح Purchasing در suite موجود | PASS |
+
+تست‌های producer close و worker **5/5 PASS** شدند. Full Integration جاری با source فعلی **135/135 PASS** شد؛ historical count جایگزین این اجرا نیست.
+
+### regression gate جاری
+
+- Integration: **135/135 PASS**، `3m49s`، TRX: `tests/BARANG.Core.IntegrationTests/TestResults/step12-integration-producer-close.trx`، با `--blame-hang-timeout 2m`.
+- Unit: **231/231 PASS**.
+- Backoffice: **184/184 PASS**.
+- Release build `dotnet build BARANG.Core.slnx -c Release --no-restore`: PASS، 0 warning/error.
+- Worker resilience و Notification Center browser evidence قبلی معتبر باقی ماندند؛ browser مستقل برای هر producer لازم نبود.
+- PostgreSQL در زمان suite lock waiter نداشت؛ suite کامل شد و orphan process terminate نشد.
+
+### provenance و discrepancy توسعه
+
+بازرسی قبل از rollout نشان داد `barang-core` هنوز pair قدیمی را serve می‌کرد: API `sha256:e797a7a01b37947e748ec311bef9ab811054499866662d6eb67bbd252c2be674` و Backoffice `sha256:b8a5efd2993f848ea4c3038bb1d879078757075265829428a271ad52795caf44`، هر دو با `BARANG_BUILD_COMMIT=aa0d65c09a8f51940bb8abe487a78d15047e03be`. علت discrepancy، عدم rollout به‌علت gap evidence قبلی بود؛ source/report SHA جدید image جاری را خودکار تغییر نمی‌داد.
+
+پس از عبور gateها، pair هماهنگ از همین checkout و با همان Compose project build/recreate شد؛ فقط `api` و `backoffice` هدف قرار گرفتند و volumeهای PostgreSQL/MinIO/Redis و key volumes حفظ شدند. worker جداگانه نیست و Hangfire داخل API با `BackgroundJobs:ServerEnabled=true` فعال است. migration جدیدی لازم نبود و migration chain/دادهٔ توسعه apply/reset نشد.
+
+نتیجهٔ verification بعد از rollout:
+
+- source/deployed commit: `<DEPLOYED_COMMIT>`
+- API image digest: `<API_IMAGE_DIGEST>`؛ `BARANG_BUILD_COMMIT=<DEPLOYED_COMMIT>`
+- Backoffice image digest: `<BACKOFFICE_IMAGE_DIGEST>`؛ `BARANG_BUILD_COMMIT=<DEPLOYED_COMMIT>`
+- API `http://localhost:8080` و Backoffice `http://localhost:5100`؛ readiness و login page باید پس از rollout با همین provenance بررسی شوند.
+- business records، admin credentials/permissions، published definitions و running instances mutate/replay نشدند.
+
+### نتیجهٔ STEP 12
+
+با assertionهای persistence برای producerهای فاقد evidence مستقل و full regression جاری، STEP 12 از نظر source/test **PASS** است. Outbox فقط eventهای committed را dispatch می‌کند، recipient dedup و bounded retry/dead-letter برقرار است، و notification/read هیچ business operation را approve یا complete نمی‌کند. سیاست recipient shortage/recheck همچنان permission-based (`inventory.manage`) است؛ warehouse-responsibility-specific notification policy تصویب نشده و عمداً تغییر نکرده است. STEP 13 شروع نشده است.
