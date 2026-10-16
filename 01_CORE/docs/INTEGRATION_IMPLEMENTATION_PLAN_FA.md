@@ -195,3 +195,9 @@ fixture قابل بازتولید `tests/Acceptance/Step10QualityFixture.ps1` ا
 فهرست canonical در `docs/STEP13_MASTER_DATA_CONSUMER_CATALOG_FA.md` ثبت شد. `DomainReferenceCatalog` و `ReferenceConsumerTraceability` باید هم‌تعداد و هم‌پوشان باشند؛ تست `MasterDataTraceabilityTests` این invariant را بررسی می‌کند. Lookupها از stable code/ID، scope شرکت/Global، ترجمهٔ fa/en/ar، active-only options، inactive historical references، parent validation و optimistic concurrency استفاده می‌کنند. adapterهای artwork tag و defect type جدول تکراری Lookup ایجاد نمی‌کنند.
 
 `equipment.type/status` به‌صورت metadata در دامنهٔ `equipment` و alias سازگار `inventory` ارائه می‌شوند. `equipment.status` دو مصرف مستقل operational/lifecycle دارد و تا تصمیم محصول دربارهٔ تفکیک catalogها یک منبع مشترک باقی می‌ماند. هیچ حذف، remap، تغییر status یا migration schema برای STEP ۱۳ انجام نشد؛ قبل از هر cleanup مخرب، ارجاع‌ها و backup/restore باید دوباره تأیید و تصمیم مالک محصول ثبت شود.
+
+## STEP ۱۵ — نهایی‌سازی و release-readiness
+
+در اجرای نهایی، source candidate با SHA `792a3e0e3f9e8dd7af26bf9d65fe20d17baf4b85` ثبت شد. تغییر این candidate فقط lifecycle انتخاب‌گر جست‌وجویی را اصلاح می‌کند: پاسخ جست‌وجوی async دیگر DOM را با `@key` بازسازی و فهرست را بسته نمی‌کند. تست‌های تعاملی با action-menuهای استاندارد و تست readiness روی build هم‌محتوا موفق شدند.
+
+گیت‌های Unit/Backoffice/Integration و Release build موفق‌اند؛ backup و restore دیتابیس توسعه در محیط task-owned نیز بررسی شد. با این حال، اجرای نهایی browser روی image دقیق candidate به‌علت از دست رفتن fixture احراز هویت ایزوله پس از recreate محیط، 401 داد و تست pricing نیز به fixture فاقد artworkVersion معتبر و submit 422 رسید. بنابراین این سند صرفاً evidence است و STEP ۱۵ تا تکمیل بازاجرای end-to-end و fixture پایدار PASS اعلام نمی‌شود.
