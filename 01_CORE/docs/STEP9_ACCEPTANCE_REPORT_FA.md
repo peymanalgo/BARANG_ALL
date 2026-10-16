@@ -2,9 +2,9 @@
 
 ## وضعیت و provenance
 
-این گزارش برای checkout step2-clean/01_CORE و branch codex/step2-inventory-unit-contracts است. baseline پذیرفته‌شدهٔ STEP ۸، application 09f5a656dc7fb25a95929ae8d2fe3a1564989e99 و report c29755c8e2ce5e0e7cabdbe2da411bc13d632487، حفظ شده است. source نهایی تست‌شده پس از اصلاح UI، commit eec768c2f0ed95941d16403c95e6d378498ba37b است؛ پیاده‌سازی canonical STEP ۹ از 71b61c057bb0b98abfdb82d9366c87a8083c7b7c آمده است.
+این گزارش برای checkout step2-clean/01_CORE و branch codex/step2-inventory-unit-contracts است. baseline پذیرفته‌شدهٔ STEP ۸، application 09f5a656dc7fb25a95929ae8d2fe3a1564989e99 و report c29755c8e2ce5e0e7cabdbe2da411bc13d632487، حفظ شده است. source نهایی تست‌شده و image pair ایزوله، commit `e4463181d006a66b277221a7e7c3ae5768ee65d7` است؛ پیاده‌سازی canonical STEP ۹ از 71b61c057bb0b98abfdb82d9366c87a8083c7b7c آمده است.
 
-محیط browser ایزوله با Compose project `barang-step9b-acceptance`، API روی 5869، Backoffice روی 5560، PostgreSQL روی 5569، Redis روی 6399 و MinIO روی 9069/9070 اجرا شد. volume توسعه و `barang_core` استفاده نشد. migration chain کامل روی DB `barang_step9b_test` اجرا شد. candidate واقعی BARANG.ORDER از طریق APIهای پشتیبانی‌شدهٔ Designer import/save/validate/publish شد؛ نتیجه نسخهٔ ۴ در همین محیط ایزوله است و instanceهای قبلی دست‌کاری نشدند. image manifestهای بازسازی‌شدهٔ API و Backoffice به‌ترتیب `sha256:ca75bd76a5ca60ffd22977a2c620527d657b2b7a4e45016141eaa37b82304aae` و `sha256:f269d18880a5be4227936689e13a72334be391a6227b456c958c3a1bc957046b` هستند؛ provenance نهایی پس از commit گزارش روی هر دو سرویس با `BARANG_BUILD_COMMIT` برابر SHA همان commit ثبت می‌شود.
+محیط browser ایزوله با Compose project `barang-step9b-acceptance`، API روی 5869، Backoffice روی 5560، PostgreSQL روی 5569، Redis روی 6399 و MinIO روی 9069/9070 اجرا شد. volume توسعه و `barang_core` استفاده نشد. migration chain کامل روی DB `barang_step9b_test` اجرا شد. candidate واقعی BARANG.ORDER از طریق APIهای پشتیبانی‌شدهٔ Designer import/save/validate/publish شد؛ نتیجه نسخهٔ ۴ در همین محیط ایزوله است و instanceهای قبلی دست‌کاری نشدند. image manifestهای نهایی API و Backoffice به‌ترتیب `sha256:19e0fd9cc74b49fbdb62d557cbaf392d68dda4a4a3efaada1d8b7f8aaa3cabe0` و `sha256:8dcea62e2fbef80e0a6855e17c401307ecac5507a0c9167f017c45e3afb94bc2` هستند؛ هر دو کانتینر `BARANG_BUILD_COMMIT=e4463181d006a66b277221a7e7c3ae5768ee65d7` را گزارش می‌کنند.
 
 ## پیاده‌سازی و defectهای اصلاح‌شده
 
@@ -27,7 +27,7 @@
 | Production browser موفقیت واقعی | PASS 1/1 | `.artifacts/step9-browser/step9-production-issue-gate.png`؛ Generate retry، assignment، Plan، Start، Complete و reload از UI |
 | API negative gates | PASS | `warehouse_issue_required`، `incompatible_equipment` و `equipment_unavailable` با status 422 در fixture ایزوله |
 
-اجرای Full Integration جدید در DBهای تازهٔ barang_step9d_test و barang_step9e_test تا مرحلهٔ test-host پیش رفت، اما summary کامل تولید نکرد: pg_stat_activity query فعال نداشت و processهای vstest باقی ماندند. این را PASS حساب نکرده‌ام. نتیجهٔ 133/133 موجود مربوط به اجرای کامل قبلی همین implementation و migration chain clean است؛ تغییرات بعدی فقط Backoffice workspace و تست browser بودند و به API/Integration code دست نزدند.
+اجرای مقایسه‌ای قبلی در DBهای تازهٔ barang_step9d_test و barang_step9e_test تا مرحلهٔ test-host پیش رفت، اما summary کامل تولید نکرد: pg_stat_activity query فعال نداشت و processهای vstest باقی ماندند. آن اجرا PASS محسوب نشده است. اجرای نهایی با setup clean PostgreSQL، role initialization پشتیبانی‌شده، `-m:1`، logger کنسول/TRX، diag و `--blame-hang-timeout 5m` کامل شد و نتیجهٔ 133/133 را برای source فعلی ثبت کرد؛ cutoff سکوت ۹۰ثانیه‌ای علت توقف گزارش قبلی بود، نه lock یا deadlock.
 
 ## browser acceptance انجام‌شده
 
@@ -47,7 +47,7 @@
 
 موارد باقی‌ماندهٔ خارج از این acceptance browser/API matrix: سناریوی کاربرِ شرکت بیگانه با identity جداگانه در این run دوباره seed نشد و از گیت‌های RLS/Integration و service company-scope پوشش دارد؛ برای rollout production باید همین سناریو در runbook fixture امنیتی نیز اجرا شود. تکمیل ناکافی و generic workflow bypass در Integration STEP5 و gateهای canonical پوشش دارند و در این run با production code تغییر نکردند. هیچ policy جدید QC یا مرحلهٔ STEP10 اضافه نشد.
 
-با توجه به PASS کامل Integration 133/133، Unit 229/229، Backoffice 184/184، buildهای Release، graph واقعی Designer و successful/negative browser/API evidence، STEP ۹ **PASS** است. deployment توسعهٔ barang-core در این run انجام نشد؛ فقط deployment ایزوله برای mutation acceptance استفاده شد و قبل از هر rollout توسعه، image pair با commit نهایی همین گزارش rebuild و smoke غیرمخرب خواهد شد. STEP ۱۰ و QC شروع نشده است.
+با توجه به PASS کامل Integration 133/133، Unit 229/229، Backoffice 184/184، buildهای Release، graph واقعی Designer و successful/negative browser/API evidence، STEP ۹ **PASS** است. deployment توسعهٔ barang-core در این run انجام نشد؛ deployment ایزوله با image pair هم‌نسخه برای mutation acceptance انجام شد و کانتینرهای توسعه، داده، volume و credentialها دست‌نخورده ماندند. STEP ۱۰ و QC شروع نشده است.
 
 ## migration و recovery
 
