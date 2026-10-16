@@ -63,6 +63,21 @@ public sealed class PurchaseRequestsE2ETests : IAsyncLifetime
         await Assertions.Expect(page.Locator("[data-purchase-request-grid]")).ToContainTextAsync("PR-");
     }
 
+    [Fact]
+    public async Task PurchasingApprovalWorkspaceShowsSubmittedRequestAndRecordsDecision()
+    {
+        await page.GotoAsync(baseUrl + "/culture?culture=en&returnUrl=%2Fworkspace%2Finventory%3Fsection%3Dapprovals", new() { WaitUntil = WaitUntilState.NetworkIdle });
+        await page.GotoAsync(baseUrl + "/workspace/inventory?section=approvals", new() { WaitUntil = WaitUntilState.NetworkIdle });
+        var approvals = page.Locator("[data-purchasing-approvals]");
+        await Assertions.Expect(approvals).ToBeVisibleAsync();
+        var submitted = approvals.Locator("tbody tr").Filter(new() { HasText = "Submitted" }).First;
+        await Assertions.Expect(submitted).ToBeVisibleAsync();
+        await submitted.Locator(".barang-action-menu-trigger").ClickAsync();
+        await page.Locator(".barang-action-menu-popup").GetByRole(AriaRole.Button, new() { Name = "Approve", Exact = true }).ClickAsync();
+        await Assertions.Expect(approvals).ToContainTextAsync("Decision recorded.");
+        await Assertions.Expect(approvals).Not.ToContainTextAsync("Submitted");
+    }
+
     private async Task Choose(ILocator input, string search)
     {
         await input.ClickAsync();

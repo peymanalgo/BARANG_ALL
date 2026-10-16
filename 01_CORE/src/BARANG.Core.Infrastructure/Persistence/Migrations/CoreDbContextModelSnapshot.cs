@@ -4475,6 +4475,18 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("ApprovalReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long?>("ApprovedVersion")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("ClosureReason")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -4487,6 +4499,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
@@ -4648,6 +4663,18 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("ApprovalReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long?>("ApprovedVersion")
+                        .HasColumnType("bigint");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -9162,6 +9189,20 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                             Code = "customer.financial.manage",
                             Module = "customer",
                             TechnicalDescription = "customer.financial.manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000086"),
+                            Code = "purchasing.request.approve",
+                            Module = "purchasing",
+                            TechnicalDescription = "purchasing.request.approve"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000087"),
+                            Code = "purchasing.order.approve",
+                            Module = "purchasing",
+                            TechnicalDescription = "purchasing.order.approve"
                         });
                 });
 

@@ -56,3 +56,28 @@ branch نسبت به `origin/main` در شروع بررسی `90` commit جلو �
 **STEP 8: CONDITIONAL — NOT FINAL PASS**
 
 زنجیرهٔ shortage proposal، conversion idempotent، عدم ساخت خودکار PO، receipt جزئی و recheck persisted پیاده‌سازی و با تست فعلی verify شده است. blockers دقیق: approval واقعی و assignment/routing مستند PR/PO، browser acceptance کامل برای proposal/PR/PO/receipt/recheck، و failure مشخص UI در انتخاب Variant که باید با trace/DOM اصلاح شود؛ این failure به‌دلیل API نبودن SKU یا کمبود داده ادعا نشده است.
+
+## پیگیری پذیرش approval خرید — ۱۴۰۵/۰۷/۲۴
+
+در این پیگیری policy خرید به‌صورت صریح اعمال شد: PR فقط با تصمیم persisted یک purchasing officer واجد شرایط همان شرکت تأیید می‌شود؛ PO فقط با تصمیم purchasing manager واجد شرایط همان شرکت تأیید و سپس با action جداگانه به supplier ارسال می‌شود. threshold مالی وجود ندارد، سازنده نمی‌تواند سند خود را تأیید کند، Admin fallback ممنوع است و نبود approver خطای `purchasing.approver_not_configured` می‌دهد. تغییر approval-relevant یا ارسال با revision قدیمی، approval قبلی را معتبر نمی‌داند.
+
+تغییرات فعلی در commit مورد آزمون شامل مدل/مهاجرت approval در `InventoryModels.cs`، endpointهای approve/reject/send، سرویس canonical `PurchasingApprovalAdministration`، history/audit، سطح دسترسی‌های `purchasing.request.approve` و `purchasing.order.approve`، و بخش Backoffice `PurchaseApprovalSection` است. migration جدید permission seed را با `ON CONFLICT (code) DO NOTHING` نصب می‌کند تا روی database تازه و databaseای که قبلاً permission را دارد، تکرارپذیر و غیرمخرب باشد.
+
+| سناریو | نتیجهٔ فعلی |
+|---|---|
+| non-creator واجد شرایط، submit→approve برای PR | PASS، `Step8PurchasingApprovalE2ETests.EligibleNonCreatorApprovesRequestAndOrderBeforeSend` |
+| non-creator واجد شرایط، approve برای PO | PASS، همان تست |
+| ارسال PO قبل از approval | PASS در domain/unit؛ `ApprovalRequired` |
+| ارسال PO بعد از approval با action صریح | PASS، همان تست؛ وضعیت `Sent` |
+| self-approval | PASS، API `403` (`purchasing.creator_cannot_approve`) |
+| ثبت actor، version و زمان تصمیم در persistence/history | PASS، همان تست و migration جاری |
+| SKU8 در فرم Purchase Request | PASS، `PurchaseRequestsE2ETests.PurchaseRequestGridAndSameSessionMultilineDraftWork`، `1/1` پس از اصلاح refresh گزینه‌های variant |
+| Unit فعلی | PASS، `229/229` |
+| Integration کامل پس از migration جدید | PASS، `133/133` روی `barang_step6_test`/port 5546 با `--blame-hang-timeout 30s -m:1`، 3m43s؛ شامل approval جدید |
+| Backoffice unit/component suite | PASS، `184/184` |
+| SKU browser acceptance | PASS، `PurchaseRequestsE2ETests.PurchaseRequestGridAndSameSessionMultilineDraftWork`، `1/1` روی API `5821`/Backoffice `5820` با Chrome نصب‌شده و fixture `W8/P8/SKU8` |
+| Purchasing approval browser acceptance | PASS، `PurchaseRequestsE2ETests.PurchasingApprovalWorkspaceShowsSubmittedRequestAndRecordsDecision`، `1/1`; approver غیرسازنده از workspace واقعی تصمیم را ثبت کرد و reload/status persisted تأیید شد |
+
+علت دقیق SKU failure قبلی: پاسخ API شامل SKU8 بود، اما callback وابستهٔ Product→Variant قبل از refresh render به‌صورت قطعی اجرا نمی‌شد؛ selector با تغییر value/options کلیددار و preload از endpoint رسمی variant اصلاح شد. SKU hard-code، wait مصنوعی یا bypass UI استفاده نشده است.
+
+**وضعیت جاری:** approval backend/domain/UI و اصلاح SKU با اجرای فعلی API/persistence و browser fixture تأیید شدند. مسیر shortage proposal، conversion idempotent، partial receipt/recheck نیز در full Integration سبز است. با این حال full browser matrix همهٔ سناریوهای receipt/warehouse mutation در این اجرای نهایی تکرار نشده است؛ بنابراین وضعیت release-level STEP 8 را **CONDITIONAL** نگه می‌دارم، نه PASS کاذب. blocker اجرایی approval یا SKU باقی نمانده؛ پذیرش نهایی گستردهٔ receipt/recheck و deployment development باید در gate مستقل ثبت شود.

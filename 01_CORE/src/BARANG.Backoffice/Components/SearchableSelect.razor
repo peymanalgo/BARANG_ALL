@@ -1,7 +1,7 @@
 @implements IDisposable
 @inject IStringLocalizer<CrudStrings> T
 
-<div class="searchable-select" @onfocusin="CancelBlurFromFocus" @onfocusout="HandleBlur">
+<div @key="OptionKey" class="searchable-select" @onfocusin="CancelBlurFromFocus" @onfocusout="HandleBlur">
     <input name="@Name"
            value="@DisplayText"
            data-selected-value="@Value"
@@ -52,6 +52,7 @@
     [Parameter] public bool Disabled { get; set; }
 
     private string Query = "";
+    private string OptionKey => $"{Value}:{Options.Count}:{Options.FirstOrDefault()?.Value}";
     private CancellationTokenSource? SearchDelay;
     private CancellationTokenSource? BlurDelay;
     private bool Open;
@@ -96,6 +97,7 @@
         Value = option.Value;
         Query = option.Label;
         await ValueChanged.InvokeAsync(Value);
+        await InvokeAsync(StateHasChanged);
         Open = false;
     }
 

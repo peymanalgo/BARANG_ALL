@@ -16,6 +16,24 @@
 <BarangModal Open="@Dialog" Title='@(ReadOnly ? T("مشاهده درخواست خرید","عرض طلب الشراء","View purchase request") : T("افزودن درخواست خرید","إضافة طلب شراء","Add purchase request"))' Size="large" CloseRequested="Close"><ChildContent><div class="form-grid"><label><span>@T("انبار مقصد","المستودع الوجهة","Destination warehouse")</span><SearchableSelect Options="@WarehouseOptions" Value="@Warehouse" ValueChanged="WarehouseChanged" Placeholder='@T("انتخاب انبار","اختر المستودع","Choose warehouse")' /></label><label><span>@T("دلیل/هدف","السبب/الغرض","Reason/Purpose")</span><input @bind="Reason" readonly="@ReadOnly" /></label><label><span>@T("مرجع کمبود","مرجع النقص","Shortage reference")</span><input @bind="SourceShortageId" readonly="@ReadOnly" /></label></div><h3>@T("ردیف‌های درخواست","بنود الطلب","Request lines")</h3>@if(!ReadOnly){<div class="form-grid"><label><span>@T("محصول","المنتج","Product")</span><SearchableSelect Options="@ProductOptions" Value="@Product" ValueChanged="ProductChanged" Placeholder='@T("انتخاب محصول","اختر المنتج","Choose product")' /></label><label><span>SKU</span><SearchableSelect Options="@VariantOptions" Value="@Variant" ValueChanged="VariantChanged" Placeholder='@T("انتخاب SKU","اختر SKU","Choose SKU")' /></label><label><span>@T("مقدار","الكمية","Quantity")</span><input type="number" min="0.01" step="0.01" @bind="Quantity" /></label><button type="button" class="btn btn-secondary" @onclick="AddLine">@T("افزودن ردیف","إضافة بند","Add line")</button></div>}<table class="data-grid"><thead><tr><th>SKU</th><th>@T("مقدار","الكمية","Quantity")</th><th>@T("عملیات","الإجراءات","Actions")</th></tr></thead><tbody>@foreach(var line in Lines){<tr><td>@line.Sku</td><td>@line.Quantity</td><td>@if(!ReadOnly){<BarangIconButton Icon="trash" Semantic="danger" Label="@T("حذف","حذف","Remove")" Clicked="(()=>Lines.Remove(line))" />}</td></tr>}</tbody></table>@if(FormError is not null){<div class="inline-error" role="alert">@FormError</div>}</ChildContent><Footer><button type="button" class="btn btn-secondary" @onclick="Close">@T("انصراف","إلغاء","Cancel")</button>@if(!ReadOnly){<button type="button" class="btn btn-primary" @onclick="Save">@T("ذخیره پیش‌نویس","حفظ المسودة","Save draft")</button>}</Footer></BarangModal>
 
 @code {
+    private bool VariantsPreloaded;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (VariantsPreloaded || ProductOptions.Count == 0) return;
+        VariantsPreloaded = true;
+        var s = await Session();
+        if (s is null) return;
+        var all = new List<SearchableSelectOption>();
+        foreach (var product in ProductOptions.Take(100))
+        {
+            if (!Guid.TryParse(product.Value, out var productId)) continue;
+            var result = await Core.GetAsync($"api/v1/products/{productId}/variants/options?limit=100", s.Value.Token, s.Value.Company, default);
+            if (result.IsSuccess && result.Value.ValueKind == JsonValueKind.Array)
+                all.AddRange(result.Value.EnumerateArray().Select(x => new SearchableSelectOption(x.GetProperty("id").ToString(), x.TryGetProperty("sku", out var sku) ? sku.ToString() : x.ToString())));
+        }
+        VariantOptions = all.GroupBy(x => x.Value).Select(x => x.First()).ToList();
+        await InvokeAsync(StateHasChanged);
+    }
     private sealed record Row(Guid Id,string Number,string Warehouse,string Reason,int Lines,string Status,DateTimeOffset Date,long Version);
     private sealed record Draft(string VariantId,string Sku,decimal Quantity);
     private string Search="",Status="",Warehouse="",Product="",Variant="",Reason="",SourceShortageId=""; private string? FormError; private decimal Quantity=1; private int Page=1; private const int PageSize=20; private bool Loading,Dialog,ReadOnly,Success; private string? Message; private CancellationTokenSource? CancelSearch; private List<Row> Rows=[]; private List<Draft> Lines=[]; private List<SearchableSelectOption> WarehouseOptions=[],ProductOptions=[],VariantOptions=[]; private string Lang=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
