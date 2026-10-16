@@ -27,9 +27,9 @@
 
 - Release build: PASS، `dotnet build BARANG.Core.slnx -c Release --no-restore`، ۰ warning/۰ error.
 - Migration chain: از database خالی `barang_step11_test` روی PostgreSQL ایزوله port 5569 تا `AddShipmentReturns` با موفقیت اعمال شد؛ development database در این اجرا تغییر نکرد.
-- Unit: پس از build نهایی باید با summary ثبت شود؛ تست جدید `Customer_return_requires_traceable_identity_and_is_idempotency_ready` به `LogisticsFoundationTests` افزوده شد.
+- Unit: `231/231` PASS؛ تست `Customer_return_requires_traceable_identity_and_is_idempotency_ready` نیز PASS است.
 - Backoffice: شمارش route به‌علت صفحه‌ی بازگشت از 46 به 47 به‌روزرسانی شد؛ تمام صفحات همچنان button type صریح دارند.
-- API/browser feature matrix: اجرای authenticated disposable UI برای package→shipment→delivery و return باید پیش از اعلام PASS ثبت شود؛ smoke/health به‌تنهایی پذیرش feature محسوب نمی‌شود.
+- API/browser feature matrix: اجرای authenticated disposable UI و assertions مستقل persistence برای package→shipment→delivery و customer return ثبت شده است.
 
 ## ماتریس پذیرش
 
@@ -47,7 +47,7 @@
 
 ## وضعیت نهایی
 
-تا زمان اجرای authenticated browser matrix، وضعیت STEP ۱۱ **CONDITIONAL / NOT ACCEPTED** است. هیچ deployment توسعه‌ای یا mutation روی business data توسعه در این مرحله از گزارش انجام نشده است. پس از اجرای matrix و regression کامل، همین فایل باید با commit/imageهای واقعی و نتیجه‌ی PASS/FAIL نهایی تکمیل شود.
+پس از اجرای matrix کامل تحویل، وضعیت STEP ۱۱ **PASS** است. تمام mutationها در محیط disposable انجام شد و business data توسعه، credentials، keys و workflowهای منتشرشده‌ی توسعه تغییر نکردند.
 
 ## شواهد اجرای business-flow در محیط ایزوله
 
@@ -62,9 +62,19 @@
 - اثر جانبی: `stock_transactions` فقط Adjustment و `WAREHOUSE_ISSUE` داشت و هیچ movement بازگشت ایجاد نشد؛ `payments` برای company ایزوله صفر بود.
 - خطای قبلی `Test process did not return valid JSON` مربوط به discovery زیرساختی xUnit بود؛ runner مستقل با assertions واقعی UI اجرا شد. خطای اول UI نیز به selector input مخفی antiforgery مربوط بود و با `input:not([type=hidden])` اصلاح شد.
 
+## شواهد تکمیل تحویل همه‌ی اقلام
+
+- محیط disposable نهایی: Compose project `barang-step11-final`، database `barang_step11_final_test`، PostgreSQL روی `5581`، API روی `5881` و Backoffice روی `5580`؛ همه‌ی volumeها و storageها task-owned و جدا از `barang_core` بودند.
+- Workflow واقعی از طریق Designer API بازسازی و در isolation منتشر شد: `fb2303b8-31ba-4da0-9448-458eb6fc3278`، version `4`، شامل `24` node و `42` transition؛ `InventoryIssue` در مسیر `DECIDE_WAREHOUSE → InventoryIssue → PRINT` قرار داشت.
+- سفارش ایزوله `7429297a-1427-494a-adb9-0a13a71c4cbb` دو `OrderItem` مستقل با یک `ProductVariant` داشت: item `3e9fcbcb-c1e0-4911-8dfc-e4a740120e38` مقدار ۲ و item `71545397-9744-465b-b43e-08a5bdb49b26` مقدار ۳، هر دو با UOM `PCS`.
+- هر دو Job و Quality inspection مستقل برای همان OrderItemها با مقدار کامل تکمیل/پذیرفته شدند. Package `da99f06a-0a03-43da-a596-53ec8ff602e3` هر دو item را جداگانه allocation کرد؛ shipment `cb108c4b-044a-4db8-888f-189a2f590409` با tracking `STEP11-FINAL-TRACK` dispatch و سپس Delivered شد.
+- API و Order 360 پس از delivery وضعیت Order را `Delivered` نشان دادند. مقدار delivered مستقل: item اول `2/2` و item دوم `3/3`؛ shipment history وضعیت‌های `0 → 1 → 2 → 3` را ثبت کرد. تکرار delivery با همان وضعیت persisted duplicate effect ایجاد نکرد.
+- Browser runner مستقل Playwright با Chrome سیستم، login/company selection و UI واقعی در Backoffice ایزوله PASS شد: صفحه‌ی return، ثبت return موفق item اول مقدار ۱، retry همان idempotency key بدون duplicate، over-return مقدار ۲ با rejection، و return دوم مقدار ۱ برای Full شدن return status. پس از هر مرحله Order 360 دوباره load شد و Delivered history حفظ شد.
+- پس از returnها، Order همچنان `Delivered` باقی ماند؛ return progress جداگانه از مقادیر دقیق shipment/item محاسبه شد و برای item اول از partial به full رسید. هیچ stock movement usable، payment، refund یا delivery-history overwrite ایجاد نشد.
+
 ## نتیجه‌ی پذیرش
 
-جریان isolated package→shipment→partial delivery→customer return با assertions مستقل انجام شد و policy مصوب customer return در این بخش **PASS** است. سناریوی تکمیل تحویل همه‌ی اقلام و مشاهده‌ی انتقال Order به `Delivered` در این نوبت اجرا نشد؛ بنابراین پذیرش کامل STEP ۱۱ هنوز **CONDITIONAL / NOT PASS** است. deployment توسعه‌ای انجام شده، اما این کمبود پذیرش را جایگزین نمی‌کند. خارج از scope: carrier خارجی، replacement، refund/payment خودکار، usable-stock disposition و receipt-QC hold.
+جریان isolated package→dispatch→complete delivery برای همه‌ی OrderItemها، انتقال Order به `Delivered`، retry نهایی، rejection مقدار بیش‌ازحد، و customer return با وضعیت جداگانه با assertions مستقل **PASS** است. خارج از scope: carrier خارجی، replacement، refund/payment خودکار، usable-stock disposition و receipt-QC hold.
 
 ## تحویل نهایی توسعه‌ای
 
@@ -72,5 +82,5 @@
 - Backup پیش از rollout: `D:\00_BARANG\20261016_step11_customer_return_predeploy.dump`، PostgreSQL custom archive، 5,067,393 bytes؛ `pg_restore --list` دارای 1,762 TOC entry بود.
 - Compose project `barang-core` بدون reset یا تعویض volumeها به‌روزرسانی شد. API روی `127.0.0.1:8080` با image `sha256:e797a7a01b37947e748ec311bef9ab811054499866662d6eb67bbd252c2be674` و Backoffice روی `localhost:5100` با image `sha256:b8a5efd2993f848ea4c3038bb1d879078757075265829428a271ad52795caf44` اجرا شد؛ هر دو `BARANG_BUILD_COMMIT` دقیق بالا را در environment/log دارند.
 - API و Backoffice healthy هستند. smoke احراز‌شده‌ی غیرتغییردهنده روی `http://localhost:5100/workspace/logistics/returns` PASS شد؛ database، credentials، keys و published workflowهای development تغییر داده نشدند.
-- محیط ایزوله‌ی task-owned `barang-step11-flow` و database regression موقت پس از جمع‌آوری evidence حذف شدند؛ Compose project قدیمی `barang-step9b-acceptance` دست‌نخورده باقی ماند.
-- محدودیت دقیق باقی‌مانده: برای اثبات `Delivered` باید در یک محیط disposable همان order، اقلام تحویل‌نشده‌ی مستقل نیز dispatch و delivery شوند و سپس status/order history و return status دوباره خوانده شود؛ هیچ داده‌ی development برای این کار mutate نشده است.
+- محیط ایزوله‌ی task-owned `barang-step11-flow` و `barang-step11-final` و databaseهای موقت پس از جمع‌آوری evidence حذف شدند؛ Compose project قدیمی `barang-step9b-acceptance` دست‌نخورده باقی ماند.
+- محدودیت باقی‌مانده‌ای در scope STEP ۱۱ وجود ندارد؛ محدودیت‌های خارج از scope همان carrier خارجی، replacement، refund/payment خودکار، usable-stock disposition و receipt-QC hold هستند.
