@@ -6,7 +6,7 @@
 
 - Notification Center implementation: `src/BARANG.Backoffice/Components/Pages/NotificationCenter.razor`, `src/BARANG.Backoffice/Components/NotificationBell.razor`, `src/BARANG.Backoffice/wwwroot/notification-center.css`, `src/BARANG.Backoffice/wwwroot/notification-bell.css`
 - Notification query contract/filter evidence: `src/BARANG.Core.Application/Background/BackgroundContracts.cs`, `src/BARANG.Core.Api/Background/BackgroundEndpoints.cs`, `src/BARANG.Core.Infrastructure/Background/NotificationAdministration.cs`, `tests/BARANG.Core.IntegrationTests/Database/NotificationOutboxAcceptanceTests.cs`
-- Deployed Notification Center screenshots: `.artifacts/step12-notification-browser-fa-desktop.png`, `.artifacts/step12-notification-browser-fa-mobile.png`, `.artifacts/step12-notification-browser-en.png`, `.artifacts/step12-notification-browser-ar.png`
+- Deployed Notification Center screenshots: `.artifacts/step12-notification-browser-fa-desktop.png`, `.artifacts/step12-notification-browser-fa-mobile.png`, `.artifacts/step12-notification-browser-bell.png`, `.artifacts/step12-notification-browser-en.png`, `.artifacts/step12-notification-browser-ar.png`
 
 - `docs/STEP3_READINESS_REVIEW_FA.md`
 - `docs/STEP4_ACCEPTANCE_REPORT_FA.md`
