@@ -18,6 +18,7 @@ Notification Center فعلی از زیرساخت canonical `notifications/mine`�
 - Compose project `barang-core`، API روی `localhost:8080` و Backoffice روی `localhost:5100`؛ readiness و login هر دو HTTP 200 و Hangfire worker healthy بود. PostgreSQL/Redis/MinIO و key/business volumes recreate نشدند.
 - standalone Playwright با system Chrome و کاربر مجاز فعلی: PASS؛ empty state معتبر، search no-results، bell، mark-all/read persistence، reload، Escape/overlay و screenshots fa desktop/mobile و en/ar اجرا شد. شواهد: `.artifacts/step12-notification-browser-fa-desktop.png`, `.artifacts/step12-notification-browser-fa-mobile.png`, `.artifacts/step12-notification-browser-en.png`, `.artifacts/step12-notification-browser-ar.png`.
 - در deployment توسعه فعلی تعداد اعلان‌ها صفر بود؛ runner این را empty معتبر می‌داند و هیچ رکورد ساختگی یا mutation برای پر کردن صفحه ایجاد نشد.
+- regression gate پس از این تغییرات: Unit `233/233`، Backoffice `184/184`، targeted notification integration `2/2` و full current Integration `136/136` با TRX `tests/BARANG.Core.IntegrationTests/TestResults/notification-center-full-integration.trx`؛ Release build API/Backoffice و build standalone browser runner نیز موفق شدند.
 
 ## وضعیت فعلی
 
