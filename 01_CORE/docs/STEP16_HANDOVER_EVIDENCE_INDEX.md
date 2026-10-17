@@ -11,6 +11,8 @@
 - Management Dashboard metric registry: `docs/MANAGEMENT_DASHBOARD_METRIC_REGISTRY_FA.md`
 - Management Dashboard acceptance: `docs/MANAGEMENT_DASHBOARD_ACCEPTANCE_REPORT_FA.md`
 - Management Dashboard API/UI: `src/BARANG.Core.Api/BusinessAnalysis/ManagementDashboardEndpoints.cs`, `src/BARANG.Backoffice/Components/Pages/ManagementDashboard.razor`
+- Management Dashboard browser runner: `tests/Acceptance/ManagementDashboardBrowserRunner/Program.cs`
+- Management Dashboard screenshots: `.artifacts/management-dashboard-fa-desktop.png`, `.artifacts/management-dashboard-fa-mobile.png`, `.artifacts/management-dashboard-en.png`, `.artifacts/management-dashboard-ar.png`
 
 - `docs/STEP3_READINESS_REVIEW_FA.md`
 - `docs/STEP4_ACCEPTANCE_REPORT_FA.md`
