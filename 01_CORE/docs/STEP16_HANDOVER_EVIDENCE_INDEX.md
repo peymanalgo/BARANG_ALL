@@ -4,6 +4,9 @@
 
 ## Reports and contracts
 
+- Notification Center implementation: `src/BARANG.Backoffice/Components/Pages/NotificationCenter.razor`, `src/BARANG.Backoffice/Components/NotificationBell.razor`, `src/BARANG.Backoffice/wwwroot/notification-center.css`, `src/BARANG.Backoffice/wwwroot/notification-bell.css`
+- Notification query contract/filter evidence: `src/BARANG.Core.Application/Background/BackgroundContracts.cs`, `src/BARANG.Core.Api/Background/BackgroundEndpoints.cs`, `src/BARANG.Core.Infrastructure/Background/NotificationAdministration.cs`, `tests/BARANG.Core.IntegrationTests/Database/NotificationOutboxAcceptanceTests.cs`
+
 - `docs/STEP3_READINESS_REVIEW_FA.md`
 - `docs/STEP4_ACCEPTANCE_REPORT_FA.md`
 - `docs/STEP4_5_GRID_ACTION_ACCEPTANCE_FA.md`

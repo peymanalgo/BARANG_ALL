@@ -1,5 +1,16 @@
 # گزارش پذیرش STEP ۱۲ — اعلان‌های business با Transactional Outbox
 
+## الحاقیهٔ Notification Center polished — 2026-10-17
+
+Notification Center فعلی از زیرساخت canonical `notifications/mine`، Outbox و read-state استفاده می‌کند و UI جدید در مسیر `/workspace/notifications` ارائه شد:
+
+- کارت‌های خوانا با دسته، اولویت صریح (`urgent`/`attention`/`info`)، وضعیت نیازمند اقدام، مرجع منبع، زمان نسبی با timestamp دقیق و action مجاز.
+- فیلترهای server-side برای unread/read، action، module، priority، جست‌وجوی عنوان/مرجع، بازهٔ تاریخ و صفحه‌بندی bounded؛ جست‌وجوی payload JSONB در مسیر bounded in-memory انجام می‌شود تا ترجمهٔ نامعتبر SQL و HTTP 500 ایجاد نشود.
+- حالت‌های loading، error با Retry، empty واقعی و no-results از هم جدا هستند؛ mark-read و read-all همان endpointهای canonical را با تأیید ثانویه برای read-all صدا می‌زنند.
+- bell سراسری با unread badge، recent dropdown، View All، Escape/outside-click، focus-visible، refresh دوره‌ای ۴۵ ثانیه‌ای با cleanup و بدون replay/تغییر business state.
+- طراحی fa/en/ar، RTL/LTR، mobile/desktop، رنگ‌های purple/turquoise/coral/amber، motif سبک چاپ/لباس و `prefers-reduced-motion` اضافه شد. هیچ notification count یا record ساختگی اضافه نشده است.
+- optional notification preferences هنوز مدل/سیاست تأییدشده‌ای در سیستم ندارد؛ mandatory operational notifications همچنان قابل خاموش‌کردن نیستند و preference جعلی persist نشده است.
+
 ## وضعیت فعلی
 
 این گزارش بر مبنای source فعلی branch `codex/step2-inventory-unit-contracts` تهیه شده است. زیرساخت canonical قبلی شامل `outbox_messages`، dispatcher/worker Hangfire، retry با سقف ۵ تلاش، dead-letter و Notification Center بود؛ اما تا این مرحله producer business واقعی در مسیر سفارش وجود نداشت و صفحه‌ی Notification Center placeholder بود.

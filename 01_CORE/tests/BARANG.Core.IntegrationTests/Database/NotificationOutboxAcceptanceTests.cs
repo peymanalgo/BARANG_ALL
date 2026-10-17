@@ -78,6 +78,13 @@ public sealed class NotificationOutboxAcceptanceTests(PostgreSqlDatabaseFixture 
             Assert.Equal(1, await verify.Notifications.IgnoreQueryFilters().CountAsync(x => x.CompanyId == company && x.RecipientUserId == actor && x.TemplateCode == "test.outbox.failure", ct));
         }
 
+        JsonElement filtered = await JsonElementResult(client, Request(HttpMethod.Get, "/api/v1/notifications/mine?search=test.outbox.failure&page=1&pageSize=10", login.AccessToken, company), ct);
+        Assert.Equal(1, filtered.GetProperty("total").GetInt64());
+        JsonElement filteredRow = filtered.GetProperty("items").EnumerateArray().Single();
+        Assert.Equal("system", filteredRow.GetProperty("category").GetString());
+        Assert.Equal("urgent", filteredRow.GetProperty("priority").GetString());
+        Assert.False(filteredRow.GetProperty("isActionable").GetBoolean());
+
         Guid concurrent = await Json<Guid>(await client.SendAsync(Request(HttpMethod.Post, "/api/v1/notifications/queue", login.AccessToken, company,
             new { recipientUserId = actor, channel = NotificationChannel.InApp, templateCode = "test.outbox.concurrent", payload = "{}" }), ct), ct);
         using HttpClient second = host.CreateClient();
