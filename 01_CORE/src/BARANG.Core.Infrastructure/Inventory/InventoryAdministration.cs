@@ -4,10 +4,12 @@ using BARANG.Core.Application.Abstractions.Correlation;
 using BARANG.Core.Application.Abstractions.Transactions;
 using BARANG.Core.Application.Auditing;
 using BARANG.Core.Application.Inventory;
+using BARANG.Core.Application.Pagination;
 using BARANG.Core.Application.Pricing;
 using BARANG.Core.Domain.Catalog;
 using BARANG.Core.Domain.Common;
 using BARANG.Core.Domain.Inventory;
+using BARANG.Core.Domain.Organization;
 using BARANG.Core.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -16,9 +18,24 @@ namespace BARANG.Core.Infrastructure.Inventory;
 #pragma warning disable CA1725,CA1862
 public sealed partial class InventoryAdministration(CoreDbContext db,ITransactionExecutor tx,ICompanyContext company,ICurrentActor actor,ICorrelationContext correlation,IAuditWriter audit,TimeProvider time,IOrderPricingEngine pricing,BARANG.Core.Application.Background.INotificationAdministration notifications):IInventoryAdministration,IPurchasingAdministration
 {
+ private sealed record AdjustmentRow(StockTransaction Transaction,Warehouse Warehouse,ProductVariant Variant,Product Product);
  private Guid Company=>company.RequireCompanyId();private Guid Actor=>Guid.TryParse(actor.Actor.UserId,out Guid id)?id:throw new InvalidOperationException("Authenticated actor required.");private DateTimeOffset Now=>time.GetUtcNow();private string Correlation=>correlation.CorrelationId??Guid.NewGuid().ToString("N");
  public Task<Result<IReadOnlyList<StockBalanceView>>>BalancesAsync(Guid?w,Guid?v,CancellationToken ct)=>tx.ExecuteAsync(async t=>{IQueryable<StockBalance>q=db.StockBalances.AsNoTracking();if(w is not null)q=q.Where(x=>x.WarehouseId==w);if(v is not null)q=q.Where(x=>x.ProductVariantId==v);return Result.Success<IReadOnlyList<StockBalanceView>>((await q.OrderBy(x=>x.WarehouseId).ThenBy(x=>x.ProductVariantId).ToListAsync(t)).Select(BalanceView).ToArray());},ct);
  public Task<Result<IReadOnlyList<StockTransactionView>>>TransactionsAsync(Guid?w,Guid?v,CancellationToken ct)=>tx.ExecuteAsync(async t=>{IQueryable<StockTransaction>q=db.StockTransactions.AsNoTracking();if(w is not null)q=q.Where(x=>x.WarehouseId==w);if(v is not null)q=q.Where(x=>x.ProductVariantId==v);return Result.Success<IReadOnlyList<StockTransactionView>>((await q.OrderByDescending(x=>x.OccurredAtUtc).Take(500).ToListAsync(t)).Select(TransactionView).ToArray());},ct);
+  public Task<Result<PagedResult<StockAdjustmentListView>>>AdjustmentsAsync(string?search,Guid?warehouseId,int pageNumber,int pageSize,CancellationToken ct)=>tx.ExecuteAsync(async t=>
+  {
+   string term=(search??"").Trim();
+   List<StockTransaction> transactions=await db.StockTransactions.AsNoTracking().Where(x=>x.TransactionType==StockTransactionType.Adjustment&&(warehouseId==null||x.WarehouseId==warehouseId)).OrderByDescending(x=>x.OccurredAtUtc).ThenByDescending(x=>x.Id).ToListAsync(t);
+   Dictionary<Guid,Warehouse> warehouses=await db.Warehouses.AsNoTracking().Where(x=>transactions.Select(y=>y.WarehouseId).Contains(x.Id)).ToDictionaryAsync(x=>x.Id,t);
+   Dictionary<Guid,ProductVariant> variants=await db.ProductVariants.AsNoTracking().Where(x=>transactions.Select(y=>y.ProductVariantId).Contains(x.Id)).ToDictionaryAsync(x=>x.Id,t);
+   Guid[] productIds=variants.Values.Select(x=>x.ProductId).Distinct().ToArray();
+   Dictionary<Guid,Product> products=await db.Products.AsNoTracking().Where(x=>productIds.Contains(x.Id)).ToDictionaryAsync(x=>x.Id,t);
+   IEnumerable<StockAdjustmentListView> mapped=transactions.Where(x=>warehouses.ContainsKey(x.WarehouseId)&&variants.ContainsKey(x.ProductVariantId)&&products.ContainsKey(variants[x.ProductVariantId].ProductId)).Select(x=>{Warehouse w=warehouses[x.WarehouseId];ProductVariant v=variants[x.ProductVariantId];Product p=products[v.ProductId];return new StockAdjustmentListView(x.Id,x.WarehouseId,w.Code,w.Name,x.ProductVariantId,p.ProductCode,p.Name,v.Sku,x.TransactionType,x.QuantityDelta,x.UomCode,x.ReasonCode,x.Reference,x.OccurredAtUtc,x.ActorUserId);});
+   if(term.Length>0)mapped=mapped.Where(x=>new[]{x.Reference,x.ReasonCode??"",x.WarehouseCode,x.WarehouseName,x.Sku,x.ProductCode,x.ProductName}.Any(value=>value.Contains(term,StringComparison.OrdinalIgnoreCase)));
+   long total=mapped.LongCount();
+   List<StockAdjustmentListView> rows=mapped.Skip((pageNumber-1)*pageSize).Take(pageSize).ToList();
+   return Result.Success(new PagedResult<StockAdjustmentListView>(rows,pageNumber,pageSize,total));
+  },ct);
  public Task<Result<IReadOnlyList<ReturnableIssueView>>>ReturnableIssuesAsync(CancellationToken ct)=>tx.ExecuteAsync(async t=>{List<StockTransaction>issues=await db.StockTransactions.AsNoTracking().Where(x=>x.SourceType=="WAREHOUSE_ISSUE"&&x.TransactionType==StockTransactionType.Issue).OrderByDescending(x=>x.OccurredAtUtc).Take(500).ToListAsync(t);List<Guid> ids=issues.Where(x=>x.SourceId is not null).Select(x=>x.SourceId!.Value).ToList();Dictionary<Guid,StockReservation> reservations=await db.StockReservations.AsNoTracking().Where(x=>ids.Contains(x.Id)).ToDictionaryAsync(x=>x.Id,t);List<StockTransaction> returns=await db.StockTransactions.AsNoTracking().Where(x=>x.TransactionType==StockTransactionType.Return&&x.SourceId!=null&&ids.Contains(x.SourceId.Value)).ToListAsync(t);Dictionary<Guid,Guid> itemOrders=await db.OrderItems.AsNoTracking().Where(x=>reservations.Values.Select(r=>r.OrderItemId).Contains(x.Id)).ToDictionaryAsync(x=>x.Id,x=>x.OrderId,t);return Result.Success<IReadOnlyList<ReturnableIssueView>>(issues.Select(x=>{decimal issued=Math.Abs(x.QuantityDelta),returned=returns.Where(y=>y.SourceId==x.Id).Sum(y=>y.QuantityDelta);reservations.TryGetValue(x.SourceId??Guid.Empty,out StockReservation? r);Guid? item=r?.OrderItemId;return new ReturnableIssueView(x.Id,item is Guid itemId&&itemOrders.TryGetValue(itemId,out Guid order)?order:null,item,x.WarehouseId,x.ProductVariantId,x.UomCode,issued,returned,Math.Max(0,issued-returned),x.Reference,x.OccurredAtUtc);}).Where(x=>x.RemainingQuantity>0).ToArray());},ct);
  public Task<Result<IReadOnlyList<StockShortageView>>>ShortagesAsync(bool includeClosed,int limit,CancellationToken ct)=>tx.ExecuteAsync(async t=>{IQueryable<StockShortage>q=db.StockShortages.AsNoTracking();if(!includeClosed)q=q.Where(x=>x.IsActive);return Result.Success<IReadOnlyList<StockShortageView>>((await q.OrderByDescending(x=>x.CreatedAtUtc).Take(limit).ToListAsync(t)).Select(x=>new StockShortageView(x.Id,x.OrderItemId,x.WarehouseId,x.ProductVariantId,x.RequiredQuantity,x.AvailableQuantity,x.ShortageQuantity,x.IsActive,x.CreatedAtUtc,x.Version,x.ProposalStatus,x.PurchaseRequestId,x.LastRecheckedAtUtc)).ToArray());},ct);
  public Task<Result<IReadOnlyList<ReservationView>>>ReservationsAsync(bool includeClosed,int limit,CancellationToken ct)=>tx.ExecuteAsync(async t=>{IQueryable<StockReservation>q=db.StockReservations.AsNoTracking();if(!includeClosed)q=q.Where(x=>x.Status==ReservationStatus.Active||x.Status==ReservationStatus.PartiallyReleased);return Result.Success<IReadOnlyList<ReservationView>>( (await q.OrderByDescending(x=>x.CreatedAtUtc).Take(limit).ToListAsync(t)).Select(ReservationView).ToArray());},ct);
