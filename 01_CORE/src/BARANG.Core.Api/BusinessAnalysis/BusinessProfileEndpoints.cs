@@ -17,6 +17,7 @@ public static class BusinessProfileEndpoints
         e.MapPut("/api/v1/orders/{id:guid}/business-profile",async(Guid id,OrderBusinessProfileCommand c,IBusinessProfileAdministration s,CancellationToken ct)=>Map(await s.SetOrderAsync(id,c,ct))).RequireAuthorization(SecurityPermissions.OrderManage);
         e.MapGet("/api/v1/order-print-operations/{id:guid}/technical-profile",async(Guid id,IBusinessProfileAdministration s,CancellationToken ct)=>Map(await s.GetPrintAsync(id,ct))).RequireAuthorization(SecurityPermissions.OrderRead);
         e.MapPut("/api/v1/order-print-operations/{id:guid}/technical-profile",async(Guid id,PrintTechnicalProfileCommand c,IBusinessProfileAdministration s,CancellationToken ct)=>Map(await s.SetPrintAsync(id,c,ct))).RequireAuthorization(SecurityPermissions.OrderManage);
+        e.MapManagementDashboardEndpoints();
         return e;
     }
     private static IResult Map<T>(Result<T> result)=>result.IsSuccess?Results.Ok(result.Value):Results.Problem(ApiProblemDetailsMapper.Create(result.Error,"business-profile",null));

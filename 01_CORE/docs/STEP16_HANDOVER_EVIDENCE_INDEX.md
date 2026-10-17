@@ -8,6 +8,10 @@
 - Notification query contract/filter evidence: `src/BARANG.Core.Application/Background/BackgroundContracts.cs`, `src/BARANG.Core.Api/Background/BackgroundEndpoints.cs`, `src/BARANG.Core.Infrastructure/Background/NotificationAdministration.cs`, `tests/BARANG.Core.IntegrationTests/Database/NotificationOutboxAcceptanceTests.cs`
 - Deployed Notification Center screenshots: `.artifacts/step12-notification-browser-fa-desktop.png`, `.artifacts/step12-notification-browser-fa-mobile.png`, `.artifacts/step12-notification-browser-bell.png`, `.artifacts/step12-notification-browser-en.png`, `.artifacts/step12-notification-browser-ar.png`
 
+- Management Dashboard metric registry: `docs/MANAGEMENT_DASHBOARD_METRIC_REGISTRY_FA.md`
+- Management Dashboard acceptance: `docs/MANAGEMENT_DASHBOARD_ACCEPTANCE_REPORT_FA.md`
+- Management Dashboard API/UI: `src/BARANG.Core.Api/BusinessAnalysis/ManagementDashboardEndpoints.cs`, `src/BARANG.Backoffice/Components/Pages/ManagementDashboard.razor`
+
 - `docs/STEP3_READINESS_REVIEW_FA.md`
 - `docs/STEP4_ACCEPTANCE_REPORT_FA.md`
 - `docs/STEP4_5_GRID_ACTION_ACCEPTANCE_FA.md`
