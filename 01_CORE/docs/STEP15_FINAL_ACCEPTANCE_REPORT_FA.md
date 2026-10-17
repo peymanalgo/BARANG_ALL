@@ -13,7 +13,7 @@
 - source/application candidate: `792a3e0f7097d2f43c700c8f09d92f51835d884d` (قابل resolve)
 - reported source `792a3e0e3f9e8dd7af26bf9d65fe20d17baf4b85` قابل resolve نیست؛ `git cat-file`, `fsck`, reflog، worktree و remote refs بررسی شد. `792a3e0f` در reflog به candidate واقعی بالا resolve شد.
 - candidate worktree: clean detached worktree از همین SHA؛ `git diff <candidate>..HEAD -- src` خالی است. تنها تفاوت source/test بعدی، fixture تست `tests/Acceptance/Step9ProductionFixture.ps1` است و در application image وارد نشده.
-- acceptance/report commit: `b02259cc1e7a7486ec33b74b72789688c19044cd`
+- previous acceptance/report commit: `b02259cc1e7a7486ec33b74b72789688c19044cd`; this finalized provenance update is delivered in the pushed commit containing this report.
 - parent accepted baseline: `86def3f69276d25e74c531866ca8828a17106314`
 - اصلاح واقعی: `SearchableSelect.razor` دیگر هنگام پاسخ async با `@key` بازسازی نمی‌شود و listbox را باز نگه می‌دارد.
 - selectorهای E2E سازمان/افراد با action menu سه‌نقطه‌ای استاندارد منطبق شدند؛ assertionها حذف نشدند.
