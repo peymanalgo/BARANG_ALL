@@ -66,7 +66,14 @@ Runner با system Chrome، login، company selection، route واقعی، و as
 
 ## استقرار development
 
-پس از commit نهایی، API/Backoffice با همان source SHA و build provenance به compose project `barang-core` روی `localhost:8080` و `localhost:5100` deploy می‌شوند. volumeهای PostgreSQL/MinIO/Redis، keyها، business data و admin حفظ می‌شوند. نتیجهٔ image digest و smoke نهایی در همین report و manifest تکمیل می‌شود.
+نسخهٔ application source `a7202d6cfa6e7a197495bd60be62e501e1c7e59f` با build provenance صریح deploy شد:
+
+| سرویس | image digest | BARANG_BUILD_COMMIT | وضعیت |
+|---|---|---|---|
+| API | `sha256:9ce88c9a2c69e35da0fa05cba4009490ebafdbc17100644e809a67996e2d4d3e` | `a7202d6cfa6e7a197495bd60be62e501e1c7e59f` | healthy، `127.0.0.1:8080` |
+| Backoffice | `sha256:c20f89831850794e3af1f38dcb3012343fbc9d7500a38ae8f9516fdf8bbd0e22` | `a7202d6cfa6e7a197495bd60be62e501e1c7e59f` | healthy، `localhost:5100` |
+
+Compose project `barang-core` و volumeهای PostgreSQL/MinIO/Redis، keyها، business data و admin حفظ شدند؛ migration جدیدی وجود نداشت. Smoke authenticated با همان user/company development در پورت ۵۱۰۰ موفق شد: چهار کارت، `Open orders=38`، `Overdue tasks=0`، `Open shortages=0`، وضعیت empty واقعی برای Needs Attention، reload و fa mobile بدون console error. تصاویر واقعی این deployment در `.artifacts/management-dashboard-dev/` هستند. دادهٔ development برای ساختن shortage/task یا تغییر business state mutate نشد.
 
 ## محدودیت‌های باقی‌مانده
 
