@@ -24,8 +24,8 @@
 
 ## Evidence paths
 
-TRXهای Unit/Backoffice/Integration/browser در manifest و report بالا ثبت شده‌اند. backup و diagnostics زیر `.artifacts/` task-local هستند و به‌دلیل احتمال شناسه/اطلاعات حساس commit نشده‌اند. provenance استقرار از image digest و `BARANG_BUILD_COMMIT` containerها قابل بررسی است.
+TRXهای current-source در manifest و report بالا ثبت شده‌اند. candidate قابل‌بازسازی `792a3e0f7097d2f43c700c8f09d92f51835d884d` است؛ SHA گزارش‌شدهٔ `792a3e0e...` resolve نشد و نباید به‌عنوان provenance استفاده شود. image IDهای API/Backoffice و `BARANG_BUILD_COMMIT` containerها در manifest ثبت شده‌اند؛ metadata به‌تنهایی proof source نیست و اینجا با clean detached worktree و diff source corroborate شده است. backup و diagnostics زیر `.artifacts/` task-local هستند و commit نشده‌اند.
 
 ## Rollout and open actions
 
-نسخهٔ workflow برای instanceهای موجود تغییر داده نشده است؛ graph candidate در این run فقط در environment ایزوله ساخته/منتشر شد و برای instanceهای جدید پس از configure/validate جداگانه قابل rollout است. Exact-image identity/company, migration, workflow, artwork-backed production fixture, Pricing→Submit و browser evidence در manifest و STEP15 report ثبت شده‌اند. full cross-module business path از STEP2–14 به‌عنوان unchanged evidence reuse شده و اجرای یکپارچهٔ دوبارهٔ آن به‌عنوان optional release evidence باقی است؛ این فایل همچنان user guide یا handover نهایی نیست.
+نسخهٔ workflow برای instanceهای موجود تغییر داده نشده است؛ graph candidate در این run فقط در environment ایزوله ساخته/منتشر شد و برای instanceهای جدید پس از configure/validate جداگانه قابل rollout است. Exact-image identity/company, migration, workflow, artwork-backed production fixture, Pricing→Submit و browser evidence در manifest و STEP15 report ثبت شده‌اند. full cross-module business path از STEP2–14 به‌عنوان unchanged evidence reuse شده و اجرای یکپارچهٔ دوبارهٔ آن به‌عنوان limitation evidentiary ثبت است؛ این فایل همچنان user guide یا handover نهایی نیست.
