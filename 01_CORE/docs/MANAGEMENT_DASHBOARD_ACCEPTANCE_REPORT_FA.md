@@ -55,6 +55,7 @@ Runner با system Chrome، login، company selection، route واقعی، و as
 - فارسی mobile: `.artifacts/management-dashboard-fa-mobile.png`
 - English: `.artifacts/management-dashboard-en.png`
 - العربية: `.artifacts/management-dashboard-ar.png`
+- صفحهٔ مقصد کمبود: `.artifacts/management-dashboard-attention-drilldown.png`
 
 بررسی شد: کارت‌های populated، shortage واقعی در Needs Attention، click و navigation به `/workspace/inventory?section=shortages`، reload، fa/en/ar، RTL/LTR، mobile layout و نبود console error. stage خالی، empty state واقعی است نه صفر ساختگی. تصاویر task-local هستند و به Git commit نشده‌اند.
 

@@ -13,6 +13,7 @@
 - Management Dashboard API/UI: `src/BARANG.Core.Api/BusinessAnalysis/ManagementDashboardEndpoints.cs`, `src/BARANG.Backoffice/Components/Pages/ManagementDashboard.razor`
 - Management Dashboard browser runner: `tests/Acceptance/ManagementDashboardBrowserRunner/Program.cs`
 - Management Dashboard screenshots: `.artifacts/management-dashboard-fa-desktop.png`, `.artifacts/management-dashboard-fa-mobile.png`, `.artifacts/management-dashboard-en.png`, `.artifacts/management-dashboard-ar.png`
+- Management Dashboard attention drill-down screenshot: `.artifacts/management-dashboard-attention-drilldown.png`
 - Management Dashboard development smoke screenshots: `.artifacts/management-dashboard-dev/management-dashboard-fa-desktop.png`, `.artifacts/management-dashboard-dev/management-dashboard-fa-mobile.png`
 
 - `docs/STEP3_READINESS_REVIEW_FA.md`
