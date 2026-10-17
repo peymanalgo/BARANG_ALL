@@ -5,7 +5,7 @@
 - source SHA: `792a3e0e3f9e8dd7af26bf9d65fe20d17baf4b85`
 - branch: `codex/step2-inventory-unit-contracts`
 - accepted parent: `86def3f69276d25e74c531866ca8828a17106314`
-- acceptance/report commit: `030195e844d1d5c9f0b143b0c4565a0b5253d219`
+- acceptance/report commit: `b02259cc1e7a7486ec33b74b72789688c19044cd`
 - build: `dotnet build .\BARANG.Backoffice.slnx -c Release --no-restore`
 
 ## Local deployment
