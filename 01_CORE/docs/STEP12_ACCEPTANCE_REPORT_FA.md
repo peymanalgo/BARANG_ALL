@@ -11,6 +11,14 @@ Notification Center فعلی از زیرساخت canonical `notifications/mine`�
 - طراحی fa/en/ar، RTL/LTR، mobile/desktop، رنگ‌های purple/turquoise/coral/amber، motif سبک چاپ/لباس و `prefers-reduced-motion` اضافه شد. هیچ notification count یا record ساختگی اضافه نشده است.
 - optional notification preferences هنوز مدل/سیاست تأییدشده‌ای در سیستم ندارد؛ mandatory operational notifications همچنان قابل خاموش‌کردن نیستند و preference جعلی persist نشده است.
 
+### شواهد اجرای واقعی و rollout محلی
+
+- source/deployed commit: `9a3595f48180f3b8bd800168b03adff0d5701d1b`؛ migration جدید لازم نبود و تاریخچه/دادهٔ اعلان‌ها حفظ شد.
+- API image: `sha256:ec8798feb1f81accc01a15332a1a039d3cc1294c3daac3c10b47a82d86af48db`؛ Backoffice image: `sha256:3e66ca4d3631791018315c4656f132d015c5f7ce9e0c2b5852dd76a040b0d55b`؛ هر دو runtime با `BARANG_BUILD_COMMIT=9a3595f48180f3b8bd800168b03adff0d5701d1b` ثبت شدند.
+- Compose project `barang-core`، API روی `localhost:8080` و Backoffice روی `localhost:5100`؛ readiness و login هر دو HTTP 200 و Hangfire worker healthy بود. PostgreSQL/Redis/MinIO و key/business volumes recreate نشدند.
+- standalone Playwright با system Chrome و کاربر مجاز فعلی: PASS؛ empty state معتبر، search no-results، bell، mark-all/read persistence، reload، Escape/overlay و screenshots fa desktop/mobile و en/ar اجرا شد. شواهد: `.artifacts/step12-notification-browser-fa-desktop.png`, `.artifacts/step12-notification-browser-fa-mobile.png`, `.artifacts/step12-notification-browser-en.png`, `.artifacts/step12-notification-browser-ar.png`.
+- در deployment توسعه فعلی تعداد اعلان‌ها صفر بود؛ runner این را empty معتبر می‌داند و هیچ رکورد ساختگی یا mutation برای پر کردن صفحه ایجاد نشد.
+
 ## وضعیت فعلی
 
 این گزارش بر مبنای source فعلی branch `codex/step2-inventory-unit-contracts` تهیه شده است. زیرساخت canonical قبلی شامل `outbox_messages`، dispatcher/worker Hangfire، retry با سقف ۵ تلاش، dead-letter و Notification Center بود؛ اما تا این مرحله producer business واقعی در مسیر سفارش وجود نداشت و صفحه‌ی Notification Center placeholder بود.
