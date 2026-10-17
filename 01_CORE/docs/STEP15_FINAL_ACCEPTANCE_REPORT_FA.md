@@ -11,6 +11,7 @@
 ## provenance و تغییرات
 
 - source/application candidate: `792a3e0e3f9e8dd7af26bf9d65fe20d17baf4b85`
+- acceptance/report commit: `030195e844d1d5c9f0b143b0c4565a0b5253d219`
 - parent accepted baseline: `86def3f69276d25e74c531866ca8828a17106314`
 - اصلاح واقعی: `SearchableSelect.razor` دیگر هنگام پاسخ async با `@key` بازسازی نمی‌شود و listbox را باز نگه می‌دارد.
 - selectorهای E2E سازمان/افراد با action menu سه‌نقطه‌ای استاندارد منطبق شدند؛ assertionها حذف نشدند.
@@ -51,7 +52,7 @@ Integration با `--blame-hang --blame-hang-timeout 5m` اجرا شد؛ testhost
 
 ## deployment و Git
 
-- branch نسبت به `origin/main`: ۱۳۶ commit جلو و ۲ commit عقب؛ main ادغام نشد.
+- branch نسبت به `origin/main` در زمان تحویل: ۱۳۹ commit جلو و ۲ commit عقب؛ `origin/main` ancestor نیست و main ادغام نشد.
 - development local بعد از build candidate deploy شد؛ API و Backoffice هر دو `BARANG_BUILD_COMMIT=792a3e0e3f9e8dd7af26bf9d65fe20d17baf4b85` دارند.
 - API `:8080` image `sha256:e97007c51c3a4fa82f2366b7db479a7ea6f3c0daa59d660da95e30237a846733`؛ Backoffice `:5100` image `sha256:b9d13fbd902aa98172aa22ec1821b1ffbd10ded2c6158230d2ab1c26b4892f53`.
 - non-mutating checks: API root=200، readiness=200، Backoffice `/login`=200.
