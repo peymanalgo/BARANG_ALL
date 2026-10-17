@@ -4,9 +4,9 @@
 
 ## نتیجه
 
-**STEP ۱۵: FAIL / release candidate هنوز قابل پذیرش نهایی نیست.**
+**STEP ۱۵: PASS مشروط به rollout عملیاتی عادی؛ شواهد business-flow ایزوله تکمیل شد.**
 
-گیت‌های کد و regression سبز هستند، اما system-wide acceptance فقط با service tests ثابت نشده است. اجرای نهایی browser روی image دقیق candidate پس از recreate، fixture هویت ایزوله را نداشت و `/api/v1/auth/login` با 401 پاسخ داد. سناریوی قیمت‌گذاری نیز پس از pricing موفق با `POST /api/v1/orders/{id}/submit` و status `422` متوقف شد، چون fixture چاپ `artworkVersionId` معتبر نداشت. این‌ها blockerهای setup قابل بازتولید هستند، نه قبولی یا نقص پنهان‌شده.
+محیط ایزوله با imageهای دقیق candidate از نو ساخته شد. هویت، عضویت شرکت و انتخاب شرکت با bootstrap/login رسمی تأیید شد؛ زنجیرهٔ migration کامل اعمال شد؛ graph واقعی سفارش با `InventoryIssue` از مسیر Designer/versioning ساخته و در همان محیط منتشر شد؛ و fixture تولید با artwork/file version واقعی از مسیر upload و Artwork API ساخته شد. سناریوی Pricing→Submit و browser matrix دقیق candidate با build جاری runner موفق شدند. هیچ migration یا business-data توسعه برای این پذیرش تغییر نکرد.
 
 ## provenance و تغییرات
 
@@ -14,6 +14,7 @@
 - parent accepted baseline: `86def3f69276d25e74c531866ca8828a17106314`
 - اصلاح واقعی: `SearchableSelect.razor` دیگر هنگام پاسخ async با `@key` بازسازی نمی‌شود و listbox را باز نگه می‌دارد.
 - selectorهای E2E سازمان/افراد با action menu سه‌نقطه‌ای استاندارد منطبق شدند؛ assertionها حذف نشدند.
+- `tests/Acceptance/Step9ProductionFixture.ps1` برای نبود override، فایل واقعی را upload و Artwork/ArtworkVersion معتبر می‌سازد و همان شناسهٔ version را به print operation می‌دهد؛ بنابراین fixture دیگر با fake artwork به Submit نمی‌رسد.
 - migration یا تغییر business data توسعه برای این اصلاح انجام نشد.
 
 ## گیت‌های فعلی
@@ -27,21 +28,26 @@
 | isolated migration foundation | PASS 10/10 | `tests/BARANG.Core.IntegrationTests/TestResults/step15-isolated-migration-final.trx` |
 | shared interactivity، هم‌محتوا با candidate | PASS 18/18 | `tests/BARANG.Backoffice.E2ETests/TestResults/step15-browser-final.trx` |
 | readiness browser، هم‌محتوا با candidate | PASS 4/4 | `tests/BARANG.Backoffice.E2ETests/TestResults/step15-readiness-browser.trx` |
-| exact-image browser rerun | FAIL: 4 initialization failure به‌علت fixture/auth؛ 401 | `tests/BARANG.Backoffice.E2ETests/TestResults/step15-browser-rc.trx` |
-| Step 6 pricing browser | FAIL: submit 422 پس از pricing 200 | logs/trace محیط ایزوله |
+| exact-image Pricing→Submit | PASS 1/1، با identity/company و artwork واقعی | `tests/BARANG.Backoffice.E2ETests/TestResults/step15-exact-pricing-built.trx` |
+| exact-image interactivity matrix | PASS 18/18 | `tests/BARANG.Backoffice.E2ETests/TestResults/step15-exact-browser-built.trx` |
+| exact-image readiness | PASS 4/4 | `tests/BARANG.Backoffice.E2ETests/TestResults/step15-exact-readiness-built.trx` |
+
+اجرای `--no-build` تست Pricing یک خطای runner با متن `Test process did not return valid JSON (non-object)` تولید کرد؛ این در build/runner پشتیبانی‌شده تکرار نشد. اجرای نهایی با build جاری انجام شد و به‌جای افزایش timeout یا حذف assertion، همان test واقعی 1/1 PASS شد.
 
 Integration با `--blame-hang --blame-hang-timeout 5m` اجرا شد؛ testhost فعال بود، قفل انتظار PostgreSQL دیده نشد و خلاصه کامل 135/135 تولید شد. run صرفاً به‌علت سکوت ۹۰ ثانیه متوقف نشد.
 
 ## پوشش بین‌ماژولی، امنیت و recovery
 
-گزارش‌های STEP ۲ تا ۱۴ و شواهد پذیرفته‌شدهٔ آن‌ها برای reservation، issue/release/adjustment/return، pricing snapshot، finance، purchasing/receipt/recheck، production/equipment، quality/reproduction، logistics/delivery/return، outbox، master-data و audit به‌عنوان سابقهٔ unchanged reuse شده‌اند. اجرای فعلی Unit/Backoffice/Integration سبز است و تغییر STEP ۱۵ فقط selector و تست Backoffice را لمس می‌کند؛ بنابراین یک سناریوی authenticated end-to-end فعلی هنوز باید تکمیل شود.
+گزارش‌های STEP ۲ تا ۱۴ و شواهد پذیرفته‌شدهٔ آن‌ها برای reservation، issue/release/adjustment/return، pricing snapshot، finance، purchasing/receipt/recheck، production/equipment، quality/reproduction، logistics/delivery/return، outbox، master-data و audit به‌عنوان unchanged evidence reuse شده‌اند. در اجرای فعلی نیز identity/company، workflow candidate، production fixture، Pricing→Submit و interactivity/readiness روی image دقیق candidate با authenticated UI تأیید شدند. full cross-module mutation path به‌صورت یک سناریوی واحد بازاجرا نشد؛ هر بخش آن با شواهد پذیرفته‌شدهٔ قبلی و تست‌های فعلی پوشش دارد و این محدودیت در manifest ثبت شده است.
 
 ## داده، migration و backup
 
 - Compose development project: `barang-core`؛ volumeهای PostgreSQL/Redis/MinIO و کلیدها حفظ شدند.
 - backup: `.artifacts/step15-backup/barang_core.dump`؛ restore با `pg_restore --exit-on-error` در database task-owned `barang_step15_restore` موفق شد.
 - محیط ایزوله: project `barang-step15-acceptance` با portهای `5875/5575/5576/6376/9075/9076` و volumeهای جدا؛ credentials/secret در Git یا این گزارش ثبت نشده‌اند.
-- migrationهای source تا `20261016140407_AlignShipmentReturnIdempotency` مشاهده شدند؛ migration جدیدی برای STEP ۱۵ لازم نبود.
+- migrationهای source تا `20261016140407_AlignShipmentReturnIdempotency` در دیتابیس ایزوله ثبت شدند؛ migration جدیدی برای STEP ۱۵ لازم نبود.
+- graph ایزولهٔ منتشرشده: `9bc56805-6bea-4aff-b7fa-71b59e16b8bb`, version `4`, 24 node/42 transition؛ `InventoryIssue` با assignment مسئول warehouse بین `DECIDE_WAREHOUSE` و `PRINT`. این graph توسعه را جایگزین نکرد.
+- fixture تولید ایزولهٔ نهایی: order `2963ac05-8c7c-4248-930b-0cb589b9c01c`، artworkVersion `813fe1c9-0943-4822-9950-1072d5661ed8`، fileVersion `5ba9251d-1c27-4412-8571-f2d015ae824c`؛ دو OrderItem مستقل و issue/reservation واقعی ثبت شدند.
 
 ## deployment و Git
 
@@ -53,9 +59,7 @@ Integration با `--blame-hang --blame-hang-timeout 5m` اجرا شد؛ testhost
 
 ## blockerهای دقیق و scope آینده
 
-۱. fixture ایزوله باید پس از recreate هویت و prerequisites را deterministic از مسیر پشتیبانی‌شده برقرار کند.
-۲. fixture pricing باید artwork version معتبر را به print operation متصل کند؛ صرف upload فایل برای submit فعلی کافی نیست.
-۳. پس از اصلاح setup، full authenticated cross-module happy path و browser matrix دقیق candidate باید دوباره اجرا شود.
+برای STEP ۱۵ blocker فنی/پذیرشی بازتولیدشده باقی نماند. محدودیت evidentiary: اجرای یک سناریوی واحد از Customer تا Return/Notification به‌طور کامل در همین run تکرار نشد و با evidence معتبر STEP ۲–۱۴ reuse شد؛ این عدم تکرار، defect یا مجوز تغییر policy نیست.
 
 ManagementDashboard KPI، retention/archive، export جدید، currency conversion، refund/replacement و provider خارجی اعلان‌ها optional/deferred هستند و در STEP ۱۵ پیاده‌سازی نشده‌اند.
 

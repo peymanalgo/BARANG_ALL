@@ -24,8 +24,12 @@ API root، `/health/ready` و Backoffice `/login` همگی موفق بودند؛
 - migration: `tests/BARANG.Core.IntegrationTests/TestResults/step15-isolated-migration-final.trx` — 10/10
 - browser equivalent candidate: `tests/BARANG.Backoffice.E2ETests/TestResults/step15-browser-final.trx` — 18/18
 - readiness: `tests/BARANG.Backoffice.E2ETests/TestResults/step15-readiness-browser.trx` — 4/4
-- exact image rerun: `tests/BARANG.Backoffice.E2ETests/TestResults/step15-browser-rc.trx` — fixture/auth failure
+- exact-image Pricing→Submit: `tests/BARANG.Backoffice.E2ETests/TestResults/step15-exact-pricing-built.trx` — 1/1
+- exact-image interactivity: `tests/BARANG.Backoffice.E2ETests/TestResults/step15-exact-browser-built.trx` — 18/18
+- exact-image readiness: `tests/BARANG.Backoffice.E2ETests/TestResults/step15-exact-readiness-built.trx` — 4/4
+
+Exact isolated setup: project `barang-step15-acceptance`; API `5875`, Backoffice `5575`, PostgreSQL `5576`, Redis `6376`, MinIO `9075/9076`; final migration `20261016140407_AlignShipmentReturnIdempotency`. Bootstrap/login/company selection succeeded. Candidate graph version 4 was created/published only in isolation. Production fixture used real uploaded `artworkVersionId` and `fileVersionId`; no fake IDs or SQL-fabricated order state were used.
 
 ## Recovery and release decision
 
-Backup توسعه `.artifacts/step15-backup/barang_core.dump` خارج از Git نگه داشته می‌شود و restore آن verify شد. این candidate به‌دلیل blockerهای browser fixture هنوز release-approved نیست؛ workflowهای موجود و instanceهای running نباید خودکار migrate شوند.
+Backup توسعه `.artifacts/step15-backup/barang_core.dump` خارج از Git نگه داشته می‌شود و restore آن verify شد. Candidate از نظر STEP15 acceptance PASS است؛ rollout graph همچنان برای instanceهای موجود خودکار انجام نمی‌شود و graph ایزوله باید برای instanceهای جدید از مسیر change-control جداگانه configure شود.

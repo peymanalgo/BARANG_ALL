@@ -49,12 +49,21 @@ $variant = Invoke-Api Post "/api/v1/products/$($product.id)/variants" @{ sku = "
 $equipment = Invoke-Api Post '/api/v1/equipment/' @{ equipmentCode = "S9E$suffix"; name = 'STEP9 press'; equipmentTypeCode = 'PRESS'; operationalStatusCode = 'AVAILABLE'; branchId = $branch.id }
 Invoke-Api Post '/api/v1/pricing/tariffs' @{ tariffType = 0; code = "S9T$suffix"; productVariantId = $variant.id; amount = 100; currencyCode = 'IRR'; validFrom = (Get-Date).ToString('yyyy-MM-dd') } | Out-Null
 Invoke-Api Post '/api/v1/pricing/tariffs' @{ tariffType = 1; code = "S9PRINT$suffix"; printPositionCode = 'FRONT'; printMethodCode = 'SCREEN'; amount = 10; currencyCode = 'IRR'; validFrom = (Get-Date).ToString('yyyy-MM-dd') } | Out-Null
-$artworkId = if ($env:BARANG_STEP9_ARTWORK_ID) { [Guid]$env:BARANG_STEP9_ARTWORK_ID } else { [Guid]'4d72f0c0-d8f0-4ea9-bfc1-9da578b12bc1' }
-$artworkVersionId = if ($env:BARANG_STEP9_ARTWORK_VERSION_ID) { [Guid]$env:BARANG_STEP9_ARTWORK_VERSION_ID } else { [Guid]'5dc25e80-62d9-4144-9663-4f7d076e3160' }
-$fileVersionId = if ($env:BARANG_STEP9_FILE_VERSION_ID) { [Guid]$env:BARANG_STEP9_FILE_VERSION_ID } else { [Guid]'681336b6-d7de-4a24-bf07-6bedcb5f2dc5' }
-$artwork = [pscustomobject]@{ id = $artworkId }
-$artworkVersion = [pscustomobject]@{ id = $artworkVersionId; fileVersionId = $fileVersionId }
-$upload = [pscustomobject]@{ fileId = [Guid]::Empty; fileVersionId = $fileVersionId }
+if ($env:BARANG_STEP9_ARTWORK_ID -and $env:BARANG_STEP9_ARTWORK_VERSION_ID -and $env:BARANG_STEP9_FILE_VERSION_ID) {
+    $artwork = Invoke-Api Get "/api/v1/artworks/$([Guid]$env:BARANG_STEP9_ARTWORK_ID)"
+    $artworkVersion = Invoke-Api Get "/api/v1/artworks/$([Guid]$env:BARANG_STEP9_ARTWORK_ID)/versions" | Where-Object { $_.id -eq [Guid]$env:BARANG_STEP9_ARTWORK_VERSION_ID } | Select-Object -First 1
+    $upload = [pscustomobject]@{ fileId = [Guid]::Empty; fileVersionId = [Guid]$env:BARANG_STEP9_FILE_VERSION_ID }
+    if (-not $artworkVersion) { throw 'Configured artwork version was not found in the selected company.' }
+} else {
+    $fixtureFile = Join-Path $PSScriptRoot '../../src/BARANG.Backoffice/wwwroot/images/login-background.png'
+    $fixtureBytes = [System.IO.File]::ReadAllBytes((Resolve-Path $fixtureFile).Path)
+    $uniqueFixture = Join-Path ([System.IO.Path]::GetTempPath()) ("barang-step9-artwork-" + [Guid]::NewGuid().ToString('N') + '.png')
+    [System.IO.File]::WriteAllBytes($uniqueFixture, $fixtureBytes + [System.Text.Encoding]::UTF8.GetBytes([Guid]::NewGuid().ToString()))
+    $upload = Upload-File $uniqueFixture
+    Remove-Item -LiteralPath $uniqueFixture -Force -ErrorAction SilentlyContinue
+    $artwork = Invoke-Api Post '/api/v1/artworks/' @{ code = "S9ART$suffix"; title = 'STEP9 isolated artwork'; description = 'Sanitized acceptance artwork'; categoryCode = $null; designerUserId = $null; lifecycleStatus = 'Approved' }
+    $artworkVersion = Invoke-Api Post "/api/v1/artworks/$($artwork.id)/versions" @{ fileVersionId = $upload.fileVersionId; notes = 'STEP9 supported fixture version' }
+}
 
 # Stock is posted through the supported inventory movement API; no database seed is used.
 Invoke-Api Post '/api/v1/inventory/adjustments/true' @{ warehouseId = $warehouse.id; productVariantId = $variant.id; quantity = 20; reference = "STEP9-STOCK-$suffix"; reasonCode = 'COUNT'; uomCode = 'PCS' } | Out-Null

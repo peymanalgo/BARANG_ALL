@@ -28,4 +28,4 @@ TRXهای Unit/Backoffice/Integration/browser در manifest و report بالا �
 
 ## Rollout and open actions
 
-نسخهٔ workflow برای instanceهای موجود تغییر داده نشده است؛ graph جدید فقط برای instanceهای جدید پس از configure/validate جداگانه قابل rollout است. برای release نهایی باید fixture هویت و artwork version پس از recreate پایدار شود، سپس full authenticated cross-module path، failure/security/recovery matrix و PR status احراز‌شده تکمیل شود.
+نسخهٔ workflow برای instanceهای موجود تغییر داده نشده است؛ graph candidate در این run فقط در environment ایزوله ساخته/منتشر شد و برای instanceهای جدید پس از configure/validate جداگانه قابل rollout است. Exact-image identity/company, migration, workflow, artwork-backed production fixture, Pricing→Submit و browser evidence در manifest و STEP15 report ثبت شده‌اند. full cross-module business path از STEP2–14 به‌عنوان unchanged evidence reuse شده و اجرای یکپارچهٔ دوبارهٔ آن به‌عنوان optional release evidence باقی است؛ این فایل همچنان user guide یا handover نهایی نیست.
