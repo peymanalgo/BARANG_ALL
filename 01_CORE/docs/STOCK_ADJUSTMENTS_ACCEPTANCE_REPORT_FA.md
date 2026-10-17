@@ -67,7 +67,19 @@ dotnet run --project tests/Acceptance/StockAdjustmentsBrowserRunner/StockAdjustm
 
 ## وضعیت استقرار
 
-تا پیش از commit نهایی، استقرار توسعه تغییری نکرده است. پس از commit و عبور gateها، API و Backoffice به‌صورت coherent از همان SHA با Compose فعلی `barang-core` ساخته و روی `localhost:8080`/`localhost:5100` مستقر می‌شوند؛ volumeها، business data، keys و credentials حفظ می‌شوند. image digestها و SHA نهایی در همین فایل پس از deployment تکمیل می‌شوند.
+commit نهایی application/test/report این تغییر: `623051d5947002991db31a539ddc028107e5ade9`.
+
+استقرار توسعه‌ی موجود با Compose project `barang-core` بدون reset یا migration جدید به‌روزرسانی شد. هر دو سرویس از همین SHA ساخته شدند:
+
+- API image: `sha256:bd84ad0c674c7d49d40c2c23bd0e13b4c4eed4e9a37f780fa889925877b0410d`
+- Backoffice image: `sha256:dd9ac38bc09bd7c16038627d106f8ef565dad8e6ce22c7f7ba9bec9d030225ff`
+- runtime `BARANG_BUILD_COMMIT` در هر دو container: `623051d5947002991db31a539ddc028107e5ade9`
+- API: `http://localhost:8080`, readiness HTTP 200 / `Healthy`
+- Backoffice: `http://localhost:5100/login`, HTTP 200
+
+با system Chrome و کاربر مجاز توسعه، مسیر `/workspace/inventory?section=adjustments` به‌صورت read-only بازخوانی شد: page smoke با rows=0، بدون load error و بدون console error، standalone Add حاضر و screenshot در `.artifacts/stock-adjustments-development-smoke.png` ثبت شد. هیچ mutation در توسعه انجام نشد.
+
+volumeهای `barang-core`، database، keys، business records، admin credentials و permissions حفظ شدند. migration جدید لازم نبود.
 
 ## محدودیت باقی‌مانده
 

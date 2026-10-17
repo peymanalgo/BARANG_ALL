@@ -9,7 +9,8 @@ string browserPath = Environment.GetEnvironmentVariable("BARANG_E2E_BROWSER_PATH
 string company = Environment.GetEnvironmentVariable("BARANG_E2E_COMPANY_ID") ?? throw new InvalidOperationException("BARANG_E2E_COMPANY_ID is required");
 string username = Environment.GetEnvironmentVariable("BARANG_E2E_USERNAME") ?? "admin";
 string password = Environment.GetEnvironmentVariable("BARANG_E2E_PASSWORD") ?? "BarangDev@2026";
-string warehouseId = Environment.GetEnvironmentVariable("BARANG_ADJUSTMENT_WAREHOUSE_ID") ?? throw new InvalidOperationException("BARANG_ADJUSTMENT_WAREHOUSE_ID is required");
+bool readOnly = string.Equals(Environment.GetEnvironmentVariable("BARANG_E2E_READ_ONLY"), "1", StringComparison.Ordinal);
+string warehouseId = Environment.GetEnvironmentVariable("BARANG_ADJUSTMENT_WAREHOUSE_ID") ?? (readOnly ? "" : throw new InvalidOperationException("BARANG_ADJUSTMENT_WAREHOUSE_ID is required"));
 string productCode = Environment.GetEnvironmentVariable("BARANG_ADJUSTMENT_PRODUCT_CODE") ?? "ADJ-P";
 string sku = Environment.GetEnvironmentVariable("BARANG_ADJUSTMENT_SKU") ?? "ADJ-SKU";
 string reference = "ADJ-BROWSER-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -23,11 +24,14 @@ using HttpRequestMessage select = new(HttpMethod.Post, "/api/v1/auth/me/company"
 select.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 (await http.SendAsync(select)).EnsureSuccessStatusCode();
 
-using HttpRequestMessage warehouses = new(HttpMethod.Get, "/api/v1/organization/warehouses?pageNumber=1&pageSize=100");
-warehouses.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token); warehouses.Headers.Add("X-Company-ID", company);
-using JsonDocument warehouseJson = JsonDocument.Parse(await (await http.SendAsync(warehouses)).Content.ReadAsStringAsync());
-JsonElement warehouseItems = warehouseJson.RootElement.ValueKind == JsonValueKind.Object && warehouseJson.RootElement.TryGetProperty("items", out JsonElement wi) ? wi : warehouseJson.RootElement;
-if (!warehouseItems.EnumerateArray().Any(x => x.GetProperty("id").GetString() == warehouseId)) throw new InvalidOperationException("The isolated warehouse prerequisite is absent.");
+if (!readOnly)
+{
+    using HttpRequestMessage warehouses = new(HttpMethod.Get, "/api/v1/organization/warehouses?pageNumber=1&pageSize=100");
+    warehouses.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token); warehouses.Headers.Add("X-Company-ID", company);
+    using JsonDocument warehouseJson = JsonDocument.Parse(await (await http.SendAsync(warehouses)).Content.ReadAsStringAsync());
+    JsonElement warehouseItems = warehouseJson.RootElement.ValueKind == JsonValueKind.Object && warehouseJson.RootElement.TryGetProperty("items", out JsonElement wi) ? wi : warehouseJson.RootElement;
+    if (!warehouseItems.EnumerateArray().Any(x => x.GetProperty("id").GetString() == warehouseId)) throw new InvalidOperationException("The isolated warehouse prerequisite is absent.");
+}
 
 using IPlaywright playwright = await Playwright.CreateAsync();
 await using IBrowser browser = await playwright.Chromium.LaunchAsync(new() { Headless = true, ExecutablePath = browserPath });
@@ -43,6 +47,15 @@ if (new Uri(page.Url).AbsolutePath == "/company") { await page.Locator(".company
 
 await page.GotoAsync($"{baseUrl}/workspace/inventory?section=adjustments", new() { WaitUntil = WaitUntilState.NetworkIdle });
 ILocator section = page.Locator("section.stock-adjustment-section"); await section.WaitForAsync();
+if (readOnly)
+{
+    if (await section.GetByText("دریافت اصلاح‌ها انجام نشد؛ دوباره تلاش کنید.", new() { Exact = true }).CountAsync() != 0) throw new InvalidOperationException("Deployed read-only page showed a load error.");
+    if (await section.Locator(".section-header button").CountAsync() != 1) throw new InvalidOperationException("Standalone Add button was not rendered on deployed page.");
+    await page.ScreenshotAsync(new() { Path = ".artifacts/stock-adjustments-development-smoke.png", FullPage = true });
+    if (consoleErrors.Count > 0) throw new InvalidOperationException("Browser console errors: " + string.Join(" | ", consoleErrors));
+    Console.WriteLine($"PASS stock-adjustments-development-readonly url={page.Url} rows={await section.Locator("tbody tr").CountAsync()} screenshot=.artifacts/stock-adjustments-development-smoke.png");
+    return;
+}
 ILocator search = section.Locator("input").First; await search.FillAsync("NO-SUCH-ADJUSTMENT-" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()); await page.WaitForTimeoutAsync(500);
 if (await section.GetByText("اصلاحی یافت نشد", new() { Exact = true }).CountAsync() != 1) throw new InvalidOperationException($"Successful-empty state was not rendered. body={await section.InnerTextAsync()}");
 if (await section.GetByText("دریافت اصلاح‌ها انجام نشد؛ دوباره تلاش کنید.", new() { Exact = true }).CountAsync() != 0) throw new InvalidOperationException("Empty state incorrectly contains a load error.");
