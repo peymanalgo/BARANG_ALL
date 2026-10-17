@@ -38,8 +38,9 @@ public static class ManagementDashboardEndpoints
         int? openShortageItems = inventoryRead ? await db.StockShortages.CountAsync(x => x.IsActive && x.ShortageQuantity > 0, ct) : null;
         var receivables = financeRead ? await ReceivablesAsync(db, ct) : [];
 
-        var stages = workflowRead ? await db.HumanTasks.AsNoTracking().Where(x => x.Status == HumanTaskStatus.Open || x.Status == HumanTaskStatus.Claimed)
-            .GroupBy(x => x.Stage).Select(g => new DashboardStageView(g.Key.ToString(), g.Count())).OrderBy(x => x.Stage).ToListAsync(ct) : [];
+        var stageRows = workflowRead ? await db.HumanTasks.AsNoTracking().Where(x => x.Status == HumanTaskStatus.Open || x.Status == HumanTaskStatus.Claimed)
+            .GroupBy(x => x.Stage).Select(g => new { Stage = g.Key, Count = g.Count() }).OrderBy(x => x.Stage).ToListAsync(ct) : [];
+        var stages = stageRows.Select(x => new DashboardStageView(x.Stage.ToString(), x.Count)).ToList();
         var attention = new List<DashboardAttentionView>();
         if (workflowRead) attention.AddRange(await db.HumanTasks.AsNoTracking()
             .Where(x => (x.Status == HumanTaskStatus.Open || x.Status == HumanTaskStatus.Claimed) && x.DueAtUtc < to)
