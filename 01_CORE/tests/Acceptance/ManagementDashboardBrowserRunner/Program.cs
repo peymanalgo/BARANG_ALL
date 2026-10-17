@@ -46,6 +46,8 @@ if (requireAttention)
     await attention.First.ClickAsync();
     await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     if (!new Uri(page.Url).AbsolutePath.Equals("/workspace/inventory", StringComparison.OrdinalIgnoreCase) && !new Uri(page.Url).AbsolutePath.Contains("/workspace/orders", StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException($"Needs Attention drill-down navigated to an unexpected route: {page.Url}");
+    await page.Locator(".inventory-workspace").WaitForAsync(new() { State = WaitForSelectorState.Visible });
+    if (!await page.Locator(".reference-navigation").IsVisibleAsync()) throw new InvalidOperationException($"Needs Attention drill-down did not render the inventory navigation: {page.Url}");
     await page.ScreenshotAsync(new() { Path = Path.Combine(artifactDirectory, "management-dashboard-attention-drilldown.png"), FullPage = false });
 }
 await page.CloseAsync();
