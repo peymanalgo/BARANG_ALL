@@ -54,10 +54,14 @@ public static class ManagementDashboardEndpoints
             select new DashboardAttentionView("shortage", s.Id, o.Id, o.OrderNumber ?? "shortage", s.CreatedAtUtc, "urgent", "/workspace/inventory/purchasing")).Take(8).ToListAsync(ct));
         attention = attention.OrderByDescending(x => x.Priority == "urgent").ThenBy(x => x.OccurredAtUtc).Take(12).ToList();
 
-        var submittedTrend = orderRead ? await db.Orders.AsNoTracking().Where(x => x.CreatedAtUtc >= from && x.CreatedAtUtc < to)
-            .GroupBy(x => x.CreatedAtUtc.Date).Select(g => new DashboardTrendView(g.Key, g.Count())).OrderBy(x => x.Day).ToListAsync(ct) : [];
-        var deliveredTrend = logisticsRead ? await db.ShipmentStatusHistory.AsNoTracking().Where(x => x.Status == Domain.Logistics.ShipmentStatus.Delivered && x.OccurredAtUtc >= from && x.OccurredAtUtc < to)
-            .GroupBy(x => x.OccurredAtUtc.Date).Select(g => new DashboardTrendView(g.Key, g.Count())).OrderBy(x => x.Day).ToListAsync(ct) : [];
+        var submittedRows = orderRead ? await db.Orders.AsNoTracking().Where(x => x.CreatedAtUtc >= from && x.CreatedAtUtc < to)
+            .GroupBy(x => new { Year = x.CreatedAtUtc.Year, Day = x.CreatedAtUtc.DayOfYear })
+            .Select(g => new { g.Key.Year, g.Key.Day, Count = g.Count() }).OrderBy(x => x.Year).ThenBy(x => x.Day).ToListAsync(ct) : [];
+        var deliveredRows = logisticsRead ? await db.ShipmentStatusHistory.AsNoTracking().Where(x => x.Status == Domain.Logistics.ShipmentStatus.Delivered && x.OccurredAtUtc >= from && x.OccurredAtUtc < to)
+            .GroupBy(x => new { Year = x.OccurredAtUtc.Year, Day = x.OccurredAtUtc.DayOfYear })
+            .Select(g => new { g.Key.Year, g.Key.Day, Count = g.Count() }).OrderBy(x => x.Year).ThenBy(x => x.Day).ToListAsync(ct) : [];
+        var submittedTrend = submittedRows.Select(x => new DashboardTrendView(new DateTime(x.Year, 1, 1).AddDays(x.Day - 1), x.Count)).ToList();
+        var deliveredTrend = deliveredRows.Select(x => new DashboardTrendView(new DateTime(x.Year, 1, 1).AddDays(x.Day - 1), x.Count)).ToList();
 
         return Results.Ok(new
         {
