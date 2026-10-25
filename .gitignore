@@ -71,3 +71,17 @@ $*.pptx
 *.bak
 *.swp
 *~
+
+# Data protection keys and local recovery/evidence artifacts
+**/.keys/
+.artifacts/
+recovery-snapshots/
+modeldiff/
+*.backup
+*.dump
+route_grid_hits.txt
+.tmp-textcols.txt
+
+# Local git worktrees (content lives on their own branches)
+step1-order-lifecycle-contract/
+step2-clean/
