@@ -13,10 +13,14 @@ internal static class E2EEnvironmentGuard
             Environment.GetEnvironmentVariable("BARANG_E2E_ALLOW_SHARED_DEV_DB"),
             "true",
             StringComparison.OrdinalIgnoreCase);
+        var isolatedDeployment = string.Equals(
+            Environment.GetEnvironmentVariable("BARANG_E2E_ISOLATED"),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
 
         if (string.IsNullOrWhiteSpace(baseUrl) || IsLocalhost(baseUrl))
         {
-            if (!sharedDevelopmentDbAllowed)
+            if (!sharedDevelopmentDbAllowed && !isolatedDeployment)
             {
                 throw new InvalidOperationException(
                     "Backoffice E2E tests require an isolated deployed environment. " +

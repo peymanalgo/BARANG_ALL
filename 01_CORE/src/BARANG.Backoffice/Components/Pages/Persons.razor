@@ -55,12 +55,12 @@
                             <td><button type="button" class="table-link" @onclick="() => Open(person.Id, true)">@person.Name</button></td>
                             <td class="truncate-cell" title="@person.Email">@person.Email</td>
                             <td><StatusBadge Active="@person.Active" /></td>
-                            <td><div class="grid-actions">
+                            <td><BarangActionMenu>
                                 <BarangIconButton Icon="eye" Semantic="info" Label="@T["View"]" Clicked="() => Open(person.Id, true)" />
                                 <BarangIconButton Icon="edit" Semantic="edit" Label="@T["Edit"]" Clicked="() => Open(person.Id, false)" />
                                 <BarangIconButton Icon="power" Semantic="@(person.Active ? "warning" : "success")" Label="@(person.Active ? T["Deactivate"] : T["Activate"])" Clicked="() => ToggleActive(person)" />
                                 <BarangIconButton Icon="trash" Semantic="danger" Label="@O["Delete"]" Clicked="() => AskDelete(person)" />
-                            </div></td>
+                            </BarangActionMenu></td>
                         </tr>
                     }
                 </tbody>

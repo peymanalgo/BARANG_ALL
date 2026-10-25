@@ -1,5 +1,15 @@
 # قرارداد یکپارچگی چرخه عمر سفارش BARANG — STEP 1
 
+## الحاقیه STEP ۱۴ — Audit و گزارش‌های عملیاتی
+
+Audit canonical با `IAuditWriter` فقط به‌صورت opt-in در owner service ثبت می‌شود و در همان transaction mutation ذخیره می‌گردد؛ actor، company، UTC timestamp، correlation/request، action و entity identity را نگه می‌دارد. RLS و permission `audit.read` هر دو برای read لازم‌اند و API هیچ update/delete audit ندارد. `FromUtc` شامل و `ToUtc` غیرشامل است. گزارش‌های عملیاتی باید از snapshot، ledger، history و read model مالک استفاده کنند؛ currency/UOM متفاوت نباید بدون policy conversion جمع شوند. جزئیات و شواهد STEP ۱۴ در `docs/STEP14_ACCEPTANCE_REPORT_FA.md` و ماتریس coverage آن ثبت شده است.
+
+## الحاقیه مصوب STEP ۱۱
+
+Packaging و Shipping/Delivery فقط با evidence persisted مرحله‌ی owner خود معتبرند: allocation بسته باید در محدوده‌ی QC پذیرفته‌شده باشد، dispatch نیازمند tracking است و Delivery از مقدار تجمعی دقیق OrderItem در shipmentهای تحویل‌شده استفاده می‌کند. تکمیل عمومی یا legacy Workflow نمی‌تواند این گیت‌ها را دور بزند.
+
+`ShipmentReturn` بازگشت traceable مشتری را مستقل از return انبار ثبت می‌کند و شامل shipment، OrderItem، مقدار، UOM، علت، actor، زمان و کلید idempotency است. بازگشت به‌طور خودکار stock قابل‌استفاده، refund، payment یا balance را تغییر نمی‌دهد؛ disposition انبار و Finance اقدام‌های بعدی و صریح‌اند.
+
 تاریخ: ۱۴۰۵/۰۷/۲۰ برابر با ۲۰۲۶-۱۰-۱۲
 
 ## وضعیت و دامنه
@@ -108,7 +118,7 @@
 
 ### ۶. Notifications/background/outbox
 
-`NotificationAdministration.QueueAsync` فقط با درخواست صریح notification، `OutboxMessage` با event=`notification.requested` می‌سازد. `BackgroundSchedulers` outbox dispatch، SLA scheduler و file processing را ثبت می‌کند. producer صریح برای order submit، task completion، finance decision، shortage، production، QC یا delivery در مسیر بررسی پیدا نشد. DB نیز `notifications=0` و `outbox_messages=0` داشت.
+`NotificationAdministration.QueueAsync` همچنان برای درخواست صریح notification، `OutboxMessage` با event=`notification.requested` می‌سازد. علاوه بر آن، مسیر واقعی `OrderAdministration.SubmitAsync` همین event را داخل transaction سفارش و فقط برای کاربران فعال همان company با permission `workflow.task.claim` منتشر می‌کند؛ stable key از event و order identity و recipient ساخته می‌شود. producerهای task assignment، finance، shortage، production، QC و delivery هنوز به mapping مسئولیت صریح نیاز دارند و نباید به Admin fallback تبدیل شوند.
 
 ## جدول رفتار فعلی در برابر رفتار موردنیاز
 
@@ -167,6 +177,10 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 
 `order.submitted`, `order.workflow.started`, `inventory.reservation.requested`, `inventory.reserved`, `inventory.shortage.created`, `inventory.reservation.released`, `inventory.reservation.consumed`, `production.jobs.generated`, `quality.inspection.approved/rejected`, `package.completed`, `shipment.delivered/returned`, `finance.approved`, `invoice.issued`, `order.cancelled`.
 
+### الحاقیه STEP 11 — customer return
+
+بازگشت مشتری (`ShipmentReturn`) از return انبارِ issue/production مستقل است و به shipment، order و `OrderItemId` دقیق، مقدار و UOM canonical، علت، actor و idempotency key متصل می‌شود. delivery evidence و status تاریخی `Delivered` immutable می‌ماند. وضعیت بازگشت جداگانه از مجموع posted returnهای معتبر نسبت به مقدار تحویل‌شده محاسبه می‌شود: `None`، `Partial` یا `Full`. بازگشت نه order را reopen می‌کند، نه replacement obligation می‌سازد و نه خودکار stock قابل‌استفاده، payment یا refund ایجاد می‌کند. Over-return، cross-company، UOM ناهماهنگ و retry با payload متفاوت رد می‌شوند.
+
 هر event باید `CompanyId`, `OrderId`, optional `OrderItemId`, aggregate/version، correlation، actor، occurred-at UTC، source reference و idempotency key داشته باشد. Event outbox باید در همان transaction aggregate ذخیره شود. consumerها dedupe key داشته باشند و retry/dead-letter قابل مشاهده باشد؛ payload نباید secret یا credential داشته باشد.
 
 ## تصمیم‌های لازم از کسب‌وکار
@@ -179,6 +193,12 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 | quantity change بعد از reserve | ممنوع در ordinary edit؛ change request/compensation | UX پیچیده‌تر ولی audit و stock امن‌تر |
 | finance approval | task باید Finance state واقعی را approve کند، نه auto-approve | approval انسانی حفظ می‌شود؛ invoice بعد از آن |
 | invoice creation | final invoice فقط approved finance + finalized snapshot؛ payment شرط جدا | invoice ≠ payment |
+
+### STEP ۷ Finance enforcement
+
+تکمیل FinancialApproval در مسیر legacy و WorkflowDefinitionRuntime فقط وقتی مجاز است که actor مجاز، تصمیم persisted و snapshot نهایی فعلی را داشته باشد؛ generic completion تصمیم مالی ایجاد نمی‌کند. Invoice نهایی همان snapshot approved را مصرف می‌کند و revision جدید بدون approval مجدد صادر نمی‌شود. صدور invoice، payment یا settlement نیست؛ balance از Payment/Reversalهای immutable محاسبه می‌شود.
+
+**تصمیم مصوب تکمیلی:** صدور invoice صریح است. پس از approval معتبر actor مالی مجاز، approval به‌تنهایی هیچ invoiceای ایجاد نمی‌کند؛ همان actor باید عملیات `Issue Invoice` را صریحاً اجرا کند. این عملیات فقط از snapshot finalized فعلی که همان approval به آن متصل است invoice می‌سازد، retry آن idempotent است، و صدور invoice به معنی پرداخت نیست.
 | shortage→purchasing | PR پیشنهادی با link، approval دستی | از auto-PO ناخواسته جلوگیری می‌کند |
 | customer group | گروه از Customer به pricing request نهایی پاس شود | discount قابل ردیابی و snapshot می‌شود |
 | tax | استفاده از `ResolveTaxAsync` واحد | tax status و specificity یکسان می‌شود |
@@ -218,3 +238,104 @@ availability = `OnHand - Reserved` برای همان Company/Warehouse/Variant. 
 - تصمیم‌های ستون «تصمیم لازم» تا تأیید BA قرارداد قطعی نیستند.
 
 **وضعیت STEP 1:** قرارداد و شواهد آماده است؛ application integrations عمداً اصلاح نشده‌اند.
+
+## الحاقیه STEP 3 — قرارداد رزرو اتمیک موجودی (مصوب)
+
+- Draft و Submit هیچ reservation یا stock deduction ایجاد نمی‌کنند؛ نقطهٔ رسمی رزرو فقط action مرحلهٔ `InventoryReservation` در `WorkflowDefinitionRuntime` است.
+- actor مجاز باید warehouse فعالِ همان CompanyContext را صریحاً انتخاب کند؛ جایگزینی خاموش، cross-company و aggregation بین warehouseها ممنوع است.
+- availability برای هر `CompanyId + WarehouseId + ProductVariantId + UomCode` برابر usable physical stock منهای reservationهای فعال است؛ blocked stock دوباره از آن کسر نمی‌شود.
+- demand هم‌کلید برای check تجمیع می‌شود، اما reservationها برای هر `OrderItemId` جدا ثبت می‌شوند. همهٔ اقلام در یک transaction و با lock مرتب stock key ثبت می‌شوند؛ کمبود هر قلم کل درخواست را rollback می‌کند و task باز می‌ماند.
+- `OrderId` از workflow task و `OrderItemId` دقیق از order خوانده می‌شود؛ quantity اعشاری و UOM canonical snapshot می‌شوند. retry موفق همان نتیجه را برمی‌گرداند؛ تغییر warehouse/quantity/variant پس از reservation با خطای روشن رد می‌شود.
+- reservation فیزیکی را کم نمی‌کند. مصرف و release/cancellation به STEP 4 تعلق دارند و در این STEP فعال نشده‌اند.
+
+## الحاقیه STEP 2 — قرارداد هویت و واحد موجودی
+
+### تصمیم‌های پیاده‌سازی‌شده
+
+- هویت موجودی همچنان ترکیب `CompanyId + WarehouseId + ProductVariantId` است؛ مدل موازی ایجاد نشده است.
+- ارتباط رزرو به `OrderItemId` دقیق متصل می‌ماند و دو قلم سفارش با SKU یکسان مستقل هستند.
+- واحد مرجع از `Product.UnitOfMeasureCode` خوانده می‌شود؛ `ProductVariant` واحد مستقل ندارد.
+- `uom_code` اکنون در رزرو، Purchase Request Item و Purchase Order Item ذخیره و در قراردادهای API برای رزرو و Purchase Order نمایش داده می‌شود.
+- واحد ارسالی، در صورت وجود، باید دقیقاً با واحد مرجع محصول برابر باشد؛ تبدیل عمومی یا فرض «جعبه به قطعه» اضافه نشده است. اختلاف واحد با `inventory.unit_mismatch` رد می‌شود.
+- کمیت همچنان `decimal` با precision فعلی دامنه است؛ این STEP زمان مصرف، رزرو، آزادسازی یا gateهای workflow را تغییر نمی‌دهد.
+
+### شواهد و migration
+
+کد اصلی در `src/BARANG.Core.Infrastructure/Inventory/InventoryAdministration.cs` برای Movement، Reserve، CreatePurchaseRequest و CreatePurchaseOrder مالکیت شرکت/انبار/variant و تطبیق واحد را بررسی می‌کند. مدل‌ها در `src/BARANG.Core.Domain/Inventory/InventoryModels.cs` و قراردادها در `src/BARANG.Core.Application/Inventory/InventoryContracts.cs` تغییر کرده‌اند. migration `20261012100553_Step2InventoryUnitContracts` ستون‌ها را ابتدا nullable اضافه می‌کند، فقط با joinهای Product/Variant/OrderItem backfill می‌کند، ردیف حل‌نشده را با خطای صریح متوقف می‌کند و سپس NOT NULL می‌سازد.
+
+بررسی read-only قبلی در DB توسعه برای هر سه جدول، ردیف unresolved برابر صفر نشان داد؛ در snapshot آن زمان migration روی `barang_core` به‌علت خطای duplicate column در `LateWorkflowEvidenceSchema` متوقف می‌شد. repair نسخه‌بندی‌شده و اجرای موفق آن روی development، همراه با حفظ شمارش رکوردها و نتیجه backfill، در الحاقیه عملیاتی STEP 2 در انتهای همین سند ثبت شده است.
+
+### تست و وضعیت
+
+تست‌های واحد هویت دقیق OrderItem، استقلال قلم‌های SKU یکسان، واحد و کمیت اعشاری اضافه شده‌اند. Build لایه Core موفق است. اصلاح lookup چاپ در source انجام شده، اما اجرای integration روی DB ایزوله پیش از رسیدن به endpoint چاپ در fixture با ناسازگاری قدیمی schema مشتری (`customers.first_name`) متوقف می‌شود؛ بنابراین رفتار endpoint و مسیر کامل چاپ هنوز runtime-تأیید نشده است. نتایج migration و deploy محلی در الحاقیه عملیاتی ثبت شده و این سند STEP 2 را به‌عنوان عملیاتیِ کامل اعلام نمی‌کند.
+
+وابستگی STEP 3: Reservation می‌تواند این `uom_code` و هویت دقیق را مصرف کند، اما stage رزرو و رفتار shortage هنوز طبق تصمیم کسب‌وکار STEP 1 باید نهایی شود.
+
+### الحاقیه عملیاتی STEP 2
+
+### به‌روزرسانی راستی‌آزمایی Customer/Pricing
+
+در اجرای فعلی branch `codex/step2-inventory-unit-contracts`، دو blocker قبلی با evidence واقعی اصلاح شدند. `POST /api/v1/pricing/tariffs` به‌علت سه ستون اجباری نسل قدیمی در جدول `tariffs` که در مدل `Tariff` map نشده بودند، با `NOT NULL logical_tariff_id` شکست می‌خورد؛ shadow mapping و migration سازگار `20261012115004_AlignTariffCompatibilityColumns` این drift را بدون حذف ستون/داده و بدون whitelist چاپ برطرف کردند. مسیر print همچنان lookup فعال `print.method` را با scope شرکت مرجع می‌گیرد.
+
+در مسیر سفارش، `Customer.IsActive` یک property computed و unmapped پس از نرمال‌سازی Customer بود؛ اصلاح `OrderAdministration.ValidHeader` به `Customer.Status == Active` انجام شد. تست نرمال‌شده اکنون association فرد و legal با order، آدرس و reload، company isolation و رد کردن آدرس مشتری دیگر را در API/persistence اثبات می‌کند. تست‌های منتخب integration ایزوله ۱۲ از ۱۲ و unit Release برابر ۱۸۹ از ۱۸۹ موفق شدند؛ Pricing create/list/update و order print نیز سبز است.
+
+backup توسعه قبل از migration در `D:\00_BARANG\barang_core_pricing_fix_predeploy.backup` با `pg_restore --list` معتبر شد. migration روی `barang_core` با EF اعمال و در history ثبت شد؛ ستون‌های compatibility دارای `NOT NULL` و defaultهای مورد انتظار هستند. API و Backoffice محلی با digestهای جدید deploy شدند و readiness/health سبز است.
+
+این نتیجه فقط Customer/Pricing و شواهد مربوط به STEP 2 را operationally تأیید می‌کند. پیاده‌سازی runtime کامل `WorkflowDefinitionRuntime` و Cartable هنوز در checkout موجود نیست/تأیید نشده، و reservation/consumption و workflow gateها عمداً به STEPهای بعد موکول‌اند. browser verification در دسترس این اجرا نبود.
+
+### ممیزی baseline و محدودیت restore
+
+مقایسه‌ی `main`، branch STEP 2، `step2-clean` و working tree canonical نشان داد که migrationهای customer به مدل profile نرمال‌شده تعلق دارند، اما checkout تمیز هنوز مدل قدیمیِ دارای map برای `customers.first_name` را دارد. working tree اصلی مدل نرمال‌شده و profileها را دارد، ولی همان working tree نیز runtime کامل `WorkflowDefinitionRuntime` و entityهای وابسته‌ی Cartable را ندارد؛ endpoint و DI registration به‌تنهایی implementation محسوب نمی‌شوند. Probe build پس از قراردادن contractهای موجود، خطاهای missing runtime واقعی را آشکار کرد. از افزودن placeholder یا contract-only substitute خودداری شد. در نتیجه تست چاپ و رفتار کامل Cartable هنوز قابل ادعای موفقیت نیست و STEP 2 تا restore یک baseline authoritative و سازگار، ناقص باقی می‌ماند.
+
+### الحاقیه سیاست مصوب STEP 4
+
+مصرف فیزیکی فقط در issue واقعی انبار انجام می‌شود. endpoint issue چندقلمی روی همان `InventoryAdministration` با lock قطعی reservation/balance، کاهش `OnHand` و کاهش outstanding reservation کار می‌کند و retry با reference پایدار ledger جدید نمی‌سازد. Cancel به همان owner موجودی در transaction سفارش متصل است: قبل از issue باقی‌مانده release می‌شود؛ بعد از issue stock خودکار برنمی‌گردد. return فقط سند جبرانی traceable برای issue اصلی با UOM و مقدار برگشت‌نشده و disposition=`USABLE` است. runtime برای node کلیددار `InventoryIssue` قبل از complete task issue را اجرا می‌کند و issue ناقص task را باز نگه می‌دارد.
+
+تعریف‌های published موجود در این checkout فعلاً stage `InventoryIssue` ندارند؛ اضافه‌کردن stage به definition عمداً انجام نشده و تا تصمیم workflow owner blocker پذیرش UI باقی می‌ماند. مسیر atomic adjustment برای تغییر quantity/variant و invalidation/recompute قیمت به change-request/pricing integration نیاز دارد و در این گام silent پیاده‌سازی نشده است.
+
+علت drift فقط ستون گزارش‌شده نبود: DB توسعه migrationهای 20260902 تا 20261007 را داشت که در شاخه STEP 2 جا افتاده بودند. پس از بازگردانی آن زنجیره، migrationهای `CartablePersonalFollowUp`، `AddWorkflowDecisionAttachments` و `AddWorkflowSubstitutionsAndForwardContext` مالک واقعی schema شناخته شدند؛ `LateWorkflowEvidenceSchema` قبلی همان objects را دوباره ایجاد می‌کرد. نسخه‌ی اصلاحی no-op است و migration قبلی را بدون mark دستی یا reset کنار می‌زند. در `AddWorkflowSubstitutionsAndForwardContext` نیز overload نادرست `AddColumn` که SQL نوع را `barang` تولید می‌کرد، به نوع `uuid` و schema صریح اصلاح شد.
+
+در توسعه، backup قبل از repair در `artifacts/barang_core_before_step2_repair.dump` تهیه و با `pg_restore --list` بررسی شد. شمارش‌های قبل/بعد حفظ شدند: products=56، variants=57، order_items=49، stock_balances=0، purchase_items=0، و rows unresolved برای سه ستون UOM برابر صفر بود. fresh و restored isolated DB هر دو تا STEP 2 migrate شدند.
+
+اعتبارسنجی print method دیگر whitelist ثابت دامنه را مرجع نمی‌گیرد؛ `OrderAdministration` lookup فعال `print.method` را با scope شرکت/شناسه شرکت بررسی می‌کند و خطای `order.invalid_print_method` را حفظ می‌کند. مقدار runtime توسعه `dtf/standard/standard2` بود، نه `SCREEN/DTG/...`. با این حال integration fixture فعلی هنوز با schema customer جدید سازگار نیست و پیش از endpoint چاپ روی `customers.first_name` شکست می‌خورد؛ نتیجه‌ی print endpoint تا اصلاح آن fixture **تأییدنشده** است.
+
+### الحاقیهٔ STEP ۸ — shortage و purchasing
+
+shortage یک proposal durable و company-scoped است و به PR فقط با action صریحِ کاربر مجاز تبدیل می‌شود؛ conversion با lock روی balance/shortage و uniqueness روی source shortage، retry-safe است و PO خودکار تولید نمی‌کند. receipt canonical در transaction ledger/balance و receipt row را ثبت می‌کند و shortageهای همان warehouse/variant را با موجودی فعلی recheck می‌کند؛ این recheck نه reservation خودکار است و نه completion workflow. اسناد فعلی هنوز actor، threshold و routing approval واقعی PR/PO را تعریف نکرده‌اند؛ تا تصویب آن قرارداد و اجرای browser acceptance، STEP ۸ نهایی PASS نیست.
+
+### الحاقیهٔ STEP ۱۰ — گیت Quality و reproduction
+
+Quality فقط بر خروجی persisted و تکمیل‌شدهٔ یک `ProductionJob` قابل آغاز است و `QCInspection` هویت دقیق Company/Order/OrderItem/Job و نسخهٔ template را نگه می‌دارد. disposition در جدول مستقل و با optimistic version، UOM و actor ثبت می‌شود؛ مقادیر accepted/rejected/reproduction-required باید نامنطبق و جمعاً دقیقاً برابر مقدار inspectable باشند و برای مقادیر غیرصفر reason لازم است. معیار و defect فعالِ همان شرکت بررسی می‌شوند و مجموع defectها نمی‌تواند از خروجی قابل بازرسی بیشتر شود.
+
+در `WorkflowDefinitionRuntime`، هر node کیفیت پیش از completion، وجود inspection نهایی Approved/Rejected و disposition کامل برای همهٔ jobهای تکمیل‌شدهٔ سفارش را از `IQualityAdministration` می‌گیرد؛ completion عمومی، legacy و administrative بدون این evidence مجاز نیست. Approved فقط با outcome `Approve` و بدون rejected/reproduction quantity پذیرفته می‌شود؛ mixed outcome routing خودکار ندارد و تصمیم صریح به مسیر Reject/انجام reproduction نیاز دارد. reproduction به inspection و source job و lineage اصلی متصل، retry-safe و بدون stock/payment/refund side effect است؛ اجرای job جدید همچنان گیت‌های Production و warehouse issue را طی می‌کند. انتشار یا مهاجرت خودکار graphهای جاری انجام نمی‌شود.
+
+در سیاست نهایی mixed outcome، rejected یا reproduction-required unresolved، task کیفیت را باز نگه می‌دارد و progression خودکار به shipping را ممنوع می‌کند. خروجی جایگزین به Job جدید با همان OrderItem و lineage صریح تعلق دارد و جداگانه بازرسی می‌شود؛ پذیرش آن فقط obligation متناظر reproduction را resolve می‌کند و تاریخچهٔ inspection/job اصلی را تغییر نمی‌دهد. reinspection مستقیم همان Job رد می‌شود و مسیر correction مصوب در این مرحله تعریف یا حدس زده نشده است.
+
+## الحاقیهٔ STEP ۱۳ — یکپارچگی Master Data
+
+در STEP ۱۳، `DomainReferenceCatalog` با `ReferenceConsumerTraceability` تطبیق داده شد: ۴۳ نوع Lookup و دو adapter (`artwork.tag` و `defect.type`) در مجموع ۴۵ مصرف‌کنندهٔ مستند دارند. کد فنی/شناسهٔ پایدار از caption ترجمه‌شده جدا می‌ماند؛ scope شرکت/Global، RLS، parent hierarchy دسته‌های طرح، active/inactive و version concurrency تغییر نکرده‌اند.
+
+دو ناهماهنگی metadata اصلاح شد: `equipment.type` و `equipment.status` دامنهٔ canonical `equipment` را نیز دارند و alias قدیمی `inventory` برای سازگاری مسیر حفظ شده است؛ و مصرف `equipment.status` هر دو فیلد مستقل `OperationalStatusCode` (eligibility) و `LifecycleStatusCode` (lifecycle/history) را ثبت می‌کند. این اصلاح، دو مفهوم را به یک state machine تبدیل نمی‌کند و هیچ داده، status یا reference موجودی را تغییر نمی‌دهد.
+
+وضعیت‌های داخلی workflow/order/inventory/finance/quality/logistics و permissionها همچنان قرارداد ثابت‌اند و به Lookup تبدیل نشده‌اند. catalog یا موجودیت master-data حذف/مخفی/غیرفعال نشد؛ پیشنهادهای cleanup در گزارش مستقل STEP ۱۳ و منوط به تصمیم صاحب محصول هستند.
+# الحاقیه STEP 5 — گیت عملیات Inventory
+
+در گام پنجم، تکمیل هر مرحلهٔ Inventory فقط با نتیجهٔ persisted و معتبر سرویس canonical Inventory مجاز است. `InventoryReservation` باید برای همهٔ OrderItemهای فعال reservation مستقل با OrderItemId، variant، warehouse، quantity و UOM صحیح داشته باشد. `InventoryIssue` باید برای همهٔ همان اقلام movement ثبت‌شدهٔ `WAREHOUSE_ISSUE` با مقدار لازم داشته باشد؛ issue ناقص task را باز نگه می‌دارد. گیت، claim/list و adapter قدیمی نیز همین قرارداد را اجرا می‌کنند و generic completion نمی‌تواند آن را دور بزند. release/adjustment/return همچنان مالکیت Inventory را حفظ می‌کنند و return compensating، issue تاریخی را خودکار باطل نمی‌کند.
+
+## الحاقیه STEP ۹ — گیت Production
+
+ProductionPlanning در runtime واقعی به `ProductionAdministration.GenerateInsideTransactionAsync` canonical متصل است و generation را برای هر OrderItem و هر PrintOperation با `GenerationKey` پایدار و قفل order انجام می‌دهد. DesignPreparation، Printing و HeatPress فقط با evidence تکمیل همه jobهای لازم و quantity کافی می‌توانند task را جلو ببرند؛ چاپ باید همان operation و Artwork/File version ثبت‌شده را داشته باشد.
+
+شروع job از مسیر API نیز مجوز operator، شرکت، تجهیز active/capability/status و issue انبار همان OrderItem را دوباره بررسی می‌کند. تکمیل بدون quantity کافی رد می‌شود. این gateها در adapter legacy و runtime definition اعمال شده‌اند؛ UI فقط نمایش/عملیات canonical است و منبع امنیت نیست. QC و reproduction در STEP ۱۰ عمداً تغییر نکرده‌اند.
+
+## الحاقیه STEP ۶ — قرارداد محاسبه قیمت canonical
+
+برآورد و نهایی‌سازی هر دو از resolver canonical قیمت استفاده می‌کنند. `CustomerGroupId` از Customer به context محاسبه منتقل می‌شود؛ ترتیب انتخاب یک قانون تخفیف فعال و معتبر، بدون stacking، به‌ترتیب Customer، CustomerGroup، source/partner و general است. قانون گروه فقط با شناسه پایدار گروه سنجیده می‌شود و caption ترجمه‌شده هویت نیست.
+
+`TaxStatusCode` از CustomerFinancialProfile به resolver می‌رسد و قانون status-specific بر قانون DEFAULT مقدم است. `Customer.PriceGroupId` فقط برای انتخاب tariffهای `price.group` کاربرد دارد و با `customer.group` قاطی نمی‌شود؛ tariff گروه‌دارِ منطبق بر tariff بدون گروه مقدم است. snapshot قیمت، شناسه و نسخه قانون، ورودی‌های محاسبه و breakdown را نگه می‌دارد و پس از نهایی‌سازی با تغییر master data بازنویسی نمی‌شود. تبدیل ارز، exemption خارج از TaxStatusCode و stacking تخفیف در این مرحله سیاست مصوب ندارند و به STEP ۷/تصمیم مستقل نیاز دارند.
+
+## الحاقیهٔ STEP ۱۲ — Transactional Outbox و اعلان business
+
+رویدادهای اعلان باید در همان transaction موفق business operation در `outbox_messages` ثبت شوند؛ dispatcher پس از commit، با claim قفل‌شده و dedupe پایدار، Notification in-app را ایجاد می‌کند. گیرنده فقط عضو فعال همان شرکت با حساب Active و permission مستقیم یا role-derived است؛ broadcast/Admin fallback و cross-company disclosure ممنوع است. `order.submitted` پس از رفع خطای translation مربوط به `ApplicationUser.IsActive` به این مسیر متصل و با browser/DB ایزوله تأیید شد. payload dispatcher با JSON web options خوانده می‌شود تا camelCase contract پایدار بماند.
+
+پوشش source فعلی شامل task assignment/claim/forward، shortage/recheck، purchasing approval request/decision/send، financial decision/invoice، quality rejection/reproduction، shipment dispatch/delivery و SLA escalation است. template code و recipient permission هر transition در `docs/STEP12_ACCEPTANCE_REPORT_FA.md` ثبت شده‌اند. policy دقیق گیرندهٔ warehouse-responsibility برای shortage/recheck هنوز به‌عنوان تصمیم باز ثبت شده و نباید با Admin fallback حدس زده شود. کانال mandatory این مرحله InApp است و provider خارجی خارج از scope است.

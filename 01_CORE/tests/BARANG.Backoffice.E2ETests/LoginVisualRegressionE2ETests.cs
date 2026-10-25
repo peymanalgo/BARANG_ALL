@@ -6,7 +6,7 @@ namespace BARANG.Backoffice.E2ETests;
 public sealed class LoginVisualRegressionE2ETests
 {
     [Fact]
-    public async Task Login_visual_geometry_is_bounded()
+    public async Task LoginVisualGeometryIsBounded()
     {
         using IPlaywright playwright = await Playwright.CreateAsync();
         await using IBrowser browser = await playwright.Chromium.LaunchAsync(new() { Headless = true, ExecutablePath = Environment.GetEnvironmentVariable("BARANG_E2E_BROWSER_PATH") });

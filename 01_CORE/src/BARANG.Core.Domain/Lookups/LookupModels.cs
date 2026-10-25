@@ -17,7 +17,6 @@ public static class LookupErrors
     public static Error SystemRecordProtected => Error.BusinessRule("lookup.system_record_protected");
     public static Error Concurrency => Error.Concurrency("lookup.concurrency_conflict");
 }
-
 public static class LookupText
 {
     public const string DefaultCulture = "fa";
@@ -27,6 +26,11 @@ public static class LookupText
         string code = value?.Trim().ToLowerInvariant() ?? string.Empty;
         return code.Length is >= 2 and <= 100 && code[0] is >= 'a' and <= 'z' &&
             code.All(static c => char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-') ? code : null;
+    }
+    public static string? NormalizeValueCode(string? value)
+    {
+        string code = value?.Trim().ToLowerInvariant() ?? "";
+        return code.Length is >= 1 and <= 100 && code.All(static c => char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-') ? code : null;
     }
     public static string? NormalizeName(string? value, int max = 200)
     {
@@ -86,6 +90,7 @@ public sealed class LookupValue
     public Guid Id { get; private set; }
     public Guid LookupTypeId { get; private set; }
     public Guid? CompanyId { get; private set; }
+    public Guid? ParentId { get; private set; }
     public string Code { get; private set; } = string.Empty;
     public int DisplayOrder { get; private set; }
     public bool IsActive { get; private set; }
@@ -98,13 +103,14 @@ public sealed class LookupValue
 
     public static Result<LookupValue> Create(Guid id, LookupType type, string code, int displayOrder, bool isSystem, DateTimeOffset now)
     {
-        string? normalized = LookupText.NormalizeCode(code);
+        string? normalized = LookupText.NormalizeValueCode(code);
         if (id == Guid.Empty || normalized is null) return Result.Failure<LookupValue>(LookupErrors.InvalidCode);
         if (!type.IsActive || (type.Scope == LookupScope.Company && type.CompanyId is null)) return Result.Failure<LookupValue>(LookupErrors.InvalidScope);
         return Result.Success(new LookupValue { Id = id, LookupTypeId = type.Id, CompanyId = type.CompanyId, Code = normalized, DisplayOrder = displayOrder, IsSystem = isSystem, IsActive = true, CreatedAtUtc = now, UpdatedAtUtc = now, Version = 1 });
     }
     public Result UpdateOrder(int order, DateTimeOffset now) { if (IsSystem) return Result.Failure(LookupErrors.SystemRecordProtected); DisplayOrder = order; Touch(now); return Result.Success(); }
     public Result SetActive(bool active, DateTimeOffset now) { if (IsSystem) return Result.Failure(LookupErrors.SystemRecordProtected); if (IsActive != active) { IsActive = active; Touch(now); } return Result.Success(); }
+    public Result SetParent(Guid? parentId, DateTimeOffset now) { if (parentId == Id) return Result.Failure(Error.BusinessRule("artwork.category.cycle")); if (ParentId != parentId) { ParentId = parentId; Touch(now); } return Result.Success(); }
     public Result<LookupValueTranslation> SetTranslation(string culture, string displayName, string? description, DateTimeOffset now)
     {
         string? normalizedCulture = LookupText.NormalizeCulture(culture);
@@ -134,3 +140,4 @@ public sealed class LookupValueTranslation
     internal static LookupValueTranslation Create(Guid id, Guid valueId, Guid? companyId, string culture, string name, string? description, DateTimeOffset now) => new() { Id = id, LookupValueId = valueId, CompanyId = companyId, Culture = culture, DisplayName = name, Description = description, CreatedAtUtc = now, UpdatedAtUtc = now, Version = 1 };
     internal void Update(string name, string? description, DateTimeOffset now) { DisplayName = name; Description = description; UpdatedAtUtc = now; Version++; }
 }
+

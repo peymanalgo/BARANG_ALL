@@ -4,12 +4,13 @@
 @using System.Globalization
 @using System.Text.Json
 @inject IStringLocalizer<SupplierStrings> S
+@inject IStringLocalizer<AppStrings> L
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
 
 <PageTitle>@S["Title"] | BARANG</PageTitle>
 <nav class="breadcrumbs"><span>@S["MasterData"]</span><span>/</span><span>@S["SystemManagement"]</span><span>/</span><span>@S["Title"]</span></nav>
-<header class="crud-header"><div><h1>@S["Title"]</h1><p>@S["Subtitle"]</p></div>@if(CanManage){<button type="button" class="btn btn-primary" data-supplier-add="true" @onclick="New"><BarangIcon Name="plus" />@S["NewSupplier"]</button>}</header>
+<header class="crud-header"><div><h1>@S["Title"]</h1><p>@S["Subtitle"]</p></div>@if(CanManage){<button type="button" class="btn btn-primary" data-supplier-add="true" @onclick="New"><BarangIcon Name="plus" /> @L["Add"]</button>}</header>
 @if(Message is not null){<p class="@(Success?"inline-success":"inline-error")" role="@(Success?"status":"alert")">@S[Message]</p>}
 <section class="crud-card" data-supplier-directory="true">
     <BarangToolbar AriaLabel="@S["Title"]" Class="customer-toolbar">
@@ -39,7 +40,7 @@
                 <td dir="ltr">@(SupplierUiSchema.Text(row,"primaryMobile") is string mobile&&mobile.Length>0?mobile:SupplierUiSchema.Text(row,"primaryPhone"))</td>
                 <td>@Caption(SupplierUiSchema.Text(row,"gradeId"))@if(row.GetProperty("isPreferred").GetBoolean()){<span class="status-badge">@S["Preferred"]</span>}</td>
                 <td><span class="customer-status status-@status.ToLowerInvariant()">@S[status]</span></td>
-                <td><div class="row-actions">
+                <td><BarangActionMenu>
                     <BarangIconButton Icon="eye" Label="@S["View"]" Semantic="info" Clicked="()=>Show(id,true)" />
                     @if(CanManage){
                         <BarangIconButton Icon="edit" Label="@S["Edit"]" Semantic="edit" Clicked="()=>Show(id,false)" />
@@ -50,7 +51,7 @@
                             <BarangIconButton Icon="unlink" Label="@S["Block"]" Semantic="danger" Clicked="()=>Block(id)" />
                         }
                     }
-                </div></td>
+                </BarangActionMenu></td>
             </tr>
         }
         </tbody></table></div>

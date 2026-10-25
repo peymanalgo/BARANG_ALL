@@ -21,13 +21,13 @@
             <tr data-id="@SupplierUiSchema.Text(row,"id")">
                 @foreach(var item in Columns){<td>@Cell(row,item)</td>}
                 <td><StatusBadge Active="@Active(row)" />@if(Selected(row)){<span class="status-badge">@S[Kind=="contacts"?"Primary":"Default"]</span>}</td>
-                <td><div class="row-actions"><BarangIconButton Icon="eye" Label="@S["View"]" Semantic="info" Clicked="()=>Show(row,true)" />
+                <td><BarangActionMenu><BarangIconButton Icon="eye" Label="@S["View"]" Semantic="info" Clicked="()=>Show(row,true)" />
                 @if(!ReadOnly){
                     <BarangIconButton Icon="edit" Label="@S["Edit"]" Semantic="edit" Clicked="()=>Show(row,false)" />
                     <BarangIconButton Icon="power" Label="@S[Active(row)?"Deactivate":"Activate"]" Semantic="@(Active(row)?"warning":"success")" Clicked="()=>Activate(row)" />
                     <BarangIconButton Icon="trash" Label="@S["Delete"]" Semantic="danger" Clicked="()=>AskDelete(row)" />
                     @if(Active(row)&&!Selected(row)){<BarangIconButton Icon="check" Label="@S[Kind=="contacts"?"SetPrimary":"SetDefault"]" Semantic="success" Clicked="()=>SetDefault(row)" />}
-                }</div></td>
+                }</BarangActionMenu></td>
             </tr>
         }
         </tbody></table></div>

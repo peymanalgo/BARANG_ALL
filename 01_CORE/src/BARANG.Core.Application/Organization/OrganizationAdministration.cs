@@ -61,4 +61,7 @@ public sealed class OrganizationAdministration(IOrganizationStore store, ITransa
     private static BranchView ToView(Branch x) => new(x.Id, x.CompanyId, x.Code, x.DisplayName, x.IsActive, x.CreatedAtUtc, x.UpdatedAtUtc, x.Version);
     private static OrganizationalUnitView ToView(OrganizationalUnit x) => new(x.Id, x.CompanyId, x.BranchId, x.ParentId, x.Code, x.DisplayName, x.IsActive, x.CreatedAtUtc, x.UpdatedAtUtc, x.Version);
     private static WarehouseView ToView(Warehouse x) => new(x.Id, x.CompanyId, x.BranchId, x.Code, x.Name, x.Type, x.IsActive, x.CreatedAtUtc, x.UpdatedAtUtc, x.Version);
+    internal static CompanyView ToCompanyView(Company x) => ToView(x);
+    internal static BranchView ToBranchView(Branch x) => ToView(x);
+    internal static OrganizationalUnitView ToUnitView(OrganizationalUnit x) => ToView(x);
 }

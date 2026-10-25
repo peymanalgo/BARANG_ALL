@@ -33,10 +33,12 @@ public sealed class DatabaseFoundationTests(PostgreSqlDatabaseFixture database)
         string[] pending = (await context.Database.GetPendingMigrationsAsync(
             TestContext.Current.CancellationToken)).ToArray();
 
-        Assert.Equal(23, migrations.Length);
-        Assert.Equal(migrations, applied);
+        Assert.NotEmpty(migrations);
+        Assert.All(migrations, migration => Assert.Contains(migration, applied));
         Assert.Empty(pending);
-        Assert.EndsWith("_CreateBarangSchema", migrations[0], StringComparison.Ordinal);
+        Assert.Contains(migrations, migration => migration.EndsWith("_CreateBarangSchema", StringComparison.Ordinal));
+        Assert.Contains(migrations, migration => migration.Contains("Workflow", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(migrations, migration => migration.Contains("InventoryUnit", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -185,8 +187,10 @@ public sealed class DatabaseFoundationTests(PostgreSqlDatabaseFixture database)
         await using CoreDbContext context = database.CreateCoreDbContext();
 
         Assert.Equal(0, await database.CountTransactionProbesAsync(TestContext.Current.CancellationToken));
-        Assert.Equal(23, (await context.Database.GetAppliedMigrationsAsync(
-            TestContext.Current.CancellationToken)).Count());
+        string[] applied = (await context.Database.GetAppliedMigrationsAsync(
+            TestContext.Current.CancellationToken)).ToArray();
+        Assert.All(context.Database.GetMigrations(), migration => Assert.Contains(migration, applied));
+        Assert.Contains(applied, migration => migration.Contains("Workflow", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

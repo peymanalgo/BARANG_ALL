@@ -1,0 +1,118 @@
+@using Microsoft.Extensions.Localization
+@using BARANG.Backoffice.Localization
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject IStringLocalizer<AppStrings> L
+@inject ILogger<BarangActionMenu> Logger
+
+@if (Visible)
+{
+<div class="barang-action-menu @(Toolbar ? "barang-action-menu-toolbar" : "barang-action-menu-row")" @onclick:stopPropagation="true">
+    <button @ref="_trigger" type="button" class="barang-action-menu-trigger" aria-haspopup="menu" aria-expanded="@(_open ? "true" : "false")" aria-label="@ResolvedLabel" title="@ResolvedLabel" @onclick="Toggle" @onclick:stopPropagation="true" @onkeydown="HandleTriggerKeyDown"><BarangIcon Name="more-vertical" /></button>
+    @if (_open)
+    {
+        <CascadingValue Value="true" Name="BarangActionMenuContext">
+            <div @ref="_popup" class="barang-action-menu-popup" role="menu" tabindex="-1" @onclick="CloseAfterAction">@ChildContent</div>
+        </CascadingValue>
+    }
+</div>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string Label { get; set; } = "Actions";
+    [Parameter] public bool Toolbar { get; set; }
+    [Parameter] public bool Visible { get; set; } = true;
+    private string ResolvedLabel => string.IsNullOrWhiteSpace(Label) || Label == "Actions" ? L["Actions"].Value : Label;
+    private ElementReference _trigger, _popup;
+    private DotNetObjectReference<BarangActionMenu>? _dotNet;
+    private string? _registrationId;
+    private bool _open;
+    private bool _disposed;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_open || _disposed) return;
+        try
+        {
+            _dotNet ??= DotNetObjectReference.Create(this);
+            _registrationId = await JS.InvokeAsync<string>("barangPopupManager.register", _trigger, _popup, _dotNet);
+            await JS.InvokeVoidAsync("barangPopupManager.open", _registrationId);
+            await JS.InvokeVoidAsync("barangActionMenu.watch", _registrationId, _trigger, _popup);
+            await JS.InvokeVoidAsync("barangActionMenu.focusFirst", _popup);
+        }
+        catch (JSDisconnectedException) when (_disposed) { }
+        catch (InvalidOperationException) when (_disposed) { }
+    }
+
+    private async Task Toggle()
+    {
+        _open = !_open;
+        if (!_open) await StopWatching();
+        await InvokeAsync(StateHasChanged);
+        if (!_open && _registrationId is not null) await CloseRegistration(false);
+    }
+
+    private async Task CloseAfterAction()
+    {
+        if (!_open) return;
+        _open = false;
+        await StopWatching();
+        await InvokeAsync(StateHasChanged);
+        if (_registrationId is not null) await CloseRegistration(false);
+    }
+
+    private async Task HandleTriggerKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key is "Enter" or " " or "ArrowDown") await Toggle();
+        else if (args.Key == "Escape" && _open)
+        {
+            _open = false;
+            await StopWatching();
+            await InvokeAsync(StateHasChanged);
+            if (_registrationId is not null) await CloseRegistration(true);
+        }
+    }
+
+    [JSInvokable]
+    public async Task CloseFromPopupManager()
+    {
+        if (!_open) return;
+        _open = false;
+        await StopWatching();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task StopWatching()
+    {
+        if (_registrationId is not null)
+        {
+            try { await JS.InvokeVoidAsync("barangActionMenu.unwatch", _registrationId); }
+            catch (JSDisconnectedException) { }
+            catch (InvalidOperationException) when (_disposed) { }
+        }
+    }
+
+    private async Task CloseRegistration(bool restoreFocus)
+    {
+        if (_registrationId is null || _disposed) return;
+        try { await JS.InvokeVoidAsync("barangPopupManager.close", _registrationId, restoreFocus); }
+        catch (JSDisconnectedException) when (_disposed) { }
+        catch (InvalidOperationException) when (_disposed) { }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        if (_registrationId is not null)
+        {
+            try
+            {
+                await StopWatching();
+                await JS.InvokeVoidAsync("barangPopupManager.unregister", _registrationId);
+            }
+            catch (JSDisconnectedException) { }
+        }
+        _dotNet?.Dispose();
+    }
+}

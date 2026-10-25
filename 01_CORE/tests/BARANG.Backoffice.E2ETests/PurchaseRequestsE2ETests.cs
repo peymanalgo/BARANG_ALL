@@ -22,12 +22,15 @@ public sealed class PurchaseRequestsE2ETests : IAsyncLifetime
         await page.Locator("#password").FillAsync(Environment.GetEnvironmentVariable("BARANG_E2E_PASSWORD") ?? "BarangDev@2026");
         await page.Locator("button[type=submit]").ClickAsync();
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        if (new Uri(page.Url).AbsolutePath == "/company") await page.Locator(".company-list form:has(input[name=companyId][value='42f0e459-6095-45bb-aa13-f38126d91d9c']) button[type=submit]").ClickAsync();
+        await BrowserCompanyContext.SelectIfRequiredAsync(page);
     }
 
     [Fact]
-    public async Task Purchase_request_grid_and_same_session_multiline_draft_work()
+    public async Task PurchaseRequestGridAndSameSessionMultilineDraftWork()
     {
+        string warehouse = Environment.GetEnvironmentVariable("BARANG_E2E_WAREHOUSE_CODE") ?? "EW0_1788283843295";
+        string productCode = Environment.GetEnvironmentVariable("BARANG_E2E_PRODUCT_CODE") ?? "I14P1788268154";
+        string skuCode = Environment.GetEnvironmentVariable("BARANG_E2E_SKU_CODE") ?? "I14SKU1788268154";
         await page.GotoAsync(baseUrl + "/culture?culture=en&returnUrl=%2Fworkspace%2Finventory", new() { WaitUntil = WaitUntilState.NetworkIdle });
         await page.GotoAsync(baseUrl + "/workspace/inventory?section=requests", new() { WaitUntil = WaitUntilState.NetworkIdle });
         var grid = page.Locator("[data-purchase-request-grid]");
@@ -38,25 +41,48 @@ public sealed class PurchaseRequestsE2ETests : IAsyncLifetime
         await Assertions.Expect(grid).Not.ToContainTextAsync("Refresh");
         await grid.GetByRole(AriaRole.Button, new() { Name = "Add request", Exact = true }).ClickAsync();
         var dialog = page.GetByRole(AriaRole.Dialog, new() { Name = "Add purchase request" });
-        await Choose(dialog.Locator("label").Filter(new() { HasText = "Destination warehouse" }).Locator("input[role=combobox]"), "EW0_1788283843295");
+        await Choose(dialog.Locator("label").Filter(new() { HasText = "Destination warehouse" }).Locator("input[role=combobox]"), warehouse);
         await dialog.Locator("label").Filter(new() { HasText = "Reason/Purpose" }).Locator("input").FillAsync("Replenishment request");
         var product = dialog.Locator("label").Filter(new() { HasText = "Product" }).Locator("input[role=combobox]");
-        await Choose(product, "I14P1788268154");
-        await Choose(dialog.Locator("label").Filter(new() { HasText = "SKU" }).Locator("input[role=combobox]"), "I14SKU1788268154");
+        await Choose(product, productCode);
+        var sku = dialog.Locator("label").Filter(new() { HasText = "SKU" }).Locator("input[role=combobox]");
+        await Choose(sku, skuCode);
         await dialog.Locator("input[type=number]").FillAsync("2");
         await dialog.GetByRole(AriaRole.Button, new() { Name = "Add line", Exact = true }).ClickAsync();
         await Assertions.Expect(dialog.Locator("tbody tr")).ToHaveCountAsync(1);
         await dialog.GetByRole(AriaRole.Button, new() { Name = "Save draft", Exact = true }).ClickAsync();
         await Assertions.Expect(dialog).ToBeHiddenAsync();
         await Assertions.Expect(grid).ToContainTextAsync("PR-");
+        var row = grid.Locator("tbody tr").Last;
+        await row.Locator(".barang-action-menu-trigger").ClickAsync();
+        await page.Locator(".barang-action-menu-popup").GetByRole(AriaRole.Button, new() { Name = "View", Exact = true }).ClickAsync();
+        var viewDialog = page.GetByRole(AriaRole.Dialog, new() { Name = "View purchase request" });
+        await Assertions.Expect(viewDialog).ToBeVisibleAsync();
+        await viewDialog.GetByRole(AriaRole.Button, new() { Name = "Cancel", Exact = true }).ClickAsync();
         await page.ReloadAsync(new() { WaitUntil = WaitUntilState.NetworkIdle });
         await Assertions.Expect(page.Locator("[data-purchase-request-grid]")).ToContainTextAsync("PR-");
     }
 
+    [Fact]
+    public async Task PurchasingApprovalWorkspaceShowsSubmittedRequestAndRecordsDecision()
+    {
+        await page.GotoAsync(baseUrl + "/culture?culture=en&returnUrl=%2Fworkspace%2Finventory%3Fsection%3Dapprovals", new() { WaitUntil = WaitUntilState.NetworkIdle });
+        await page.GotoAsync(baseUrl + "/workspace/inventory?section=approvals", new() { WaitUntil = WaitUntilState.NetworkIdle });
+        var approvals = page.Locator("[data-purchasing-approvals]");
+        await Assertions.Expect(approvals).ToBeVisibleAsync();
+        var submitted = approvals.Locator("tbody tr").Filter(new() { HasText = "Submitted" }).First;
+        await Assertions.Expect(submitted).ToBeVisibleAsync();
+        await submitted.Locator(".barang-action-menu-trigger").ClickAsync();
+        await page.Locator(".barang-action-menu-popup").GetByRole(AriaRole.Button, new() { Name = "Approve", Exact = true }).ClickAsync();
+        await Assertions.Expect(approvals).ToContainTextAsync("Decision recorded.");
+        await Assertions.Expect(approvals).Not.ToContainTextAsync("Submitted");
+    }
+
     private async Task Choose(ILocator input, string search)
     {
+        await input.ClickAsync();
         await input.FillAsync(search);
-        var options = page.Locator(".searchable-select-list[role=listbox] [role=option]");
+        var options = page.Locator(".searchable-select-list[role=listbox] [role=option]").Filter(new() { HasText = search });
         await Assertions.Expect(options).ToHaveCountAsync(1);
         await options.First.ClickAsync();
     }

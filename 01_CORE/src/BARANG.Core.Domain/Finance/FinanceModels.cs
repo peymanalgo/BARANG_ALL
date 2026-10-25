@@ -19,6 +19,8 @@ public static class FinanceErrors
     public static Error PaymentMethodInactive => Error.BusinessRule("finance.payment_method.inactive");
     public static Error DuplicateReference => Error.Conflict("finance.payment.duplicate_reference");
     public static Error AlreadyReversed => Error.Conflict("finance.payment.already_reversed");
+    public static Error ApprovalRequired => Error.BusinessRule("finance.approval.required");
+    public static Error ApprovalSnapshotMismatch => Error.BusinessRule("finance.approval.snapshot_mismatch");
     public static Error InvalidTransition => Error.BusinessRule("finance.invalid_status_transition");
     public static Error ReasonRequired => Error.Validation("finance.reason_required");
     public static Error Concurrency => Error.Concurrency("finance.concurrency_conflict");
@@ -47,9 +49,9 @@ public static class FinancialStatusTransitionService
 public sealed class OrderFinancialState
 {
     private OrderFinancialState() { }
-    public Guid Id { get; private set; } public Guid CompanyId { get; private set; } public Guid OrderId { get; private set; } public FinancialStatus Status { get; private set; } public string? Reason { get; private set; } public Guid? DecidedByUserId { get; private set; } public DateTimeOffset? DecidedAtUtc { get; private set; } public DateTimeOffset CreatedAtUtc { get; private set; } public DateTimeOffset UpdatedAtUtc { get; private set; } public long Version { get; private set; }
+    public Guid Id { get; private set; } public Guid CompanyId { get; private set; } public Guid OrderId { get; private set; } public FinancialStatus Status { get; private set; } public string? Reason { get; private set; } public Guid? DecidedByUserId { get; private set; } public DateTimeOffset? DecidedAtUtc { get; private set; } public Guid? ApprovedPriceSnapshotId { get; private set; } public DateTimeOffset CreatedAtUtc { get; private set; } public DateTimeOffset UpdatedAtUtc { get; private set; } public long Version { get; private set; }
     public static OrderFinancialState Create(Guid company,Guid order,DateTimeOffset now)=>new(){Id=Guid.NewGuid(),CompanyId=company,OrderId=order,Status=FinancialStatus.Pending,CreatedAtUtc=now,UpdatedAtUtc=now,Version=1};
-    public Result Transition(FinancialStatus target,string? reason,Guid actor,long expectedVersion,DateTimeOffset now){if(expectedVersion!=Version)return Result.Failure(FinanceErrors.Concurrency);if(!FinancialStatusTransitionService.CanTransition(Status,target))return Result.Failure(FinanceErrors.InvalidTransition);string? why=Payment.Text(reason,500);if(target is FinancialStatus.Rejected or FinancialStatus.Suspended&&why is null)return Result.Failure(FinanceErrors.ReasonRequired);Status=target;Reason=why;DecidedByUserId=actor;DecidedAtUtc=now;UpdatedAtUtc=now;Version++;return Result.Success();}
+    public Result Transition(FinancialStatus target,string? reason,Guid actor,long expectedVersion,DateTimeOffset now,Guid? priceSnapshotId=null){if(expectedVersion!=Version)return Result.Failure(FinanceErrors.Concurrency);bool reapproval=target==FinancialStatus.Approved&&Status==FinancialStatus.Approved&&priceSnapshotId is not null&&priceSnapshotId!=ApprovedPriceSnapshotId;if(!FinancialStatusTransitionService.CanTransition(Status,target)&&!reapproval)return Result.Failure(FinanceErrors.InvalidTransition);string? why=Payment.Text(reason,500);if(target is FinancialStatus.Rejected or FinancialStatus.Suspended&&why is null)return Result.Failure(FinanceErrors.ReasonRequired);Status=target;Reason=why;DecidedByUserId=actor;DecidedAtUtc=now;ApprovedPriceSnapshotId=target==FinancialStatus.Approved?priceSnapshotId:null;UpdatedAtUtc=now;Version++;return Result.Success();}
 }
 
 public sealed class Invoice

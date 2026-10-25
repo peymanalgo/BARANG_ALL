@@ -68,8 +68,8 @@ public sealed class OrderWizardRoutingTests
         Assert.Contains("Icon=\"trash\"", wizard, StringComparison.Ordinal);
         Assert.Contains("<tr @key=\"row.Id\">", wizard, StringComparison.Ordinal);
         Assert.Contains("await Core.SendAsync(HttpMethod.Post,$\"api/v1/orders/{o}/items/{row.Id}/remove\"", wizard, StringComparison.Ordinal);
-        Assert.Contains("x.OrderId == o.Id && x.CompanyId == Company && x.IsActive", administration, StringComparison.Ordinal);
-        Assert.Contains("x.OrderId == o.Id && x.CompanyId == Company && x.IsActive", administration, StringComparison.Ordinal);
+        Assert.Contains("x.Id == itemId && x.OrderId == orderId", administration, StringComparison.Ordinal);
+        Assert.Contains("x.OrderId == orderId && x.IsActive", administration, StringComparison.Ordinal);
     }
 
     private static int Count(string value, string token) => value.Split(token, StringSplitOptions.None).Length - 1;

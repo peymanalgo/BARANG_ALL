@@ -53,8 +53,8 @@ public sealed class MultiCompanyFoundationTests(PostgreSqlDatabaseFixture databa
         using IDisposable scope = database.CompanyContext.BeginScope(seed.CompanyA);
         await using CoreDbContext context = database.CreateCoreDbContext();
         OrganizationAdministration service = CreateService(context);
-        OrganizationalUnitView root = (await service.CreateUnitAsync(new("ROOT_A", "Root", null, null), TestContext.Current.CancellationToken)).Value;
-        OrganizationalUnitView child = (await service.CreateUnitAsync(new("CHILD_A", "Child", null, root.Id), TestContext.Current.CancellationToken)).Value;
+        OrganizationalUnitView root = (await service.CreateUnitAsync(new("ROOT_A", "Root", seed.BranchA, null), TestContext.Current.CancellationToken)).Value;
+        OrganizationalUnitView child = (await service.CreateUnitAsync(new("CHILD_A", "Child", seed.BranchA, root.Id), TestContext.Current.CancellationToken)).Value;
 
         Result<OrganizationalUnitView> result = await service.UpdateUnitAsync(root.Id, root.DisplayName, null, child.Id, root.Version, TestContext.Current.CancellationToken);
 

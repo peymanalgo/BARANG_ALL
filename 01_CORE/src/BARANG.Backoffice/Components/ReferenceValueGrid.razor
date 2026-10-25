@@ -6,6 +6,7 @@
 @inject IStringLocalizer<ReferenceStrings> R
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
+@inject ILogger<ReferenceValueGrid> Logger
 
 <section class="crud-card" data-reference-type="@TypeCode">
     <header class="section-header"><h2>@Caption</h2>@if(CanManage){<button type="button" class="btn btn-primary btn-small" @onclick="Create"><BarangIcon Name="plus" /> @T["Add"]</button>}</header>
@@ -21,11 +22,11 @@
     {
         <div class="data-grid-wrap"><table class="data-grid">
             <thead><tr>@foreach(string column in new[]{"Code","Name","Status"}){<th><BarangSortHeader Label="@T[column]" Active="@(Sort==column)" Descending="Descending" Clicked="()=>ChangeSort(column)" /></th>}<th>@L["DisplayOrder"]</th><th>@T["Actions"]</th></tr></thead>
-            <tbody>@foreach(var row in PagedRows){<tr data-id="@row.Id">
+            <tbody>@foreach(var row in PagedRows){<tr @key="row.Id" data-id="@row.Id">
                 <td dir="ltr">@row.Code</td><td>@row.Caption(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)</td><td><StatusBadge Active="row.Active" /></td><td>@row.Order</td>
-                <td><div class="row-actions"><BarangIconButton Icon="eye" Label="@T["View"]" Semantic="info" Clicked="()=>Open(row,true)" />
+                <td><BarangActionMenu @key="row.Id.ToString()+row.Active.ToString()+row.Version.ToString()"><BarangIconButton Icon="eye" Label="@T["View"]" Semantic="info" Clicked="()=>Open(row,true)" />
                     @if(CanManage&&!row.System){<BarangIconButton Icon="edit" Label="@T["Edit"]" Semantic="edit" Clicked="()=>Open(row,false)" /><BarangIconButton Icon="power" Label="@(row.Active?T["Deactivate"]:T["Activate"])" Semantic="@(row.Active?"warning":"success")" Clicked="()=>Activate(row)" /><BarangIconButton Icon="trash" Label="@T["Delete"]" Semantic="danger" Clicked="()=>AskDelete(row)" />}
-                </div></td></tr>}</tbody>
+                </BarangActionMenu></td></tr>}</tbody>
         </table></div>
         <BarangPagination Page="Page" HasNext="@(Filtered.Count>Page*PageSize)" Disabled="Loading" PageLabel="" PreviousText="@C["Previous"]" NextText="@C["Next"]" Previous="Previous" Next="Next" />
     }
@@ -82,10 +83,24 @@
     protected override async Task OnInitializedAsync(){var user=(await AuthState.GetAuthenticationStateAsync()).User;Token=user.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await Reload();}
     private async Task Reload(){
         if(Token is null)return;Loading=true;
-        var result=await Core.GetAsync(ValuesPath,Token,Company,default);
-        if(result.IsSuccess)Rows=result.Value.EnumerateArray().Select(Parse).ToList();
-        else if(result.ProblemCode=="lookup.type_not_found")Rows=[];
-        else Show(result);
+        try
+        {
+            var result=await Core.GetAsync(ValuesPath,Token,Company,default);
+            if(result.IsSuccess)
+            {
+                Rows=result.Value.EnumerateArray().Select(Parse).ToList();
+                Message=null;
+            }
+            else if(result.ProblemCode=="lookup.type_not_found")Rows=[];
+            else Show(result);
+        }
+        catch(Exception ex)
+        {
+            Logger.LogError(ex,"Reference values response could not be loaded or parsed for {TypeCode}",TypeCode);
+            Rows=[];
+            Success=false;
+            Message=R["ReferenceLoadFailed"];
+        }
         Page=Math.Clamp(Page,1,Math.Max(1,(Filtered.Count+PageSize-1)/PageSize));Loading=false;
     }
     private Task ResetGrid(){Search="";Sort="Code";Descending=false;Page=1;Message=null;return Reload();}

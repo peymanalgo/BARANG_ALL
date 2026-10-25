@@ -24,7 +24,7 @@ public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyConte
             Result result = await operation(cancellationToken);
             if (result.IsFailure)
             {
-                await transaction.RollbackAsync(cancellationToken);
+                await SafeRollbackAsync(transaction);
                 return result;
             }
 
@@ -34,17 +34,17 @@ public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyConte
         }
         catch (DbUpdateConcurrencyException)
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await SafeRollbackAsync(transaction);
             return Result.Failure(Error.Concurrency("core.database.concurrency_conflict"));
         }
         catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await SafeRollbackAsync(transaction);
             return Result.Failure(Error.Conflict("core.database.unique_conflict"));
         }
         catch
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await SafeRollbackAsync(transaction);
             throw;
         }
     }
@@ -63,7 +63,7 @@ public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyConte
             Result<T> result = await operation(cancellationToken);
             if (result.IsFailure)
             {
-                await transaction.RollbackAsync(cancellationToken);
+                await SafeRollbackAsync(transaction);
                 return result;
             }
 
@@ -73,17 +73,17 @@ public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyConte
         }
         catch (DbUpdateConcurrencyException)
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await SafeRollbackAsync(transaction);
             return Result.Failure<T>(Error.Concurrency("core.database.concurrency_conflict"));
         }
         catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await SafeRollbackAsync(transaction);
             return Result.Failure<T>(Error.Conflict("core.database.unique_conflict"));
         }
         catch
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            await SafeRollbackAsync(transaction);
             throw;
         }
     }
@@ -104,5 +104,12 @@ public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyConte
         {
             await dbContext.Database.ExecuteSqlInterpolatedAsync($"SELECT set_config('barang.company_id', {companyContext.RequireCompanyId().ToString()}, true);", cancellationToken);
         }
+    }
+
+    private static async Task SafeRollbackAsync(IDbContextTransaction transaction)
+    {
+        try { await transaction.RollbackAsync(CancellationToken.None); }
+        catch (InvalidOperationException) { }
+        catch (NpgsqlException) { }
     }
 }

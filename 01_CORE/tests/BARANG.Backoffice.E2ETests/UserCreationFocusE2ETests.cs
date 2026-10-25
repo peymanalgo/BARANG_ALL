@@ -25,7 +25,7 @@ public sealed class UserCreationFocusE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Selected_person_survives_username_focus_and_save_reloads_grid()
+    public async Task SelectedPersonSurvivesUsernameFocusAndSaveReloadsGrid()
     {
         await page.GotoAsync($"{baseUrl}/culture?culture=en&returnUrl=%2Fadmin%2Fuser-access", new() { WaitUntil = WaitUntilState.NetworkIdle });
         await page.Locator(".uam-primary-action").ClickAsync();

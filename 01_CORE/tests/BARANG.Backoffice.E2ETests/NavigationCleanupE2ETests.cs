@@ -26,7 +26,7 @@ public sealed class NavigationCleanupE2ETests : IAsyncLifetime
     [InlineData("fa", "rtl")]
     [InlineData("ar", "rtl")]
     [InlineData("en", "ltr")]
-    public async Task Direct_menu_pages_are_blank_and_directional(string culture, string direction)
+    public async Task DirectMenuPagesAreBlankAndDirectional(string culture, string direction)
     {
         await page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl=%2F", new() { WaitUntil = WaitUntilState.NetworkIdle });
         await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("dir", direction);
@@ -39,7 +39,7 @@ public sealed class NavigationCleanupE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Notifications_and_management_dashboard_are_sibling_direct_items()
+    public async Task NotificationsAndManagementDashboardAreSiblingDirectItems()
     {
         await page.GotoAsync($"{baseUrl}/culture?culture=en&returnUrl=%2Fworkspace%2Forders", new() { WaitUntil = WaitUntilState.NetworkIdle });
         foreach (string route in new[] { "/workspace/notifications", "/workspace/management" })

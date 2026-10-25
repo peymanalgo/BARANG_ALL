@@ -1,0 +1,42 @@
+.barang-action-menu{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.barang-action-menu-trigger{display:grid;place-items:center;width:38px;height:38px;padding:0;border:0;border-radius:8px;background:transparent;color:#31574c;font-family:inherit;font-size:24px;font-weight:700;line-height:1;cursor:pointer;box-shadow:none}
+.barang-action-menu-trigger:hover,.barang-action-menu-trigger:active{background:#edf5f1}
+.barang-action-menu-trigger:focus-visible{background:#edf5f1;outline:2px solid #86b8a7;outline-offset:2px}
+.barang-action-menu-popup{position:fixed;z-index:1700;display:flex;flex-direction:column;align-items:stretch;min-width:min(220px,calc(100vw - 16px));width:max-content;max-width:min(340px,calc(100vw - 16px));padding:5px;border:1px solid #cdd9d2;border-radius:10px;background:#fff;box-shadow:0 14px 32px #173c3126}
+/* Child action buttons need ::deep because BarangIconButton owns their DOM. */
+::deep .barang-action-menu-popup .barang-icon-button,
+::deep .barang-action-menu-popup .icon-button{
+    display:flex !important;
+    flex-direction:row !important;
+    align-items:center;
+    justify-content:flex-start;
+    gap:8px;
+    width:100% !important;
+    height:auto !important;
+    min-width:0 !important;
+    min-height:38px !important;
+    min-height:38px;
+    max-width:none !important;
+    direction:inherit;
+    padding:7px 10px !important;
+    color:#31574c;
+    background:transparent;
+    border:0 !important;
+    border-radius:7px;
+    box-shadow:none !important;
+    text-align:start;
+    white-space:nowrap;
+    font:inherit;
+    cursor:pointer;
+}
+::deep .barang-action-menu-popup .barang-icon-button:hover,
+::deep .barang-action-menu-popup .barang-icon-button:focus-visible,
+::deep .barang-action-menu-popup .icon-button:hover,
+::deep .barang-action-menu-popup .icon-button:focus-visible{background:#edf5f1;outline:2px solid transparent;outline-offset:-2px;border-color:transparent !important}
+::deep .barang-action-menu-popup .barang-icon-button:focus-visible,
+::deep .barang-action-menu-popup .icon-button:focus-visible{outline-color:#86b8a7}
+::deep .barang-action-menu-popup .barang-icon-button:disabled{cursor:not-allowed;opacity:.55}
+::deep .barang-action-menu-popup .barang-icon-button .barang-icon,
+::deep .barang-action-menu-popup .icon-button .barang-icon{display:block;flex:0 0 18px;width:18px !important;height:18px !important;min-width:18px;min-height:18px}
+::deep .barang-action-menu-popup .barang-action-menu-item-label{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+::deep .barang-action-menu-popup .icon-button::after{content:attr(title);flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}

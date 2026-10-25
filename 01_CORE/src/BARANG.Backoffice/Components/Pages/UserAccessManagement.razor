@@ -3,6 +3,7 @@
 @attribute [Authorize(Policy = AuthPolicies.UserAccessManagement)]
 @implements IDisposable
 @inject IStringLocalizer<UserAccessStrings> U
+@inject IStringLocalizer<AppStrings> L
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
 @inject ILocaleDateService Dates
@@ -32,7 +33,7 @@
             <label class="search-box uam-search"><BarangIcon Name="search" /><input value="@UserSearch" @onchange="ChangeUserSearch" placeholder="@U["SearchUsers"]" /></label>
             <select class="uam-select" value="@UserState" @onchange="ChangeUserState" aria-label="@U["AccountStatus"]"><option value="">@U["AllStatuses"]</option><option value="Active">@U["Enabled"]</option><option value="Inactive">@U["Disabled"]</option><option value="Locked">@U["Locked"]</option></select>
             <button type="button" class="btn btn-secondary" @onclick="LoadUsers"><BarangIcon Name="refresh" />@U["Refresh"]</button>
-            <button type="button" class="btn btn-primary uam-primary-action" @onclick="OpenAddUser"><BarangIcon Name="plus" />@U["AddUser"]</button>
+            <button type="button" class="btn btn-primary uam-primary-action" @onclick="OpenAddUser"><BarangIcon Name="plus" /> @L["Add"]</button>
         </div>
         @if (UsersLoading) { <div class="uam-state"><span class="uam-spinner"></span>@U["Loading"]</div> }
         else if (UsersError) { <div class="uam-state error">@U["LoadError"] <button type="button" class="btn btn-secondary btn-small" @onclick="LoadUsers">@U["Refresh"]</button></div> }
@@ -46,7 +47,7 @@
             </tr></thead><tbody>
             @foreach (UserRow row in Users)
             {
-                <tr><td class="uam-col-person"><strong>@row.PersonName</strong><small class="uam-cell-note" title="@row.Organization">@row.Organization</small></td><td class="uam-col-username" dir="ltr"><span class="code-pill uam-username" title="@row.Username">@row.Username</span></td><td class="uam-col-code" dir="ltr">@row.PersonnelCode</td><td class="uam-col-roles"><span class="uam-role-summary" title="@string.Join("، ",row.Roles)">@(row.Roles.Count == 0 ? "—" : string.Join("، ", row.Roles))</span></td><td class="uam-col-status"><span class="status-badge @StateClass(row.State)">@StateLabel(row.State)</span></td><td class="uam-col-login">@FormatDate(row.LastLogin)</td><td class="uam-col-actions"><div class="row-actions"><BarangIconButton Icon="eye" Label="@U["View"]" Clicked="() => OpenUser(row.Id, false)" />@if(CanUserAccountEdit){<BarangIconButton Icon="edit" Label="@U["Edit"]" Clicked="() => OpenUser(row.Id, true)" />}</div></td></tr>
+                <tr><td class="uam-col-person"><strong>@row.PersonName</strong><small class="uam-cell-note" title="@row.Organization">@row.Organization</small></td><td class="uam-col-username" dir="ltr"><span class="code-pill uam-username" title="@row.Username">@row.Username</span></td><td class="uam-col-code" dir="ltr">@row.PersonnelCode</td><td class="uam-col-roles"><span class="uam-role-summary" title="@string.Join("، ",row.Roles)">@(row.Roles.Count == 0 ? "—" : string.Join("، ", row.Roles))</span></td><td class="uam-col-status"><span class="status-badge @StateClass(row.State)">@StateLabel(row.State)</span></td><td class="uam-col-login">@FormatDate(row.LastLogin)</td><td class="uam-col-actions"><BarangActionMenu><BarangIconButton Icon="eye" Label="@U["View"]" Clicked="() => OpenUser(row.Id, false)" />@if(CanUserAccountEdit){<BarangIconButton Icon="edit" Label="@U["Edit"]" Clicked="() => OpenUser(row.Id, true)" />}</BarangActionMenu></td></tr>
             }
             </tbody></table></div>
         }
@@ -59,7 +60,7 @@ else if (ActiveTab == "roles")
         <div class="uam-toolbar">
             <label class="search-box uam-search"><BarangIcon Name="search" /><input value="@RoleSearch" @onchange="ChangeRoleSearch" placeholder="@U["SearchRoles"]" /></label>
             <button type="button" class="btn btn-secondary" @onclick="LoadRoles"><BarangIcon Name="refresh" />@U["Refresh"]</button>
-            <button type="button" class="btn btn-primary uam-primary-action" @onclick="OpenAddRole"><BarangIcon Name="plus" />@U["AddRole"]</button>
+            <button type="button" class="btn btn-primary uam-primary-action" @onclick="OpenAddRole"><BarangIcon Name="plus" /> @L["Add"]</button>
         </div>
         @if (RolesLoading) { <div class="uam-state"><span class="uam-spinner"></span>@U["Loading"]</div> }
         else if (RolesError) { <div class="uam-state error">@U["LoadError"] <button type="button" class="btn btn-secondary btn-small" @onclick="LoadRoles">@U["Refresh"]</button></div> }
@@ -69,7 +70,7 @@ else if (ActiveTab == "roles")
             <div class="data-grid-wrap"><table class="data-grid uam-grid"><thead><tr><th><BarangSortHeader Label="@U["RoleName"]" Active="@(RoleSort=="title")" Descending="@RoleDescending" Clicked='() => SortRoles("title")' /></th><th><BarangSortHeader Label="@U["Code"]" Active="@(RoleSort=="code")" Descending="@RoleDescending" Clicked='() => SortRoles("code")' /></th><th>@U["Scope"]</th><th>@U["UserCount"]</th><th>@U["AccountStatus"]</th><th>@U["Actions"]</th></tr></thead><tbody>
             @foreach (RoleRow role in Roles)
             {
-                <tr><td><strong>@role.Title</strong><small class="uam-cell-note">@role.Description</small></td><td dir="ltr"><span class="code-pill">@role.Code</span></td><td><span class="uam-scope">@(role.Scope == "System" ? U["SystemScope"] : U["CompanyScope"])</span></td><td>@role.UserCount</td><td><span class="status-badge @(role.Active ? "active" : "inactive")">@(role.Active ? U["Active"] : U["Inactive"])</span></td><td><BarangIconButton Icon="edit" Label="@U["Edit"]" Clicked="() => OpenRole(role)" /></td></tr>
+                <tr><td><strong>@role.Title</strong><small class="uam-cell-note">@role.Description</small></td><td dir="ltr"><span class="code-pill">@role.Code</span></td><td><span class="uam-scope">@(role.Scope == "System" ? U["SystemScope"] : U["CompanyScope"])</span></td><td>@role.UserCount</td><td><span class="status-badge @(role.Active ? "active" : "inactive")">@(role.Active ? U["Active"] : U["Inactive"])</span></td><td><BarangActionMenu><BarangIconButton Icon="edit" Label="@U["Edit"]" Clicked="() => OpenRole(role)" /></BarangActionMenu></td></tr>
             }
             </tbody></table></div>
         }
@@ -82,7 +83,7 @@ else if (ActiveTab == "substitutions")
         <div class="uam-toolbar">
             <label class="search-box uam-search"><BarangIcon Name="search" /><span class="sr-only">@U["SearchSubstitutions"]</span><input value="@SubstitutionSearch" @onchange="ChangeSubstitutionSearch" placeholder="@U["SearchSubstitutions"]" /></label>
             <button type="button" class="btn btn-secondary" @onclick="LoadSubstitutions"><BarangIcon Name="refresh" />@U["Refresh"]</button>
-            @if (CanManageSubstitutions) { <button type="button" class="btn btn-primary uam-primary-action" @onclick="OpenAddSubstitution"><BarangIcon Name="plus" />@U["AddSubstitution"]</button> }
+            @if (CanManageSubstitutions) { <button type="button" class="btn btn-primary uam-primary-action" @onclick="OpenAddSubstitution"><BarangIcon Name="plus" /> @L["Add"]</button> }
         </div>
         @if (SubstitutionsLoading) { <div class="uam-state"><span class="uam-spinner"></span>@U["Loading"]</div> }
         else if (SubstitutionsError) { <div class="uam-state error">@U["LoadError"] <button type="button" class="btn btn-secondary btn-small" @onclick="LoadSubstitutions">@U["Refresh"]</button></div> }
@@ -92,7 +93,7 @@ else if (ActiveTab == "substitutions")
             <div class="data-grid-wrap"><table class="data-grid uam-grid"><thead><tr><th>@U["Principal"]</th><th>@U["Substitute"]</th><th>@U["EffectiveFrom"]</th><th>@U["EffectiveTo"]</th><th>@U["Status"]</th><th>@U["Reason"]</th><th>@U["CreatedBy"]</th><th>@U["Actions"]</th></tr></thead><tbody>
             @foreach (SubstitutionRow row in Substitutions)
             {
-                <tr><td><strong>@row.PrincipalName</strong></td><td><strong>@row.SubstituteName</strong></td><td>@FormatDate(row.EffectiveFromUtc)</td><td>@FormatDate(row.EffectiveToUtc)</td><td><span class="status-badge @SubstitutionStatusClass(row)">@SubstitutionStatus(row)</span></td><td><span class="uam-cell-note" title="@row.Reason">@(string.IsNullOrWhiteSpace(row.Reason) ? "—" : row.Reason)</span></td><td>@(string.IsNullOrWhiteSpace(row.CreatedByName) ? "—" : row.CreatedByName)</td><td><div class="row-actions"><BarangIconButton Icon="eye" Label="@U["View"]" Clicked="() => ViewSubstitution(row)" />@if (CanManageSubstitutions && row.IsActive) { <BarangIconButton Icon="close" Label="@U["RevokeSubstitution"]" Clicked="() => AskRevokeSubstitution(row)" /> }</div></td></tr>
+                <tr><td><strong>@row.PrincipalName</strong></td><td><strong>@row.SubstituteName</strong></td><td>@FormatDate(row.EffectiveFromUtc)</td><td>@FormatDate(row.EffectiveToUtc)</td><td><span class="status-badge @SubstitutionStatusClass(row)">@SubstitutionStatus(row)</span></td><td><span class="uam-cell-note" title="@row.Reason">@(string.IsNullOrWhiteSpace(row.Reason) ? "—" : row.Reason)</span></td><td>@(string.IsNullOrWhiteSpace(row.CreatedByName) ? "—" : row.CreatedByName)</td><td><BarangActionMenu><BarangIconButton Icon="eye" Label="@U["View"]" Clicked="() => ViewSubstitution(row)" />@if (CanManageSubstitutions && row.IsActive) { <BarangIconButton Icon="close" Label="@U["RevokeSubstitution"]" Clicked="() => AskRevokeSubstitution(row)" /> }</BarangActionMenu></td></tr>
             }
             </tbody></table></div>
         }
@@ -174,7 +175,7 @@ else
             @PersonCard(SelectedPerson)
             <section class="uam-account-panel"><h3>@U["UserAccountInformation"]</h3><div class="form-grid"><label><span>@U["Username"]</span><input dir="ltr" autocomplete="username" @bind="NewUsername" /></label><label><span>@U["NewPassword"]</span><input type="password" dir="ltr" autocomplete="new-password" @bind="NewPassword" /></label><label><span>@U["ConfirmPassword"]</span><input type="password" dir="ltr" autocomplete="new-password" @bind="ConfirmPassword" /></label><label class="uam-check"><input type="checkbox" @bind="NewEnabled" /><span>@U["AccountEnabled"]</span></label><label><span>@U["AssignedRoles"]</span><SearchableSelect Options="RoleAssignmentOptions" @bind-Value="NewRoleId" SearchChanged="SearchAssignmentRoles" Placeholder="@U["SearchRoles"]" /></label></div><p class="field-help">@U["PasswordPolicy"]</p></section>
         }
-        </div><footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button><button type="button" class="btn btn-primary" disabled="@(SelectedPerson is null || SavingDialog)" @onclick="CreateUser">@U["AddUser"]</button></footer>
+        </div><footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button><button type="button" class="btn btn-primary" disabled="@(SelectedPerson is null || SavingDialog)" @onclick="CreateUser"><BarangIcon Name="plus" /> @L["Add"]</button></footer>
     </section></div>
 }
 

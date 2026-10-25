@@ -34,7 +34,7 @@
         </tr></thead><tbody>
         @foreach (CustomerRow customer in Rows)
         {
-            <tr data-customer-id="@customer.Id"><td><strong class="entity-code">@customer.Code</strong></td><td><button type="button" class="entity-link" @onclick="() => OpenView(customer.Id)">@customer.Name</button></td><td>@TypeLabel(customer.Type)</td><td dir="ltr">@customer.Mobile</td><td>@DisplayCode(customer.Group)</td><td>@customer.SalesRepresentative</td><td><span class="customer-status status-@customer.Status.ToLowerInvariant()">@StatusLabel(customer.Status)</span></td><td><div class="row-actions">
+            <tr data-customer-id="@customer.Id"><td><strong class="entity-code">@customer.Code</strong></td><td><button type="button" class="entity-link" @onclick="() => OpenView(customer.Id)">@customer.Name</button></td><td>@TypeLabel(customer.Type)</td><td dir="ltr">@customer.Mobile</td><td>@DisplayCode(customer.Group)</td><td>@customer.SalesRepresentative</td><td><span class="customer-status status-@customer.Status.ToLowerInvariant()">@StatusLabel(customer.Status)</span></td><td><BarangActionMenu>
                 <BarangIconButton Icon="eye" Label="@C["View"]" Semantic="info" Clicked="() => OpenView(customer.Id)" />
                 @if (CanEdit) { <BarangIconButton Icon="edit" Label="@C["Edit"]" Semantic="edit" Clicked="() => OpenEdit(customer.Id)" /><BarangIconButton Icon="trash" Label="@C["Delete"]" Semantic="danger" Clicked="() => AskDelete(customer)" /> }
                 @if (CanStatus)
@@ -43,7 +43,7 @@
                     else if (customer.Status == "Inactive") { <BarangIconButton Icon="power" Label="@C["Activate"]" Semantic="success" Clicked='@(() => SetStatus(customer, "Active"))' /><BarangIconButton Icon="unlink" Label="@C["Block"]" Semantic="danger" Clicked='@(() => SetStatus(customer, "Blocked"))' /> }
                     else { <BarangIconButton Icon="restore" Label="@C["Unblock"]" Semantic="success" Clicked='@(() => SetStatus(customer, "Active"))' /> }
                 }
-            </div></td></tr>
+            </BarangActionMenu></td></tr>
         }
         </tbody></table></div>
         <footer class="grid-pagination"><button type="button" class="btn btn-secondary btn-small" disabled="@(Page <= 1)" @onclick="Previous">@C["Previous"]</button><span>@string.Format(CultureInfo.CurrentCulture, C["PageOf"], Page, TotalPages)</span><button type="button" class="btn btn-secondary btn-small" disabled="@(Page >= TotalPages)" @onclick="Next">@C["Next"]</button></footer>

@@ -25,3 +25,9 @@ Status changes are command-specific and centralized: `Ready -> Shipped -> InTran
 Permissions are `logistics.read`, `packaging.manage`, `shipping.manage`, and `delivery.manage`. System administrators receive them idempotently. All six tables use EF company filters, PostgreSQL RLS, same-company composite foreign keys, restrictive delete behavior, and no DELETE API. Package allocations, shipment assignments, and status history have no update/delete grants.
 
 Routes are rooted at `/api/v1/logistics` and cover packages, allocations, completion, warehouse handoff/release, shipment creation/read, tracking, explicit lifecycle actions, and ordered history. Future carrier adapters may implement `ICarrierService`; Domain and Application remain independent of carrier SDKs.
+
+## STEP 11 acceptance additions
+
+Packaging completion now compares each package allocation with the independently persisted accepted QC quantity; rejected or reproduction-required quantities are not eligible. Shipping requires tracking evidence. Delivery is cumulative per exact `OrderItemId` across delivered shipments and changes the order to `Delivered` only when every active item is fully delivered. Generic workflow completion cannot satisfy Packaging, Shipping, or Delivery without these persisted records.
+
+Customer returns are separate from warehouse shipment return. `POST /api/v1/logistics/shipments/{shipmentId}/returns` records an exact delivered shipment/order-item quantity, canonical UOM, reason, actor, company, and idempotency key. It never creates stock, refund, payment, or balance effects. The quantity is limited to the shipment's package allocation minus already-posted customer returns; follow-up warehouse disposition and Finance handling remain explicit later actions.

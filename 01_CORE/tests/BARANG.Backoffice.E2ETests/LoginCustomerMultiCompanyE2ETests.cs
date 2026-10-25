@@ -9,6 +9,9 @@ namespace BARANG.Backoffice.E2ETests;
 
 public sealed class LoginCustomerMultiCompanyE2ETests : IAsyncLifetime
 {
+    private static readonly string[] SystemManagementRoutes = ["/manage/products", "/master/equipment", "/master/organization-chart", "/master/persons", "/master/suppliers"];
+    private static readonly string[] CustomerStatuses = ["Active", "Inactive", "Blocked"];
+    private static readonly string[] IranianBranches = ["تبریز", "تهران"];
     private static readonly Guid Iran=Guid.Parse("42f0e459-6095-45bb-aa13-f38126d91d9c");
     private static readonly Guid Iraq=Guid.Parse("d82f44d5-8d22-4154-8eed-e7075ee6ce9f");
     private static readonly Guid UnauthorizedCompany=Guid.Parse("aa4b06c1-9568-49c4-8b49-b9422309b0ca");
@@ -40,7 +43,6 @@ public sealed class LoginCustomerMultiCompanyE2ETests : IAsyncLifetime
         Guid id=created.GetProperty("id").GetGuid();
         await using IBrowserContext context=await NewContext();
         IPage page=await context.NewPageAsync();
-        Exception? primaryFailure=null;
         try
         {
             await Login(page,culture,Username,Password,Iran);
@@ -51,7 +53,7 @@ public sealed class LoginCustomerMultiCompanyE2ETests : IAsyncLifetime
             await Assertions.Expect(system).ToHaveCountAsync(1);
             await Assertions.Expect(page.Locator("[data-navigation-group=Nav_SystemManagement]")).ToHaveCountAsync(1);
             await Assertions.Expect(system.Locator("summary")).ToHaveTextAsync(Caption("NavigationStrings","Nav_SystemManagement",culture));
-            Assert.Equal(new[]{"/manage/products","/master/equipment","/master/organization-chart","/master/persons","/master/suppliers"},
+            Assert.Equal(SystemManagementRoutes,
                 (await system.Locator("a").EvaluateAllAsync<string[]>("els=>els.map(e=>e.getAttribute('href')).sort()")));
             await Assertions.Expect(page.Locator(".reference-workspace [data-navigation-item=Nav_SystemManagement]")).ToHaveCountAsync(0);
             await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("dir",culture=="en"?"ltr":"rtl");
@@ -68,7 +70,7 @@ public sealed class LoginCustomerMultiCompanyE2ETests : IAsyncLifetime
                 ILocator selector=dialog.Locator(".customer-editor-panel fieldset select[name=customer-status]");
                 await Assertions.Expect(selector).ToBeVisibleAsync();
                 await Assertions.Expect(selector).ToBeEnabledAsync();
-                Assert.Equal(new[]{"Active","Inactive","Blocked"},await selector.Locator("option").EvaluateAllAsync<string[]>("els=>els.map(e=>e.value)"));
+                Assert.Equal(CustomerStatuses,await selector.Locator("option").EvaluateAllAsync<string[]>("els=>els.map(e=>e.value)"));
                 ILocator actions=dialog.Locator("[data-customer-editor-actions=general]");
                 await Assertions.Expect(actions.GetByRole(AriaRole.Button)).ToHaveCountAsync(2);
                 ILocator save=actions.GetByRole(AriaRole.Button,new(){Name=Caption("CustomerStrings","Save",culture),Exact=true});
@@ -100,11 +102,9 @@ public sealed class LoginCustomerMultiCompanyE2ETests : IAsyncLifetime
             await Assertions.Expect(view.Locator("textarea[name=customer-notes]")).ToHaveValueAsync(notes);
             await Assertions.Expect(view.GetByRole(AriaRole.Button,new(){Name=Caption("CustomerStrings","Save",culture),Exact=true})).ToHaveCountAsync(0);
         }
-        catch(Exception failure){primaryFailure=failure;throw;}
         finally
         {
-            try{await RetireHistoricalCustomer(Iran,id);}
-            catch(Exception cleanupFailure) when(primaryFailure is not null){throw new AggregateException(primaryFailure,cleanupFailure);}
+            await RetireHistoricalCustomer(Iran,id);
         }
     }
 
@@ -236,7 +236,7 @@ public sealed class LoginCustomerMultiCompanyE2ETests : IAsyncLifetime
         JsonElement chart=await Api(HttpMethod.Get,"/api/v1/organization/chart",adminToken,Iran);
         Assert.Equal(Iran,Assert.Single(chart.GetProperty("companies").EnumerateArray()).GetProperty("id").GetGuid());
         JsonElement[] branches=chart.GetProperty("branches").EnumerateArray().ToArray();
-        Assert.Equal(new[]{"تبریز","تهران"}.Order(),branches.Where(x=>x.GetProperty("isActive").GetBoolean()).Select(x=>x.GetProperty("displayName").GetString()).Order());
+        Assert.Equal(IranianBranches.Order(),branches.Where(x=>x.GetProperty("isActive").GetBoolean()).Select(x=>x.GetProperty("displayName").GetString()).Order());
         Assert.All(branches.Where(x=>!x.GetProperty("isActive").GetBoolean()),x=>Assert.Contains(x.GetProperty("id").GetGuid(),new[]{Guid.Parse("238a028c-76cf-4ed4-892f-80dff9261e16"),Guid.Parse("35298368-f3c2-4680-b4bb-a39cfd310fe1")}));
         Assert.Equal(2,chart.GetProperty("units").GetArrayLength());
         Assert.Equal(2,chart.GetProperty("assignments").GetArrayLength());

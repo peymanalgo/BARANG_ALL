@@ -1,4 +1,5 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0.400-noble AS build
+ARG SOURCE_COMMIT=unknown
 WORKDIR /source
 
 COPY Directory.Build.props Directory.Packages.props BARANG.Core.slnx ./
@@ -16,6 +17,7 @@ RUN dotnet publish src/BARANG.Core.Api/BARANG.Core.Api.csproj \
     /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.11-noble AS runtime
+ARG SOURCE_COMMIT=unknown
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
@@ -25,5 +27,6 @@ RUN mkdir -p /app/App_Data/locks && chown -R app:app /app/App_Data
 USER app
 EXPOSE 8080
 ENV ASPNETCORE_HTTP_PORTS=8080 \
-    DOTNET_EnableDiagnostics=0
-ENTRYPOINT ["dotnet", "BARANG.Core.Api.dll"]
+    DOTNET_EnableDiagnostics=0 \
+    BARANG_BUILD_COMMIT=$SOURCE_COMMIT
+ENTRYPOINT ["sh", "-c", "echo BARANG API build commit ${BARANG_BUILD_COMMIT:-unknown}; exec dotnet BARANG.Core.Api.dll"]

@@ -114,7 +114,7 @@ public sealed class GlobalTypographyE2ETests:IAsyncLifetime
         }
     }
 
-    private async Task InspectCustomerModal(IPage page,string culture)
+    private static async Task InspectCustomerModal(IPage page,string culture)
     {
         await WaitForHandler(page,".customer-page-header .btn-primary","click");
         await page.Locator(".customer-page-header .btn-primary").ClickAsync();
@@ -132,7 +132,7 @@ public sealed class GlobalTypographyE2ETests:IAsyncLifetime
         await Assertions.Expect(modal).ToBeHiddenAsync();
     }
 
-    private async Task InspectChartSelector(IPage page,string culture)
+    private static async Task InspectChartSelector(IPage page,string culture)
     {
         await WaitForHandler(page,"[data-chart-action=print] button","click");
         await page.Locator("[data-chart-action=print] button").ClickAsync();

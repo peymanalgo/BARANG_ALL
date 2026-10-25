@@ -6,6 +6,7 @@ namespace BARANG.Backoffice.E2ETests;
 
 public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
 {
+    private static readonly JsonSerializerOptions ArtifactJsonOptions = new() { WriteIndented = true };
     private readonly string baseUrl = Environment.GetEnvironmentVariable("BARANG_E2E_BASE_URL") ?? "http://localhost:5100";
     private readonly string artifacts = Environment.GetEnvironmentVariable("BARANG_E2E_ARTIFACTS") ?? Path.Combine(AppContext.BaseDirectory, "artifacts", "global-grid-cell-style");
     private IPlaywright playwright = null!;
@@ -32,7 +33,11 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         if (new Uri(page.Url).AbsolutePath == "/company")
         {
-            await page.Locator(".company-list form button[type=submit]").First.ClickAsync();
+            string? company = Environment.GetEnvironmentVariable("BARANG_E2E_COMPANY_ID");
+            ILocator choice = string.IsNullOrWhiteSpace(company)
+                ? page.Locator(".company-list form button[type=submit]").First
+                : page.Locator($".company-list form:has(input[name='companyId'][value='{company}']) button[type=submit]");
+            await choice.ClickAsync();
             await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
         Assert.DoesNotContain("/login", page.Url, StringComparison.OrdinalIgnoreCase);
@@ -58,7 +63,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
     [InlineData("products", "en")]
     [InlineData("products", "fa")]
     [InlineData("products", "ar")]
-    public async Task Ordinary_cells_are_unframed_and_interactions_and_semantics_survive(string grid, string culture)
+    public async Task OrdinaryCellsAreUnframedAndInteractionsAndSemanticsSurvive(string grid, string culture)
     {
         await Navigate(culture, Route(grid));
         await AssertLanguage(culture);
@@ -84,7 +89,14 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
         }
         else
         {
-            await table.Locator("tbody .barang-icon-button:has(svg[data-icon='eye'])").First.ClickAsync();
+            // Row actions are intentionally exposed through the shared vertical menu.
+            // Keep this semantic action check aligned with the STEP 4.5 standard rather
+            // than looking for the retired standalone eye button.
+            ILocator rowMenu = table.Locator("tbody .barang-action-menu-trigger").First;
+            await rowMenu.ClickAsync();
+            ILocator popup = page.Locator(".barang-action-menu-popup").Last;
+            await Assertions.Expect(popup).ToBeVisibleAsync();
+            await popup.Locator("button").First.ClickAsync();
         }
         ILocator dialog = page.Locator(".dialog-backdrop .crud-dialog");
         await Assertions.Expect(dialog).ToBeVisibleAsync();
@@ -128,7 +140,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
     [InlineData("en")]
     [InlineData("fa")]
     [InlineData("ar")]
-    public async Task Narrow_grids_keep_plain_cells_and_reachable_semantic_actions(string culture)
+    public async Task NarrowGridsKeepPlainCellsAndReachableSemanticActions(string culture)
     {
         await page.SetViewportSizeAsync(390, 844);
         foreach (string grid in new[] { "persons", "customers", "users", "products" })
@@ -139,7 +151,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
             await Assertions.Expect(table.Locator("tbody tr").First).ToBeVisibleAsync();
             await AssertOrdinaryCells(table);
             Assert.False(await page.Locator("body").EvaluateAsync<bool>("el => el.scrollWidth > el.clientWidth + 1"), $"{grid}/{culture} overflows the mobile page.");
-            ILocator action = table.Locator("tbody .barang-icon-button:has(svg[data-icon='eye'])").First;
+            ILocator action = table.Locator("tbody .barang-action-menu-trigger").First;
             await action.ScrollIntoViewIfNeededAsync();
             await Assertions.Expect(action).ToBeInViewportAsync();
             await AssertSemanticElements(table);
@@ -155,7 +167,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task All_permission_visible_grid_routes_follow_the_shared_ordinary_cell_contract()
+    public async Task AllPermissionVisibleGridRoutesFollowTheSharedOrdinaryCellContract()
     {
         await Navigate("en", "/");
         string[] routes = await page.Locator(".sidebar-navigation a[href]").EvaluateAllAsync<string[]>("links => [...new Set(links.map(link => link.getAttribute('href')).filter(href => href && href !== '/'))]");
@@ -172,7 +184,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
             }
         }
         Assert.True(audited.Count >= 6, $"Only {audited.Count} populated grids were audited.");
-        await File.WriteAllTextAsync(Path.Combine(artifacts, "audited-grid-routes.json"), JsonSerializer.Serialize(audited, new JsonSerializerOptions { WriteIndented = true }));
+        await File.WriteAllTextAsync(Path.Combine(artifacts, "audited-grid-routes.json"), JsonSerializer.Serialize(audited, ArtifactJsonOptions), TestContext.Current.CancellationToken);
         AssertNoBrowserErrors();
     }
 
@@ -211,7 +223,7 @@ public sealed class GlobalGridCellStyleE2ETests : IAsyncLifetime
         }
     }
 
-    private Task Navigate(string culture, string route) => page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(route)}", new() { WaitUntil = WaitUntilState.NetworkIdle });
+    private Task<Microsoft.Playwright.IResponse?> Navigate(string culture, string route) => page.GotoAsync($"{baseUrl}/culture?culture={culture}&returnUrl={Uri.EscapeDataString(route)}", new() { WaitUntil = WaitUntilState.NetworkIdle });
     private async Task AssertLanguage(string culture)
     {
         await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("lang", culture);

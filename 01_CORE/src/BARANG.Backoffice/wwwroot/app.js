@@ -3,6 +3,141 @@ document.addEventListener('submit',event=>{const form=event.target.closest('.sub
 window.barangFocusCalendarDay = date => requestAnimationFrame(() => document.querySelector(`[data-calendar-date="${date}"]`)?.focus());
 window.barangGetDocumentCulture = () => document.documentElement.lang || 'fa';
 
+window.barangPopupManager = (() => {
+    let active = null;
+    let nextId = 1;
+    const entries = new Map();
+
+    const isInside = (entry, event) => {
+        const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+        return path.includes(entry.trigger) || path.includes(entry.popup)
+            || entry.trigger?.contains?.(event.target) || entry.popup?.contains?.(event.target);
+    };
+
+    const closeEntry = (entry, restoreFocus = true) => {
+        if (!entry) return;
+        if (active === entry) active = null;
+        const closeNotification = entry.trigger?.isConnected
+            ? entry.dotnet?.invokeMethodAsync('CloseFromPopupManager')
+            : Promise.resolve();
+        Promise.resolve(closeNotification).catch(() => { }).finally(() => {
+            if (restoreFocus && entry.trigger?.isConnected) requestAnimationFrame(() => entry.trigger.focus());
+        });
+    };
+
+    const removeDetached = () => {
+        for (const [id, entry] of entries) {
+            if (entry.trigger?.isConnected && entry.popup?.isConnected) continue;
+            if (active === entry) active = null;
+            entries.delete(id);
+        }
+    };
+
+    document.addEventListener('pointerdown', event => {
+        if (active && !isInside(active, event)) closeEntry(active, true);
+    }, true);
+
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape' || !active) return;
+        event.preventDefault();
+        event.stopPropagation();
+        closeEntry(active, true);
+    }, true);
+
+    return {
+        register(trigger, popup, dotnet) {
+            removeDetached();
+            let entry = [...entries.values()].find(item => item.dotnet === dotnet);
+            if (!entry) {
+                entry = { id: `popup-${nextId++}`, trigger, popup, dotnet };
+                entries.set(entry.id, entry);
+            } else {
+                entry.trigger = trigger;
+                entry.popup = popup;
+            }
+            return entry.id;
+        },
+        open(id) {
+            removeDetached();
+            const entry = entries.get(id);
+            if (!entry) return;
+            if (active && active !== entry) closeEntry(active, true);
+            active = entry;
+        },
+        close(id, restoreFocus = true) {
+            const entry = entries.get(id);
+            if (entry && active === entry) closeEntry(entry, restoreFocus);
+        },
+        unregister(id) {
+            const entry = entries.get(id);
+            if (active === entry) active = null;
+            entries.delete(id);
+        }
+    };
+})();
+
+window.barangActionMenu = {
+    watchers: new Map(),
+    focusFirst(popup) { requestAnimationFrame(() => popup?.querySelector('button:not([disabled]),a[href],input:not([disabled])')?.focus()); },
+    position(trigger, popup) {
+        if (!trigger || !popup || !trigger.isConnected || !popup.isConnected) return false;
+        const gap = 6, margin = 8, rect = trigger.getBoundingClientRect();
+        const width = popup.offsetWidth || 180, height = popup.offsetHeight || 120;
+        const rtl = document.documentElement.dir === 'rtl';
+        let left = rtl ? rect.right - width : rect.left;
+        let top = rect.bottom + gap;
+        if (top + height > window.innerHeight - margin && rect.top - gap - height >= margin) top = rect.top - gap - height;
+        left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+        popup.style.position = 'fixed';
+        for (const property of ['inset', 'inset-inline-start', 'inset-inline-end', 'inset-block-start', 'inset-block-end']) popup.style.removeProperty(property);
+        popup.style.setProperty('left', `${Math.round(left)}px`, 'important');
+        popup.style.setProperty('top', `${Math.round(top)}px`, 'important');
+        popup.style.setProperty('right', 'auto', 'important');
+        popup.style.setProperty('bottom', 'auto', 'important');
+        return true;
+    },
+    watch(id, trigger, popup) {
+        this.unwatch(id);
+        const placeholder = document.createComment(`barang-action-menu-${id}`);
+        const originalParent = popup?.parentNode;
+        if (popup && originalParent && popup.parentNode !== document.body) {
+            originalParent.insertBefore(placeholder, popup);
+            document.body.appendChild(popup);
+        }
+        const update = () => this.position(trigger, popup);
+        const keydown = event => {
+            if (!popup?.isConnected) return;
+            const items = [...popup.querySelectorAll('button:not([disabled]),a[href],input:not([disabled])')];
+            if (!items.length || !['ArrowDown','ArrowUp','Home','End'].includes(event.key)) return;
+            event.preventDefault();
+            const current = items.indexOf(document.activeElement);
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (current + (event.key === 'ArrowUp' ? -1 : 1) + items.length) % items.length;
+            items[next].focus();
+        };
+        popup?.addEventListener('keydown', keydown);
+        update();
+        const resizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null;
+        resizeObserver?.observe(trigger);
+        resizeObserver?.observe(popup);
+        window.addEventListener('resize', update, { passive: true });
+        window.addEventListener('scroll', update, { passive: true, capture: true });
+        this.watchers.set(id, { update, resizeObserver, popup, placeholder, keydown });
+    },
+    unwatch(id) {
+        const watcher = this.watchers.get(id);
+        if (!watcher) return;
+        window.removeEventListener('resize', watcher.update);
+        window.removeEventListener('scroll', watcher.update, true);
+        watcher.popup?.removeEventListener('keydown', watcher.keydown);
+        watcher.resizeObserver?.disconnect();
+        if (watcher.popup?.isConnected && watcher.placeholder?.isConnected) {
+            watcher.placeholder.parentNode.insertBefore(watcher.popup, watcher.placeholder.nextSibling);
+            watcher.placeholder.remove();
+        }
+        this.watchers.delete(id);
+    }
+};
+
 let barangDialogTrigger = null;
 const barangFocusable = 'button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 const barangDialogObserver = new MutationObserver(() => {

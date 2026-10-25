@@ -1,0 +1,30 @@
+@using System.Globalization
+@using System.Text.Json
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+@rendermode InteractiveServer
+
+<section class="crud-card purchasing-approval-section" data-purchasing-approvals>
+    <header class="section-header"><div><h2>@T("تأیید خرید","اعتماد الشراء","Purchasing approvals")</h2><p>@T("تصمیم انسانی برای درخواست و سفارش خرید؛ ارسال سفارش فقط پس از تأیید مدیر خرید","قرار بشري للطلب وأمر الشراء؛ لا يرسل الأمر إلا بعد اعتماد مدير المشتريات","Human approval for requests and orders; supplier sending requires manager approval")</p></div></header>
+    @if (Message is not null) { <div class="@(Success ? "inline-success" : "inline-error")" role="status">@Message</div> }
+    <div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("نوع","النوع","Type")</th><th>@T("شماره","الرقم","Number")</th><th>@T("وضعیت","الحالة","Status")</th><th>@T("نسخه","الإصدار","Revision")</th><th>@T("عملیات","الإجراءات","Actions")</th></tr></thead><tbody>
+    @foreach (var row in Rows) { <tr><td>@(row.Kind == "request" ? T("درخواست خرید","طلب شراء","Purchase request") : T("سفارش خرید","أمر شراء","Purchase order"))</td><td dir="ltr">@row.Number</td><td>@StatusText(StatusName(row))</td><td dir="ltr">@row.Version</td><td><BarangActionMenu>
+        @if (StatusName(row) == "Submitted") { <BarangIconButton Icon="check" Semantic="success" Label="@T("تأیید","اعتماد","Approve")" Clicked="(()=>Decide(row,true))" /><BarangIconButton Icon="close" Semantic="danger" Label="@T("رد","رفض","Reject")" Clicked="(()=>Decide(row,false))" /> }
+        @if (row.Kind == "order" && StatusName(row) == "Approved") { <BarangIconButton Icon="send" Semantic="info" Label="@T("ارسال به تأمین‌کننده","إرسال للمورد","Send to supplier")" Clicked="(()=>Send(row))" /> }
+    </BarangActionMenu></td></tr> }
+    </tbody></table></div>
+</section>
+
+@code {
+    private sealed record Row(string Kind, Guid Id, string Number, string Status, long Version);
+    private List<Row> Rows = []; private string? Message; private bool Success; private string Lang => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+    private string T(string fa,string ar,string en)=>Lang switch { "ar"=>ar, "en"=>en, _=>fa };
+    private string StatusText(string s)=>s switch { "Submitted"=>T("ارسال‌شده برای تأیید","مرسل للاعتماد","Submitted for approval"), "Approved"=>T("تأییدشده","معتمد","Approved"), "Rejected"=>T("ردشده","مرفوض","Rejected"), "Sent"=>T("ارسال‌شده به تأمین‌کننده","مرسل للمورد","Sent to supplier"), _=>s };
+    private static string StatusName(Row row)=>row.Status switch { "1"=>"Submitted", "2"=>"Approved", "3"=>"Rejected", "4" when row.Kind=="order"=>"Sent", _=>row.Status };
+    private async Task<(string Token, Guid Company)?> Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token?(token,c):null;}
+    protected override async Task OnInitializedAsync()=>await Load();
+    private async Task Load(){var s=await Session();if(s is null)return;Rows=[];var requests=await Core.GetAsync("api/v1/purchasing/requests?pageNumber=1&pageSize=100",s.Value.Token,s.Value.Company,default);if(requests.IsSuccess)Rows.AddRange(Items(requests.Value).Select(x=>new Row("request",x.GetProperty("id").GetGuid(),x.GetProperty("requestNumber").ToString(),x.GetProperty("status").ToString(),x.GetProperty("version").GetInt64())));var orders=await Core.GetAsync("api/v1/purchasing/orders?pageNumber=1&pageSize=100",s.Value.Token,s.Value.Company,default);if(orders.IsSuccess)Rows.AddRange(Items(orders.Value).Select(x=>new Row("order",x.GetProperty("id").GetGuid(),x.GetProperty("purchaseOrderNumber").ToString(),x.GetProperty("status").ToString(),x.GetProperty("version").GetInt64())));}
+    private static IEnumerable<JsonElement> Items(JsonElement value){if(value.ValueKind==JsonValueKind.Array)return value.EnumerateArray();if(value.ValueKind==JsonValueKind.Object&&value.TryGetProperty("items",out var items)&&items.ValueKind==JsonValueKind.Array)return items.EnumerateArray();return [] ;}
+    private async Task Decide(Row row,bool approve){var s=await Session();if(s is null)return;var path=$"api/v1/purchasing/{(row.Kind=="request"?"requests":"orders")}/{row.Id}/{(approve?"approve":"reject")}";var result=await Core.SendAsync(HttpMethod.Post,path,new {version=row.Version,reason=approve?null:T("رد توسط مسئول مجاز","رفض من المسؤول المخول","Rejected by authorized officer")},s.Value.Token,s.Value.Company,default);Success=result.IsSuccess;Message=result.IsSuccess?T("تصمیم ثبت شد.","تم تسجيل القرار.","Decision recorded."):T("تصمیم ثبت نشد؛ نسخه یا صلاحیت را بررسی کنید.","تعذر تسجيل القرار؛ تحقق من الإصدار والصلاحية.","Decision was not recorded; check revision and eligibility.");await Load();}
+    private async Task Send(Row row){var s=await Session();if(s is null)return;var result=await Core.SendAsync(HttpMethod.Post,$"api/v1/purchasing/orders/{row.Id}/send?version={row.Version}",new {},s.Value.Token,s.Value.Company,default);Success=result.IsSuccess;Message=result.IsSuccess?T("سفارش برای تأمین‌کننده ارسال شد.","تم إرسال الأمر إلى المورد.","Order sent to supplier."):T("ارسال سفارش مجاز نیست؛ تأیید معتبر لازم است.","لا يمكن إرسال الأمر؛ يلزم اعتماد صالح.","Order cannot be sent; valid approval is required.");await Load();}
+}

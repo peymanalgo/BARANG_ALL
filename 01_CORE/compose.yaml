@@ -59,6 +59,8 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      args:
+        SOURCE_COMMIT: ${BARANG_BUILD_COMMIT:-unknown}
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__CoreDatabase: Host=postgres;Port=5432;Database=${POSTGRES_DB:-barang_core};Username=${POSTGRES_APP_USER:-barang_app};Password=${POSTGRES_APP_PASSWORD:-barang_app_dev_only}
@@ -100,6 +102,8 @@ services:
     build:
       context: .
       dockerfile: src/BARANG.Backoffice/Dockerfile
+      args:
+        SOURCE_COMMIT: ${BARANG_BUILD_COMMIT:-unknown}
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       CoreApi__BaseUrl: http://api:8080

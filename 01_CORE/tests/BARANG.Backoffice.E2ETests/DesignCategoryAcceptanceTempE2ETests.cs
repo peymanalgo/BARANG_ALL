@@ -24,7 +24,7 @@ public sealed class DesignCategoryAcceptanceTempE2ETests : IAsyncLifetime
         var master = page.Locator(".nav-group[data-navigation-group='Nav_MasterData']"); await master.Locator(":scope > summary").ClickAsync();
         var artwork = master.GetByRole(AriaRole.Link,new(){Name="Design Bank Reference Data",Exact=true}); await artwork.ClickAsync(); await page.WaitForURLAsync("**/master/reference-data/artwork"); await page.WaitForTimeoutAsync(2000);
         await Assertions.Expect(page.Locator("[role=tree]")).ToBeVisibleAsync(); Assert.Equal(0,await page.Locator("table").CountAsync());
-        string s=DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(); string root=$"E2E ROOT {s}",child=$"E2E CHILD {s}",grand=$"E2E GRANDCHILD {s}";
+        string s=DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture); string root=$"E2E ROOT {s}",child=$"E2E CHILD {s}",grand=$"E2E GRANDCHILD {s}";
         await page.Locator(".design-category-admin header button[title='Add root category']").ClickAsync(); await Assertions.Expect(page.Locator("input[name=category-code]")).ToBeVisibleAsync(); await Fill("root",root); await Save();
         var rootNode=NodeByCaption(root); await Assertions.Expect(rootNode).ToBeVisibleAsync();
         await rootNode.Locator("button[title='Add subcategory']").ClickAsync(); await Fill("child",child); await Save();

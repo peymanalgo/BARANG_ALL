@@ -26,3 +26,11 @@ Inventory and purchasing mutations emit Phase 06 audit entries. Concise purchasi
 ## APIs
 
 Inventory routes are under `/api/v1/inventory` for balances, ledger, receipt/issue, reservations, transfers, and adjustments. Purchasing routes are under `/api/v1/purchasing` for requests, orders, receipts, and close/cancel. All require authentication, selected company, permission, and RLS authorization.
+
+## STEP 4 approved issue/release contract
+
+- Warehouse issue is posted through `POST /api/v1/inventory/orders/{orderId}/issues`. It locks the exact order-item reservations and stock balances in deterministic order, consumes reservation remainder, deducts on-hand, and writes immutable `WAREHOUSE_ISSUE` transactions. A reference plus item identity is the retry key; a changed retry is rejected.
+- Order cancellation calls the same inventory owner inside the order transaction. Active/partially released reservation remainder is released; consumed reservations and issued stock are not restored.
+- A workflow node whose configured key contains `InventoryIssue` calls the issue owner before task completion. The task remains open when any selected reservation still has an outstanding remainder; transaction rollback protects both ledger and task state.
+- `POST /api/v1/inventory/returns` is a compensating, idempotent usable-goods return. It requires the original warehouse issue transaction, canonical UOM, `USABLE` disposition, and cannot exceed the unreturned issued quantity. Damaged/unknown goods are not added to usable stock.
+- Partial warehouse issue is supported by the API for an existing workflow that permits it; an InventoryIssue task itself requires all selected current reservation quantities to be satisfied. Consumption, cancellation release, and returns are separate ledger events; no automatic refund, QC, procurement, or accounting integration is introduced in STEP 4.

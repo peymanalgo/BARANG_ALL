@@ -36,7 +36,7 @@
                 <span class="org-title"><strong>@company.DisplayName</strong><small>@company.Code</small></span>
                 <StatusBadge Active="company.Active" />
 
-                <div class="node-actions">
+                <div class="node-actions"><BarangActionMenu Visible="@(Editable && (CanManageCompanies || (CanManageBranches && company.Active && CanManageCompany(company.Id))))">
                     @if (Editable && CanManageCompanies)
                     {
                         <BarangIconButton Icon="eye" Label="@O["View"]" Semantic="info" StopPropagation="true"
@@ -61,28 +61,9 @@
                             data-chart-action="company-toggle-status"
                             data-chart-node-id="@company.Id"
                             Clicked="() => EmitAction(company.Active ? OrganizationChartActionType.DeactivateCompany : OrganizationChartActionType.ActivateCompany, OrganizationChartNodeType.Company, company.Id)" />
-                        <details class="chart-action-menu" @onclick:stopPropagation>
-                            <summary class="barang-icon-button barang-action-neutral" title="@O["More"]" aria-label="@O["More"]" data-chart-action="company-more" data-chart-node-id="@company.Id"><BarangIcon Name="more" /></summary>
-                            <div class="chart-action-menu-panel">
-                                <button
-                                    type="button"
-                                    class="chart-menu-action danger"
-                                    title="@(HasBranchChildren(company.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
-                                    aria-label="@(HasBranchChildren(company.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
-                                    disabled="@HasBranchChildren(company.Id)"
-                                    data-chart-action="company-delete"
-                                    data-chart-node-id="@company.Id"
-                                    @onclick="() => EmitAction(OrganizationChartActionType.DeleteCompany, OrganizationChartNodeType.Company, company.Id)">
-                                    @O["Delete"]
-                                </button>
-                                @if (HasBranchChildren(company.Id))
-                                {
-                                    <span class="chart-action-reason">@O["DeleteBlockedChildren"]</span>
-                                }
-                            </div>
-                        </details>
+                        <BarangIconButton Icon="trash" Semantic="danger" Label="@O["Delete"]" Disabled="@HasBranchChildren(company.Id)" StopPropagation="true" Clicked="() => EmitAction(OrganizationChartActionType.DeleteCompany, OrganizationChartNodeType.Company, company.Id)" />
                     }
-                </div>
+                </BarangActionMenu></div>
             </article>
 
             @if (IsExpanded(company.Id))
@@ -113,7 +94,7 @@
                             <span class="org-title"><strong>@branch.DisplayName</strong><small>@branch.Code</small></span>
                             <StatusBadge Active="branch.Active" />
 
-                            <div class="node-actions">
+                            <div class="node-actions"><BarangActionMenu Visible="@(Editable && (CanManageBranches || (CanManageUnits && branch.Active)))">
                                 @if (Editable && CanManageBranches)
                                 {
                                     <BarangIconButton Icon="eye" Label="@O["View"]" Semantic="info" StopPropagation="true"
@@ -138,28 +119,9 @@
                                         data-chart-action="branch-toggle-status"
                                         data-chart-node-id="@branch.Id"
                                         Clicked="() => EmitAction(branch.Active ? OrganizationChartActionType.DeactivateBranch : OrganizationChartActionType.ActivateBranch, OrganizationChartNodeType.Branch, branch.Id)" />
-                                    <details class="chart-action-menu" @onclick:stopPropagation>
-                                        <summary class="barang-icon-button barang-action-neutral" title="@O["More"]" aria-label="@O["More"]" data-chart-action="branch-more" data-chart-node-id="@branch.Id"><BarangIcon Name="more" /></summary>
-                                        <div class="chart-action-menu-panel">
-                                            <button
-                                                type="button"
-                                                class="chart-menu-action danger"
-                                                title="@(HasUnitChildrenForBranch(branch.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
-                                                aria-label="@(HasUnitChildrenForBranch(branch.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
-                                                disabled="@HasUnitChildrenForBranch(branch.Id)"
-                                                data-chart-action="branch-delete"
-                                                data-chart-node-id="@branch.Id"
-                                                @onclick="() => EmitAction(OrganizationChartActionType.DeleteBranch, OrganizationChartNodeType.Branch, branch.Id, company.Id)">
-                                                @O["Delete"]
-                                            </button>
-                                            @if (HasUnitChildrenForBranch(branch.Id))
-                                            {
-                                                <span class="chart-action-reason">@O["DeleteBlockedChildren"]</span>
-                                            }
-                                        </div>
-                                    </details>
+                                    <BarangIconButton Icon="trash" Semantic="danger" Label="@O["Delete"]" Disabled="@HasUnitChildrenForBranch(branch.Id)" StopPropagation="true" Clicked="() => EmitAction(OrganizationChartActionType.DeleteBranch, OrganizationChartNodeType.Branch, branch.Id, company.Id)" />
                                 }
-                            </div>
+                            </BarangActionMenu></div>
                         </article>
 
                         @if (IsExpanded(branch.Id))
@@ -320,7 +282,7 @@
             <span class="org-title"><strong>@unit.DisplayName</strong><small>@unit.Code</small></span>
             <StatusBadge Active="unit.Active" />
 
-            <div class="node-actions">
+            <div class="node-actions"><BarangActionMenu Visible="@(Editable && CanManageUnits)">
                 @if (Editable && CanManageUnits)
                 {
                     <BarangIconButton Icon="eye" Label="@O["View"]" Semantic="info" StopPropagation="true"
@@ -349,28 +311,9 @@
                         data-chart-action="unit-toggle-status"
                         data-chart-node-id="@unit.Id"
                         Clicked="() => EmitAction(unit.Active ? OrganizationChartActionType.DeactivateUnit : OrganizationChartActionType.ActivateUnit, OrganizationChartNodeType.Unit, unit.Id)" />
-                    <details class="chart-action-menu" @onclick:stopPropagation>
-                        <summary class="barang-icon-button barang-action-neutral" title="@O["More"]" aria-label="@O["More"]" data-chart-action="unit-more" data-chart-node-id="@unit.Id"><BarangIcon Name="more" /></summary>
-                        <div class="chart-action-menu-panel">
-                            <button
-                                type="button"
-                                class="chart-menu-action danger"
-                                title="@(UnitHasOrganizationalChildren(unit.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
-                                aria-label="@(UnitHasOrganizationalChildren(unit.Id) ? O["DeleteBlockedChildren"] : O["Delete"])"
-                                disabled="@UnitHasOrganizationalChildren(unit.Id)"
-                                data-chart-action="unit-delete"
-                                data-chart-node-id="@unit.Id"
-                                @onclick="() => EmitAction(OrganizationChartActionType.DeleteUnit, OrganizationChartNodeType.Unit, unit.Id, unit.ParentId ?? unit.BranchId)">
-                                @O["Delete"]
-                            </button>
-                            @if (UnitHasOrganizationalChildren(unit.Id))
-                            {
-                                <span class="chart-action-reason">@O["DeleteBlockedChildren"]</span>
-                            }
-                        </div>
-                    </details>
+                    <BarangIconButton Icon="trash" Semantic="danger" Label="@O["Delete"]" Disabled="@UnitHasOrganizationalChildren(unit.Id)" StopPropagation="true" Clicked="() => EmitAction(OrganizationChartActionType.DeleteUnit, OrganizationChartNodeType.Unit, unit.Id, unit.ParentId ?? unit.BranchId)" />
                 }
-            </div>
+            </BarangActionMenu></div>
         </article>
 
         if (IsExpanded(unit.Id))
@@ -416,7 +359,7 @@
                         }
                     </div>
                 }
-                <div class="node-actions">
+                <div class="node-actions"><BarangActionMenu>
                     <BarangIconButton Icon="eye" Label="@O["View"]" Semantic="info" StopPropagation="true" data-chart-action="position-view" data-chart-node-id="@position.Id" Clicked="() => EmitAction(OrganizationChartActionType.ViewPosition, OrganizationChartNodeType.Position, position.Id, position.UnitId)" />
                     @if (position.Active)
                     {
@@ -424,7 +367,7 @@
                     }
                     <BarangIconButton Icon="power" Label="@(position.Active ? O["Deactivate"] : O["Activate"])" Semantic="@(position.Active ? "warning" : "success")" StopPropagation="true" data-chart-action="position-toggle-status" data-chart-node-id="@position.Id" Clicked="() => EmitAction(position.Active ? OrganizationChartActionType.DeactivatePosition : OrganizationChartActionType.ActivatePosition, OrganizationChartNodeType.Position, position.Id, position.UnitId)" />
                     <BarangIconButton Icon="trash" Label="@O["Delete"]" Semantic="danger" StopPropagation="true" data-chart-action="position-delete" data-chart-node-id="@position.Id" Clicked="() => EmitAction(OrganizationChartActionType.DeletePosition, OrganizationChartNodeType.Position, position.Id, position.UnitId)" />
-                </div>
+                </BarangActionMenu></div>
             </article>
             @if (reports.Count > 0)
             {
@@ -484,7 +427,7 @@
 
                 @if (Editable && CanManageUnits)
                 {
-                    <div class="node-actions">
+                    <div class="node-actions"><BarangActionMenu>
                         <BarangIconButton Icon="eye" Label="@O["View"]" Semantic="info" StopPropagation="true" data-chart-action="assignment-view" data-chart-node-id="@assignment.Id" Clicked="() => EmitAction(OrganizationChartActionType.ViewAssignment, OrganizationChartNodeType.Assignment, assignment.Id)" />
                         @if (assignment.Active)
                         {
@@ -498,27 +441,8 @@
                         {
                             <BarangIconButton Icon="power" Label="@O["Activate"]" Semantic="success" StopPropagation="true" data-chart-action="assignment-toggle-status" data-chart-node-id="@assignment.Id" Clicked="() => EmitAction(OrganizationChartActionType.ActivateAssignment, OrganizationChartNodeType.Assignment, assignment.Id)" />
                         }
-                        <details class="chart-action-menu" @onclick:stopPropagation>
-                            <summary class="barang-icon-button barang-action-neutral" title="@O["More"]" aria-label="@O["More"]" data-chart-action="assignment-more" data-chart-node-id="@assignment.Id"><BarangIcon Name="more" /></summary>
-                            <div class="chart-action-menu-panel">
-                                <button
-                                    type="button"
-                                    class="chart-menu-action danger"
-                                    title="@(reports.Count > 0 ? O["DeleteBlockedChildren"] : O["RemoveAssignment"])"
-                                    aria-label="@(reports.Count > 0 ? O["DeleteBlockedChildren"] : O["RemoveAssignment"])"
-                                    disabled="@(reports.Count > 0)"
-                                    data-chart-action="assignment-delete"
-                                    data-chart-node-id="@assignment.Id"
-                                    @onclick="() => EmitAction(OrganizationChartActionType.DeleteAssignment, OrganizationChartNodeType.Assignment, assignment.Id, assignment.UnitId)">
-                                    @O["RemoveAssignment"]
-                                </button>
-                                @if (reports.Count > 0)
-                                {
-                                    <span class="chart-action-reason">@O["DeleteBlockedChildren"]</span>
-                                }
-                            </div>
-                        </details>
-                    </div>
+                        <BarangIconButton Icon="trash" Semantic="danger" Label="@O["RemoveAssignment"]" Disabled="@(reports.Count > 0)" StopPropagation="true" Clicked="() => EmitAction(OrganizationChartActionType.DeleteAssignment, OrganizationChartNodeType.Assignment, assignment.Id, assignment.UnitId)" />
+                    </BarangActionMenu></div>
                 }
             </article>
             @if (reports.Count > 0)
@@ -571,3 +495,6 @@
     private UnitRow? GetUnit(Guid? id) => id is Guid unitId ? SourceUnits.FirstOrDefault(x => x.Id == unitId) : null;
 
 }
+
+
+

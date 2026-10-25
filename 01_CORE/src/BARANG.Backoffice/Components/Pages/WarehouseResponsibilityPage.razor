@@ -1,0 +1,8 @@
+@page "/workspace/inventory/warehouse-responsibility"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using BARANG.Backoffice.Components
+<PageTitle>@T("مسئولان انبار","مسؤولو المستودعات","Warehouse responsibility")</PageTitle>
+<nav class="breadcrumbs"><a href="/workspace/inventory">@T("موجودی و خرید","المخزون والمشتريات","Inventory & Purchasing")</a></nav>
+<WarehouseResponsibilitySection />
+@code { private string T(string fa,string ar,string en)=>System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "fa"=>fa,"ar"=>ar,_=>en }; }

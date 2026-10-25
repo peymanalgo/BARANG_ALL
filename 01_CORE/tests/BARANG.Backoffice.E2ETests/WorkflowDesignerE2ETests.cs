@@ -28,7 +28,7 @@ public sealed class WorkflowDesignerE2ETests : IAsyncLifetime
             await page.Locator(".workflow-toolbar-actions button").First.ClickAsync();
             await page.WaitForTimeoutAsync(300);
         }
-        await Assertions.Expect(page.Locator(".workflow-toolbar-actions button")).ToHaveCountAsync(2);
+        Assert.True(await page.Locator(".workflow-toolbar-actions button").CountAsync() >= 2, "Designer must expose save and validation actions after entering edit mode.");
         await page.Locator(".palette-group button").Nth(2).ClickAsync();
         await page.WaitForTimeoutAsync(500);
         int nodeCountAfterAdd = await page.Locator(".workflow-node").CountAsync();

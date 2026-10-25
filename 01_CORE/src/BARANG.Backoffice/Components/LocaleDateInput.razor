@@ -5,7 +5,7 @@
 
 <div class="locale-date-input" data-calendar-culture="@EffectiveCulture" data-calendar-ready="@CultureReady.ToString().ToLowerInvariant()">
     <div class="locale-date-control">
-        <input name="@Name" value="@Text" disabled="@(Disabled || !CultureReady)" inputmode="numeric" placeholder="@O["DatePlaceholder"]" aria-invalid="@Invalid.ToString().ToLowerInvariant()" @oninput="Input" @onkeydown="InputKeyDown" />
+        <input name="@Name" value="@Text" disabled="@(Disabled || !CultureReady)" inputmode="numeric" placeholder="@O["DatePlaceholder"]" aria-invalid="@Invalid.ToString().ToLowerInvariant()" @oninput="Input" @onchange="Input" @onblur="Commit" @onkeydown="InputKeyDown" />
         <button type="button" class="date-picker-button" disabled="@(Disabled || !CultureReady)" title="@O["Calendar"]" aria-label="@O["Calendar"]" aria-expanded="@Open.ToString().ToLowerInvariant()" @onclick="Toggle"><BarangIcon Name="calendar" /></button>
     </div>
     @if (Invalid)
@@ -102,8 +102,8 @@
         if (!firstRender) return;
         CultureReady = true;
         string culture = EffectiveCulture;
-        Text = Value is null ? "" : Dates.Format(Value.Value, culture);
-        DisplayMonth = Dates.StartOfMonth(Value ?? DateOnly.FromDateTime(DateTime.Today), culture);
+        if (DisplayMonth == default)
+            DisplayMonth = Dates.StartOfMonth(Value ?? DateOnly.FromDateTime(DateTime.Today), culture);
         LastCulture = culture;
         LastValue = Value;
         await InvokeAsync(StateHasChanged);
@@ -130,6 +130,16 @@
         if (string.IsNullOrWhiteSpace(Text)) { Invalid = false; LastValue = null; await ValueChanged.InvokeAsync(null); return; }
         Invalid = !Dates.TryParse(Text, EffectiveCulture, out DateOnly parsed);
         if (!Invalid) { DisplayMonth = Dates.StartOfMonth(parsed, EffectiveCulture); LastValue = parsed; await ValueChanged.InvokeAsync(parsed); }
+    }
+
+    private async Task Commit()
+    {
+        if (string.IsNullOrWhiteSpace(Text)) { Invalid = false; await ValueChanged.InvokeAsync(null); return; }
+        if (Dates.TryParse(Text, EffectiveCulture, out DateOnly parsed))
+        {
+            Invalid = false; LastValue = parsed; DisplayMonth = Dates.StartOfMonth(parsed, EffectiveCulture); await ValueChanged.InvokeAsync(parsed);
+        }
+        else Invalid = true;
     }
 
     private async Task Select(DateOnly date)

@@ -37,6 +37,20 @@ public static class OrganizationEndpoints
         units.MapGet("/{unitId:guid}", async (Guid unitId, IOrganizationAdministration s, CancellationToken ct) => Map(await s.GetUnitAsync(unitId, ct)));
         units.MapPut("/{unitId:guid}", async (Guid unitId, UpdateUnitRequest r, IOrganizationAdministration s, CancellationToken ct) => Map(await s.UpdateUnitAsync(unitId, r.DisplayName, r.BranchId, r.ParentId, r.Version, ct)));
         units.MapPut("/{unitId:guid}/activation", async (Guid unitId, ActivationRequest r, IOrganizationAdministration s, CancellationToken ct) => Map(await s.SetUnitActiveAsync(unitId, r.IsActive, r.Version, ct)));
+        RouteGroupBuilder chart = group.MapGroup("/chart").RequireAuthorization(SecurityPermissions.OrganizationUnitManage);
+        chart.MapGet("/", async (Guid? highlightedPersonId, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.GetChartAsync(highlightedPersonId, ct)));
+        chart.MapGet("/companies/{companyId:guid}", async (Guid companyId, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.GetCompanyChartAsync(companyId, ct)));
+        chart.MapPost("/assignments", async (CreateAssignmentRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.AssignPersonAsync(new(r.PersonId, r.OrganizationalUnitId, r.ManagerAssignmentId, r.PositionCode, r.PositionTitle, r.IsPrimary, r.StartDate, r.EndDate, r.Notes), ct), true));
+        chart.MapPut("/assignments/{id:guid}", async (Guid id, CreateAssignmentRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.ChangeAssignmentAsync(id, new(r.PersonId, r.OrganizationalUnitId, r.ManagerAssignmentId, r.PositionCode, r.PositionTitle, r.IsPrimary, r.StartDate, r.EndDate, r.Notes), r.Version, ct)));
+        chart.MapPut("/assignments/{id:guid}/activation", async (Guid id, ActivationRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.SetAssignmentActiveAsync(id, r.IsActive, r.Version, ct)));
+        chart.MapDelete("/assignments/{id:guid}", async (Guid id, long version, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.RemoveAssignmentAsync(id, version, ct)));
+        RouteGroupBuilder persons = group.MapGroup("/persons").RequireAuthorization(SecurityPermissions.OrganizationUnitManage);
+        persons.MapGet("/", async (string? search, int? take, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.SearchPersonsAsync(search, take ?? 30, ct)));
+        persons.MapGet("/{id:guid}", async (Guid id, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.GetPersonAsync(id, ct)));
+        persons.MapPost("/", async (CreatePersonRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.CreatePersonAsync(new(r.PersonnelCode, r.FirstName, r.LastName, r.NationalId, r.BirthDate, r.Email, r.Phone, r.Address, r.Notes), ct), true));
+        persons.MapPut("/{id:guid}", async (Guid id, CreatePersonRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.UpdatePersonAsync(id, new(r.PersonnelCode, r.FirstName, r.LastName, r.NationalId, r.BirthDate, r.Email, r.Phone, r.Address, r.Notes), r.Version, ct)));
+        persons.MapPut("/{id:guid}/activation", async (Guid id, ActivationRequest r, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.SetPersonActiveAsync(id, r.IsActive, r.Version, ct)));
+        persons.MapDelete("/{id:guid}", async (Guid id, long version, IOrganizationalChartAdministration s, CancellationToken ct) => Map(await s.DeletePersonAsync(id, version, ct)));
         RouteGroupBuilder warehouses = group.MapGroup("/warehouses").RequireAuthorization(SecurityPermissions.OrganizationWarehouseManage);
         warehouses.MapPost("/", async (CreateWarehouseRequest r, IOrganizationAdministration s, CancellationToken ct) => Map(await s.CreateWarehouseAsync(new(r.Code, r.Name, r.Type, r.BranchId), ct), true));
         warehouses.MapGet("/", async (IOrganizationAdministration s, CancellationToken ct) => Map(await s.ListWarehousesAsync(ct)));
@@ -47,6 +61,7 @@ public static class OrganizationEndpoints
     }
 
     private static OrganizationResult<T> Map<T>(Result<T> result, bool created = false) => new(result, created);
+    private static OrganizationVoidResult Map(Result result) => new(result);
 
     private sealed class OrganizationResult<T>(Result<T> result, bool created) : IResult
     {
@@ -64,6 +79,17 @@ public static class OrganizationEndpoints
             return httpContext.Response.WriteAsJsonAsync(details, httpContext.RequestAborted);
         }
     }
+
+    private sealed class OrganizationVoidResult(Result result) : IResult
+    {
+        public Task ExecuteAsync(HttpContext httpContext)
+        {
+            if (result.IsSuccess) { httpContext.Response.StatusCode = StatusCodes.Status204NoContent; return Task.CompletedTask; }
+            ICorrelationContext correlation = httpContext.RequestServices.GetRequiredService<ICorrelationContext>();
+            ProblemDetails details = ApiProblemDetailsMapper.Create(result.Error, correlation.CorrelationId ?? httpContext.TraceIdentifier, httpContext.Request.Path);
+            return Results.Problem(details).ExecuteAsync(httpContext);
+        }
+    }
 }
 
 public sealed record CreateCompanyRequest(string Code, string DisplayName);
@@ -77,3 +103,5 @@ public sealed record CreateUnitRequest(string Code, string DisplayName, Guid? Br
 public sealed record UpdateUnitRequest(string DisplayName, Guid? BranchId, Guid? ParentId, long Version);
 public sealed record CreateWarehouseRequest(string Code, string Name, WarehouseType Type, Guid? BranchId);
 public sealed record UpdateWarehouseRequest(string Name, WarehouseType Type, Guid? BranchId, long Version);
+public sealed record CreateAssignmentRequest(Guid PersonId, Guid OrganizationalUnitId, Guid? ManagerAssignmentId, string PositionCode, string PositionTitle, bool IsPrimary, DateOnly? StartDate, DateOnly? EndDate, string? Notes, long Version = 0);
+public sealed record CreatePersonRequest(string PersonnelCode, string FirstName, string LastName, string? NationalId, DateOnly? BirthDate, string? Email, string? Phone, string? Address, string? Notes, long Version = 0);

@@ -76,6 +76,7 @@
     <div class="main-column">
         <header class="topbar">
             <div class="top-actions">
+                <NotificationBell />
                 <a class="company-chip" href="@($"/company?returnUrl={Uri.EscapeDataString(CurrentPath)}")" data-enhance-nav="false" title="@L["SwitchCompany"]">
                     <BarangIcon Name="building" />
                     <span><small>@L["CurrentCompany"]</small><strong>@CompanyName</strong></span>

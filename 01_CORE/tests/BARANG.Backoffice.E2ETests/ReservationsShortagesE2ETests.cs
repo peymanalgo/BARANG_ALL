@@ -26,7 +26,7 @@ public sealed class ReservationsShortagesE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Reservations_and_shortages_are_independent_read_workflows_with_canonical_toolbars()
+    public async Task ReservationsAndShortagesAreIndependentReadWorkflowsWithCanonicalToolbars()
     {
         await GoTo("en");
         ILocator section = page.Locator("[data-reservation-shortage-grid]");
@@ -41,7 +41,10 @@ public sealed class ReservationsShortagesE2ETests : IAsyncLifetime
         await page.GetByRole(AriaRole.Link, new() { Name = "Stock Shortages", Exact = true }).ClickAsync();
         await Assertions.Expect(section).ToHaveAttributeAsync("data-section", "shortages");
         await Assertions.Expect(section.Locator("h2")).ToHaveTextAsync("Stock Shortages");
-        await Assertions.Expect(section.GetByRole(AriaRole.Columnheader, new() { Name = "Shortage", Exact = true })).ToBeVisibleAsync();
+        if (await section.Locator("table.data-grid tbody tr").CountAsync() > 0)
+            await Assertions.Expect(section.GetByRole(AriaRole.Columnheader, new() { Name = "Shortage", Exact = true })).ToBeVisibleAsync();
+        else
+            await Assertions.Expect(section).ToContainTextAsync("No shortages found");
         await Assertions.Expect(section.Locator(".crud-toolbar input")).ToHaveCountAsync(2); // Search plus warehouse selector.
         await Assertions.Expect(section.Locator(".crud-toolbar button")).ToHaveCountAsync(1);
         await section.Locator(".crud-search input").FillAsync("not-a-real-stock-row");
@@ -52,7 +55,7 @@ public sealed class ReservationsShortagesE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Reservations_and_shortages_localize_in_fa_ar_en()
+    public async Task ReservationsAndShortagesLocalizeInFaArEn()
     {
         foreach ((string culture, string title, string reservations, string shortages, string direction) in new[]
         {

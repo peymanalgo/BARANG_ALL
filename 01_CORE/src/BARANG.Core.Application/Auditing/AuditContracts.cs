@@ -16,6 +16,9 @@ public static class AuditActions
     public const string UserActivated = "security.user.activated";
     public const string UserDeactivated = "security.user.deactivated";
     public const string UserPasswordChanged = "security.user.password_changed";
+    public const string UserPasswordReset = "security.user.password_reset";
+    public const string UserUnlocked = "security.user.unlocked";
+    public const string UserDirectPermissionsChanged = "security.user_direct_permissions.changed";
     public const string RoleCreated = "security.role.created";
     public const string RoleUpdated = "security.role.updated";
     public const string RoleActivated = "security.role.activated";
@@ -26,6 +29,8 @@ public static class AuditActions
     public const string UserCompanyRevoked = "security.user_company.revoked";
     public const string PermissionAssigned = "security.permission.assigned";
     public const string PermissionRevoked = "security.permission.revoked";
+    public const string RolePermissionsChanged = "security.role_permissions.changed";
+    public const string RoleDeleted = "security.role.deleted";
     public const string BootstrapCompleted = "security.bootstrap.completed";
     public const string ConfigurationChanged = "system.configuration.changed";
     public const string OperationFailed = "system.operation.failed";
@@ -75,7 +80,7 @@ public static class AuditActions
 
 [JsonConverter(typeof(JsonStringEnumConverter<AuditOutcome>))]
 public enum AuditOutcome { Success, Failure }
-public enum AuditChangeKind { Added, Modified, Archived }
+public enum AuditChangeKind { Added, Modified, Archived, Deleted, Removed = Deleted }
 
 public sealed record AuditValueChange(object? Old, object? New);
 

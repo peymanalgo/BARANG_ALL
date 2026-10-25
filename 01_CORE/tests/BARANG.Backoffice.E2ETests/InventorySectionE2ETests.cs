@@ -24,13 +24,12 @@ public sealed class InventorySectionE2ETests : IAsyncLifetime
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         if (new Uri(page.Url).AbsolutePath == "/company")
         {
-            await page.Locator(".company-list form:has(input[name=companyId][value='42f0e459-6095-45bb-aa13-f38126d91d9c']) button[type=submit]").ClickAsync();
-            await page.WaitForURLAsync(url => new Uri(url).AbsolutePath != "/company");
+            await BrowserCompanyContext.SelectIfRequiredAsync(page);
         }
     }
 
     [Fact]
-    public async Task Inventory_balance_grid_is_read_only_paged_searchable_and_kardex_connected()
+    public async Task InventoryBalanceGridIsReadOnlyPagedSearchableAndKardexConnected()
     {
         await GoToInventory("en");
         ILocator section = page.Locator("[data-inventory-grid]");
@@ -66,7 +65,7 @@ public sealed class InventorySectionE2ETests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Inventory_balance_grid_localizes_and_switches_direction()
+    public async Task InventoryBalanceGridLocalizesAndSwitchesDirection()
     {
         foreach ((string culture, string title, string direction) in new[]
         {

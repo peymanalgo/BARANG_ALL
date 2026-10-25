@@ -58,7 +58,7 @@
                     else if(Mode=="lines"){<span class="status-badge">@S[Published(row)?"Published":"Draft"]</span>}
                     else{<span class="customer-status status-@Value(row,"status").ToLowerInvariant()">@Text(Value(row,"status"))</span>@if(Mode=="prices"&&Bool(item,"isCurrent")){<span class="status-badge">@S["Current"]</span>}}
                 </td>
-                <td><div class="row-actions">
+                <td><BarangActionMenu>
                     <BarangIconButton Icon="eye" Label="@C["View"]" Semantic="info" Clicked="()=>Show(item,true)" />
                     @if(Mode=="price-lists"){<BarangIconButton Icon="orders" Label="@S["Lines"]" Semantic="info" Clicked="()=>OpenLines(item)" />}
                     @if(CanEdit){
@@ -68,7 +68,7 @@
                         @if(Mode=="prices"&&Published(row)&&Value(row,"priceListId").Length==0){<BarangIconButton Icon="calendar" Label="@S["EndPrice"]" Semantic="info" Clicked="()=>EndPrice(item)" />}
                         <BarangIconButton Icon="trash" Label="@C["Delete"]" Semantic="danger" Clicked="()=>AskDelete(item)" />
                     }
-                </div></td>
+                </BarangActionMenu></td>
             </tr>
         }
         </tbody></table></div>

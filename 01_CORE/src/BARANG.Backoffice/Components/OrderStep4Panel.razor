@@ -64,7 +64,7 @@
                                     <td>@(row.OrderItemId is null ? L["OrderLevel"] : S["ItemLevel"])</td>
                                     <td>@ItemCaption(row.OrderItemId)</td>
                                     <td>@row.Quantity</td>
-                                    <td class="row-actions"><BarangIconButton Icon="delete" Semantic="danger" Label="@L["Delete"]" Clicked="@(() => RemoveService(row))" /></td>
+                                    <td ><BarangActionMenu><BarangIconButton Icon="delete" Semantic="danger" Label="@L["Delete"]" Clicked="@(() => RemoveService(row))" /></BarangActionMenu></td>
                                 </tr>
                             }
                         </tbody>

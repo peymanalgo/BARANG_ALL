@@ -1,0 +1,19 @@
+@using System.Globalization
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+
+<section class="crud-card">
+ <header class="section-header"><h2>@T("مسئولان انبار","مسؤولو المستودع","Warehouse responsible users")</h2></header>
+ <div class="form-grid"><label><span>@T("شناسه انبار","معرف المستودع","Warehouse id")</span><input @bind="WarehouseId" /></label><label><span>@T("شناسه کاربر","معرف المستخدم","Application user id")</span><input @bind="UserId" /></label><button class="btn btn-primary" type="button" @onclick="Add">@T("افزودن مسئول","إضافة مسؤول","Add responsible user")</button></div>
+ @if(Message is not null){<div class="@(Success?"inline-success":"inline-error")">@Message</div>}
+ @if(Rows.Count>0){<table class="data-grid"><thead><tr><th>@T("کاربر","المستخدم","User")</th><th>@T("فعال","نشط","Active")</th><th>@T("عملیات","الإجراءات","Actions")</th></tr></thead><tbody>@foreach(Row row in Rows){<tr><td>@row.DisplayName (@row.UserName)</td><td>@row.IsActive</td><td><button class="btn btn-secondary" type="button" @onclick="()=>Toggle(row)">@(row.IsActive?T("غیرفعال‌سازی","تعطيل","Deactivate"):T("فعال‌سازی","تفعيل","Activate"))</button></td></tr>}</tbody></table>}
+</section>
+@code {
+ private sealed record Row(Guid Id,string UserName,string DisplayName,bool IsActive,long Version);
+ private string WarehouseId="",UserId=""; private List<Row> Rows=[]; private string? Message; private bool Success; private string Lang=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+ private string T(string fa,string ar,string en)=>Lang switch{"fa"=>fa,"ar"=>ar,_=>en};
+ private async Task Add(){if(!Guid.TryParse(WarehouseId,out var w)||!Guid.TryParse(UserId,out var u)){Success=false;Message=T("شناسه‌ها معتبر نیستند.","المعرفات غير صالحة.","The identifiers are invalid.");return;}var s=await Session();if(s is null)return;var r=await Core.SendAsync(HttpMethod.Post,$"api/v1/inventory/warehouses/{w}/responsibilities",new{applicationUserId=u},s.Value.Token,s.Value.Company,default);Success=r.IsSuccess;Message=r.IsSuccess?T("مسئول ثبت شد.","تم تسجيل المسؤول.","Responsibility added."):T("ثبت مسئول ممکن نیست.","تعذر تسجيل المسؤول.","Cannot add responsibility.");if(r.IsSuccess)await Load();}
+ private async Task Toggle(Row row){var s=await Session();if(s is null)return;var r=await Core.SendAsync(HttpMethod.Put,$"api/v1/inventory/warehouse-responsibilities/{row.Id}/activation",new{isActive=!row.IsActive,version=row.Version},s.Value.Token,s.Value.Company,default);Success=r.IsSuccess;Message=r.IsSuccess?T("وضعیت تغییر کرد.","تم تغيير الحالة.","Status changed."):T("تغییر وضعیت انجام نشد.","تعذر تغيير الحالة.","Status change failed.");if(r.IsSuccess)await Load();}
+ private async Task Load(){if(!Guid.TryParse(WarehouseId,out var w))return;var s=await Session();if(s is null)return;var r=await Core.GetAsync($"api/v1/inventory/warehouses/{w}/responsibilities",s.Value.Token,s.Value.Company,default);if(r.IsSuccess&&r.Value.ValueKind==System.Text.Json.JsonValueKind.Array)Rows=r.Value.EnumerateArray().Select(x=>new Row(x.GetProperty("id").GetGuid(),x.GetProperty("userName").GetString()??"",x.GetProperty("displayName").GetString()??"",x.GetProperty("isActive").GetBoolean(),x.GetProperty("version").GetInt64())).ToList();}
+ private async Task<(string Token,Guid Company)?> Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token?(token,c):null;}
+}
