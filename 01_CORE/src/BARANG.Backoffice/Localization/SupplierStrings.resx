@@ -153,7 +153,7 @@
   <data name="Hold" xml:space="preserve"><value>توقف</value></data>
   <data name="EvaluationDate" xml:space="preserve"><value>تاریخ ارزیابی</value></data>
   <data name="EvaluationPeriod" xml:space="preserve"><value>دوره ارزیابی</value></data>
-  <data name="OverallScore" xml:space="preserve"><value>امتیاز کلی</value></data>
+  <data name="OverallScore" xml:space="preserve"><value>امتیاز کلی</value></data><data name="EvaluationCriteria" xml:space="preserve"><value>معیارهای ارزیابی</value></data>
   <data name="EvaluationResult" xml:space="preserve"><value>نتیجه ارزیابی</value></data>
   <data name="AddEvaluation" xml:space="preserve"><value>افزودن ارزیابی</value></data>
   <data name="AddIncident" xml:space="preserve"><value>افزودن رخداد</value></data>

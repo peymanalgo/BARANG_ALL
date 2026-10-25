@@ -39,7 +39,7 @@ public sealed class SupplierCoreUiTests
     [Fact]public void AllSupplierResourcesHaveIdenticalNonemptyThreeLanguageKeys(){
         var docs=new[]{"SupplierStrings.resx","SupplierStrings.ar.resx","SupplierStrings.en.resx"}.Select(name=>XDocument.Parse(Read("Localization/"+name))).ToArray();
         string[] keys=docs[0].Root!.Elements("data").Select(x=>x.Attribute("name")!.Value).Order().ToArray();
-        Assert.Equal(173,keys.Length);Assert.Equal(keys.Length,keys.Distinct().Count());
+        Assert.Equal(174,keys.Length);Assert.Equal(keys.Length,keys.Distinct().Count());
         foreach(var doc in docs){Assert.Equal(keys,doc.Root!.Elements("data").Select(x=>x.Attribute("name")!.Value).Order());Assert.All(doc.Root.Elements("data"),x=>Assert.False(string.IsNullOrWhiteSpace(x.Element("value")!.Value)));}
     }
 }
