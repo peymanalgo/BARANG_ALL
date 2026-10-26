@@ -1119,3 +1119,13 @@ tr.is-selected td { background: color-mix(in srgb, var(--barang-accent) 6%, var(
 .chart-sub{margin:0;font-size:.8rem;font-weight:800;color:var(--barang-text);display:flex;align-items:center;gap:.4rem}
 .chart-sub::before{content:"";width:.55rem;height:.55rem;border-radius:50%;background:var(--barang-accent);opacity:.7}
 @media (max-width:1100px){.prod-panel .prod-cols{grid-template-columns:1fr}.prod-col.chart-col{order:2}}
+
+/* Quality workspace tint */
+.prod-tint-rose{background:linear-gradient(180deg,#fff1f2,var(--barang-surface) 42%)}
+.prod-tint-rose .prod-panel-head{background:linear-gradient(120deg,#f43f5e,#fb7185)}
+.chip-rose{background:rgba(255,255,255,.22)}
+.prod-tint-coral{background:linear-gradient(180deg,#fff5f0,var(--barang-surface) 42%)}
+.prod-tint-coral .prod-panel-head{background:linear-gradient(120deg,#f97316,#fb923c)}
+.chip-coral{background:rgba(255,255,255,.22)}
+.qc-input{min-height:36px;width:100%;max-width:11rem;border:1px solid var(--barang-border-strong);border-radius:8px;padding:.3rem .5rem;font:inherit;font-size:.78rem}
+.qst-inprogress{background:#f59e0b}.qst-suspended{background:#ef6b63}.qst-managementreview{background:#8b5cf6}.qst-approved{background:#22c55e}.qst-rejected{background:#dc2626}.qst-draft{background:#94a3b8}
