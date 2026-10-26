@@ -1110,3 +1110,12 @@ tr.is-selected td { background: color-mix(in srgb, var(--barang-accent) 6%, var(
 .prod-code{color:var(--barang-muted);font-size:.66rem}
 @media (max-width:1100px){.prod-section{grid-template-columns:1fr}.production-kpis{grid-template-columns:repeat(3,1fr)}}
 @media (max-width:640px){.production-kpis{grid-template-columns:repeat(2,1fr)}.kpi-body strong{font-size:1.2rem}}
+
+/* Full-width panels: grid + chart columns inside one panel */
+.prod-panel.prod-full{width:100%;margin-bottom:1.1rem}
+.prod-panel .prod-cols{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:1.2rem;align-items:start}
+.prod-panel .prod-col{min-width:0;display:grid;gap:.55rem;align-content:start}
+.prod-panel .prod-col.chart-col{background:rgba(255,255,255,.55);border:1px dashed rgba(108,77,246,.25);border-radius:14px;padding:.9rem}
+.chart-sub{margin:0;font-size:.8rem;font-weight:800;color:var(--barang-text);display:flex;align-items:center;gap:.4rem}
+.chart-sub::before{content:"";width:.55rem;height:.55rem;border-radius:50%;background:var(--barang-accent);opacity:.7}
+@media (max-width:1100px){.prod-panel .prod-cols{grid-template-columns:1fr}.prod-col.chart-col{order:2}}

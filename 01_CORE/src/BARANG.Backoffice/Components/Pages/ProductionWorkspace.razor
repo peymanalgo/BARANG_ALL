@@ -18,10 +18,10 @@
  <button type="button" class="kpi-card kpi-green" @onclick="@(async()=>{Status="Completed";Page=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="check" /></span><span class="kpi-body"><strong>@CompletedCount</strong><small>@T("تکمیل‌شده","Completed","مكتمل")</small></span></button>
 </div>
 
-<section class="prod-section">
- <div class="prod-panel prod-tint-indigo">
-  <header class="prod-panel-head"><span class="prod-panel-icon chip-indigo"><BarangIcon Name="orders" /></span><div><h2>@T("صف کارهای تولید","Production job queue","قائمة أعمال الإنتاج")</h2><small>@T("کارهای ساخته‌شده از سفارش‌های ثبت‌شده","Jobs created from submitted orders","أعمال منشأة من الطلبات المعتمدة")</small></div></header>
-  <div class="prod-panel-body">
+<section class="prod-panel prod-tint-indigo prod-full">
+ <header class="prod-panel-head"><span class="prod-panel-icon chip-indigo"><BarangIcon Name="orders" /></span><div><h2>@T("صف کارهای تولید","Production job queue","قائمة أعمال الإنتاج")</h2><small>@T("کارهای ساخته‌شده از سفارش‌های ثبت‌شده — نمودار توزیع وضعیت در ستون کناری","Jobs created from submitted orders — status mix beside","أعمال منشأة من الطلبات المعتمدة — مع توزيع الحالات")</small></div></header>
+ <div class="prod-panel-body prod-cols">
+  <div class="prod-col">
   <div class="crud-toolbar compact"><label class="compact-filter"><span>@L["Status"]</span><select @bind="Status" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="Planned">@St("Planned")</option><option value="Ready">@St("Ready")</option><option value="InProgress">@St("InProgress")</option><option value="Suspended">@St("Suspended")</option><option value="Failed">@St("Failed")</option><option value="Completed">@St("Completed")</option></select></label><label class="compact-filter"><span>@T("نوع کار","Job type","نوع العملية")</span><select @bind="JobType" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="DesignPreparation">@Jt("DesignPreparation")</option><option value="Print">@Jt("Print")</option><option value="HeatPress">@Jt("HeatPress")</option></select></label><label class="compact-filter"><span>@T("اولویت","Priority","الأولوية")</span><select @bind="Priority" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="Urgent">@Pt("Urgent")</option><option value="High">@Pt("High")</option><option value="Normal">@Pt("Normal")</option><option value="Low">@Pt("Low")</option></select></label></div>
   @if(Busy){<BarangLoadingState Text="@L["Loading"]" />}
   else if(Rows.Count==0){<CrudEmptyState Title="@L["NoRecords"]" Description="@T("پس از ثبت نهایی سفارش‌ها، کارهای تولید به‌صورت خودکار اینجا ساخته می‌شوند.","Production jobs are created automatically after orders are submitted.","بعد من الاعتماد النهائي للطلبات تُنشأ أعمال الإنتاج تلقائياً.")" />}
@@ -45,10 +45,9 @@
    <BarangPagination Page="@Page" HasNext="@(Page*PageSize<Total)" Disabled="@Busy" PageLabel="@L["Page"]" PreviousText="@L["Previous"]" NextText="@L["Next"]" Previous="@PreviousPage" Next="@NextPage" />
   }
   </div>
- </div>
- <div class="prod-panel prod-tint-violet">
-  <header class="prod-panel-head"><span class="prod-panel-icon chip-violet"><BarangIcon Name="chart" /></span><div><h2>@T("توزیع وضعیت کارها","Job status mix","توزيع حالات الأعمال")</h2><small>@T("سهم هر وضعیت از کل کارهای شرکت","Share of each status across all company jobs","حصة كل حالة من إجمالي الأعمال")</small></div></header>
-  <div class="prod-panel-body chart-body">
+  <div class="prod-col chart-col">
+   <h3 class="chart-sub">@T("توزیع وضعیت کارها","Job status mix","توزيع حالات الأعمال")</h3>
+   <div class="chart-body-inline">
    @if(Busy){<BarangLoadingState Text="@L["Loading"]" />}
    else if(StatusTotal==0){<p class="field-help">@T("کاری ثبت نشده است.","No jobs yet.","لا توجد أعمال.")</p>}
    else{
@@ -61,24 +60,24 @@
      </ul>
     </div>
    }
+   </div>
   </div>
  </div>
 </section>
 
-<section class="prod-section">
- <div class="prod-panel prod-tint-teal">
-  <header class="prod-panel-head"><span class="prod-panel-icon chip-teal"><BarangIcon Name="settings" /></span><div><h2>@T("ظرفیت خطوط (شیفت‌محور)","Line capacity (shift based)","الطاقة حسب الورديات")</h2><small>@T("بار برنامه در برابر ظرفیت دستگاه‌ها","Planned load versus equipment capacity","الحمل المخطط مقابل طاقة الأجهزة")</small></div></header>
-  <div class="prod-panel-body">
+<section class="prod-panel prod-tint-teal prod-full">
+ <header class="prod-panel-head"><span class="prod-panel-icon chip-teal"><BarangIcon Name="settings" /></span><div><h2>@T("ظرفیت خطوط (شیفت‌محور)","Line capacity (shift based)","الطاقة حسب الورديات")</h2><small>@T("بار برنامه در برابر ظرفیت دستگاه‌ها — نمودار بهره‌وری در ستون کناری","Planned load versus capacity — utilization chart beside","الحمل المخطط مقابل الطاقة — مع رسم الاستغلال")</small></div></header>
+ <div class="prod-panel-body prod-cols">
+  <div class="prod-col">
    @if(CapacityBusy){<BarangLoadingState Text="@L["Loading"]" />}
    else if(Capacity.Count==0){<p class="field-help">@T("تجهیز فعالی ثبت نشده است.","No active equipment.","لا يوجد عدة نشطة.")</p>}
    else{<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("دستگاه","Equipment","الجهاز")</th><th>@T("ظرفیت/ساعت","Cap/hour","طاقة/ساعة")</th><th>@T("ظرفیت بازه","Window cap","طاقة الفترة")</th><th>@T("بار","Load","الحمل")</th><th>@T("بهره‌وری","Util.","الاستغلال")</th></tr></thead><tbody>
     @foreach(var c in Capacity){<tr><td>@c.EquipmentName <small dir="ltr" class="prod-code">@c.EquipmentCode</small></td><td>@(c.CapacityPerHour?.ToString("0.#",CultureInfo.InvariantCulture)??"—")</td><td>@(c.AvailableUnits?.ToString("0.#",CultureInfo.InvariantCulture)??"—")</td><td>@(c.LoadUnits?.ToString("0.#",CultureInfo.InvariantCulture)??"—")</td><td>@if(c.UtilizationPercent is null){<span>—</span>}else{<span class="util-badge @(c.UtilizationPercent>100?"over":c.UtilizationPercent>70?"high":"ok")">@c.UtilizationPercent?.ToString("0.#",CultureInfo.InvariantCulture)٪</span>}</td></tr>}
    </tbody></table></div><p class="field-help">@T("شیفت‌های فعال:","Active shifts:","الورديات النشطة:") @ShiftSummary</p>}
   </div>
- </div>
- <div class="prod-panel prod-tint-teal chart-panel">
-  <header class="prod-panel-head"><span class="prod-panel-icon chip-teal"><BarangIcon Name="chart" /></span><div><h2>@T("بهره‌وری دستگاه‌ها","Equipment utilization","استغلال الأجهزة")</h2><small>@T("درصد اشغال هر خط در بازه جاری","Each line's occupancy in the current window","نسبة إشغال كل خط في الفترة الحالية")</small></div></header>
-  <div class="prod-panel-body chart-body">
+  <div class="prod-col chart-col">
+   <h3 class="chart-sub">@T("بهره‌وری دستگاه‌ها","Equipment utilization","استغلال الأجهزة")</h3>
+   <div class="chart-body-inline">
    @if(CapacityBusy||Capacity.Count==0){<p class="field-help">@T("داده‌ای برای نمایش نیست.","Nothing to display.","لا شيء للعرض.")</p>}
    else{<ul class="bar-chart">
     @foreach(var c in Capacity){
@@ -86,14 +85,15 @@
      <li><div class="bar-row"><span class="bar-label">@c.EquipmentName</span><div class="bar-track"><div class="bar-fill @band" style="width:@(Math.Clamp(pct,0,100).ToString("0.#",CultureInfo.InvariantCulture))%"></div></div><span class="bar-value" dir="ltr">@(c.UtilizationPercent?.ToString("0.#",CultureInfo.InvariantCulture)??"0")٪</span></div></li>
     }
    </ul>}
+   </div>
   </div>
  </div>
 </section>
 
-<section class="prod-section">
- <div class="prod-panel prod-tint-amber">
-  <header class="prod-panel-head"><span class="prod-panel-icon chip-amber"><BarangIcon Name="user-manager" /></span><div><h2>@T("عملکرد اپراتورها","Operator performance","أداء المشغلين")</h2><small>@T("کارهای تکمیل‌شده، مقدار و سرعت اجرا","Completed jobs, units and execution speed","العمليات المكتملة والكمية وسرعة التنفيذ")</small></div></header>
-  <div class="prod-panel-body">
+<section class="prod-panel prod-tint-amber prod-full">
+ <header class="prod-panel-head"><span class="prod-panel-icon chip-amber"><BarangIcon Name="user-manager" /></span><div><h2>@T("عملکرد اپراتورها","Operator performance","أداء المشغلين")</h2><small>@T("کارهای تکمیل‌شده، مقدار و سرعت اجرا — نمودار مقایسه در ستون کناری","Completed jobs, units and speed — comparison chart beside","العمليات المكتملة والكمية والسرعة — مع رسم المقارنة")</small></div></header>
+ <div class="prod-panel-body prod-cols">
+  <div class="prod-col">
    <div class="crud-toolbar compact"><label class="compact-filter"><span>@T("از تاریخ","From","من")</span><LocaleDateInput Name="perf-from" Value="@PerfFrom" ValueChanged="PerfFromChanged" /></label><label class="compact-filter"><span>@T("تا تاریخ","To","إلى")</span><LocaleDateInput Name="perf-to" Value="@PerfTo" ValueChanged="PerfToChanged" /></label></div>
    @if(PerfBusy){<BarangLoadingState Text="@L["Loading"]" />}
    else if(Performance.Count==0){<p class="field-help">@T("در این بازه کاری تکمیل نشده است.","No completed jobs in this period.","لا توجد عمليات مكتملة في هذه الفترة.")</p>}
@@ -101,10 +101,9 @@
     @foreach(var p in Performance){<tr><td>@p.OperatorName</td><td>@p.CompletedJobs</td><td>@p.UnitsCompleted.ToString("0.##",CultureInfo.InvariantCulture)</td><td>@p.AvgDurationMinutes.ToString("0.#",CultureInfo.InvariantCulture)</td><td><span class="util-badge ok">@p.OnTimeCount</span></td><td>@if(p.LateCount>0){<span class="util-badge over">@p.LateCount</span>}else{<span>—</span>}</td></tr>}
    </tbody></table></div>}
   </div>
- </div>
- <div class="prod-panel prod-tint-amber chart-panel">
-  <header class="prod-panel-head"><span class="prod-panel-icon chip-amber"><BarangIcon Name="chart" /></span><div><h2>@T("کارهای تکمیل‌شده هر اپراتور","Completed jobs per operator","الأعمال المكتملة لكل مشغل")</h2><small>@T("مقایسه تعداد کار تکمیل‌شده در بازه انتخابی","Completed job counts in the selected period","مقارنة عدد العمليات المكتملة في الفترة")</small></div></header>
-  <div class="prod-panel-body chart-body">
+  <div class="prod-col chart-col">
+   <h3 class="chart-sub">@T("کارهای تکمیل‌شده هر اپراتور","Completed jobs per operator","الأعمال المكتملة لكل مشغل")</h3>
+   <div class="chart-body-inline">
    @if(PerfBusy||Performance.Count==0){<p class="field-help">@T("داده‌ای برای نمایش نیست.","Nothing to display.","لا شيء للعرض.")</p>}
    else{<ul class="bar-chart">
     @{ double maxJobs=Math.Max(1,Performance.Max(p=>(double)p.CompletedJobs)); }
@@ -113,6 +112,7 @@
      <li><div class="bar-row"><span class="bar-label">@p.OperatorName</span><div class="bar-track"><div class="bar-fill bar-indigo" style="width:@pct.ToString("0.#",CultureInfo.InvariantCulture)%"></div></div><span class="bar-value" dir="ltr">@p.CompletedJobs</span></div></li>
     }
    </ul>}
+   </div>
   </div>
  </div>
 </section>
