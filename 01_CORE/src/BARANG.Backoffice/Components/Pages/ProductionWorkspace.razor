@@ -8,36 +8,113 @@
 @inject ICoreApiClient Core
 @inject ILocaleDateService Dates
 <PageTitle>@L["Module_production"]</PageTitle>
-<header class="crud-header"><div><span class="eyebrow">@L["OperationalWorkspace"]</span><h1>@L["Module_production"]</h1><p>@T("برنامه‌ریزی، صف چاپ و پرس، ظرفیت و عملکرد اپراتورها","Production planning, print & press queues, capacity and operator performance","برنامه‌ریزی تولید، صف چاپ و کوبش، ظرفیت و عملکرد اپراتورها")</p></div><div class="row-actions"><button type="button" class="btn btn-secondary" @onclick="ToggleMine">@(MineOnly?T("همه کارها","All jobs","همه کارها"):T("کارهای من","My jobs","کارهای من"))</button><button type="button" class="btn btn-secondary" @onclick="Load"><BarangIcon Name="reset" /> @L["Refresh"]</button></div></header>
-<div class="production-summary">
- <div class="panel production-stat"><small>@T("در صف","In queue","در صف")</small><strong>@QueueCount</strong></div>
- <div class="panel production-stat"><small>@T("در جریان","In progress","در جریان")</small><strong>@InProgressCount</strong></div>
- <div class="panel production-stat"><small>@T("متوقف","Suspended","متوقف")</small><strong>@SuspendedCount</strong></div>
- <div class="panel production-stat"><small>@T("بدون تحویل کالا","Awaiting stock","بی تحویل انبار")</small><strong>@PendingWarehouseCount</strong></div>
+<header class="crud-header production-hero"><div><span class="eyebrow production-hero-kicker"><span class="production-ink-dot" aria-hidden="true"></span>@L["OperationalWorkspace"]</span><h1>@L["Module_production"]</h1><p>@T("برنامه‌ریزی، صف چاپ و پرس، ظرفیت و عملکرد اپراتورها","Production planning, print & press queues, capacity and operator performance","برنامه‌ریزی تولید، صف چاپ و کوبش، ظرفیت و عملکرد اپراتورها")</p></div><div class="row-actions"><button type="button" class="btn btn-secondary" @onclick="ToggleMine">@(MineOnly?T("همه کارها","All jobs","همه کارها"):T("کارهای من","My jobs","کارهای من"))</button><button type="button" class="btn btn-secondary" @onclick="Load"><BarangIcon Name="reset" /> @L["Refresh"]</button></div></header>
+
+<div class="production-kpis">
+ <button type="button" class="kpi-card kpi-indigo" @onclick="@(async()=>{Status="";JobType="";Priority="";Page=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="history" /></span><span class="kpi-body"><strong>@TotalJobsAll</strong><small>@T("کل کارها","Total jobs","کل العملیات")</small></span></button>
+ <button type="button" class="kpi-card kpi-amber" @onclick="@(async()=>{Status="InProgress";Page=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="refresh" /></span><span class="kpi-body"><strong>@InProgressCount</strong><small>@T("در جریان","In progress","قيد التنفيذ")</small></span></button>
+ <button type="button" class="kpi-card kpi-coral" @onclick="@(async()=>{Status="Suspended";Page=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="minus" /></span><span class="kpi-body"><strong>@SuspendedCount</strong><small>@T("متوقف","Suspended","معلق")</small></span></button>
+ <button type="button" class="kpi-card kpi-violet" @onclick="@(async()=>{Status="";JobType="";Priority="";Page=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="warehouse" /></span><span class="kpi-body"><strong>@PendingWarehouseCount</strong><small>@T("بدون تحویل کالا","Awaiting stock","بانتظار الصنف")</small></span></button>
+ <button type="button" class="kpi-card kpi-green" @onclick="@(async()=>{Status="Completed";Page=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="check" /></span><span class="kpi-body"><strong>@CompletedCount</strong><small>@T("تکمیل‌شده","Completed","مكتمل")</small></span></button>
 </div>
-<section class="crud-card">
- <div class="crud-toolbar"><label class="compact-filter"><span>@L["Status"]</span><select @bind="Status" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="Planned">@St("Planned")</option><option value="Ready">@St("Ready")</option><option value="InProgress">@St("InProgress")</option><option value="Suspended">@St("Suspended")</option><option value="Failed">@St("Failed")</option><option value="Completed">@St("Completed")</option></select></label><label class="compact-filter"><span>@T("نوع کار","Job type","نوع کار")</span><select @bind="JobType" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="DesignPreparation">@Jt("DesignPreparation")</option><option value="Print">@Jt("Print")</option><option value="HeatPress">@Jt("HeatPress")</option></select></label><label class="compact-filter"><span>@T("اولویت","Priority","الأولوية")</span><select @bind="Priority" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="Urgent">@Pt("Urgent")</option><option value="High">@Pt("High")</option><option value="Normal">@Pt("Normal")</option><option value="Low">@Pt("Low")</option></select></label></div>
- @if(Busy){<BarangLoadingState Text="@L["Loading"]" />}
- else if(Rows.Count==0){<CrudEmptyState Title="@L["NoRecords"]" Description="@T("پس از ثبت نهایی سفارش‌ها، کارهای تولید به‌صورت خودکار اینجا ساخته می‌شوند.","Production jobs are created automatically after orders are submitted.","بعد من الاعتماد النهائي للطلبات تُنشأ أعمال الإنتاج تلقائياً.")" />}
- else{
-  <div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("نوع کار","Job type","نوع")</th><th>@L["Module_orders"]</th><th>@T("محصول","Product","المنتج")</th><th>@T("عملیات چاپ","Print op","الطباعة")</th><th>@T("مقدار برنامه","Planned qty","الكمية")</th><th>@T("اپراتور","Operator","المشغل")</th><th>@T("دستگاه","Equipment","الجهاز")</th><th>@T("کالا از انبار","Stock issued","الصنف من المستودع")</th><th>@L["Status"]</th><th class="actions-column">@L["Actions"]</th></tr></thead><tbody>
-   @foreach(var row in Rows){
-    <tr class="@(Selected?.Id==row.Id?"is-selected":null)">
-     <td><span class="status-pill">@Jt(row.JobType)</span></td>
-     <td dir="ltr"><span class="code-pill">@(row.OrderNumber.Length==0?"—":row.OrderNumber)</span></td>
-     <td>@(row.ProductTitle.Length==0?"—":row.ProductTitle)</td>
-     <td>@(row.PrintPosition.Length==0?"—":row.PrintPosition)</td>
-     <td>@(row.PlannedQuantity>0?row.PlannedQuantity.ToString("0.##",CultureInfo.InvariantCulture):"—")</td>
-     <td>@(row.OperatorName??"—")</td>
-     <td>@(row.EquipmentName??"—")</td>
-     <td>@if(row.JobType=="DesignPreparation"){<span class="concept-meta">—</span>}else if(row.WarehouseIssued){<span class="wh-badge ok" title="@T("کالا از انبار تحویل شده است","Stock issued from warehouse","تم تسليم الصنف من المستودع")">✔</span>}else{<span class="wh-badge pending" title="@T("منتظر تحویل کالا از انبار","Awaiting stock issue","بانتظار تسليم الصنف")">⏳</span>}</td>
-     <td><span class="status-pill">@St(row.Status)</span></td>
-     <td><BarangActionMenu><BarangIconButton Icon="eye" Semantic="info" Label="@L["View"]" Clicked="@(()=>Pick(row))" />@if(!Viewing){@StateActions(row)}</BarangActionMenu></td>
-    </tr>
+
+<section class="prod-section">
+ <div class="prod-panel prod-tint-indigo">
+  <header class="prod-panel-head"><span class="prod-panel-icon chip-indigo"><BarangIcon Name="orders" /></span><div><h2>@T("صف کارهای تولید","Production job queue","قائمة أعمال الإنتاج")</h2><small>@T("کارهای ساخته‌شده از سفارش‌های ثبت‌شده","Jobs created from submitted orders","أعمال منشأة من الطلبات المعتمدة")</small></div></header>
+  <div class="prod-panel-body">
+  <div class="crud-toolbar compact"><label class="compact-filter"><span>@L["Status"]</span><select @bind="Status" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="Planned">@St("Planned")</option><option value="Ready">@St("Ready")</option><option value="InProgress">@St("InProgress")</option><option value="Suspended">@St("Suspended")</option><option value="Failed">@St("Failed")</option><option value="Completed">@St("Completed")</option></select></label><label class="compact-filter"><span>@T("نوع کار","Job type","نوع العملية")</span><select @bind="JobType" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="DesignPreparation">@Jt("DesignPreparation")</option><option value="Print">@Jt("Print")</option><option value="HeatPress">@Jt("HeatPress")</option></select></label><label class="compact-filter"><span>@T("اولویت","Priority","الأولوية")</span><select @bind="Priority" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="Urgent">@Pt("Urgent")</option><option value="High">@Pt("High")</option><option value="Normal">@Pt("Normal")</option><option value="Low">@Pt("Low")</option></select></label></div>
+  @if(Busy){<BarangLoadingState Text="@L["Loading"]" />}
+  else if(Rows.Count==0){<CrudEmptyState Title="@L["NoRecords"]" Description="@T("پس از ثبت نهایی سفارش‌ها، کارهای تولید به‌صورت خودکار اینجا ساخته می‌شوند.","Production jobs are created automatically after orders are submitted.","بعد من الاعتماد النهائي للطلبات تُنشأ أعمال الإنتاج تلقائياً.")" />}
+  else{
+   <div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("نوع کار","Type","النوع")</th><th>@L["Module_orders"]</th><th>@T("محصول","Product","المنتج")</th><th>@T("عملیات چاپ","Print op","الطباعة")</th><th>@T("مقدار","Qty","الكمية")</th><th>@T("اپراتور","Operator","المشغل")</th><th>@T("دستگاه","Equipment","الجهاز")</th><th>@T("کالا","Stock","الصنف")</th><th>@L["Status"]</th><th class="actions-column">@L["Actions"]</th></tr></thead><tbody>
+    @foreach(var row in Rows){
+     <tr class="@(Selected?.Id==row.Id?"is-selected":null)">
+      <td><span class="job-type-pill jt-@row.JobType.ToLowerInvariant()">@Jt(row.JobType)</span></td>
+      <td dir="ltr"><span class="code-pill">@(row.OrderNumber.Length==0?"—":row.OrderNumber)</span></td>
+      <td class="cell-ellipsis" title="@row.ProductTitle">@(row.ProductTitle.Length==0?"—":row.ProductTitle)</td>
+      <td class="cell-ellipsis">@(row.PrintPosition.Length==0?"—":row.PrintPosition)</td>
+      <td>@(row.PlannedQuantity>0?row.PlannedQuantity.ToString("0.##",CultureInfo.InvariantCulture):"—")</td>
+      <td class="cell-ellipsis">@(row.OperatorName??"—")</td>
+      <td class="cell-ellipsis">@(row.EquipmentName??"—")</td>
+      <td>@if(row.JobType=="DesignPreparation"){<span class="wh-badge none">—</span>}else if(row.WarehouseIssued){<span class="wh-badge ok" title="@T("کالا از انبار تحویل شده است","Stock issued from warehouse","تم تسليم الصنف من المستودع")">✔</span>}else{<span class="wh-badge pending" title="@T("منتظر تحویل کالا از انبار","Awaiting stock issue","بانتظار تسليم الصنف")">⏳</span>}</td>
+      <td><span class="status-dot st-@row.Status.ToLowerInvariant()"></span><span>@St(row.Status)</span></td>
+      <td><BarangActionMenu><BarangIconButton Icon="eye" Semantic="info" Label="@L["View"]" Clicked="@(()=>Pick(row))" />@if(!Viewing){@StateActions(row)}</BarangActionMenu></td>
+     </tr>
+    }
+   </tbody></table></div>
+   <BarangPagination Page="@Page" HasNext="@(Page*PageSize<Total)" Disabled="@Busy" PageLabel="@L["Page"]" PreviousText="@L["Previous"]" NextText="@L["Next"]" Previous="@PreviousPage" Next="@NextPage" />
+  }
+  </div>
+ </div>
+ <div class="prod-panel prod-tint-violet">
+  <header class="prod-panel-head"><span class="prod-panel-icon chip-violet"><BarangIcon Name="chart" /></span><div><h2>@T("توزیع وضعیت کارها","Job status mix","توزيع حالات الأعمال")</h2><small>@T("سهم هر وضعیت از کل کارهای شرکت","Share of each status across all company jobs","حصة كل حالة من إجمالي الأعمال")</small></div></header>
+  <div class="prod-panel-body chart-body">
+   @if(Busy){<BarangLoadingState Text="@L["Loading"]" />}
+   else if(StatusTotal==0){<p class="field-help">@T("کاری ثبت نشده است.","No jobs yet.","لا توجد أعمال.")</p>}
+   else{
+    <div class="chart-flex">
+     <div class="donut-wrap"><div class="donut" style="@DonutStyle()"><div class="donut-hole"><strong>@StatusTotal</strong><small>@T("کار","jobs","عمل")</small></div></div></div>
+     <ul class="chart-legend">
+      @foreach(var seg in StatusSegments){
+       <li><span class="legend-dot" style="background:@seg.Color"></span><span class="legend-label">@seg.Label</span><strong dir="ltr">@seg.Count</strong></li>
+      }
+     </ul>
+    </div>
    }
-  </tbody></table></div>
-  <BarangPagination Page="@Page" HasNext="@(Page*PageSize<Total)" Disabled="@Busy" PageLabel="@L["Page"]" PreviousText="@L["Previous"]" NextText="@L["Next"]" Previous="@PreviousPage" Next="@NextPage" />
- }
+  </div>
+ </div>
+</section>
+
+<section class="prod-section">
+ <div class="prod-panel prod-tint-teal">
+  <header class="prod-panel-head"><span class="prod-panel-icon chip-teal"><BarangIcon Name="settings" /></span><div><h2>@T("ظرفیت خطوط (شیفت‌محور)","Line capacity (shift based)","الطاقة حسب الورديات")</h2><small>@T("بار برنامه در برابر ظرفیت دستگاه‌ها","Planned load versus equipment capacity","الحمل المخطط مقابل طاقة الأجهزة")</small></div></header>
+  <div class="prod-panel-body">
+   @if(CapacityBusy){<BarangLoadingState Text="@L["Loading"]" />}
+   else if(Capacity.Count==0){<p class="field-help">@T("تجهیز فعالی ثبت نشده است.","No active equipment.","لا يوجد عدة نشطة.")</p>}
+   else{<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("دستگاه","Equipment","الجهاز")</th><th>@T("ظرفیت/ساعت","Cap/hour","طاقة/ساعة")</th><th>@T("ظرفیت بازه","Window cap","طاقة الفترة")</th><th>@T("بار","Load","الحمل")</th><th>@T("بهره‌وری","Util.","الاستغلال")</th></tr></thead><tbody>
+    @foreach(var c in Capacity){<tr><td>@c.EquipmentName <small dir="ltr" class="prod-code">@c.EquipmentCode</small></td><td>@(c.CapacityPerHour?.ToString("0.#",CultureInfo.InvariantCulture)??"—")</td><td>@(c.AvailableUnits?.ToString("0.#",CultureInfo.InvariantCulture)??"—")</td><td>@(c.LoadUnits?.ToString("0.#",CultureInfo.InvariantCulture)??"—")</td><td>@if(c.UtilizationPercent is null){<span>—</span>}else{<span class="util-badge @(c.UtilizationPercent>100?"over":c.UtilizationPercent>70?"high":"ok")">@c.UtilizationPercent?.ToString("0.#",CultureInfo.InvariantCulture)٪</span>}</td></tr>}
+   </tbody></table></div><p class="field-help">@T("شیفت‌های فعال:","Active shifts:","الورديات النشطة:") @ShiftSummary</p>}
+  </div>
+ </div>
+ <div class="prod-panel prod-tint-teal chart-panel">
+  <header class="prod-panel-head"><span class="prod-panel-icon chip-teal"><BarangIcon Name="chart" /></span><div><h2>@T("بهره‌وری دستگاه‌ها","Equipment utilization","استغلال الأجهزة")</h2><small>@T("درصد اشغال هر خط در بازه جاری","Each line's occupancy in the current window","نسبة إشغال كل خط في الفترة الحالية")</small></div></header>
+  <div class="prod-panel-body chart-body">
+   @if(CapacityBusy||Capacity.Count==0){<p class="field-help">@T("داده‌ای برای نمایش نیست.","Nothing to display.","لا شيء للعرض.")</p>}
+   else{<ul class="bar-chart">
+    @foreach(var c in Capacity){
+     double pct=c.UtilizationPercent??0; string band=pct>100?"bar-over":pct>70?"bar-high":"bar-ok";
+     <li><div class="bar-row"><span class="bar-label">@c.EquipmentName</span><div class="bar-track"><div class="bar-fill @band" style="width:@(Math.Clamp(pct,0,100).ToString("0.#",CultureInfo.InvariantCulture))%"></div></div><span class="bar-value" dir="ltr">@(c.UtilizationPercent?.ToString("0.#",CultureInfo.InvariantCulture)??"0")٪</span></div></li>
+    }
+   </ul>}
+  </div>
+ </div>
+</section>
+
+<section class="prod-section">
+ <div class="prod-panel prod-tint-amber">
+  <header class="prod-panel-head"><span class="prod-panel-icon chip-amber"><BarangIcon Name="user-manager" /></span><div><h2>@T("عملکرد اپراتورها","Operator performance","أداء المشغلين")</h2><small>@T("کارهای تکمیل‌شده، مقدار و سرعت اجرا","Completed jobs, units and execution speed","العمليات المكتملة والكمية وسرعة التنفيذ")</small></div></header>
+  <div class="prod-panel-body">
+   <div class="crud-toolbar compact"><label class="compact-filter"><span>@T("از تاریخ","From","من")</span><LocaleDateInput Name="perf-from" Value="@PerfFrom" ValueChanged="PerfFromChanged" /></label><label class="compact-filter"><span>@T("تا تاریخ","To","إلى")</span><LocaleDateInput Name="perf-to" Value="@PerfTo" ValueChanged="PerfToChanged" /></label></div>
+   @if(PerfBusy){<BarangLoadingState Text="@L["Loading"]" />}
+   else if(Performance.Count==0){<p class="field-help">@T("در این بازه کاری تکمیل نشده است.","No completed jobs in this period.","لا توجد عمليات مكتملة في هذه الفترة.")</p>}
+   else{<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("اپراتور","Operator","المشغل")</th><th>@T("کارها","Jobs","الأعمال")</th><th>@T("مقدار","Units","الكمية")</th><th>@T("میانگین (دقیقه)","Avg (min)","المتوسط (دقيقة)")</th><th>@T("به‌موقع","On time","في الوقت")</th><th>@T("تأخیر","Late","متأخر")</th></tr></thead><tbody>
+    @foreach(var p in Performance){<tr><td>@p.OperatorName</td><td>@p.CompletedJobs</td><td>@p.UnitsCompleted.ToString("0.##",CultureInfo.InvariantCulture)</td><td>@p.AvgDurationMinutes.ToString("0.#",CultureInfo.InvariantCulture)</td><td><span class="util-badge ok">@p.OnTimeCount</span></td><td>@if(p.LateCount>0){<span class="util-badge over">@p.LateCount</span>}else{<span>—</span>}</td></tr>}
+   </tbody></table></div>}
+  </div>
+ </div>
+ <div class="prod-panel prod-tint-amber chart-panel">
+  <header class="prod-panel-head"><span class="prod-panel-icon chip-amber"><BarangIcon Name="chart" /></span><div><h2>@T("کارهای تکمیل‌شده هر اپراتور","Completed jobs per operator","الأعمال المكتملة لكل مشغل")</h2><small>@T("مقایسه تعداد کار تکمیل‌شده در بازه انتخابی","Completed job counts in the selected period","مقارنة عدد العمليات المكتملة في الفترة")</small></div></header>
+  <div class="prod-panel-body chart-body">
+   @if(PerfBusy||Performance.Count==0){<p class="field-help">@T("داده‌ای برای نمایش نیست.","Nothing to display.","لا شيء للعرض.")</p>}
+   else{<ul class="bar-chart">
+    @{ double maxJobs=Math.Max(1,Performance.Max(p=>(double)p.CompletedJobs)); }
+    @foreach(var p in Performance){
+     double pct=p.CompletedJobs*100.0/maxJobs;
+     <li><div class="bar-row"><span class="bar-label">@p.OperatorName</span><div class="bar-track"><div class="bar-fill bar-indigo" style="width:@pct.ToString("0.#",CultureInfo.InvariantCulture)%"></div></div><span class="bar-value" dir="ltr">@p.CompletedJobs</span></div></li>
+    }
+   </ul>}
+  </div>
+ </div>
 </section>
 
 @if(Selected is not null){
@@ -64,10 +141,6 @@
 </section>
 }
 
-<section class="crud-card"><h2>@T("ظرفیت خطوط (بر اساس شیفت‌ها)","Line capacity (shift based)","الطاقة حسب الورديات")</h2>@if(CapacityBusy){<BarangLoadingState Text="@L["Loading"]" />}else if(Capacity.Count==0){<p class="field-help">@T("تجهیز فعالی ثبت نشده است.","No active equipment.","لا يوجد عدة نشطة.")</p>}else{<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("دستگاه","Equipment","الجهاز")</th><th>@T("ظرفیت در ساعت","Capacity/hour","الطاقة/ساعة")</th><th>@T("ظرفیت بازه","Window capacity","طاقة الفترة")</th><th>@T("بار برنامه","Planned load","الحمل المخطط")</th><th>@T("بهره‌وری","Utilization","الاستغلال")</th><th>@T("در جریان","In progress","قيد التنفيذ")</th></tr></thead><tbody>@foreach(var c in Capacity){<tr><td>@c.EquipmentName <small dir="ltr">@c.EquipmentCode</small></td><td>@(c.CapacityPerHour?.ToString("0.#",CultureInfo.InvariantCulture)??"—")</td><td>@(c.AvailableUnits?.ToString("0.#",CultureInfo.InvariantCulture)??"—")</td><td>@(c.LoadUnits?.ToString("0.#",CultureInfo.InvariantCulture)??"—")</td><td>@if(c.UtilizationPercent is null){<span>—</span>}else{<span class="util-badge @(c.UtilizationPercent>100?"over":c.UtilizationPercent>70?"high":"ok")">@c.UtilizationPercent?.ToString("0.#",CultureInfo.InvariantCulture)٪</span>}</td><td>@c.InProgress</td></tr>}</tbody></table></div>}<p class="field-help">@T("شیفت‌های فعال:","Active shifts:","الورديات النشطة:") @ShiftSummary</p></section>
-
-<section class="crud-card"><h2>@T("عملکرد اپراتورها","Operator performance","أداء المشغلين")</h2><div class="crud-toolbar compact"><label class="compact-filter"><span>@T("از تاریخ","From","من")</span><LocaleDateInput Name="perf-from" Value="@PerfFrom" ValueChanged="PerfFromChanged" /></label><label class="compact-filter"><span>@T("تا تاریخ","To","إلى")</span><LocaleDateInput Name="perf-to" Value="@PerfTo" ValueChanged="PerfToChanged" /></label></div>@if(PerfBusy){<BarangLoadingState Text="@L["Loading"]" />}else if(Performance.Count==0){<p class="field-help">@T("در این بازه کاری تکمیل نشده است.","No completed jobs in this period.","لا توجد عمليات مكتملة في هذه الفترة.")</p>}else{<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("اپراتور","Operator","المشغل")</th><th>@T("کارهای تکمیل‌شده","Completed jobs","عمليات مكتملة")</th><th>@T("مجموع مقدار","Total units","مجموع الكمية")</th><th>@T("میانگین مدت (دقیقه)","Avg duration (min)","متوسط المدة (دقيقة)")</th><th>@T("به‌موقع","On time","في الوقت")</th><th>@T("با تأخیر","Late","متأخر")</th></tr></thead><tbody>@foreach(var p in Performance){<tr><td>@p.OperatorName</td><td>@p.CompletedJobs</td><td>@p.UnitsCompleted.ToString("0.##",CultureInfo.InvariantCulture)</td><td>@p.AvgDurationMinutes.ToString("0.#",CultureInfo.InvariantCulture)</td><td>@p.OnTimeCount</td><td>@p.LateCount</td></tr>}</tbody></table></div>}</section>
-
 <BarangModal Open="@Dialog" Title="@DialogTitle" Size="medium" ShowCloseButton="true" CloseRequested="()=>Dialog=false">
  <ChildContent><div class="form-grid single">
   @if(DialogKind=="plan"){<label><span>@T("اولویت","Priority","الأولوية")</span><select @bind="FormPriority"><option value="Normal">@Pt("Normal")</option><option value="High">@Pt("High")</option><option value="Urgent">@Pt("Urgent")</option><option value="Low">@Pt("Low")</option></select></label><label><span>@T("تاریخ شروع","Start date","تاريخ البداية")</span><LocaleDateInput Name="plan-start-date" Value="@FormStartDate" ValueChanged="FormStartDateChanged" /></label><label><span>@T("ساعت شروع","Start time","وقت البداية")</span><input type="time" value="@FormStartTime" @oninput="StartTimeInputChanged" /></label><label><span>@T("تاریخ پایان","End date","تاريخ النهاية")</span><LocaleDateInput Name="plan-end-date" Value="@FormEndDate" ValueChanged="FormEndDateChanged" /></label><label><span>@T("ساعت پایان","End time","وقت النهاية")</span><input type="time" value="@FormEndTime" @oninput="EndTimeInputChanged" /></label><label><span>@T("جایگاه در صف","Queue position","موقع في الصف")</span><input type="number" @bind="FormQueue" /></label>}
@@ -86,14 +159,11 @@
  private int Page=1; private long Total; private List<ProductionRow> Rows=[]; private ProductionRow? Selected;
  private List<HistoryRow> History=[]; private List<CapacityRow> Capacity=[]; private List<PerfRow> Performance=[];
  private bool Dialog; private string DialogKind="",DialogTitle=""; private string FormPriority="Normal",FormOperator="",FormEquipment="",FormNotes="",FormReason=""; private int FormQueue; private decimal FormQuantity; private DateOnly? PerfFrom,PerfTo;
- private List<SearchableSelectOption> OperatorOptions=[],EquipmentOptions=[];
- private int QueueCount,InProgressCount,SuspendedCount,PendingWarehouseCount;
- private string? Token; private Guid Company;
  private DateOnly? FormStartDate; private DateOnly? FormEndDate; private string FormStartTime="08:00"; private string FormEndTime="10:00";
- private Task FormStartDateChanged(DateOnly? v){FormStartDate=v;return Task.CompletedTask;}
- private Task FormEndDateChanged(DateOnly? v){FormEndDate=v;return Task.CompletedTask;}
- private void StartTimeInputChanged(ChangeEventArgs e)=>FormStartTime=e.Value?.ToString()??"08:00";
- private void EndTimeInputChanged(ChangeEventArgs e)=>FormEndTime=e.Value?.ToString()??"10:00";
+ private List<SearchableSelectOption> OperatorOptions=[],EquipmentOptions=[];
+ private int InProgressCount,SuspendedCount,PendingWarehouseCount,CompletedCount,TotalJobsAll,StatusTotal;
+ private Dictionary<string,int> StatusCounts=new();
+ private string? Token; private Guid Company;
  private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
  private string ShiftSummary=>string.Join(" · ",ShiftList.Select(s=>$"{s.Title} ({s.Start:HH:mm}–{s.End:HH:mm})"));
  private readonly List<(string Title,TimeOnly Start,TimeOnly End)> ShiftList=[];
@@ -107,16 +177,23 @@
  private async Task LoadShifts(){if(Token is null)return;var r=await Core.GetAsync("api/v1/production/shifts",Token,Company,default);ShiftList.Clear();if(r.IsSuccess&&r.Value.ValueKind==JsonValueKind.Array)foreach(var x in r.Value.EnumerateArray())ShiftList.Add((Text(x,"title"),TimeOnly.Parse(Text(x,"startTime")),TimeOnly.Parse(Text(x,"endTime"))));}
  private async Task ToggleMine(){MineOnly=!MineOnly;Page=1;await Load();}
  private Task FilterChanged(){Page=1;return Load();}
- private async Task Load(){if(Token is null)return;Busy=true;await InvokeAsync(StateHasChanged);try{string q=$"api/v1/production/jobs?page={Page}&pageSize={PageSize}"+(string.IsNullOrWhiteSpace(Status)?"":$"&status={Status}")+(string.IsNullOrWhiteSpace(JobType)?"":$"&jobType={JobType}")+(string.IsNullOrWhiteSpace(Priority)?"":$"&priority={Priority}")+(MineOnly?$"&operatorUserId={UserId()}":"");var r=await Core.GetAsync(q,Token,Company,default);Rows.Clear();Total=0;if(r.IsSuccess&&r.Value.TryGetProperty("items",out var items)&&items.ValueKind==JsonValueKind.Array){Rows=items.EnumerateArray().Select(ParseRow).ToList();Total=r.Value.TryGetProperty("total",out var tt)?tt.GetInt64():Rows.Count;}QueueCount=Rows.Count(x=>x.Status is "Planned" or "Ready");InProgressCount=Rows.Count(x=>x.Status=="InProgress");SuspendedCount=Rows.Count(x=>x.Status=="Suspended");PendingWarehouseCount=Rows.Count(x=>!x.WarehouseIssued&&x.JobType!="DesignPreparation"&&x.Status is not ("Completed" or "Failed"));}
+ private async Task Load(){if(Token is null)return;Busy=true;await InvokeAsync(StateHasChanged);try{string q=$"api/v1/production/jobs?page={Page}&pageSize={PageSize}"+(string.IsNullOrWhiteSpace(Status)?"":$"&status={Status}")+(string.IsNullOrWhiteSpace(JobType)?"":$"&jobType={JobType}")+(string.IsNullOrWhiteSpace(Priority)?"":$"&priority={Priority}")+(MineOnly?$"&operatorUserId={UserId()}":"");var r=await Core.GetAsync(q,Token,Company,default);Rows.Clear();Total=0;if(r.IsSuccess&&r.Value.TryGetProperty("items",out var items)&&items.ValueKind==JsonValueKind.Array){Rows=items.EnumerateArray().Select(ParseRow).ToList();Total=r.Value.TryGetProperty("total",out var tt)?tt.GetInt64():Rows.Count;}InProgressCount=Rows.Count(x=>x.Status=="InProgress");SuspendedCount=Rows.Count(x=>x.Status=="Suspended");CompletedCount=Rows.Count(x=>x.Status=="Completed");await LoadStatusCounts();PendingWarehouseCount=await LoadPendingWarehouseCount();}
  finally{Busy=false;await InvokeAsync(StateHasChanged);}await LoadCapacity();await LoadPerformance();}
- private string UserId(){var u=AuthState.GetAuthenticationStateAsync().Result.User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out _)&&u.FindFirst("sub")?.Value is string id?id:u.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value??"";}
- private async Task LoadCapacity(){if(Token is null)return;CapacityBusy=true;var r=await Core.GetAsync("api/v1/production/capacity",Token,Company,default);Capacity.Clear();if(r.IsSuccess&&r.Value.ValueKind==JsonValueKind.Array)foreach(var x in r.Value.EnumerateArray())Capacity.Add(new CapacityRow(Guid.Parse(x.GetProperty("equipmentId").GetGuid().ToString()),Text(x,"equipmentCode"),Text(x,"equipmentName"),NullInt(x,"capacityPerHour"),NullDec(x,"availableUnits"),NullDec(x,"loadUnits"),x.TryGetProperty("utilizationPercent",out var u)&&u.ValueKind==JsonValueKind.Number?u.GetDouble():(double?)null,x.TryGetProperty("inProgressJobs",out var ip)?ip.GetInt32():0));CapacityBusy=false;}
+ private string UserId(){var u=AuthState.GetAuthenticationStateAsync().Result.User;return u.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value??u.FindFirst("sub")?.Value??"";}
+ private async Task<int> LoadPendingWarehouseCount(){try{var r=await Core.GetAsync("api/v1/production/jobs?page=1&pageSize=100",Token!,Company,default);if(!r.IsSuccess||!r.Value.TryGetProperty("items",out var arr)||arr.ValueKind!=JsonValueKind.Array)return 0;int count=0;foreach(var x in arr.EnumerateArray()){string jt=Text(x,"jobType");string st=Text(x,"status");bool issued=x.TryGetProperty("warehouseIssued",out var w)&&w.ValueKind==JsonValueKind.True;if(jt!="DesignPreparation"&&st is not("Completed" or "Failed")&&!issued)count++;}return count;}catch{return 0;}}
+ private async Task LoadStatusCounts(){StatusCounts=new();int total=0;foreach(string st in new[]{"Planned","Ready","InProgress","Suspended","Failed","Completed"}){try{var r=await Core.GetAsync($"api/v1/production/jobs?status={st}&page=1&pageSize=1",Token!,Company,default);int n=r.IsSuccess&&r.Value.TryGetProperty("total",out var t)?(int)t.GetInt64():0;StatusCounts[st]=n;total+=n;}catch{StatusCounts[st]=0;}}TotalJobsAll=total;StatusTotal=total;}
+ private List<(string Label,int Count,string Color)> StatusSegments=>new(){(St("Planned"),StatusCounts.GetValueOrDefault("Planned"),"#6c8cff"),(St("Ready"),StatusCounts.GetValueOrDefault("Ready"),"#06b6d4"),(St("InProgress"),StatusCounts.GetValueOrDefault("InProgress"),"#f59e0b"),(St("Suspended"),StatusCounts.GetValueOrDefault("Suspended"),"#ef6b63"),(St("Failed"),StatusCounts.GetValueOrDefault("Failed"),"#dc2626"),(St("Completed"),StatusCounts.GetValueOrDefault("Completed"),"#22c55e")};
+ private string DonutStyle(){if(StatusTotal==0)return "background:conic-gradient(#e2e0ee 0turn 1turn)";double acc=0;var parts=new List<string>();foreach(var seg in StatusSegments){if(seg.Count<=0)continue;double from=acc/StatusTotal,to=(acc+seg.Count)/StatusTotal;parts.Add($"{seg.Color} {from:0.####}turn {to:0.####}turn");acc+=seg.Count;}if(parts.Count==0)return "background:conic-gradient(#e2e0ee 0turn 1turn)";return $"background:conic-gradient({string.Join(',',parts)})";}
+ private async Task LoadCapacity(){if(Token is null)return;CapacityBusy=true;var r=await Core.GetAsync("api/v1/production/capacity",Token,Company,default);Capacity.Clear();if(r.IsSuccess&&r.Value.ValueKind==JsonValueKind.Array)foreach(var x in r.Value.EnumerateArray())Capacity.Add(new CapacityRow(x.GetProperty("equipmentId").GetGuid().ToString(),Text(x,"equipmentCode"),Text(x,"equipmentName"),NullInt(x,"capacityPerHour"),NullDec(x,"availableUnits"),NullDec(x,"loadUnits"),x.TryGetProperty("utilizationPercent",out var u)&&u.ValueKind==JsonValueKind.Number?u.GetDouble():(double?)null,x.TryGetProperty("inProgressJobs",out var ip)?ip.GetInt32():0));CapacityBusy=false;}
  private async Task LoadPerformance(){if(Token is null)return;PerfBusy=true;await InvokeAsync(StateHasChanged);try{string q="api/v1/production/performance"+(PerfFrom is null?"":$"&fromUtc={Uri.EscapeDataString(new DateTimeOffset(PerfFrom.Value.ToDateTime(TimeOnly.MinValue),TimeSpan.Zero).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"))}")+(PerfTo is null?"":$"&toUtc={Uri.EscapeDataString(new DateTimeOffset(PerfTo.Value.ToDateTime(TimeOnly.MinValue),TimeSpan.Zero).AddDays(1).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"))}");var r=await Core.GetAsync(q,Token,Company,default);Performance.Clear();if(r.IsSuccess&&r.Value.ValueKind==JsonValueKind.Array)foreach(var x in r.Value.EnumerateArray())Performance.Add(new PerfRow(Guid.Empty,Text(x,"operatorName"),x.TryGetProperty("completedJobs",out var cj)?cj.GetInt32():0,x.TryGetProperty("unitsCompleted",out var uc)?uc.GetDecimal():0,x.TryGetProperty("avgDurationMinutes",out var av)?av.GetDouble():0,x.TryGetProperty("onTimeCount",out var ot)?ot.GetInt32():0,x.TryGetProperty("lateCount",out var lc)?lc.GetInt32():0));}finally{PerfBusy=false;await InvokeAsync(StateHasChanged);}}
  private Task PerfFromChanged(DateOnly? v){PerfFrom=v;return LoadPerformance();}
  private Task PerfToChanged(DateOnly? v){PerfTo=v;return LoadPerformance();}
+ private Task FormStartDateChanged(DateOnly? v){FormStartDate=v;return Task.CompletedTask;}
+ private Task FormEndDateChanged(DateOnly? v){FormEndDate=v;return Task.CompletedTask;}
+ private void StartTimeInputChanged(ChangeEventArgs e)=>FormStartTime=e.Value?.ToString()??"08:00";
+ private void EndTimeInputChanged(ChangeEventArgs e)=>FormEndTime=e.Value?.ToString()??"10:00";
  private async Task Pick(ProductionRow row){Viewing=true;Selected=row;ActionError="";History.Clear();await InvokeAsync(StateHasChanged);var r=await Core.GetAsync($"api/v1/production/jobs/{row.Id}/history",Token!,Company,default);History.Clear();if(r.IsSuccess&&r.Value.ValueKind==JsonValueKind.Array)foreach(var x in r.Value.EnumerateArray())History.Add(new HistoryRow(Text(x,"eventType"),x.GetProperty("occurredAtUtc").GetDateTimeOffset(),Text(x,"summary")));}
  private void CloseDetail(){Viewing=false;Selected=null;ActionError="";}
- private ProductionRow? Job(string id)=>Rows.FirstOrDefault(x=>x.Id==id)??(Selected?.Id==id?Selected:null);
  private RenderFragment StateActions(ProductionRow row)=>@<text>
   @if(row.Status is "Planned"){<BarangIconButton Icon="calendar" Semantic="info" Label="@T("برنامه‌ریزی","Plan","تخطيط")" Clicked="@(()=>OpenDialog("plan",row))" />}
   @if(row.Status is "Planned" or "Ready"){<BarangIconButton Icon="person" Semantic="info" Label="@T("تخصیص اپراتور","Assign operator","إسناد مشغل")" Clicked="@(()=>OpenDialog("operator",row))" />}
@@ -148,6 +225,6 @@
  private ProductionRow ParseRow(JsonElement x)=>new(x.GetProperty("id").GetGuid().ToString(),Text(x,"jobType"),Text(x,"status"),Text(x,"priority"),Text(x,"orderNumber"),Text(x,"productTitle"),x.TryGetProperty("plannedQuantity",out var pq)&&pq.ValueKind==JsonValueKind.Number?pq.GetDecimal():0,Text(x,"printPosition"),x.TryGetProperty("warehouseIssued",out var w)&&w.ValueKind==JsonValueKind.True,Text(x,"operatorName"),Text(x,"equipmentName"),x.TryGetProperty("quantityCompleted",out var qc)&&qc.ValueKind==JsonValueKind.Number?qc.GetDecimal():(decimal?)null,x.TryGetProperty("plannedStartUtc",out var ps)&&ps.ValueKind==JsonValueKind.String?ps.GetDateTimeOffset():(DateTimeOffset?)null,x.TryGetProperty("plannedEndUtc",out var pe)&&pe.ValueKind==JsonValueKind.String?pe.GetDateTimeOffset():(DateTimeOffset?)null,x.TryGetProperty("startedAtUtc",out var sa)&&sa.ValueKind==JsonValueKind.String?sa.GetDateTimeOffset():(DateTimeOffset?)null,x.TryGetProperty("completedAtUtc",out var ca)&&ca.ValueKind==JsonValueKind.String?ca.GetDateTimeOffset():(DateTimeOffset?)null,NullGuid(x,"operatorUserId")==Guid.Empty?"":NullGuid(x,"operatorUserId").ToString(),NullGuid(x,"equipmentId")==Guid.Empty?"":NullGuid(x,"equipmentId").ToString(),Text(x,"failureReason"),Text(x,"suspensionReason"),x.TryGetProperty("reproductionDepth",out var rd)?rd.GetInt32():0,x.TryGetProperty("version",out var v)?v.GetInt64():0);
  private sealed record ProductionRow(string Id,string JobType,string Status,string Priority,string OrderNumber,string ProductTitle,decimal PlannedQuantity,string PrintPosition,bool WarehouseIssued,string OperatorName,string EquipmentName,decimal? QuantityCompleted,DateTimeOffset? PlannedStart,DateTimeOffset? PlannedEnd,DateTimeOffset? StartedAt,DateTimeOffset? CompletedAt,string OperatorUserId,string EquipmentId,string FailureReason,string SuspensionReason,int ReproductionDepth,long Version);
  private sealed record HistoryRow(string EventType,DateTimeOffset At,string? Summary);
- private sealed record CapacityRow(Guid Id,string EquipmentCode,string EquipmentName,int? CapacityPerHour,decimal? AvailableUnits,decimal? LoadUnits,double? UtilizationPercent,int InProgress);
+ private sealed record CapacityRow(string Id,string EquipmentCode,string EquipmentName,int? CapacityPerHour,decimal? AvailableUnits,decimal? LoadUnits,double? UtilizationPercent,int InProgress);
  private sealed record PerfRow(Guid UserId,string OperatorName,int CompletedJobs,decimal UnitsCompleted,double AvgDurationMinutes,int OnTimeCount,int LateCount);
 }
