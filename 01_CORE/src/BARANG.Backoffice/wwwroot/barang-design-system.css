@@ -1129,3 +1129,27 @@ tr.is-selected td { background: color-mix(in srgb, var(--barang-accent) 6%, var(
 .chip-coral{background:rgba(255,255,255,.22)}
 .qc-input{min-height:36px;width:100%;max-width:11rem;border:1px solid var(--barang-border-strong);border-radius:8px;padding:.3rem .5rem;font:inherit;font-size:.78rem}
 .qst-inprogress{background:#f59e0b}.qst-suspended{background:#ef6b63}.qst-managementreview{background:#8b5cf6}.qst-approved{background:#22c55e}.qst-rejected{background:#dc2626}.qst-draft{background:#94a3b8}
+
+/* Production/Quality v3: KPI readability + header chart button + chart popup + detail popup */
+
+
+.prod-chart-btn{margin-inline-start:auto;display:inline-grid;place-items:center;width:2rem;height:2rem;border:1px solid rgba(255,255,255,.45);border-radius:9px;background:rgba(255,255,255,.18);color:#fff;cursor:pointer}
+.prod-chart-btn:hover{background:rgba(255,255,255,.32)}
+.prod-chart-btn:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.prod-chart-btn svg{width:1rem;height:1rem}
+.chart-popup-modal{width:min(760px,94vw)}
+.chart-popup-modal .dialog-body{min-height:340px;display:grid;place-items:center}
+.popup-chart{width:100%}
+.detail-popup-modal{width:min(1200px,96vw)}
+.detail-popup-modal .production-detail-head{background:linear-gradient(120deg,#f43f5e,#fb7185);border-radius:14px;padding:.7rem 1rem;color:#fff}
+.detail-popup-modal .production-detail-head h2{color:#fff}
+.detail-popup-modal .production-detail-head .wh-badge,.detail-popup-modal .production-detail-head .btn{background:#fff;color:var(--barang-text)}
+.btn-approve{background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:0}
+.btn-reject{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;border:0}
+.btn-suspend{background:linear-gradient(135deg,#f97316,#c2410c);color:#fff;border:0}
+.btn-review{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:0}
+.btn-approve:hover,.btn-reject:hover,.btn-suspend:hover,.btn-review:hover{filter:brightness(1.08)}
+.btn-approve:hover,.btn-reject:hover,.btn-suspend:hover,.btn-review:hover{color:#fff}
+
+.kpi-card .kpi-body small{font-size:.8rem !important;font-weight:900 !important;opacity:1 !important;color:#fff !important;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.kpi-card .kpi-body strong{font-size:1.7rem !important;font-weight:900 !important;color:#fff !important;text-shadow:0 1px 3px rgba(0,0,0,.4)}

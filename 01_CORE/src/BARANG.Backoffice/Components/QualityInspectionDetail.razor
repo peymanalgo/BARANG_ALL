@@ -46,10 +46,10 @@
    <div class="form-actions"><button type="button" class="btn btn-primary" disabled="@Busy" @onclick="SaveDisposition">@T("ثبت تخصیص","Save disposition","حفظ التوزيع")</button></div>
    <h3>@T("تصمیم کیفی","Quality decision","القرار النوعي")</h3>
    <div class="form-actions production-actions">
-    <button type="button" class="btn btn-primary" disabled="@Busy" @onclick="Approve"><BarangIcon Name="check" /> @T("تأیید بازرسی","Approve","اعتماد")</button>
-    <button type="button" class="btn btn-danger" disabled="@Busy" @onclick="Reject"><BarangIcon Name="close" /> @T("رد بازرسی","Reject","رفض")</button>
-    <button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="Suspend"><BarangIcon Name="minus" /> @T("تعلیق","Suspend","إيقاف")</button>
-    <button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="Review"><BarangIcon Name="eye" /> @T("ارجاع به بررسی مدیریت","Management review","مراجعة الإدارة")</button>
+    <button type="button" class="btn btn-approve" disabled="@Busy" @onclick="Approve"><BarangIcon Name="check" /> @T("تأیید بازرسی","Approve","اعتماد")</button>
+    <button type="button" class="btn btn-reject" disabled="@Busy" @onclick="Reject"><BarangIcon Name="close" /> @T("رد بازرسی","Reject","رفض")</button>
+    <button type="button" class="btn btn-suspend" disabled="@Busy" @onclick="Suspend"><BarangIcon Name="minus" /> @T("تعلیق","Suspend","إيقاف")</button>
+    <button type="button" class="btn btn-review" disabled="@Busy" @onclick="Review"><BarangIcon Name="eye" /> @T("ارجاع به بررسی مدیریت","Management review","مراجعة الإدارة")</button>
    </div>
    @if(Status=="Rejected"&&!ReproRequested){<div class="form-actions"><BarangIconButton Icon="refresh" Semantic="warning" Label="@T("درخواست بازتولید","Request reproduction","طلب إعادة إنتاج")" Disabled="@Busy" Clicked="StartRepro" /></div>}
    @if(ReproRequested){<div class="form-grid"><label class="span-2"><span>@T("درخواست بازتولید ثبت شد — ایجاد کارهای تولید","Reproduction requested — create production jobs","تم طلب إعادة الإنتاج — إنشاء أعمال الإنتاج")</span><div class="form-actions"><button type="button" class="btn btn-primary" disabled="@Busy||ReproJobsCreated" @onclick="CreateReproJobs">@(ReproJobsCreated?T("کارها ساخته شد","Jobs created","تم الإنشاء"):T("ایجاد کارهای بازتولید","Create reproduction jobs","إنشاء أعمال إعادة الإنتاج"))</button></div></label></div>}

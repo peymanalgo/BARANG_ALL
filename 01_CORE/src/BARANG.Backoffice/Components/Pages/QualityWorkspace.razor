@@ -18,9 +18,8 @@
 </div>
 
 <section class="prod-panel prod-tint-rose prod-full">
- <header class="prod-panel-head"><span class="prod-panel-icon chip-rose"><BarangIcon Name="quality" /></span><div><h2>@T("بازرسی‌های کنترل کیفیت","Quality inspections","عمليات مراقبة الجودة")</h2><small>@T("بازرسی‌های خروجی کارهای تولید — توزیع وضعیت در ستون کناری","Inspections of production output — status mix beside","فحوصات مخرجات الإنتاج — مع توزيع الحالات")</small></div></header>
- <div class="prod-panel-body prod-cols">
-  <div class="prod-col">
+ <header class="prod-panel-head"><span class="prod-panel-icon chip-rose"><BarangIcon Name="quality" /></span><div><h2>@T("بازرسی‌های کنترل کیفیت","Quality inspections","عمليات مراقبة الجودة")</h2><small>@T("بازرسی‌های خروجی کارهای تولید — توزیع وضعیت در ستون کناری","Inspections of production output — status mix beside","فحوصات مخرجات الإنتاج — مع توزيع الحالات")</small> <button type="button" class="prod-chart-btn" title="توزیع وضعیت بازرسی‌ها" @onclick="@(()=>OpenChart("status","توزیع وضعیت بازرسی‌ها"))"><BarangIcon Name="chart" /></button></div></header>
+ <div class="prod-panel-body">
    <div class="crud-toolbar compact"><label class="compact-filter"><span>@L["Status"]</span><select @bind="Status" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="InProgress">@St("InProgress")</option><option value="Suspended">@St("Suspended")</option><option value="ManagementReview">@St("ManagementReview")</option><option value="Approved">@St("Approved")</option><option value="Rejected">@St("Rejected")</option></select></label><button type="button" class="btn btn-primary btn-small" @onclick="OpenStart"><BarangIcon Name="plus" /> @T("شروع بازرسی","Start inspection","بدء فحص")</button></div>
    @if(Busy){<BarangLoadingState Text="@L["Loading"]" />}
    else if(Rows.Count==0){<CrudEmptyState Title="@L["NoRecords"]" Description="@T("با تکمیل کارهای چاپ و پرس، بازرسی به‌صورت خودکار ساخته می‌شود.","Inspections are created automatically when print/press jobs complete.","تبدأ عمليات الفحص تلقائياً عند إكمال أعمال الطباعة والكبس.")" />}
@@ -42,53 +41,27 @@
     </tbody></table></div>
     <BarangPagination Page="@Page" HasNext="@(Page*PageSize<Total)" Disabled="@Busy" PageLabel="@L["Page"]" PreviousText="@L["Previous"]" NextText="@L["Next"]" Previous="@PreviousPage" Next="@NextPage" />
    }
-  </div>
-  <div class="prod-col chart-col">
-   <h3 class="chart-sub">@T("توزیع وضعیت بازرسی‌ها","Inspection status mix","توزيع حالات الفحوصات")</h3>
-   <div class="chart-body-inline">
-    @if(StatusTotal==0){<p class="field-help">@T("داده‌ای برای نمایش نیست.","Nothing to display.","لا شيء للعرض.")</p>}
-    else{
-     <div class="chart-flex">
-      <div class="donut-wrap"><div class="donut" style="@DonutStyle()"><div class="donut-hole"><strong>@StatusTotal</strong><small>@T("بازرسی","inspections","فحص")</small></div></div></div>
-      <ul class="chart-legend">
-       @foreach(var seg in StatusSegments){<li><span class="legend-dot" style="background:@seg.Color"></span><span class="legend-label">@seg.Label</span><strong dir="ltr">@seg.Count</strong></li>}
-      </ul>
-     </div>
-    }
-   </div>
-  </div>
  </div>
 </section>
 
 <section class="prod-panel prod-tint-coral prod-full">
- <header class="prod-panel-head"><span class="prod-panel-icon chip-coral"><BarangIcon Name="info" /></span><div><h2>@T("پارتو عیوب","Defect Pareto","باريتو العيوب")</h2><small>@T("پرتکرارترین عیوب ثبت‌شده","Most frequent recorded defects","أكثر العيوب تكراراً")</small></div></header>
- <div class="prod-panel-body prod-cols">
-  <div class="prod-col">
+ <header class="prod-panel-head"><span class="prod-panel-icon chip-coral"><BarangIcon Name="info" /></span><div><h2>@T("پارتو عیوب","Defect Pareto","باريتو العيوب")</h2><small>@T("پرتکرارترین عیوب ثبت‌شده","Most frequent recorded defects","أكثر العيوب تكراراً")</small> <button type="button" class="prod-chart-btn" title="فراوانی عیوب" @onclick="@(()=>OpenChart("pareto","فراوانی عیوب"))"><BarangIcon Name="chart" /></button></div></header>
+ <div class="prod-panel-body">
    @if(Analytics is null){<BarangLoadingState Text="@L["Loading"]" />}
    else if(Analytics.TopDefects.Count==0){<p class="field-help">@T("عیبی ثبت نشده است.","No defects recorded.","لا توجد عيوب مسجلة.")</p>}
    else{<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("کد","Code","الرمز")</th><th>@T("نام عیب","Defect","الخلل")</th><th>@T("تعداد","Count","العدد")</th><th>@T("مقدار","Quantity","الكمية")</th></tr></thead><tbody>
     @foreach(var d in Analytics.TopDefects){<tr><td dir="ltr">@d.Code</td><td>@d.Name</td><td>@d.Count</td><td>@d.Quantity.ToString("0.#",CultureInfo.InvariantCulture)</td></tr>}
    </tbody></table></div>}
-  </div>
-  <div class="prod-col chart-col">
-   <h3 class="chart-sub">@T("فراوانی عیوب","Defect frequency","تكرار العيوب")</h3>
-   <div class="chart-body-inline">
-    @if(Analytics is null||Analytics.TopDefects.Count==0){<p class="field-help">@T("داده‌ای برای نمایش نیست.","Nothing to display.","لا شيء للعرض.")</p>}
-    else{<ul class="bar-chart">
-     @{ double maxCount=Math.Max(1,Analytics.TopDefects.Max(d=>(double)d.Count)); }
-     @foreach(var d in Analytics.TopDefects){
-      double pct=d.Count*100.0/maxCount;
-      <li><div class="bar-row"><span class="bar-label">@d.Name</span><div class="bar-track"><div class="bar-fill bar-coral" style="width:@pct.ToString("0.#",CultureInfo.InvariantCulture)%"></div></div><span class="bar-value" dir="ltr">@d.Count</span></div></li>
-     }
-    </ul>}
-   </div>
-  </div>
  </div>
 </section>
 
-@if(DetailId is not null && Token is not null){
- <QualityInspectionDetail InspectionId="@DetailId.Value" Token="@Token" Company="@Company" OnChanged="Load" OnClose="()=>DetailId=null" />
-}
+<BarangModal Open="@(DetailId is not null)" Title="@T("اجرای بازرسی","Inspection execution","تنفيذ الفحص")" Size="extra-large" CssClass="detail-popup-modal" ShowCloseButton="true" CloseRequested="CloseDetail">
+ <ChildContent>
+  @if(DetailId is not null && Token is not null){
+   <QualityInspectionDetail InspectionId="@DetailId.Value" Token="@Token" Company="@Company" OnChanged="Load" OnClose="CloseDetail" />
+  }
+ </ChildContent>
+</BarangModal>
 
 <BarangModal Open="@StartOpen" Title="@T("شروع بازرسی جدید","Start new inspection","بدء فحص جديد")" Size="medium" ShowCloseButton="true" CloseRequested="()=>StartOpen=false">
  <ChildContent><div class="form-grid single">
@@ -99,8 +72,36 @@
  <Footer><button type="button" class="btn btn-secondary" @onclick="()=>StartOpen=false">@L["Cancel"]</button><button type="button" class="btn btn-primary" disabled="@StartBusy" @onclick="SubmitStart">@L["Save"]</button></Footer>
 </BarangModal>
 
+
+<BarangModal Open="@ChartOpen" Title="@ChartTitle" Size="large" CssClass="chart-popup-modal" ShowCloseButton="true" CloseRequested="()=>ChartOpen=false">
+ <ChildContent><div class="chart-body-inline popup-chart">
+  @if(ChartKind=="status"){
+   <div class="chart-flex">
+    <div class="donut-wrap"><div class="donut" style="@DonutStyle()"><div class="donut-hole"><strong>@StatusTotal</strong><small>@T("بازرسی","inspections","فحص")</small></div></div></div>
+    <ul class="chart-legend">
+     @foreach(var seg in StatusSegments){<li><span class="legend-dot" style="background:@seg.Color"></span><span class="legend-label">@seg.Label</span><strong dir="ltr">@seg.Count</strong></li>}
+    </ul>
+   </div>
+  }
+  else if(ChartKind=="pareto"){
+   @if(Analytics is null||Analytics.TopDefects.Count==0){<p class="field-help">@T("داده‌ای برای نمایش نیست.","Nothing to display.","لا شيء للعرض.")</p>}
+   else{<ul class="bar-chart">
+    @{ double maxCount=Math.Max(1,Analytics.TopDefects.Max(d=>(double)d.Count)); }
+    @foreach(var d in Analytics.TopDefects){
+     double pct=d.Count*100.0/maxCount;
+     <li><div class="bar-row"><span class="bar-label">@d.Name</span><div class="bar-track"><div class="bar-fill bar-coral" style="width:@pct.ToString("0.#",CultureInfo.InvariantCulture)%"></div></div><span class="bar-value" dir="ltr">@d.Count</span></div></li>
+    }
+   </ul>}
+  }
+ </div></ChildContent>
+ <Footer><button type="button" class="btn btn-secondary" @onclick="()=>ChartOpen=false">@L["Cancel"]</button></Footer>
+</BarangModal>
+
+
 @code {
- private const int PageSize=20; private long StatusTotal;
+ private const int PageSize=20;
+ private bool ChartOpen; private string ChartKind="",ChartTitle="";
+ private void OpenChart(string kind,string title){ChartKind=kind;ChartTitle=title;ChartOpen=true;} private long StatusTotal;
  private bool Busy,StartBusy; private string Status="",StartError="";
  private int Page=1; private long Total; private List<QRow> Rows=[]; private Guid? DetailId;
  private List<SearchableSelectOption> JobOptions=[],TemplateOptions=[];
