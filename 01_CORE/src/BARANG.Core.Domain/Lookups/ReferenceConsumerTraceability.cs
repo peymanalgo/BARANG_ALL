@@ -71,7 +71,7 @@ public static class ReferenceConsumerTraceability
         }),
         .. DefinitionsFor("orders", "Orders", new Dictionary<string, (string Entity, string Field, string Api, string Ui)>
         {
-            ["order.type"] = ("Order", "OrderTypeCode", "orders", "Orders > General")
+            ["order.type"] = ("OrderBusinessProfile", "OrderTypeCode", "business profile", "Orders > Steps 4/5 business profile")
         }),
         .. DefinitionsFor("inventory", "Inventory", new Dictionary<string, (string Entity, string Field, string Api, string Ui)>
         {

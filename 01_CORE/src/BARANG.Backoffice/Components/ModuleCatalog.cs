@@ -49,6 +49,9 @@ public static class ModuleCatalog
         Direct("Nav_Cartable","inbox","/cartable","workflow.read"),
         Direct("Nav_Pricing","finance","/workspace/pricing","pricing.read"),
         Direct("Nav_InventoryPurchasing","warehouse","/workspace/inventory","inventory.read"),
+        Direct("Nav_Production","settings","/workspace/production","production.read"),
+        Direct("Nav_Quality","quality","/workspace/quality","qc.read"),
+        Direct("Nav_Logistics","truck","/workspace/logistics","logistics.read"),
         Direct("Nav_Notifications","bell","/workspace/notifications","notification.read"),
         Direct("Nav_ManagementDashboard","chart","/workspace/management","audit.read"),
     ];

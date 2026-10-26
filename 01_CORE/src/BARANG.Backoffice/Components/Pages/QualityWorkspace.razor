@@ -46,7 +46,7 @@
     <h2>@L["Action_Defect"]</h2>
     <div class="form-grid">
         <label><span>@L["ValidationError"]</span><input @bind="CriterionId" placeholder="GUID" /></label>
-        <label><span>@L["Action_Defect"]</span><input @bind="DefectTypeId" placeholder="GUID" /></label>
+        <label><span>@L["Action_Defect"]</span><ReferenceSelect TypeCode="defect.type" Name="quality-defect-type" @bind-Value="DefectTypeId" Placeholder="@L["Action_Defect"]" /></label>
         <label><span>@L["Reason"]</span><input @bind="Reason" /></label>
     </div>
     <div class="form-actions">
