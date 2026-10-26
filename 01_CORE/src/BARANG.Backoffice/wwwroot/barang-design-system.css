@@ -1161,3 +1161,5 @@ tr.is-selected td { background: color-mix(in srgb, var(--barang-accent) 6%, var(
 .kpi-teal{background:linear-gradient(135deg,#06b6d4,#0e7490)}
 .pkst-draft{background:#6c8cff}.pkst-completed{background:#06b6d4}.pkst-atshippingwarehouse{background:#f59e0b}.pkst-releasedtoshipment{background:#22c55e}
 .shst-ready{background:#6c8cff}.shst-shipped{background:#f59e0b}.shst-intransit{background:#06b6d4}.shst-delivered{background:#22c55e}.shst-faileddelivery{background:#ef6b63}.shst-returned{background:#8b5cf6}
+
+.prod-panel-head .chart-btn-end{margin-inline-start:auto}
