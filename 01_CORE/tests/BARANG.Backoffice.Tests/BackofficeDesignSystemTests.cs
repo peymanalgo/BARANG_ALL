@@ -228,7 +228,7 @@ public sealed class BackofficeDesignSystemTests
         Assert.Contains("@onclick=\"Save\"", page);
         Assert.Contains("disabled=\"@Saving\"", page);
         Assert.Contains("CloseConfirmOpen", page);
-        Assert.Contains("accept=\"image/*\"", page);
+        Assert.DoesNotContain("accept=", page);
         Assert.Contains("design-editor-single-page", css);
         Assert.Contains("overflow-y: auto", css);
         Assert.Contains("design-editor-modal", css);
