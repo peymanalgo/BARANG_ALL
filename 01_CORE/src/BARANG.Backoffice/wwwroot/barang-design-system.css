@@ -1153,3 +1153,11 @@ tr.is-selected td { background: color-mix(in srgb, var(--barang-accent) 6%, var(
 
 .kpi-card .kpi-body small{font-size:.8rem !important;font-weight:900 !important;opacity:1 !important;color:#fff !important;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 .kpi-card .kpi-body strong{font-size:1.7rem !important;font-weight:900 !important;color:#fff !important;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+
+/* Logistics workspace v1: hero + pills + dims row + status dots */
+.logistics-hero .logistics-kicker{display:inline-flex;align-items:center;gap:.45rem;color:#0891b2;font-weight:800}
+.logistics-ink-dot{width:.5rem;height:.5rem;border-radius:50%;background:#f59e0b;box-shadow:9px -3px 0 #22c55e,18px 2px 0 #ef6b63}
+.dims-row{display:flex;gap:.4rem}.dims-row input{min-width:0}
+.kpi-teal{background:linear-gradient(135deg,#06b6d4,#0e7490)}
+.pkst-draft{background:#6c8cff}.pkst-completed{background:#06b6d4}.pkst-atshippingwarehouse{background:#f59e0b}.pkst-releasedtoshipment{background:#22c55e}
+.shst-ready{background:#6c8cff}.shst-shipped{background:#f59e0b}.shst-intransit{background:#06b6d4}.shst-delivered{background:#22c55e}.shst-faileddelivery{background:#ef6b63}.shst-returned{background:#8b5cf6}
