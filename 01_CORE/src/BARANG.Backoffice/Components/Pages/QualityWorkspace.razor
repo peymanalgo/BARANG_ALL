@@ -1,100 +1,137 @@
 @page "/workspace/quality"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
 @inject IStringLocalizer<AppStrings> L
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
-@inject NavigationManager Navigation
-
 <PageTitle>@L["Module_quality"]</PageTitle>
-<div class="page-heading"><h1>@L["Module_quality"]</h1></div>
-@if (Message is not null) { <div class="@(Success ? "inline-success" : "inline-error")">@L[Message]</div> }
-<section class="panel quality-workspace">
-    <h2>@L["Action_Inspect"]</h2>
-    <div class="form-grid">
-        <label><span>@L["Action_Execute"]</span><input @bind="ProductionJobId" placeholder="GUID" /></label>
-        <label><span>@L["Action_Inspect"]</span><input @bind="TemplateId" placeholder="GUID" /></label>
-        <label><span>@L["Action_Inspect"]</span><input @bind="InspectionId" placeholder="GUID" /></label>
-        <label><span>@L["Version"]</span><input type="number" @bind="Version" /></label>
-    </div>
-    <div class="form-actions">
-        <button type="button" @onclick="Start">@L["Action_Inspect"]</button>
-        <button type="button" @onclick="LoadInspection">@L["Refresh"]</button>
-    </div>
-    <pre class="quality-json">@InspectionData</pre>
+<header class="crud-header quality-hero"><div><span class="eyebrow quality-kicker"><span class="quality-ink-dot" aria-hidden="true"></span>@L["OperationalWorkspace"]</span><h1>@L["Module_quality"]</h1><p>@T("بازرسی خروجی تولید با چک‌لیست، ثبت عیوب و تصمیم کیفی","Inspect production output with checklists, record defects and quality decisions","فحص إنتاج وفق قوائم الفحص وتسجيل العيوب والقرار النوعي")</p></div><div class="row-actions"><a class="btn btn-secondary" href="/quality/catalogs"><BarangIcon Name="database" /> @T("قالب‌ها و کاتالوگ‌ها","Templates & catalogs","القوالب والفهارس")</a><button type="button" class="btn btn-secondary" @onclick="Load"><BarangIcon Name="reset" /> @L["Refresh"]</button></div></header>
+
+<div class="production-kpis">
+ <button type="button" class="kpi-card kpi-indigo" @onclick="@(async()=>{Status="";Page=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="search" /></span><span class="kpi-body"><strong>@Total</strong><small>@T("کل بازرسی‌ها","Inspections","إجمالي الفحوصات")</small></span></button>
+ <button type="button" class="kpi-card kpi-amber" @onclick="@(async()=>{Status="InProgress";Page=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="refresh" /></span><span class="kpi-body"><strong>@AnalyticsInProgress</strong><small>@T("در جریان بازرسی","In progress","قيد الفحص")</small></span></button>
+ <button type="button" class="kpi-card kpi-green" @onclick="@(async()=>{Status="Approved";Page=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="check" /></span><span class="kpi-body"><strong>@AnalyticsApproved</strong><small>@T("تأییدشده","Approved","معتمد")</small></span></button>
+ <button type="button" class="kpi-card kpi-coral" @onclick="@(async()=>{Status="Rejected";Page=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="close" /></span><span class="kpi-body"><strong>@AnalyticsRejected</strong><small>@T("مردود","Rejected","مرفوض")</small></span></button>
+ <button type="button" class="kpi-card kpi-violet" @onclick="@(async()=>{Status="Suspended";Page=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="minus" /></span><span class="kpi-body"><strong>@AnalyticsSuspended</strong><small>@T("معلق","Suspended","معلق")</small></span></button>
+</div>
+
+<section class="prod-panel prod-tint-rose prod-full">
+ <header class="prod-panel-head"><span class="prod-panel-icon chip-rose"><BarangIcon Name="quality" /></span><div><h2>@T("بازرسی‌های کنترل کیفیت","Quality inspections","عمليات مراقبة الجودة")</h2><small>@T("بازرسی‌های خروجی کارهای تولید — توزیع وضعیت در ستون کناری","Inspections of production output — status mix beside","فحوصات مخرجات الإنتاج — مع توزيع الحالات")</small></div></header>
+ <div class="prod-panel-body prod-cols">
+  <div class="prod-col">
+   <div class="crud-toolbar compact"><label class="compact-filter"><span>@L["Status"]</span><select @bind="Status" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="InProgress">@St("InProgress")</option><option value="Suspended">@St("Suspended")</option><option value="ManagementReview">@St("ManagementReview")</option><option value="Approved">@St("Approved")</option><option value="Rejected">@St("Rejected")</option></select></label><button type="button" class="btn btn-primary btn-small" @onclick="OpenStart"><BarangIcon Name="plus" /> @T("شروع بازرسی","Start inspection","بدء فحص")</button></div>
+   @if(Busy){<BarangLoadingState Text="@L["Loading"]" />}
+   else if(Rows.Count==0){<CrudEmptyState Title="@L["NoRecords"]" Description="@T("با تکمیل کارهای چاپ و پرس، بازرسی به‌صورت خودکار ساخته می‌شود.","Inspections are created automatically when print/press jobs complete.","تبدأ عمليات الفحص تلقائياً عند إكمال أعمال الطباعة والكبس.")" />}
+   else{
+    <div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@L["Status"]</th><th>@L["Module_orders"]</th><th>@T("محصول","Product","المنتج")</th><th>@T("قالب","Template","القالب")</th><th>@T("نوع کار","Job type","النوع")</th><th>@T("بازرس","Inspector","الفاحص")</th><th>@T("عیوب","Defects","العيوب")</th><th>@T("قبول/مردود","Acc/Rej","قبول/رفض")</th><th class="actions-column">@L["Actions"]</th></tr></thead><tbody>
+     @foreach(var row in Rows){
+      <tr class="@(DetailId?.ToString()==row.Id?"is-selected":null)">
+       <td><span class="status-dot qst-@row.Status.ToLowerInvariant()"></span><span>@St(row.Status)</span></td>
+       <td dir="ltr"><span class="code-pill">@(row.OrderNumber.Length==0?"—":row.OrderNumber)</span></td>
+       <td class="cell-ellipsis">@(row.ProductTitle.Length==0?"—":row.ProductTitle)</td>
+       <td class="cell-ellipsis">@(row.TemplateName.Length==0?"—":row.TemplateName)</td>
+       <td><span class="job-type-pill jt-@row.JobType.ToLowerInvariant()">@Jt(row.JobType)</span></td>
+       <td class="cell-ellipsis">@(row.InspectorName.Length==0?"—":row.InspectorName)</td>
+       <td>@if(row.DefectsCount>0){<span class="util-badge over">@row.DefectsCount</span>}else{<span class="util-badge ok">۰</span>}</td>
+       <td dir="ltr">@row.AcceptedQuantity.ToString("0.#",CultureInfo.InvariantCulture) / @row.RejectedQuantity.ToString("0.#",CultureInfo.InvariantCulture)</td>
+       <td><BarangActionMenu><BarangIconButton Icon="edit" Semantic="edit" Label="@T("بازرسی","Inspect","فحص")" Clicked="@(()=>OpenDetail(row.Id))" /></BarangActionMenu></td>
+      </tr>
+     }
+    </tbody></table></div>
+    <BarangPagination Page="@Page" HasNext="@(Page*PageSize<Total)" Disabled="@Busy" PageLabel="@L["Page"]" PreviousText="@L["Previous"]" NextText="@L["Next"]" Previous="@PreviousPage" Next="@NextPage" />
+   }
+  </div>
+  <div class="prod-col chart-col">
+   <h3 class="chart-sub">@T("توزیع وضعیت بازرسی‌ها","Inspection status mix","توزيع حالات الفحوصات")</h3>
+   <div class="chart-body-inline">
+    @if(StatusTotal==0){<p class="field-help">@T("داده‌ای برای نمایش نیست.","Nothing to display.","لا شيء للعرض.")</p>}
+    else{
+     <div class="chart-flex">
+      <div class="donut-wrap"><div class="donut" style="@DonutStyle()"><div class="donut-hole"><strong>@StatusTotal</strong><small>@T("بازرسی","inspections","فحص")</small></div></div></div>
+      <ul class="chart-legend">
+       @foreach(var seg in StatusSegments){<li><span class="legend-dot" style="background:@seg.Color"></span><span class="legend-label">@seg.Label</span><strong dir="ltr">@seg.Count</strong></li>}
+      </ul>
+     </div>
+    }
+   </div>
+  </div>
+ </div>
 </section>
 
-<section class="panel quality-workspace">
-    <h2>@L["Action_Complete"]</h2>
-    <div class="form-grid">
-        <label><span>@L["Action_Complete"]</span><input type="number" step="0.0001" @bind="AcceptedQuantity" /></label>
-        <label><span>@L["ValidationError"]</span><input type="number" step="0.0001" @bind="RejectedQuantity" /></label>
-        <label><span>@L["Action_Reproduction"]</span><input type="number" step="0.0001" @bind="ReproductionQuantity" /></label>
-        <label><span>@L["Reason"]</span><input @bind="AcceptedReason" /></label>
-        <label><span>@L["Reason"]</span><input @bind="RejectedReason" /></label>
-        <label><span>@L["Reason"]</span><input @bind="ReproductionReason" /></label>
-    </div>
-    <div class="form-actions">
-        <button type="button" @onclick="SaveDisposition">@L["Save"]</button>
-        <button type="button" @onclick="Approve">@L["Action_Complete"]</button>
-        <button type="button" @onclick="Reject">@L["ValidationError"]</button>
-    </div>
-    <pre class="quality-json">@DispositionData</pre>
+<section class="prod-panel prod-tint-coral prod-full">
+ <header class="prod-panel-head"><span class="prod-panel-icon chip-coral"><BarangIcon Name="info" /></span><div><h2>@T("پارتو عیوب","Defect Pareto","باريتو العيوب")</h2><small>@T("پرتکرارترین عیوب ثبت‌شده","Most frequent recorded defects","أكثر العيوب تكراراً")</small></div></header>
+ <div class="prod-panel-body prod-cols">
+  <div class="prod-col">
+   @if(Analytics is null){<BarangLoadingState Text="@L["Loading"]" />}
+   else if(Analytics.TopDefects.Count==0){<p class="field-help">@T("عیبی ثبت نشده است.","No defects recorded.","لا توجد عيوب مسجلة.")</p>}
+   else{<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("کد","Code","الرمز")</th><th>@T("نام عیب","Defect","الخلل")</th><th>@T("تعداد","Count","العدد")</th><th>@T("مقدار","Quantity","الكمية")</th></tr></thead><tbody>
+    @foreach(var d in Analytics.TopDefects){<tr><td dir="ltr">@d.Code</td><td>@d.Name</td><td>@d.Count</td><td>@d.Quantity.ToString("0.#",CultureInfo.InvariantCulture)</td></tr>}
+   </tbody></table></div>}
+  </div>
+  <div class="prod-col chart-col">
+   <h3 class="chart-sub">@T("فراوانی عیوب","Defect frequency","تكرار العيوب")</h3>
+   <div class="chart-body-inline">
+    @if(Analytics is null||Analytics.TopDefects.Count==0){<p class="field-help">@T("داده‌ای برای نمایش نیست.","Nothing to display.","لا شيء للعرض.")</p>}
+    else{<ul class="bar-chart">
+     @{ double maxCount=Math.Max(1,Analytics.TopDefects.Max(d=>(double)d.Count)); }
+     @foreach(var d in Analytics.TopDefects){
+      double pct=d.Count*100.0/maxCount;
+      <li><div class="bar-row"><span class="bar-label">@d.Name</span><div class="bar-track"><div class="bar-fill bar-coral" style="width:@pct.ToString("0.#",CultureInfo.InvariantCulture)%"></div></div><span class="bar-value" dir="ltr">@d.Count</span></div></li>
+     }
+    </ul>}
+   </div>
+  </div>
+ </div>
 </section>
 
-<section class="panel quality-workspace">
-    <h2>@L["Action_Defect"]</h2>
-    <div class="form-grid">
-        <label><span>@L["ValidationError"]</span><input @bind="CriterionId" placeholder="GUID" /></label>
-        <label><span>@L["Action_Defect"]</span><ReferenceSelect TypeCode="defect.type" Name="quality-defect-type" @bind-Value="DefectTypeId" Placeholder="@L["Action_Defect"]" /></label>
-        <label><span>@L["Reason"]</span><input @bind="Reason" /></label>
-    </div>
-    <div class="form-actions">
-        <button type="button" @onclick="Result">@L["Save"]</button>
-        <button type="button" @onclick="Defect">@L["Action_Defect"]</button>
-        <button type="button" @onclick="Suspend">@L["Action_Cancel"]</button>
-        <button type="button" @onclick="Review">@L["Action_Approval"]</button>
-    </div>
-</section>
+@if(DetailId is not null && Token is not null){
+ <QualityInspectionDetail InspectionId="@DetailId.Value" Token="@Token" Company="@Company" OnChanged="Load" OnClose="()=>DetailId=null" />
+}
 
-<section class="panel quality-workspace">
-    <h2>@L["Action_Reproduction"]</h2>
-    <div class="form-actions">
-        <button type="button" @onclick="Reproduce">@L["Action_Request"]</button>
-        <button type="button" @onclick="GenerateJobs">@L["Action_Create"]</button>
-        <button type="button" @onclick="LoadHistory">@L["Timeline"]</button>
-    </div>
-    <pre class="quality-json">@HistoryData</pre>
-</section>
+<BarangModal Open="@StartOpen" Title="@T("شروع بازرسی جدید","Start new inspection","بدء فحص جديد")" Size="medium" ShowCloseButton="true" CloseRequested="()=>StartOpen=false">
+ <ChildContent><div class="form-grid single">
+  <label><span>@T("کار تولید تکمیل‌شده","Completed production job","عملية إنتاج مكتملة")</span><SearchableSelect Name="qc-job" Options="@JobOptions" @bind-Value="FormJob" Placeholder="@SelectPlaceholder" /></label>
+  <label><span>@T("قالب چک‌لیست","Checklist template","قالب الفحص")</span><SearchableSelect Name="qc-template" Options="@TemplateOptions" @bind-Value="FormTemplate" Placeholder="@SelectPlaceholder" /></label>
+  @if(!string.IsNullOrWhiteSpace(StartError)){<div class="inline-error" role="alert">@StartError</div>}
+ </div></ChildContent>
+ <Footer><button type="button" class="btn btn-secondary" @onclick="()=>StartOpen=false">@L["Cancel"]</button><button type="button" class="btn btn-primary" disabled="@StartBusy" @onclick="SubmitStart">@L["Save"]</button></Footer>
+</BarangModal>
 
 @code {
-    private string ProductionJobId = "", TemplateId = "", InspectionId = "", ReproductionRequestId = "", CriterionId = "", DefectTypeId = "";
-    private string InspectionData = "", DispositionData = "", HistoryData = "", Reason = "quality review";
-    private string AcceptedReason = "accepted by inspection", RejectedReason = "", ReproductionReason = "";
-    private decimal AcceptedQuantity, RejectedQuantity, ReproductionQuantity;
-    private long Version, DispositionVersion = 1;
-    private bool Success;
-    private string? Message;
-
-    private Task Start() => Post("api/v1/quality/inspections", new { productionJobId = ProductionJobId, templateId = TemplateId, parentInspectionId = (Guid?)null });
-    private async Task LoadInspection()
-    {
-        var s = await Session(); if (s is null || !Guid.TryParse(InspectionId, out Guid id)) return;
-        var r = await Core.GetAsync($"api/v1/quality/inspections/{id}", s.Value.Token, s.Value.Company, default); Show(r);
-        if (r.IsSuccess) { InspectionData = r.Value.ToString(); Version = r.Value.GetProperty("version").GetInt64(); }
-    }
-    private Task SaveDisposition() => Put($"api/v1/quality/inspections/{InspectionId}/disposition", new { acceptedQuantity = AcceptedQuantity, rejectedQuantity = RejectedQuantity, reproductionRequiredQuantity = ReproductionQuantity, acceptedReason = AcceptedReason, rejectedReason = string.IsNullOrWhiteSpace(RejectedReason) ? null : RejectedReason, reproductionReason = string.IsNullOrWhiteSpace(ReproductionReason) ? null : ReproductionReason, version = DispositionVersion });
-    private Task Result() => Post($"api/v1/quality/inspections/{InspectionId}/results", new { criterionId = CriterionId, passFailValue = true, numericValue = (decimal?)null, textValue = (string?)null, choiceCode = (string?)null });
-    private Task Defect() => Post($"api/v1/quality/inspections/{InspectionId}/defects", new { criteriaResultId = (Guid?)null, defectTypeId = DefectTypeId, quantity = RejectedQuantity + ReproductionQuantity, severity = "Major", notes = Reason, evidenceFileVersionId = (Guid?)null });
-    private Task Approve() => Post($"api/v1/quality/inspections/{InspectionId}/approve", new { version = Version });
-    private Task Suspend() => Post($"api/v1/quality/inspections/{InspectionId}/suspend", new { reason = Reason, version = Version });
-    private Task Review() => Post($"api/v1/quality/inspections/{InspectionId}/review", new { reason = Reason, version = Version });
-    private Task Reject() => Post($"api/v1/quality/inspections/{InspectionId}/reject", new { reason = Reason, version = Version });
-    private Task Reproduce() => Post($"api/v1/quality/inspections/{InspectionId}/reproduction", new { requestedStage = "FullItem", quantity = ReproductionQuantity, reason = ReproductionReason });
-    private Task GenerateJobs() => Post($"api/v1/quality/reproductions/{ReproductionRequestId}/jobs", new { version = Version });
-    private async Task LoadHistory() { var s = await Session(); if (s is null || !Guid.TryParse(InspectionId, out Guid id)) return; var r = await Core.GetAsync($"api/v1/quality/history/{id}", s.Value.Token, s.Value.Company, default); HistoryData = r.IsSuccess ? r.Value.ToString() : ""; Show(r); }
-    private async Task Post(string path, object body) { var s = await Session(); if (s is null) return; var r = await Core.SendAsync(HttpMethod.Post, path, body, s.Value.Token, s.Value.Company, default); Show(r); if (r.IsSuccess && r.Value.ValueKind == System.Text.Json.JsonValueKind.Object) { if (path.Contains("/reproduction", StringComparison.OrdinalIgnoreCase) && r.Value.TryGetProperty("id", out var reproduction)) ReproductionRequestId = reproduction.ToString(); else if (r.Value.TryGetProperty("id", out var id)) InspectionId = id.ToString(); if (r.Value.TryGetProperty("version", out var v)) Version = v.GetInt64(); InspectionData = r.Value.ToString(); } }
-    private async Task Put(string path, object body) { var s = await Session(); if (s is null) return; var r = await Core.SendAsync(HttpMethod.Put, path, body, s.Value.Token, s.Value.Company, default); Show(r); if (r.IsSuccess) DispositionData = r.Value.ToString(); }
-    private void Show(ApiResult<System.Text.Json.JsonElement> r) { Success = r.IsSuccess; Message = r.IsSuccess ? "OperationSucceeded" : r.Failure switch { ApiFailure.Unauthorized => "SessionExpired", ApiFailure.Forbidden => "Unauthorized", ApiFailure.Conflict => "ConcurrencyConflict", ApiFailure.Validation => "ValidationError", _ => "GenericError" }; }
-    private async Task<(string Token, Guid Company)?> Session() { var u = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null; }
+ private const int PageSize=20; private long StatusTotal;
+ private bool Busy,StartBusy; private string Status="",StartError="";
+ private int Page=1; private long Total; private List<QRow> Rows=[]; private Guid? DetailId;
+ private List<SearchableSelectOption> JobOptions=[],TemplateOptions=[];
+ private bool StartOpen; private string FormJob="",FormTemplate="";
+ private BARANG.Core.Application.Quality.QualityAnalyticsView? Analytics;
+ private string? Token; private Guid Company;
+ private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
+ protected override async Task OnInitializedAsync(){var u=(await AuthState.GetAuthenticationStateAsync()).User;Token=u.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await Load();}
+ private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"ar"=>ar,_=>fa};
+ private string St(string s)=>s switch{"InProgress"=>T("در جریان بازرسی","In progress","قيد الفحص"),"Suspended"=>T("معلق","Suspended","معلق"),"ManagementReview"=>T("بررسی مدیریت","Management review","مراجعة الإدارة"),"Approved"=>T("تأییدشده","Approved","معتمد"),"Rejected"=>T("مردود","Rejected","مرفوض"),_=>s};
+ private string Jt(string t)=>t switch{"DesignPreparation"=>T("آماده‌سازی طرح","Design preparation","تجهيز التصميم"),"Print"=>T("چاپ","Print","طباعة"),"HeatPress"=>T("پرس حرارتی","Heat press","كبس حراري"),_=>t};
+ private long AnalyticsInProgress=>Analytics is null?0:Math.Max(0,Analytics.Inspections-Analytics.Approved-Analytics.Rejected-Analytics.Suspended);
+ private long AnalyticsApproved=>Analytics?.Approved??0;
+ private long AnalyticsRejected=>Analytics?.Rejected??0;
+ private long AnalyticsSuspended=>Analytics?.Suspended??0;
+ private List<(string Label,long Count,string Color)> StatusSegments=>new(){(St("InProgress"),AnalyticsInProgress,"#f59e0b"),(St("Suspended"),AnalyticsSuspended,"#ef6b63"),(St("Approved"),AnalyticsApproved,"#22c55e"),(St("Rejected"),AnalyticsRejected,"#dc2626")};
+ private string DonutStyle(){long total=StatusSegments.Sum(x=>x.Count);StatusTotal=total;if(total==0)return "background:conic-gradient(#e2e0ee 0turn 1turn)";double acc=0;var parts=new List<string>();foreach(var seg in StatusSegments){if(seg.Count<=0)continue;double from=acc/(double)total,to=(acc+seg.Count)/(double)total;parts.Add($"{seg.Color} {from:0.####}turn {to:0.####}turn");acc+=seg.Count;}if(parts.Count==0)return "background:conic-gradient(#e2e0ee 0turn 1turn)";return $"background:conic-gradient({string.Join(',',parts)})";}
+ private async Task Load(){if(await Session() is not (string token,Guid company))return;Busy=true;await InvokeAsync(StateHasChanged);try{string q=$"api/v1/quality/inspections?page={Page}&pageSize={PageSize}"+(string.IsNullOrWhiteSpace(Status)?"":$"&status={Status}");var r=await Core.GetAsync(q,token,company,default);Rows.Clear();Total=0;if(r.IsSuccess&&r.Value.TryGetProperty("items",out var items)&&items.ValueKind==JsonValueKind.Array){Rows=items.EnumerateArray().Select(ParseRow).ToList();Total=r.Value.TryGetProperty("total",out var tt)?tt.GetInt64():Rows.Count;}}
+ finally{Busy=false;await InvokeAsync(StateHasChanged);}await LoadAnalytics();}
+ private async Task LoadAnalytics(){if(await Session() is not (string token,Guid company))return;var r=await Core.GetAsync("api/v1/quality/analytics?from=2020-01-01T00:00:00Z&to=2099-01-01T00:00:00Z&top=8",token,company,default);if(r.IsSuccess){var x=r.Value;Analytics=new BARANG.Core.Application.Quality.QualityAnalyticsView(x.TryGetProperty("inspections",out var i)?i.GetInt64():0,x.TryGetProperty("approved",out var ap)?ap.GetInt64():0,x.TryGetProperty("rejected",out var rj)?rj.GetInt64():0,x.TryGetProperty("suspended",out var su)?su.GetInt64():0,x.TryGetProperty("reproductions",out var rp)?rp.GetInt64():0,x.TryGetProperty("topDefects",out var td)&&td.ValueKind==JsonValueKind.Array?td.EnumerateArray().Select(d=>new BARANG.Core.Application.Quality.DefectFrequencyView(Text(d,"code"),Text(d,"name"),d.TryGetProperty("count",out var c)?c.GetInt64():0,d.TryGetProperty("quantity",out var q)?q.GetDecimal():0)).ToList():[]);}else Analytics=null;}
+ private Task FilterChanged(){Page=1;return Load();}
+ private async Task PreviousPage(){if(Page>1){Page--;await Load();}}
+ private async Task NextPage(){if(Page*PageSize<Total){Page++;await Load();}}
+ private void OpenStart(){StartOpen=true;FormJob="";FormTemplate="";StartError="";_ = LoadStartOptions();}
+ private async Task LoadStartOptions(){if(await Session() is not (string token,Guid company))return;var r=await Core.GetAsync("api/v1/production/jobs?status=Completed&pageSize=100",token,company,default);JobOptions.Clear();if(r.IsSuccess&&r.Value.TryGetProperty("items",out var items))foreach(var x in items.EnumerateArray()){string jid=Text(x,"id");string num=Text(x,"orderNumber");string jt=Jt(Text(x,"jobType"));string pos=Text(x,"printPosition");JobOptions.Add(new SearchableSelectOption(jid,$"{num} · {jt} {pos}".Trim()));}
+  var t=await Core.GetAsync("api/v1/quality/templates?includeInactive=false&limit=100",token,company,default);TemplateOptions.Clear();if(t.IsSuccess&&t.Value.ValueKind==JsonValueKind.Array)foreach(var x in t.Value.EnumerateArray())TemplateOptions.Add(new SearchableSelectOption(x.GetProperty("id").GetGuid().ToString(),Text(x,"name")));}
+ private async Task SubmitStart(){if(await Session() is not (string token,Guid company))return;if(!Guid.TryParse(FormJob,out Guid job)||!Guid.TryParse(FormTemplate,out Guid tpl)){StartError=T("انتخاب کار و قالب الزامی است.","Job and template are required.","اختيار العملية والقالب إلزامي.");return;}StartBusy=true;await InvokeAsync(StateHasChanged);try{var r=await Core.SendAsync(HttpMethod.Post,"api/v1/quality/inspections",new{productionJobId=job,templateId=tpl,parentInspectionId=(Guid?)null},token,company,default);if(r.IsSuccess){StartOpen=false;Page=1;await Load();}else StartError=T("شروع بازرسی انجام نشد.","Starting inspection failed.","فشل بدء الفحص.");}finally{StartBusy=false;await InvokeAsync(StateHasChanged);}}
+ private void OpenDetail(string id){DetailId=Guid.TryParse(id,out var g)?g:null;}
+ private void CloseDetail(){DetailId=null;}
+ private async Task<(string Token,Guid Company)?> Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Guid c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t?(t,c):null;}
+ private QRow ParseRow(JsonElement x)=>new(x.GetProperty("id").GetGuid().ToString(),Text(x,"orderNumber"),Text(x,"productTitle"),Text(x,"templateName"),Text(x,"inspectorName"),Text(x,"jobType"),Text(x,"status"),x.TryGetProperty("defectsCount",out var dc)?dc.GetInt32():0,x.TryGetProperty("acceptedQuantity",out var aq)&&aq.ValueKind==JsonValueKind.Number?aq.GetDecimal():0,x.TryGetProperty("rejectedQuantity",out var rj)&&rj.ValueKind==JsonValueKind.Number?rj.GetDecimal():0);
+ private static string Text(JsonElement x,string n)=>x.TryGetProperty(n,out var p)&&p.ValueKind!=JsonValueKind.Null?p.ToString():"";
+ private sealed record QRow(string Id,string OrderNumber,string ProductTitle,string TemplateName,string InspectorName,string JobType,string Status,int DefectsCount,decimal AcceptedQuantity,decimal RejectedQuantity);
 }

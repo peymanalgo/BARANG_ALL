@@ -1,0 +1,144 @@
+@using System.Globalization
+@using System.Text.Json
+@inject IStringLocalizer<AppStrings> L
+@inject IStringLocalizer<CrudStrings> T2
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+<section class="crud-card production-detail" data-quality-detail>
+ <div class="production-detail-head"><h2>@T("اجرای بازرسی","Inspection execution","تنفيذ الفحص") · @St(Status)</h2><div class="row-actions"><span class="wh-badge @(Outcome=="Approved"?"ok":Outcome=="Rejected"?"pending":"none")">@OutLabel(Outcome)</span><button type="button" class="btn btn-secondary btn-small" @onclick="Close">@T2["Cancel"]</button></div></div>
+ <div class="form-grid production-spec">
+  <label><span>@L["Module_orders"]</span><input value="@OrderNumber" readonly /></label>
+  <label><span>@T("محصول","Product","المنتج")</span><input value="@ProductTitle" readonly /></label>
+  <label><span>@T("قالب چک‌لیست","Checklist template","قالب الفحص")</span><input value="@TemplateName" readonly /></label>
+  <label><span>@T("نوع کار","Job type","النوع")</span><input value="@Jt(JobType)" readonly /></label>
+  <label><span>@T("بازرس","Inspector","الفاحص")</span><input value="@InspectorName" readonly /></label>
+  <label><span>@T("مقدار قابل بازرسی","Inspectable qty","الكمية القابلة للفحص")</span><input value="@Inspectable.ToString("0.#",CultureInfo.InvariantCulture)" readonly /></label>
+ </div>
+ @if(LoadError is not null){<div class="inline-error" role="alert">@LoadError</div>}
+ @if(!string.IsNullOrWhiteSpace(DecisionError)){<div class="inline-error" role="alert">@DecisionError</div>}
+ @if(!string.IsNullOrWhiteSpace(DecisionMessage)){<div class="inline-success">@DecisionMessage</div>}
+ @if(Loaded){
+  @if(Status is "InProgress" or "ManagementReview"){
+   <h3>@T("چک‌لیست بازرسی","Inspection checklist","قائمة الفحص")</h3>
+   @if(Criteria.Count==0){<p class="field-help">@T("قالب بدون معیار است.","Template has no criteria.","القالب بلا معايير.")</p>}
+   else{<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("معیار","Criterion","المعيار")</th><th>@T("نوع","Type","النوع")</th><th>@T("نتیجه","Result","النتيجة")</th><th></th></tr></thead><tbody>
+    @foreach(var c in Criteria){
+     <tr class="@(RecordedIds.Contains(c.CriterionId)?"is-selected":null)">
+      <td>@c.Name <small dir="ltr" class="prod-code">@c.Code</small>@if(c.Required){<span class="wh-badge pending">*</span>}</td>
+      <td>@Ct(c.Type)</td>
+      <td>@if(c.Type=="PassFail"){<select class="qc-input" @bind="Pass"><option value="">@T("انتخاب","Select","اختر")</option><option value="pass">@T("قبول","Pass","نجاح")</option><option value="fail">@T("رد","Fail","فشل")</option></select>}else{<input class="qc-input" @bind="ValueText" placeholder="@Hint" />}@(c.Type=="Numeric"?RangeNote:null)</td>
+      <td><BarangIconButton Icon="check" Semantic="success" Label="@T("ثبت","Record","تسجيل")" Disabled="@(RecordedIds.Contains(c.CriterionId)||Busy)" Clicked="@(()=>Record(c))" /></td>
+     </tr>
+    }
+   </tbody></table></div>
+   <div class="form-actions"><BarangIconButton Icon="plus" Semantic="warning" Label="@T("ثبت عیب","Record defect","تسجيل خلل")" Disabled="@Busy" Clicked="StartDefect" /></div>
+   @if(Defects.Count>0){<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("نوع عیب","Defect type","نوع الخلل")</th><th>@T("مقدار","Qty","الكمية")</th><th>@T("شدت","Severity","الشدة")</th><th>@T("یادداشت","Notes","ملاحظات")</th></tr></thead><tbody>@foreach(var d in Defects){<tr><td>@d.Name</td><td>@d.Quantity.ToString("0.#",CultureInfo.InvariantCulture)</td><td>@d.Severity</td><td>@(d.Notes??"—")</td></tr>}</tbody></table></div>}
+   <h3>@T("تخصیص مقادیر (Disposition)","Disposition","توزيع الكميات")</h3>
+   <div class="form-grid">
+    <label><span>@T("قبول","Accepted","مقبول")</span><input type="number" step="0.01" min="0" @bind="DispAccepted" /></label>
+    <label><span>@T("مردود","Rejected","مرفوض")</span><input type="number" step="0.01" min="0" @bind="DispRejected" /></label>
+    <label><span>@T("درخواست بازتولید","Reproduction required","إعادة إنتاج مطلوبة")</span><input type="number" step="0.01" min="0" @bind="DispRepro" /></label>
+    <label><span>@T("دلیل قبول","Accepted reason","سبب القبول")</span><input @bind="DispAcceptedReason" /></label>
+    <label><span>@T("دلیل مردودی","Rejected reason","سبب الرفض")</span><input @bind="DispRejectedReason" /></label>
+    <label><span>@T("دلیل بازتولید","Reproduction reason","سبب إعادة الإنتاج")</span><input @bind="DispReproReason" /></label>
+   </div>
+   <div class="form-actions"><button type="button" class="btn btn-primary" disabled="@Busy" @onclick="SaveDisposition">@T("ثبت تخصیص","Save disposition","حفظ التوزيع")</button></div>
+   <h3>@T("تصمیم کیفی","Quality decision","القرار النوعي")</h3>
+   <div class="form-actions production-actions">
+    <button type="button" class="btn btn-primary" disabled="@Busy" @onclick="Approve"><BarangIcon Name="check" /> @T("تأیید بازرسی","Approve","اعتماد")</button>
+    <button type="button" class="btn btn-danger" disabled="@Busy" @onclick="Reject"><BarangIcon Name="close" /> @T("رد بازرسی","Reject","رفض")</button>
+    <button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="Suspend"><BarangIcon Name="minus" /> @T("تعلیق","Suspend","إيقاف")</button>
+    <button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="Review"><BarangIcon Name="eye" /> @T("ارجاع به بررسی مدیریت","Management review","مراجعة الإدارة")</button>
+   </div>
+   @if(Status=="Rejected"&&!ReproRequested){<div class="form-actions"><BarangIconButton Icon="refresh" Semantic="warning" Label="@T("درخواست بازتولید","Request reproduction","طلب إعادة إنتاج")" Disabled="@Busy" Clicked="StartRepro" /></div>}
+   @if(ReproRequested){<div class="form-grid"><label class="span-2"><span>@T("درخواست بازتولید ثبت شد — ایجاد کارهای تولید","Reproduction requested — create production jobs","تم طلب إعادة الإنتاج — إنشاء أعمال الإنتاج")</span><div class="form-actions"><button type="button" class="btn btn-primary" disabled="@Busy||ReproJobsCreated" @onclick="CreateReproJobs">@(ReproJobsCreated?T("کارها ساخته شد","Jobs created","تم الإنشاء"):T("ایجاد کارهای بازتولید","Create reproduction jobs","إنشاء أعمال إعادة الإنتاج"))</button></div></label></div>}
+  }
+  <h3>@L["Timeline"]</h3>
+  @if(History.Count==0){<p class="field-help">@L["NoRecords"]</p>}else{<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("رویداد","Event","الحدث")</th><th>@T("زمان","When","الوقت")</th><th>@T("شرح","Summary","الوصف")</th></tr></thead><tbody>@foreach(var h in History){<tr><td>@h.EventType</td><td>@Dates.Format(h.At,CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)</td><td>@(h.Summary??"—")</td></tr>}</tbody></table></div>}
+ }
+}
+</section>
+
+<BarangModal Open="@DefectOpen" Title="@T("ثبت عیب","Record defect","تسجيل خلل")" Size="medium" ShowCloseButton="true" CloseRequested="()=>DefectOpen=false">
+ <ChildContent><div class="form-grid single">
+  <label><span>@T("نوع عیب","Defect type","نوع الخلل")</span><SearchableSelect Name="qc-defect-type" Options="@DefectOptions" @bind-Value="FormDefectType" Placeholder="@SelectPlaceholder" /></label>
+  <label><span>@T("مقدار","Quantity","الكمية")</span><input type="number" step="0.01" min="0.01" @bind="FormDefectQty" /></label>
+  <label><span>@T("شدت","Severity","الشدة")</span><select @bind="FormDefectSeverity"><option value="Minor">@T("جزئی","Minor","بسيط")</option><option value="Major">@T("اساسی","Major","رئيسي")</option><option value="Critical">@T("بحرانی","Critical","حرج")</option></select></label>
+  <label><span>@T("یادداشت","Notes","ملاحظات")</span><input @bind="FormDefectNotes" /></label>
+  @if(!string.IsNullOrWhiteSpace(ActionError)){<div class="inline-error" role="alert">@ActionError</div>}
+ </div></ChildContent>
+ <Footer><button type="button" class="btn btn-secondary" @onclick="()=>DefectOpen=false">@T2["Cancel"]</button><button type="button" class="btn btn-primary" disabled="@Busy" @onclick="SubmitDefect">@T2["Save"]</button></Footer>
+</BarangModal>
+
+<BarangModal Open="@ReasonOpen" Title="@ReasonTitle" Size="small" ShowCloseButton="true" CloseRequested="()=>ReasonOpen=false">
+ <ChildContent><div class="form-grid single">
+  <label><span>@T("دلیل (الزامی)","Reason (required)","السبب (إلزامي)")</span><input @bind="FormReason" /></label>
+  @if(!string.IsNullOrWhiteSpace(ActionError)){<div class="inline-error" role="alert">@ActionError</div>}
+ </div></ChildContent>
+ <Footer><button type="button" class="btn btn-secondary" @onclick="()=>ReasonOpen=false">@T2["Cancel"]</button><button type="button" class="btn btn-primary" disabled="@Busy" @onclick="SubmitReason">@T2["Save"]</button></Footer>
+</BarangModal>
+
+<BarangModal Open="@ReproOpen" Title="@T("درخواست بازتولید","Request reproduction","طلب إعادة إنتاج")" Size="small" ShowCloseButton="true" CloseRequested="()=>ReproOpen=false">
+ <ChildContent><div class="form-grid single">
+  <label><span>@T("مرحله بازتولید","Reproduction stage","مرحلة إعادة الإنتاج")</span><select @bind="FormReproStage"><option value="Print">@T("چاپ","Print","طباعة")</option><option value="HeatPress">@T("پرس حرارتی","Heat press","كبس حراري")</option><option value="DesignPreparation">@T("آماده‌سازی طرح","Design preparation","تجهيز التصميم")</option><option value="FullItem">@T("کل آیتم","Full item","الصنف كاملاً")</option></select></label>
+  <label><span>@T("مقدار","Quantity","الكمية")</span><input type="number" step="0.01" min="0.01" @bind="FormReproQty" /></label>
+  <label><span>@T("دلیل","Reason","السبب")</span><input @bind="FormReason" /></label>
+  @if(!string.IsNullOrWhiteSpace(ActionError)){<div class="inline-error" role="alert">@ActionError</div>}
+ </div></ChildContent>
+ <Footer><button type="button" class="btn btn-secondary" @onclick="()=>ReproOpen=false">@T2["Cancel"]</button><button type="button" class="btn btn-primary" disabled="@Busy" @onclick="SubmitRepro">@T2["Save"]</button></Footer>
+</BarangModal>
+
+@code {
+ private static Guid NullGuid(System.Text.Json.JsonElement x,string n)=>x.TryGetProperty(n,out var p)&&p.ValueKind==System.Text.Json.JsonValueKind.String&&Guid.TryParse(p.GetString(),out var g)?g:Guid.Empty;
+ [Parameter] public Guid InspectionId { get; set; }
+ [Parameter] public string Token { get; set; } = "";
+ [Parameter] public Guid Company { get; set; }
+ [Parameter] public EventCallback OnChanged { get; set; }
+ [Parameter] public EventCallback OnClose { get; set; }
+ private bool Busy; private string Status="InProgress",Outcome="Pending",OrderNumber="",ProductTitle="",TemplateName="",InspectorName="",JobType="";
+ private string? LoadError,DecisionError,DecisionMessage,ActionError;
+ private decimal Inspectable,DispAccepted,DispRejected,DispRepro; private long DispositionVersion;
+ private string DispAcceptedReason="",DispRejectedReason="",DispReproReason="";
+ private List<CriteriaRow> Criteria=[]; private List<RecRow> Recorded=[]; private List<DefRow> Defects=[]; private List<HistoryRow> History=[];
+ private HashSet<Guid> RecordedIds=new();
+ private bool DefectOpen,ReasonOpen,ReproOpen; private string FormDefectType="",FormDefectSeverity="Minor",FormDefectNotes="",FormReason="",FormReproStage="Print"; private decimal FormDefectQty=1,FormReproQty=1;
+ private List<SearchableSelectOption> DefectOptions=[];
+ private bool ReproRequested,ReproJobsCreated; private Guid? ReproId;
+ private Guid CriterionPending; private Guid TemplateId; private long Version; private bool Loaded;
+ private string Pass=""; private string ValueText="";
+ private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
+ private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"ar"=>ar,_=>fa};
+ private string St(string s)=>s switch{"InProgress"=>T("در جریان بازرسی","In progress","قيد الفحص"),"Suspended"=>T("معلق","Suspended","معلق"),"ManagementReview"=>T("بررسی مدیریت","Management review","مراجعة الإدارة"),"Approved"=>T("تأییدشده","Approved","معتمد"),"Rejected"=>T("مردود","Rejected","مرفوض"),_=>s};
+ private string Jt(string t)=>t switch{"DesignPreparation"=>T("آماده‌سازی طرح","Design preparation","تجهيز التصميم"),"Print"=>T("چاپ","Print","طباعة"),"HeatPress"=>T("پرس حرارتی","Heat press","كبس حراري"),_=>t};
+ private string Ct(string t)=>t switch{"PassFail"=>T("قبول/رد","Pass/Fail","نجاح/فشل"),"Numeric"=>T("عددی","Numeric","رقمي"),"Text"=>T("متنی","Text","نصي"),"Choice"=>T("انتخابی","Choice","اختيار"),_=>t};
+ private string OutLabel(string o)=>o switch{"Approved"=>T("تأیید کیفی","Approved","معتمد"),"Rejected"=>T("مردود کیفی","Rejected","مرفوض"),_=>T("در انتظار تصمیم","Pending decision","قرار معلق")};
+ private string Hint=>CriterionPending==Guid.Empty?"":(Criteria.FirstOrDefault(c=>c.CriterionId==CriterionPending)?.Type=="Numeric"?"عدد":"مقدار");
+ private string? RangeNote=>CriterionPending==Guid.Empty?null:(Criteria.FirstOrDefault(c=>c.CriterionId==CriterionPending) is { } c?(c.Min is null&&c.Max is null?null:"["+ (c.Min?.ToString("0.#",CultureInfo.InvariantCulture)??"-")+" .. "+(c.Max?.ToString("0.#",CultureInfo.InvariantCulture)??"-")+"]"):null);
+ protected override async Task OnParametersSetAsync()=>await Load();
+ private async Task Load(){try{var r=await Core.GetAsync($"api/v1/quality/inspections/{InspectionId}",Token,Company,default);if(!r.IsSuccess){LoadError=T("بارگذاری بازرسی انجام نشد.","Loading inspection failed.","فشل تحميل الفحص.");return;}var x=r.Value;Status=Text(x,"status");Outcome=Text(x,"outcome");OrderNumber=Text(x,"orderNumber");ProductTitle=Text(x,"productTitle");TemplateName=Text(x,"templateName");InspectorName=Text(x,"inspectorName");JobType=Text(x,"jobType");Inspectable=x.TryGetProperty("inspectableQuantity",out var iq)&&iq.ValueKind==JsonValueKind.Number?iq.GetDecimal():0;DispositionVersion=x.TryGetProperty("dispositionVersion",out var dv)&&dv.ValueKind==JsonValueKind.Number?dv.GetInt64():0;if(x.TryGetProperty("disposition",out var dd)&&dd.ValueKind==JsonValueKind.Object){DispAccepted=dd.TryGetProperty("acceptedQuantity",out var a)?a.GetDecimal():0;DispRejected=dd.TryGetProperty("rejectedQuantity",out var r2)?r2.GetDecimal():0;DispRepro=dd.TryGetProperty("reproductionRequiredQuantity",out var rp)?rp.GetDecimal():0;DispAcceptedReason=Text(dd,"acceptedReason");DispRejectedReason=Text(dd,"rejectedReason");DispReproReason=Text(dd,"reproductionReason");}TemplateId=NullGuid(x,"templateId");Version=x.TryGetProperty("version",out var vv)?vv.GetInt64():0;LoadError=null;Loaded=true;}catch(Exception ex){LoadError=ex.Message;}
+  var results=await Core.GetAsync($"api/v1/quality/inspections/{InspectionId}/results",Token,Company,default);Recorded.Clear();RecordedIds.Clear();if(results.IsSuccess&&results.Value.ValueKind==JsonValueKind.Array)foreach(var x in results.Value.EnumerateArray()){Guid cid=x.GetProperty("templateCriterionId").GetGuid();RecordedIds.Add(cid);Recorded.Add(new RecRow(cid,Text(x,"criterionName"),Text(x,"criterionCode")));}
+  var defects=await Core.GetAsync($"api/v1/quality/inspections/{InspectionId}/defects",Token,Company,default);Defects.Clear();if(defects.IsSuccess&&defects.Value.ValueKind==JsonValueKind.Array)foreach(var x in defects.Value.EnumerateArray())Defects.Add(new DefRow(Guid.Empty,Text(x,"defectTypeName"),x.TryGetProperty("quantity",out var q)?q.GetDecimal():0,Text(x,"severity"),Text(x,"notes")));
+  var templates=await Core.GetAsync("api/v1/quality/templates?includeInactive=true&limit=200",Token,Company,default);Criteria.Clear();if(templates.IsSuccess&&templates.Value.ValueKind==JsonValueKind.Array){var match=templates.Value.EnumerateArray().FirstOrDefault(x=>x.GetProperty("id").GetGuid()==TemplateId);if(match.ValueKind==JsonValueKind.Object&&match.TryGetProperty("criteria",out var cr)&&cr.ValueKind==JsonValueKind.Array)Criteria=cr.EnumerateArray().Select(c=>new CriteriaRow(Guid.Parse(Text(c,"id")),Text(c,"code"),Text(c,"name"),Text(c,"criterionType"),c.TryGetProperty("isRequired",out var rq)&&rq.GetBoolean(),c.TryGetProperty("minimumValue",out var mn)&&mn.ValueKind==JsonValueKind.Number?mn.GetDecimal():(decimal?)null,c.TryGetProperty("maximumValue",out var mx)&&mx.ValueKind==JsonValueKind.Number?mx.GetDecimal():(decimal?)null,c.TryGetProperty("sortOrder",out var so)?so.GetInt32():0)).OrderBy(c=>c.Sort).ToList();}
+  History.Clear();var hist=await Core.GetAsync($"api/v1/quality/inspections/{InspectionId}/history?pageSize=100",Token,Company,default);if(hist.IsSuccess&&hist.Value.ValueKind==JsonValueKind.Array)foreach(var x in hist.Value.EnumerateArray())History.Add(new HistoryRow(Text(x,"eventType"),x.GetProperty("occurredAtUtc").GetDateTimeOffset(),Text(x,"summary")));}
+ private string Text(JsonElement x,string n)=>x.TryGetProperty(n,out var p)&&p.ValueKind!=JsonValueKind.Null?p.ToString():"";
+ private async Task ReloadAll()=>await Load();
+ private async Task Record(CriteriaRow c){bool? pass=null;decimal? num=null;string? txt=null;string? choice=null;if(c.Type=="PassFail")pass=Pass=="pass"?true:Pass=="fail"?false:null;else if(c.Type=="Numeric"){if(!decimal.TryParse(ValueText,CultureInfo.InvariantCulture,out var parsed)){DecisionError=T("مقدار عددی نامعتبر.","Invalid numeric value.","قيمة رقمية غير صالحة.");return;}num=parsed;}else if(c.Type=="Choice")choice=ValueText;else txt=ValueText;Busy=true;DecisionError="";await InvokeAsync(StateHasChanged);try{var r=await Core.SendAsync(HttpMethod.Post,$"api/v1/quality/inspections/{InspectionId}/results",new{criterionId=c.CriterionId,passFailValue=pass,numericValue=num,textValue=txt,choiceCode=choice},Token,Company,default);if(r.IsSuccess){CriterionPending=c.CriterionId;await ReloadAll();}else DecisionError=T("ثبت نتیجه انجام نشد (مقدار یا بازه را بررسی کنید).","Recording failed (check value or range).","فشل التسجيل (تحقق من القيمة أو النطاق).");}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private async Task StartDefect(){DefectOpen=true;FormDefectType="";FormDefectQty=1;FormDefectSeverity="Minor";FormDefectNotes="";ActionError="";if(DefectOptions.Count==0){var r=await Core.GetAsync("api/v1/reference-entities/defect.type/values",Token,Company,default);if(r.IsSuccess&&r.Value.ValueKind==JsonValueKind.Array)foreach(var x in r.Value.EnumerateArray())DefectOptions.Add(new SearchableSelectOption(x.GetProperty("id").GetString()??"",Text(x,"displayName")));}await InvokeAsync(StateHasChanged);}
+ private async Task SubmitDefect(){if(!Guid.TryParse(FormDefectType,out var dt)||FormDefectQty<=0){ActionError=T("نوع عیب و مقدار الزامی است.","Defect type and quantity are required.","نوع الخلل والكمية إلزاميان.");return;}Busy=true;ActionError="";await InvokeAsync(StateHasChanged);try{var r=await Core.SendAsync(HttpMethod.Post,$"api/v1/quality/inspections/{InspectionId}/defects",new{criteriaResultId=(Guid?)null,defectTypeId=dt,quantity=FormDefectQty,severity=FormDefectSeverity,notes=string.IsNullOrWhiteSpace(FormDefectNotes)?null:FormDefectNotes,evidenceFileVersionId=(Guid?)null},Token,Company,default);if(r.IsSuccess){DefectOpen=false;await ReloadAll();}else ActionError=T("ثبت عیب انجام نشد.","Recording defect failed.","فشل تسجيل الخلل.");}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private async Task SaveDisposition(){Busy=true;DecisionError="";DecisionMessage="";await InvokeAsync(StateHasChanged);try{var r=await Core.SendAsync(HttpMethod.Put,$"api/v1/quality/inspections/{InspectionId}/disposition",new{acceptedQuantity=DispAccepted,rejectedQuantity=DispRejected,reproductionRequiredQuantity=DispRepro,acceptedReason=string.IsNullOrWhiteSpace(DispAcceptedReason)?"قبول":DispAcceptedReason,rejectedReason=string.IsNullOrWhiteSpace(DispRejectedReason)?null:DispRejectedReason,reproductionReason=string.IsNullOrWhiteSpace(DispReproReason)?null:DispReproReason,version=DispositionVersion},Token,Company,default);if(r.IsSuccess){DecisionMessage=T("تخصیص مقادیر ثبت شد.","Disposition saved.","تم حفظ التوزيع.");await ReloadAll();}else DecisionError=T("ثبت تخصیص انجام نشد (مجموع مقادیر باید برابر مقدار قابل بازرسی باشد).","Disposition failed (sum must equal inspectable quantity).","فشل التوزيع (المجموع يجب أن يساوي الكمية).");}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private async Task Approve(){Busy=true;DecisionError="";DecisionMessage="";await InvokeAsync(StateHasChanged);try{var r=await Core.SendAsync(HttpMethod.Post,$"api/v1/quality/inspections/{InspectionId}/approve",new{version=Version},Token,Company,default);if(r.IsSuccess)DecisionMessage=T("بازرسی تأیید شد.","Inspection approved.","تم اعتماد الفحص.");else DecisionError=T("تأیید انجام نشد؛ معیارهای الزامی ثبت و عیوب بازکننده رفع شده باشند.","Approve failed; required criteria must be recorded and blocking defects resolved.","فشل الاعتماد؛ سجل المعايير الإلزامية وحل العيوب المانعة.");await ReloadAll();}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private async Task Reject(){ReasonOpen=true;ReasonTitle=T("رد بازرسی","Reject inspection","رفض الفحص");ReasonAction="reject";FormReason="";ActionError="";}
+ private async Task Suspend(){ReasonOpen=true;ReasonTitle=T("تعلیق بازرسی","Suspend inspection","إيقاف الفحص");ReasonAction="suspend";FormReason="";ActionError="";}
+ private async Task Review(){ReasonOpen=true;ReasonTitle=T("ارجاع به بررسی مدیریت","Management review","مراجعة الإدارة");ReasonAction="review";FormReason="";ActionError="";}
+ private async Task SubmitReason(){if(string.IsNullOrWhiteSpace(FormReason)){ActionError=T("دلیل الزامی است.","Reason is required.","السبب إلزامي.");return;}Busy=true;ActionError="";await InvokeAsync(StateHasChanged);try{var r=await Core.SendAsync(HttpMethod.Post,$"api/v1/quality/inspections/{InspectionId}/{ReasonAction}",new{reason=FormReason,version=Version},Token,Company,default);if(r.IsSuccess){ReasonOpen=false;await ReloadAll();}else ActionError=T("عملیات انجام نشد.","Operation failed.","فشلت العملية.");}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private string ReasonAction=""; private string ReasonTitle="";
+ private async Task StartRepro(){ReproOpen=true;FormReproStage="Print";FormReproQty=DispRepro>0?DispRepro:1;FormReason="";ActionError="";}
+ private async Task SubmitRepro(){Busy=true;ActionError="";await InvokeAsync(StateHasChanged);try{var r=await Core.SendAsync(HttpMethod.Post,$"api/v1/quality/inspections/{InspectionId}/reproduction",new{requestedStage=FormReproStage,quantity=FormReproQty,reason=FormReason},Token,Company,default);if(r.IsSuccess&&r.Value.TryGetProperty("id",out var id)){ReproId=id.GetGuid();ReproRequested=true;ReproOpen=false;}else ActionError=T("درخواست بازتولید انجام نشد.","Reproduction request failed.","فشل طلب إعادة الإنتاج.");}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private async Task CreateReproJobs(){if(ReproId is null)return;Busy=true;ActionError="";await InvokeAsync(StateHasChanged);try{var r=await Core.SendAsync(HttpMethod.Post,$"api/v1/quality/reproductions/{ReproId}/jobs",new{version=1},Token,Company,default);ReproJobsCreated=r.IsSuccess;if(!r.IsSuccess)ActionError=T("ایجاد کارهای بازتولید انجام نشد.","Creating reproduction jobs failed.","فشل إنشاء أعمال إعادة الإنتاج.");else await OnChanged.InvokeAsync();}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private async Task Close(){await OnClose.InvokeAsync();}
+ private sealed record CriteriaRow(Guid CriterionId,string Code,string Name,string Type,bool Required,decimal? Min,decimal? Max,int Sort);
+ private sealed record RecRow(Guid CriterionId,string Name,string Code);
+ private sealed record DefRow(Guid Id,string Name,decimal Quantity,string Severity,string? Notes);
+ private sealed record HistoryRow(string EventType,DateTimeOffset At,string? Summary);
+}

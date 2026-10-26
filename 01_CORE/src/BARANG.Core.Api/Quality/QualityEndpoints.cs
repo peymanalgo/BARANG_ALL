@@ -1,9 +1,10 @@
 using BARANG.Core.Api.Errors;
 using BARANG.Core.Application.Quality;
-using BARANG.Core.Domain.Common;
+using BARANG.Core.Domain.Common;using BARANG.Core.Domain.Quality;
 using BARANG.Core.Domain.Security;
 
 namespace BARANG.Core.Api.Quality;
+public sealed record QualityInspectionListRequest(QCInspectionStatus? Status,Guid? OrderId,Guid? ProductionJobId,Guid? InspectorUserId,int? Page,int? PageSize){public QualityInspectionQuery Query()=>new(Status,OrderId,ProductionJobId,InspectorUserId,Page??1,PageSize??20);}
 
 public static class QualityEndpoints
 {
@@ -25,7 +26,7 @@ public static class QualityEndpoints
         r.MapPost("/inspections/{id:guid}/suspend", async (Guid id, QualityReasonCommand c, IQualityAdministration s, CancellationToken ct) => Map(await s.SuspendAsync(id, c, ct))).RequireAuthorization(SecurityPermissions.QCInspect);
         r.MapPost("/inspections/{id:guid}/review", async (Guid id, QualityReasonCommand c, IQualityAdministration s, CancellationToken ct) => Map(await s.ReviewAsync(id, c, ct))).RequireAuthorization(SecurityPermissions.QCReview);
         r.MapPost("/inspections/{id:guid}/reject", async (Guid id, QualityReasonCommand c, IQualityAdministration s, CancellationToken ct) => Map(await s.RejectAsync(id, c, ct))).RequireAuthorization(SecurityPermissions.QCReview);
-        r.MapPost("/inspections/{id:guid}/reproduction", async (Guid id, CreateReproductionCommand c, IQualityAdministration s, CancellationToken ct) => Map(await s.RequestReproductionAsync(id, c, ct), true)).RequireAuthorization(SecurityPermissions.ReproductionManage);
+        r.MapGet("/inspections",async([AsParameters]QualityInspectionListRequest q,IQualityAdministration s,CancellationToken ct)=>Map(await s.ListInspectionsAsync(q.Query(),ct)));r.MapGet("/inspections/{id:guid}/results",async(Guid id,IQualityAdministration s,CancellationToken ct)=>Map(await s.ResultsAsync(id,ct)));r.MapGet("/inspections/{id:guid}/defects",async(Guid id,IQualityAdministration s,CancellationToken ct)=>Map(await s.DefectsAsync(id,ct)));r.MapPost("/inspections/{id:guid}/reproduction", async (Guid id, CreateReproductionCommand c, IQualityAdministration s, CancellationToken ct) => Map(await s.RequestReproductionAsync(id, c, ct), true)).RequireAuthorization(SecurityPermissions.ReproductionManage);
         r.MapPost("/reproductions/{id:guid}/jobs", async (Guid id, QualityVersionCommand c, IQualityAdministration s, CancellationToken ct) => Map(await s.CreateReproductionJobsAsync(id, c.Version, ct), true)).RequireAuthorization(SecurityPermissions.ReproductionManage);
         r.MapGet("/history/{entityId:guid}", async (Guid entityId, IQualityAdministration s, CancellationToken ct) => Map(await s.HistoryAsync(entityId, ct))).RequireAuthorization(SecurityPermissions.QCRead);
         r.MapGet("/analytics", async (DateTimeOffset from, DateTimeOffset to, int? top, IQualityAdministration s, CancellationToken ct) => Map(await s.AnalyticsAsync(from, to, top ?? 10, ct))).RequireAuthorization(SecurityPermissions.QCRead);
