@@ -72,6 +72,19 @@ public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExec
         Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t);
         return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.png", derivative.MediaType, derivative.SizeBytes, content));
     }, ct);
+    public Task<Result<DownloadFile>> GetOriginalArtworkAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        Artwork? artwork = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(x => x.Id == artworkId, t);
+        if (artwork is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        Guid? fileVersionId = artwork.CurrentVersionId is Guid currentId ? (await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentId && x.ArtworkId == artworkId, t))?.FileVersionId : null;
+        fileVersionId ??= await db.ArtworkVersions.AsNoTracking().Where(x => x.ArtworkId == artworkId).OrderByDescending(x => x.VersionNumber).Select(x => x.FileVersionId).FirstOrDefaultAsync(t);
+        if (fileVersionId is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        FileVersion? file = await db.FileVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == fileVersionId, t);
+        if (file is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        Stream? content = await storage.OpenReadAsync(file.StorageKey, t);
+        if (content is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        return Result.Success(new DownloadFile(file.OriginalFileName, file.MediaType, file.SizeBytes, content));
+    }, ct);
     public Task<Result<ArtworkTagView>> CreateTagAsync(string code, string name, CancellationToken ct) => tx.ExecuteAsync(async t => { Result<ArtworkTag> x = ArtworkTag.Create(Guid.NewGuid(), Company, code, name, Now); if (x.IsFailure) return Result.Failure<ArtworkTagView>(x.Error); if (await db.ArtworkTags.AnyAsync(a => a.Code == x.Value.Code, t)) return Result.Failure<ArtworkTagView>(FileErrors.DuplicateCode); db.ArtworkTags.Add(x.Value); Log("artwork.tag.created", "artwork_tag", x.Value.Id); return Result.Success(T(x.Value)); }, ct);
     public Task<Result<ArtworkTagView>> UpdateTagAsync(Guid id, string name, bool active, long version, CancellationToken ct) => tx.ExecuteAsync(async t => { ArtworkTag? x = await db.ArtworkTags.SingleOrDefaultAsync(a => a.Id == id, t); if (x is null) return Result.Failure<ArtworkTagView>(FileErrors.NotFound); if (x.Version != version) return Result.Failure<ArtworkTagView>(FileErrors.Concurrency); Result r = x.Update(name, active, Now); return r.IsFailure ? Result.Failure<ArtworkTagView>(r.Error) : Result.Success(T(x)); }, ct);
     public Task<Result<ArtworkTagAssignmentView>> AssignTagAsync(Guid artworkId, Guid tagId, CancellationToken ct) => tx.ExecuteAsync(async t => { if (!await db.Artworks.AnyAsync(x => x.Id == artworkId, t) || !await db.ArtworkTags.AnyAsync(x => x.Id == tagId, t)) return Result.Failure<ArtworkTagAssignmentView>(FileErrors.CrossCompany); if (await db.ArtworkTagAssignments.AnyAsync(x => x.ArtworkId == artworkId && x.TagId == tagId, t)) return Result.Failure<ArtworkTagAssignmentView>(FileErrors.DuplicateAssignment); ArtworkTagAssignment x = ArtworkTagAssignment.Create(Company, artworkId, tagId, Actor, Now); db.ArtworkTagAssignments.Add(x); Log("artwork.tag.assigned", "artwork", artworkId); return Result.Success(new ArtworkTagAssignmentView(x.Id, x.ArtworkId, x.TagId, x.IsActive)); }, ct);

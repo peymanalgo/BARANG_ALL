@@ -10,6 +10,7 @@
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
 @inject LocaleDateService Dates
+@inject IJSRuntime JS
 
 <PageTitle>@N["Nav_ArtworkBank"]</PageTitle>
 <nav class="breadcrumbs"><span>@L["Module_master-data"]</span><span>/</span><span>@N["Nav_ArtworkBank"]</span></nav>
@@ -42,8 +43,8 @@
 </BarangModal>
 <BarangConfirmDialog Open="@CloseConfirmOpen" Title="@UnsavedTitle" Description="@UnsavedDescription" CancelText="@KeepEditingText" ConfirmText="@DiscardChangesText" Cancel="KeepEditing" Confirm="DiscardAndClose" />
 
-<BarangModal Open="@ViewerOpen" Title="@D["Viewer"]" Size="extra-large" ShowCloseButton="false" CloseRequested="CloseViewer">
- <ChildContent><section class="design-viewer" role="document">@if(ViewerBusy){<BarangLoadingState Text="@L["Loading"]" />}else if(ViewerSource is null){<p class="inline-error" role="alert">@D["ViewerFailed"]</p>}else{<img src="@ViewerSource" class="design-viewer-image" alt="@D["FullPreview"]" />}</section></ChildContent>
+<BarangModal Open="@ViewerOpen" Title="@D["Viewer"]" Size="extra-large" CssClass="design-viewer-modal" ShowCloseButton="false" CloseRequested="CloseViewer">
+ <ChildContent><section class="design-viewer" role="document">@if(ViewerBusy){<BarangLoadingState Text="@L["Loading"]" />}else if(ViewerNotDisplayable){<p class="inline-error" role="alert">@D["NotDisplayable"]</p>}else if(ViewerSource is null){<p class="inline-error" role="alert">@D["ViewerFailed"]</p>}else{<img src="@ViewerSource" class="design-viewer-image" alt="@D["FullPreview"]" />}</section></ChildContent>
  <Footer><button type="button" class="btn btn-secondary" @onclick="CloseViewer">@L["Cancel"]</button></Footer>
 </BarangModal>
 
@@ -60,7 +61,7 @@
      @foreach(var m in ConceptMatches){
       <article class="concept-card" data-artwork-id="@m.Id">
        <div class="concept-thumb"><DesignThumbnail DesignId="@m.Id" Token="@Token" CompanyId="@Company" Clicked="@(()=>OpenViewer(m.Id))" /></div>
-       <div class="concept-info"><strong class="concept-title">@m.Title</strong><span class="concept-meta" dir="ltr">@m.Code</span><span class="concept-meta">@m.CategoryName</span>@if(m.Formats.Count>0){<span class="concept-formats">@string.Join(" · ",m.Formats)</span>}</div>
+       <div class="concept-info"><strong class="concept-title">@m.Title</strong><div class="concept-code-row"><span class="concept-meta" dir="ltr">@m.Code</span><button type="button" class="copy-code-button" title="@D["CopyCode"]" aria-label="@D["CopyCode"]" @onclick="()=>CopyCode(m.Code)"><BarangIcon Name="copy" /></button>@if(CopiedCode==m.Code){<span class="copy-feedback" role="status">@D["CodeCopied"]</span>}</div><span class="concept-meta">@m.CategoryName</span>@if(m.Formats.Count>0){<span class="concept-formats">@string.Join(" · ",m.Formats)</span>}</div>
        <div class="match-bar @BandClass(m.Score)" role="img" aria-label="@MatchLabel(m.Score)"><div class="match-fill" style="width:@(Math.Clamp(m.Score,0,100))%"></div></div>
        <span class="match-score @BandClass(m.Score)">@MatchLabel(m.Score)</span>
       </article>
@@ -87,7 +88,8 @@
     private static Guid? GuidValue(JsonElement row,string name)=>row.TryGetProperty(name,out var p)&&p.ValueKind==JsonValueKind.String&&Guid.TryParse(p.GetString(),out var id)?id:null; private string RefLabel(string key)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en"=>key switch {"subcategory"=>"Design subgroup","type"=>"Design type","style"=>"Design style","theme"=>"Design subject","audience"=>"Design audience","license"=>"License type",_=>"Usage type"}, "ar"=>key switch {"subcategory"=>"الفئة الفرعية للتصميم","type"=>"نوع التصميم","style"=>"نمط التصميم","theme"=>"موضوع التصميم","audience"=>"جمهور التصميم","license"=>"نوع الترخيص",_=>"نوع الاستخدام"}, _=>key switch {"subcategory"=>"زیرگروه طرح","type"=>"نوع طرح","style"=>"سبک طرح","theme"=>"موضوع طرح","audience"=>"مخاطب طرح","license"=>"نوع مجوز",_=>"نوع کاربرد"} }; private string TagLabel()=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"ar"=>"وسوم التصميم","en"=>"Design tags",_=>"برچسب‌های طرح"};
     private async Task Toggle(JsonElement row){if(Token is null)return;var id=row.GetProperty("id").GetGuid();long version=row.GetProperty("version").GetInt64();bool archived=Text(row,"isArchived")!="True";await Core.SendAsync(HttpMethod.Post,$"api/v1/artworks/{id}/archive",new{archived,version},Token,Company,default);await Load();}
     private async Task Upload(InputFileChangeEventArgs args){if(Token is null||EditingId is null||args.File is null)return;UploadMessage=D["UploadPending"];try{await using var stream=args.File.OpenReadStream(long.MaxValue);var uploaded=await Core.UploadAsync("api/v1/files/upload",args.File.Name,args.File.ContentType,stream,args.File.Size,Token,Company,default);if(!uploaded.IsSuccess){UploadMessage=D["UploadFailed"];return;}var file=uploaded.Value;var created=await Core.SendAsync(HttpMethod.Post,$"api/v1/artworks/{EditingId}/versions",new{fileVersionId=file.GetProperty("fileVersionId").GetGuid(),notes=(string?)null},Token,Company,default);UploadMessage=created.IsSuccess?D["UploadComplete"]:D["UploadFailed"];if(created.IsSuccess){await Load();await LoadHistory();}}catch(Exception){UploadMessage=D["UploadFailed"];}}
-    private async Task OpenViewer(Guid id){if(Token is null)return;ViewerId=id;ViewerSource=null;ViewerBusy=true;ViewerOpen=true;var result=await Core.DownloadAsync($"api/v1/artworks/{id}/original",Token,Company,default);if(result.IsSuccess)ViewerSource=$"data:{result.Value.ContentType};base64,{Convert.ToBase64String(result.Value.Content)}";ViewerBusy=false;}
+    private bool ViewerNotDisplayable;
+    private async Task OpenViewer(Guid id){if(Token is null)return;ViewerId=id;ViewerSource=null;ViewerNotDisplayable=false;ViewerBusy=true;ViewerOpen=true;await InvokeAsync(StateHasChanged);var result=await Core.DownloadAsync($"api/v1/artworks/{id}/original",Token,Company,default);if(result.IsSuccess){if(result.Value.ContentType.StartsWith("image/",StringComparison.OrdinalIgnoreCase))ViewerSource=$"data:{result.Value.ContentType};base64,{Convert.ToBase64String(result.Value.Content)}";else ViewerNotDisplayable=true;}ViewerBusy=false;await InvokeAsync(StateHasChanged);}
     private bool ConceptOpen,ConceptBusy,ConceptRan; private string ConceptQuery="",ConceptError=""; private readonly List<ArtworkConceptMatch> ConceptMatches=[];
     private void OpenConceptSearch(){ConceptOpen=true;ConceptRan=false;ConceptMatches.Clear();ConceptError="";ConceptQuery="";}
     private void CloseConceptSearch(){ConceptOpen=false;ConceptMatches.Clear();ConceptError="";}
@@ -96,8 +98,10 @@
     private async Task RunConceptSearch(){if(Token is null||ConceptBusy)return;ConceptBusy=true;ConceptError="";await InvokeAsync(StateHasChanged);try{var r=await Core.GetAsync($"api/v1/artworks/concept-search?q={Uri.EscapeDataString(ConceptQuery.Trim())}&limit=36",Token,Company,default);if(r.IsSuccess){ConceptMatches.Clear();if(r.Value.ValueKind==JsonValueKind.Array)foreach(var x in r.Value.EnumerateArray())ConceptMatches.Add(new ArtworkConceptMatch(x.GetProperty("id").GetGuid(),Text(x,"code"),Text(x,"title"),Text(x,"categoryName"),Text(x,"lifecycleStatus"),Text(x,"isArchived")=="True",x.TryGetProperty("formats",out var f)&&f.ValueKind==JsonValueKind.Array?f.EnumerateArray().Select(v=>v.GetString()??"").Where(v=>v.Length>0).ToList():[],x.TryGetProperty("score",out var sc)&&sc.TryGetInt32(out var n)?n:0));ConceptRan=true;}else ConceptError=D["ConceptSearchFailed"];}catch{ConceptError=D["ConceptSearchFailed"];}finally{ConceptBusy=false;await InvokeAsync(StateHasChanged);}}
     private string BandClass(int score)=>score<=30?"band-red":score<=70?"band-yellow":"band-green";
     private string MatchLabel(int score)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>$"{score}% match","ar"=>$"{score}% تطابق",_=>$"مطابقت {score}٪"};
+    private void CloseViewer(){ViewerOpen=false;ViewerSource=null;ViewerId=null;ViewerNotDisplayable=false;} private string? CopiedCode;
+    private async Task CopyCode(string code){try{await JS.InvokeVoidAsync("navigator.clipboard.writeText",code);CopiedCode=code;await InvokeAsync(StateHasChanged);_=ExpireCopyFeedback(code);}catch(JSException){CopiedCode=null;await InvokeAsync(StateHasChanged);}}
+    private async Task ExpireCopyFeedback(string code){await Task.Delay(2500);if(CopiedCode==code){CopiedCode=null;await InvokeAsync(StateHasChanged);}}
     private sealed record ArtworkConceptMatch(Guid Id,string Code,string Title,string CategoryName,string LifecycleStatus,bool IsArchived,List<string> Formats,int Score);
-    private void CloseViewer(){ViewerOpen=false;ViewerSource=null;ViewerId=null;}
     private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en"=>"Select", "ar"=>"اختر", _=>"انتخاب کنید" };
     private string UnsavedTitle=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en"=>"Unsaved changes", "ar"=>"تغييرات غير محفوظة", _=>"تغییرات ذخیره‌نشده" };
     private string UnsavedDescription=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en"=>"Your changes have not been saved. Do you want to discard them?", "ar"=>"لم يتم حفظ تغييراتك. هل تريد تجاهلها؟", _=>"تغییرات ذخیره نشده‌اند. آیا می‌خواهید آن‌ها را دور بیندازید؟" };
