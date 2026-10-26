@@ -40,6 +40,7 @@ public static class ModuleCatalog
                 Item("Nav_Persons","/master/persons","organization.unit.manage"),
                 Item("Nav_Suppliers","/master/suppliers","supplier.read"),
                 Item("Nav_Equipment","/master/equipment","equipment.read"),
+                Item("Nav_Shifts","/master/shifts","organization.settings.manage"),
                 Item("Nav_Products","/manage/products","product.read"),
                 Item("Nav_UserAccessManagement","/admin/user-access","security.user.read"),
                 Item("Nav_Workflow","/workspace/workflow","workflow.read")),

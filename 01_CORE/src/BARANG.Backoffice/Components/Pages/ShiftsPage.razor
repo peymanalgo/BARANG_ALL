@@ -1,0 +1,51 @@
+@page "/master/shifts"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@inject IStringLocalizer<AppStrings> L
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+<PageTitle>@T("شیفت‌های کاری","Work shifts","الورديات")</PageTitle>
+<header class="crud-header"><div><span class="eyebrow">@T("مدیریت سیستم","System management","إدارة النظام")</span><h1>@T("شیفت‌های کاری","Work shifts","الورديات")</h1><p>@T("تعریف شیفت‌های کاری شرکت برای برنامه‌ریزی تولید و محاسبه ظرفیت خطوط","Company work shifts used for production planning and line capacity","ورديات الشركة المستخدمة في تخطيط الإنتاج وحساب طاقة الخطوط")</p></div><button type="button" class="btn btn-primary" @onclick="New">@L["Action_Create"]</button></header>
+<section class="crud-card">
+ @if(Busy){<BarangLoadingState Text="@L["Loading"]" />}
+ else if(Rows.Count==0){<CrudEmptyState Title="@L["NoRecords"]" Description="@T("هنوز شیفت کاری تعریف نشده است. با دکمه ایجاد، شیفت صبح و عصر را تعریف کنید.","No work shifts yet. Use create to add morning and evening shifts.","لا توجد ورديات بعد. استخدم الإنشاء لإضافة وردية الصباح والمساء.")" />}
+ else{
+  <div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("کد","Code","الرمز")</th><th>@T("عنوان","Title","العنوان")</th><th>@T("شروع","Start","البداية")</th><th>@T("پایان","End","النهاية")</th><th>@T("مدت (ساعت)","Duration (h)","المدة (ساعة)")</th><th>@L["Status"]</th><th class="actions-column">@L["Actions"]</th></tr></thead><tbody>
+   @foreach(var row in Rows){
+    <tr><td dir="ltr"><span class="code-pill">@row.Code</span></td><td>@row.Title</td><td dir="ltr">@row.Start</td><td dir="ltr">@row.End</td><td>@row.Duration.ToString("0.#",System.Globalization.CultureInfo.InvariantCulture)</td><td><span class="status-pill">@(row.Active?L["Active"]:L["Inactive"])</span></td><td><BarangActionMenu><BarangIconButton Icon="eye" Semantic="info" Label="@L["View"]" Clicked="@(()=>Open(row,true))" /><BarangIconButton Icon="edit" Semantic="edit" Label="@L["Action_Edit"]" Clicked="@(()=>Open(row,false))" /><BarangIconButton Icon="power" Semantic="warning" Label="@(row.Active?L["Deactivate"]:L["Activate"])" Clicked="@(()=>Toggle(row))" /></BarangActionMenu></td></tr>
+   }
+  </tbody></table></div>
+ }
+</section>
+<BarangModal Open="@Dialog" Title="@(Viewing?L["View"]:(EditingId is null?L["Action_Create"]:L["Action_Edit"]))" Size="small" ShowCloseButton="true" CloseRequested="Close">
+ <ChildContent><div class="form-grid single">
+  <label><span>@T("کد","Code","الرمز")</span><input dir="ltr" @bind="Code" disabled="@(EditingId is not null||Viewing)" /></label>
+  <label><span>@T("عنوان","Title","العنوان")</span><input @bind="Title" disabled="@Viewing" /></label>
+  <label><span>@T("ساعت شروع","Start time","وقت البداية")</span><input type="time" value="@Start" @oninput="StartChanged" disabled="@(Viewing||EditingId is not null)" /></label>
+  <label><span>@T("ساعت پایان","End time","وقت النهاية")</span><input type="time" value="@End" @oninput="EndChanged" disabled="@(Viewing||EditingId is not null)" /></label>
+  @if(!string.IsNullOrWhiteSpace(Error)){<div class="inline-error" role="alert">@Error</div>}
+ </div></ChildContent>
+ <Footer><button type="button" class="btn btn-secondary" @onclick="Close">@L["Cancel"]</button>@if(!Viewing){<button type="button" class="btn btn-primary" disabled="@Saving" @onclick="Save">@L["Save"]</button>}</Footer>
+</BarangModal>
+@code {
+ private bool Busy,Dialog,Viewing,Saving; private string? Error; private string Code="",Title="",Start="08:00",End="16:00"; private Guid? EditingId; private long Version;
+ private List<ShiftRow> Rows=[];
+ private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"ar"=>ar,_=>fa};
+ protected override async Task OnInitializedAsync()=>await Load();
+ private async Task<(string Token,Guid Company)?> Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Guid c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t?(t,c):null;}
+ private async Task Load(){if(await Session() is not (string token,Guid company))return;Busy=true;await InvokeAsync(StateHasChanged);try{Rows.Clear();var r=await Core.GetAsync("api/v1/production/shifts?includeInactive=true",token,company,default);if(r.IsSuccess&&r.Value.ValueKind==JsonValueKind.Array)foreach(var x in r.Value.EnumerateArray())Rows.Add(new ShiftRow(x.GetProperty("id").GetGuid(),Text(x,"code"),Text(x,"title"),Text(x,"startTime")[..5],Text(x,"endTime")[..5],x.TryGetProperty("isActive",out var a)&&a.GetBoolean(),x.GetProperty("version").GetInt64()));}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private static string Text(JsonElement x,string n)=>x.TryGetProperty(n,out var p)&&p.ValueKind!=JsonValueKind.Null?p.ToString():"";
+ private void New(){EditingId=null;Code="";Title="";Start="08:00";End="16:00";Viewing=false;Error="";Dialog=true;}
+ private void Open(ShiftRow row,bool view){EditingId=row.Id;Code=row.Code;Title=row.Title;Start=row.Start;End=row.End;Version=row.Version;Viewing=view;Error="";Dialog=true;}
+ private void Close(){Dialog=false;Error="";}
+ private async Task Save(){Error="";if(await Session() is not (string token,Guid company))return;if(string.IsNullOrWhiteSpace(Code)||string.IsNullOrWhiteSpace(Title)){Error=T("کد و عنوان الزامی است.","Code and title are required.","الرمز والعنوان إلزاميان.");return;}if(!TimeOnly.TryParse(Start,out var s)||!TimeOnly.TryParse(End,out var e)){Error=T("ساعت شروع و پایان معتبر نیست.","Start/end time is invalid.","وقت البداية أو النهاية غير صالح.");return;}Saving=true;await InvokeAsync(StateHasChanged);try{ApiResult<JsonElement> r=EditingId is null?await Core.SendAsync(HttpMethod.Post,"api/v1/production/shifts",new{code=Code.Trim(),title=Title.Trim(),startTime=s.ToString("HH\\:mm"),endTime=e.ToString("HH\\:mm")},token,company,default):await Core.SendAsync(HttpMethod.Put,$"api/v1/production/shifts/{EditingId}",new{title=Title.Trim(),startTime=s.ToString("HH\\:mm"),endTime=e.ToString("HH\\:mm"),version=Version},token,company,default);if(r.IsSuccess){Dialog=false;await Load();}else Error=T("ذخیره انجام نشد؛ کد تکراری یا دسترسی را بررسی کنید.","Save failed; duplicate code or access issue.","فشل الحفظ؛ رمز مكرر أو مشكلة وصول.");}finally{Saving=false;await InvokeAsync(StateHasChanged);}}
+ private async Task Toggle(ShiftRow row){if(await Session() is not (string token,Guid company))return;await Core.SendAsync(HttpMethod.Post,$"api/v1/production/shifts/{row.Id}/activation",new{version=row.Version},token,company,default);await Load();}
+ private void StartChanged(ChangeEventArgs e)=>Start=e.Value?.ToString()??"";
+ private void EndChanged(ChangeEventArgs e)=>End=e.Value?.ToString()??"";
+ private sealed record ShiftRow(Guid Id,string Code,string Title,string Start,string End,bool Active,long Version)
+ {
+  public double Duration=>TimeOnly.TryParse(Start,out var s)&&TimeOnly.TryParse(End,out var e)?(e.ToTimeSpan()-s.ToTimeSpan()).TotalHours<=0?(e.ToTimeSpan()-s.ToTimeSpan()).TotalHours+24:(e.ToTimeSpan()-s.ToTimeSpan()).TotalHours:0;
+ }
+}

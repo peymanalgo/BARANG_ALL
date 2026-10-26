@@ -11,6 +11,7 @@ internal sealed class EquipmentExtendedConfiguration : IEntityTypeConfiguration<
 {
     public void Configure(EntityTypeBuilder<Equipment> b)
     {
+        b.Property(x => x.CapacityPerHour).HasColumnName("capacity_per_hour");
         b.Property(x => x.AssetNumber).HasColumnName("asset_number").HasMaxLength(80);
         b.Property(x => x.AssetTag).HasColumnName("asset_tag").HasMaxLength(80);
         b.Property(x => x.EquipmentCategoryCode).HasColumnName("category_code").HasMaxLength(80);

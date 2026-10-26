@@ -27,7 +27,7 @@
   <data name="Nav_Units">
     <value>واحدهای سازمانی</value>
   </data>
-  <data name="Nav_Warehouses">
+  <data name="Nav_Shifts"><value>شیفت‌های کاری</value></data><data name="Nav_Warehouses">
     <value>انبارها</value>
   </data>
   <data name="Nav_UserAccessManagement">

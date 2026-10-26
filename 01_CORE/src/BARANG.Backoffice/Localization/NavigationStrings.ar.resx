@@ -27,7 +27,7 @@
   <data name="Nav_Units">
     <value>الوحدات التنظيمية</value>
   </data>
-  <data name="Nav_Warehouses">
+  <data name="Nav_Shifts"><value>الورديات</value></data><data name="Nav_Warehouses">
     <value>المستودعات</value>
   </data>
   <data name="Nav_UserAccessManagement">
