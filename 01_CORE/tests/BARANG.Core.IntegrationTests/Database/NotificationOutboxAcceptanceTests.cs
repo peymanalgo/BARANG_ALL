@@ -59,7 +59,7 @@ public sealed class NotificationOutboxAcceptanceTests(PostgreSqlDatabaseFixture 
 
         JsonElement deadLetters = await JsonElementResult(client, Request(HttpMethod.Get, "/api/v1/background/dead-letters", login.AccessToken, company), ct);
         JsonElement dead = deadLetters.EnumerateArray().First(x => x.GetProperty("outboxMessageId").GetGuid() == queued);
-        Assert.Equal((int)DeadLetterStatus.Open, dead.GetProperty("status").GetInt32());
+        Assert.Equal(DeadLetterStatus.Open.ToString(), dead.GetProperty("status").GetString());
         long deadVersion = dead.GetProperty("version").GetInt64();
 
         FailingSmsSender.Fail = false;
@@ -142,7 +142,7 @@ public sealed class NotificationOutboxAcceptanceTests(PostgreSqlDatabaseFixture 
         {
             string payload = await response.Content.ReadAsStringAsync(ct);
             Assert.True(response.IsSuccessStatusCode, $"{response.StatusCode}: {payload}");
-            return (await response.Content.ReadFromJsonAsync<T>(ct))!;
+            return (await response.Content.ReadFromJsonAsync<T>(TestJson.ApiOptions, ct))!;
         }
     }
 

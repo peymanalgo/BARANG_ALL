@@ -32,7 +32,7 @@ public sealed class PricingE2ETests(PostgreSqlDatabaseFixture database)
     }
     private static HttpRequestMessage Req(HttpMethod method,string uri,string token,Guid? company,object? body=null){HttpRequestMessage r=new(method,uri);r.Headers.Authorization=new AuthenticationHeaderValue("Bearer",token);if(company is not null)r.Headers.Add("X-Company-ID",company.ToString());if(body is not null)r.Content=JsonContent.Create(body);return r;}
     private static async Task Ok(HttpClient client,HttpRequestMessage request,CancellationToken ct){using HttpResponseMessage response=await client.SendAsync(request,ct);Assert.True(response.IsSuccessStatusCode,$"{response.StatusCode}: {await response.Content.ReadAsStringAsync(ct)}");}
-    private static async Task<T> Json<T>(HttpResponseMessage response,CancellationToken ct){using(response){string payload=await response.Content.ReadAsStringAsync(ct);Assert.True(response.IsSuccessStatusCode,$"{response.StatusCode}: {payload}");return (await response.Content.ReadFromJsonAsync<T>(ct))!;}}
+    private static async Task<T> Json<T>(HttpResponseMessage response,CancellationToken ct){using(response){string payload=await response.Content.ReadAsStringAsync(ct);Assert.True(response.IsSuccessStatusCode,$"{response.StatusCode}: {payload}");return (await response.Content.ReadFromJsonAsync<T>(TestJson.ApiOptions, ct))!;}}
     private sealed record Login(string AccessToken);
 }
 

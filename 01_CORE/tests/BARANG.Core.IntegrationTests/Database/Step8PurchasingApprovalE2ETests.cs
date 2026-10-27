@@ -70,7 +70,7 @@ public sealed class Step8PurchasingApprovalE2ETests(PostgreSqlDatabaseFixture da
         JsonElement submitted = await Read(client, Request(HttpMethod.Post, $"/api/v1/purchasing/requests/{requestId}/submit?version={requestVersion}", creator.AccessToken, company));
         long submittedVersion = submitted.GetProperty("version").GetInt64();
         JsonElement approved = await Read(client, Request(HttpMethod.Post, $"/api/v1/purchasing/requests/{requestId}/approve", approver.AccessToken, company, new { version = submittedVersion }));
-        Assert.Equal((int)PurchaseRequestStatus.Approved, approved.GetProperty("status").GetInt32());
+        Assert.Equal(PurchaseRequestStatus.Approved.ToString(), approved.GetProperty("status").GetString());
         using HttpResponseMessage self = await client.SendAsync(Request(HttpMethod.Post, $"/api/v1/purchasing/requests/{requestId}/approve", creator.AccessToken, company, new { version = approved.GetProperty("version").GetInt64() }), TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Forbidden, self.StatusCode);
 
@@ -80,9 +80,9 @@ public sealed class Step8PurchasingApprovalE2ETests(PostgreSqlDatabaseFixture da
         await using (CoreDbContext db = database.CreateAdministrationCoreDbContext())
         { db.PurchaseOrders.Add(order); db.PurchaseOrderItems.Add(PurchaseOrderItem.Create(company, order.Id, variant.Id, "PCS", 2m, 10m)); db.PurchasingHistory.Add(PurchasingHistory.Create(company, "PURCHASE_ORDER", order.Id, "Created", creatorId, now)); await db.SaveChangesAsync(TestContext.Current.CancellationToken); }
         JsonElement poApproved = await Read(client, Request(HttpMethod.Post, $"/api/v1/purchasing/orders/{orderId}/approve", approver.AccessToken, company, new { version = order.Version }));
-        Assert.Equal((int)PurchaseOrderStatus.Approved, poApproved.GetProperty("status").GetInt32());
+        Assert.Equal(PurchaseOrderStatus.Approved.ToString(), poApproved.GetProperty("status").GetString());
         JsonElement sent = await Read(client, Request(HttpMethod.Post, $"/api/v1/purchasing/orders/{orderId}/send?version={poApproved.GetProperty("version").GetInt64()}", creator.AccessToken, company));
-        Assert.Equal((int)PurchaseOrderStatus.Sent, sent.GetProperty("status").GetInt32());
+        Assert.Equal(PurchaseOrderStatus.Sent.ToString(), sent.GetProperty("status").GetString());
 
         JsonElement pending = await Read(client, Request(HttpMethod.Post, "/api/v1/purchasing/requests", creator.AccessToken, company, new { warehouseId = warehouse, reason = "browser approval fixture", items = new[] { new { productVariantId = variant.Id, quantity = 1m, uomCode = "PCS" } } }));
         await Read(client, Request(HttpMethod.Post, $"/api/v1/purchasing/requests/{pending.GetProperty("id").GetGuid()}/submit?version={pending.GetProperty("version").GetInt64()}", creator.AccessToken, company));

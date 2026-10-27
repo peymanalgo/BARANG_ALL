@@ -90,7 +90,7 @@ public sealed class NotificationProducerPersistenceTests(PostgreSqlDatabaseFixtu
         long inspectionVersion = inspection.GetProperty("version").GetInt64();
         await Read(client, Request(HttpMethod.Put, $"/api/v1/quality/inspections/{inspectionId}/disposition", token, company, new { acceptedQuantity = 0m, rejectedQuantity = 0m, reproductionRequiredQuantity = 1m, acceptedReason = "not accepted", rejectedReason = (string?)null, reproductionReason = "rework required", version = inspectionVersion }), ct);
         JsonElement rejected = await Read(client, Request(HttpMethod.Post, $"/api/v1/quality/inspections/{inspectionId}/reject", token, company, new { reason = "rework required", version = inspectionVersion }), ct);
-        Assert.Equal((int)QCInspectionStatus.Rejected, rejected.GetProperty("status").GetInt32());
+        Assert.Equal(QCInspectionStatus.Rejected.ToString(), rejected.GetProperty("status").GetString());
         JsonElement reproduction = await Read(client, Request(HttpMethod.Post, $"/api/v1/quality/inspections/{inspectionId}/reproduction", token, company, new { requestedStage = 0, quantity = 1m, reason = "rework required" }), ct);
         Guid reproductionId = reproduction.GetProperty("id").GetGuid();
         await AssertEvent("quality.rejected", inspectionId, "quality.rejected", actor, new Dictionary<string, Guid> { ["inspectionId"] = inspectionId, ["orderItemId"] = itemId }, ct);
@@ -101,7 +101,7 @@ public sealed class NotificationProducerPersistenceTests(PostgreSqlDatabaseFixtu
         await AssertEvent("shipment.dispatched", shipmentId, "shipment.dispatched", actor, new Dictionary<string, Guid> { ["shipmentId"] = shipmentId, ["orderId"] = orderId }, ct);
         JsonElement inTransit = await Read(client, Request(HttpMethod.Post, $"/api/v1/logistics/shipments/{shipmentId}/in-transit", token, company, new { version = shipped.GetProperty("version").GetInt64() }), ct);
         JsonElement delivered = await Read(client, Request(HttpMethod.Post, $"/api/v1/logistics/shipments/{shipmentId}/deliver", token, company, new { version = inTransit.GetProperty("version").GetInt64() }), ct);
-        Assert.Equal((int)ShipmentStatus.Delivered, delivered.GetProperty("status").GetInt32());
+        Assert.Equal(ShipmentStatus.Delivered.ToString(), delivered.GetProperty("status").GetString());
         await AssertEvent("shipment.delivered", shipmentId, "shipment.delivered", actor, new Dictionary<string, Guid> { ["shipmentId"] = shipmentId, ["orderId"] = orderId }, ct);
 
         await Read(client, Request(HttpMethod.Post, "/api/v1/workflows/escalations/process", token, company), ct);

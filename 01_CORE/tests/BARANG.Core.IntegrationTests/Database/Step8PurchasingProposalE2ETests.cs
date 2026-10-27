@@ -113,7 +113,7 @@ public sealed class Step8PurchasingProposalE2ETests(PostgreSqlDatabaseFixture da
         using HttpResponseMessage response = await client.SendAsync(request, TestContext.Current.CancellationToken);
         string payload = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.True(response.IsSuccessStatusCode, $"{response.StatusCode}: {payload}");
-        return (await response.Content.ReadFromJsonAsync<T>(TestContext.Current.CancellationToken))!;
+        return (await response.Content.ReadFromJsonAsync<T>(TestJson.ApiOptions, TestContext.Current.CancellationToken))!;
     }
 
     private sealed record Login(string AccessToken);
