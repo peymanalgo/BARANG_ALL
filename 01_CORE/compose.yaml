@@ -77,7 +77,7 @@ services:
       FileStorage__SecretKey: ${MINIO_ROOT_PASSWORD:-barang_minio_dev_only_12345}
       FileStorage__Bucket: ${MINIO_BUCKET:-barang-files}
       FileStorage__Secure: "false"
-      FileStorage__MaximumUploadBytes: ${MAXIMUM_UPLOAD_BYTES:-26214400}
+      FileStorage__MaximumUploadBytes: ${MAXIMUM_UPLOAD_BYTES:-9223372036854775807}
       DataProtection__KeysPath: /app/.keys
     volumes:
       - barang_api_keys:/app/.keys
