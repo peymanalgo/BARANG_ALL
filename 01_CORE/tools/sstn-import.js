@@ -27,7 +27,7 @@ async function login(){
 async function uploadFile(token,file){
   const buf=fs.readFileSync(file);
   const fd=new FormData();
-  fd.append('file',new Blob([buf]),path.basename(file));
+  fd.append('file',new Blob([buf],{type:'image/jpeg'}),path.basename(file));
   const r=await fetch(API+'/api/v1/files/upload',{method:'POST',headers:{'Authorization':'Bearer '+token,'X-Company-ID':COMPANY},body:fd});
   const j=await r.json();
   return {ok:r.ok,status:r.status,j};
