@@ -72,6 +72,16 @@ public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExec
         Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t);
         return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.png", derivative.MediaType, derivative.SizeBytes, content));
     }, ct);
+    public Task<Result<DownloadFile>> GetWebVariantAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        Artwork? artwork = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(x => x.Id == artworkId, t);
+        if (artwork?.CurrentVersionId is not Guid currentVersionId) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        ArtworkVersion? version = await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentVersionId && x.ArtworkId == artworkId, t);
+        FileDerivative? derivative = version is null ? null : await db.FileDerivatives.AsNoTracking().SingleOrDefaultAsync(x => x.SourceFileVersionId == version.FileVersionId && x.DerivativeType == FileDerivativeType.Web, t);
+        if (derivative is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t);
+        return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.webp", derivative.MediaType, derivative.SizeBytes, content));
+    }, ct);
     public Task<Result<DownloadFile>> GetOriginalArtworkAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
     {
         Artwork? artwork = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(x => x.Id == artworkId, t);

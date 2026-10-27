@@ -23,5 +23,7 @@ public sealed class FileStorageOptions
     public string Bucket { get; set; } = "barang-files";
     public bool Secure { get; set; }
     public long MaximumUploadBytes { get; set; } = long.MaxValue;
+    public int ProcessingParallelism { get; set; } = 8;
+    public int DecodeTimeoutSeconds { get; set; } = 30;
     public string[] AllowedMediaTypes { get; set; } = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/tiff", "application/pdf"];
 }
