@@ -642,6 +642,10 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(80)")
                         .HasColumnName("brand_code");
 
+                    b.Property<int?>("CapacityPerHour")
+                        .HasColumnType("integer")
+                        .HasColumnName("capacity_per_hour");
+
                     b.Property<DateOnly?>("CommissioningDate")
                         .HasColumnType("date")
                         .HasColumnName("commissioning_date");
@@ -7827,6 +7831,69 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("production_job_history", "barang");
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Production.WorkShift", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<TimeOnly>("EndTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("end_time");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("start_time");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_work_shifts");
+
+                    b.HasIndex("CompanyId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("uq_work_shifts_company_code");
+
+                    b.HasIndex("CompanyId", "IsActive");
+
+                    b.ToTable("work_shifts", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_work_shifts_version_positive", "version > 0");
+                        });
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Quality.DefectType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -9377,6 +9444,13 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                             Code = "purchasing.order.approve",
                             Module = "purchasing",
                             TechnicalDescription = "purchasing.order.approve"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000088"),
+                            Code = "notification.draftorder.read",
+                            Module = "notification",
+                            TechnicalDescription = "notification.draftorder.read"
                         });
                 });
 
