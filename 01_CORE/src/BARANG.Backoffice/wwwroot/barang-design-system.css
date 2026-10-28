@@ -1234,3 +1234,7 @@ tr.is-selected td { background: color-mix(in srgb, var(--barang-accent) 6%, var(
 .help-features li:before{content:"";position:absolute;top:.85rem;width:.45rem;height:.45rem;border-radius:50%;background:#14b8a6}
 [dir=ltr] .help-features li:before{left:.4rem}
 [dir=rtl] .help-features li:before{right:.4rem}
+
+/* ===== version badges (login + sidebar) ===== */
+.login-version{margin:.4rem 0 0;font-size:.8rem;letter-spacing:.06em;opacity:.9}
+.sidebar small{font-size:.66rem;letter-spacing:.04em;opacity:.85}

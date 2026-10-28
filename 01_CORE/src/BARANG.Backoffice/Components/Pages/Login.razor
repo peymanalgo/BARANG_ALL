@@ -5,6 +5,7 @@
 @inject AuthenticationStateProvider AuthState
 @inject NavigationManager Navigation
 @using Microsoft.AspNetCore.WebUtilities
+@using System.Globalization
 <PageTitle>@L["Login"] · BARANG</PageTitle>
 <HeadContent>
     <link rel="stylesheet" href="/login.css" />
@@ -49,6 +50,7 @@
                 <div class="login-brand-message">
                     <h2>@L["LoginBrandTagline"]</h2>
                     <p>@L["LoginBrandDescription"]</p>
+                    <p class="login-version">@VersionLabel</p>
                 </div>
             </div>
         </section>
@@ -103,6 +105,8 @@
     </article>
 </main>
 @code {
+    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() is var c && c is "en" or "ar" ? c : "fa";
+    private string VersionLabel => CultureCode switch { "ar" => "الإصدار " + BARANG.Backoffice.AppMeta.Version, "en" => "Version " + BARANG.Backoffice.AppMeta.Version, _ => "نسخه " + BARANG.Backoffice.AppMeta.Version };
     [SupplyParameterFromQuery] public string? Message { get; set; }
     [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
     private string? ErrorText => Message switch { "invalid" => L["InvalidCredentials"].Value, "unavailable" => L["ApiUnavailable"].Value, "service" => L["ErrorMessage"].Value, "validation" => L["ValidationError"].Value, "unauthorized" => L["Unauthorized"].Value, "expired" => L["SessionExpired"].Value, "error" => L["GenericError"].Value, _ => null };

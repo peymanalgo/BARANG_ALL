@@ -1,6 +1,7 @@
 @inherits LocaleLayoutBase
 @implements IDisposable
 @inject IStringLocalizer<AppStrings> L
+@using System.Globalization
 @inject IStringLocalizer<NavigationStrings> N
 @inject AuthenticationStateProvider AuthState
 @inject NavigationManager Navigation
@@ -11,7 +12,7 @@
         <header class="sidebar-header">
             <a class="brand" href="/" @onclick="CloseNavigationFromClick">
                 <span class="brand-mark"><BarangIcon Name="building" /></span>
-                <span><strong>BARANG</strong><small>@L["Backoffice"]</small></span>
+                <span><strong>@Brand</strong><small>@VersionLabel</small></span>
             </a>
         </header>
 
@@ -91,6 +92,9 @@
 <div id="blazor-error-ui">@L["GenericError"] <a href="." class="reload">@L["Reload"]</a></div>
 
 @code {
+    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "en", "ar" => "ar", _ => "fa" };
+    private string Brand => CultureCode switch { "ar" => "برنگ", "en" => "BARANG", _ => "برنگ" };
+    private string VersionLabel => CultureCode switch { "ar" => "الإصدار " + BARANG.Backoffice.AppMeta.Version, "en" => "Version " + BARANG.Backoffice.AppMeta.Version, _ => "نسخه " + BARANG.Backoffice.AppMeta.Version };
     private string DisplayName = "";
     private string CompanyName = "";
     private bool NavigationOpen;
