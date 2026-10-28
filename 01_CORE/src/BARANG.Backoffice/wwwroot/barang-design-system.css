@@ -1238,3 +1238,7 @@ tr.is-selected td { background: color-mix(in srgb, var(--barang-accent) 6%, var(
 /* ===== version badges (login + sidebar) ===== */
 .login-version{margin:.4rem 0 0;font-size:.8rem;letter-spacing:.06em;opacity:.9}
 .sidebar small{font-size:.66rem;letter-spacing:.04em;opacity:.85}
+
+/* ===== colorful brand word (per-letter colors, keeps letters joined) ===== */
+.sidebar .brand .brand-word{background:linear-gradient(90deg,#fde047 0%,#fde047 25%,#60a5fa 25%,#60a5fa 50%,#f87171 50%,#f87171 75%,#4ade80 75%,#4ade80 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;letter-spacing:.14em;font-size:15px}
+html[lang=fa] .sidebar .brand .brand-word,html[lang=ar] .sidebar .brand .brand-word{background:linear-gradient(270deg,#fde047 0%,#fde047 25%,#60a5fa 25%,#60a5fa 50%,#f87171 50%,#f87171 75%,#4ade80 75%,#4ade80 100%);letter-spacing:.02em;font-size:26px;line-height:1.1}
