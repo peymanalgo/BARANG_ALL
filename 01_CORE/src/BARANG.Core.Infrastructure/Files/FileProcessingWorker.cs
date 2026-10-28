@@ -73,11 +73,11 @@ internal sealed class FileProcessingWorker(IServiceScopeFactory scopes,IFileProc
 
     private async Task UploadPreparedAsync(IServiceScopeFactory scopeFactory,Guid company,Guid version,List<(FileDerivativeType Type,string Key,string Media,byte[] Bytes,string Hash)> prepared,CancellationToken stoppingToken)
     {
-        await using AsyncServiceScope uploadScope=scopeFactory.CreateAsyncScope();IObjectStorage storage=uploadScope.ServiceProvider.GetRequiredService<IObjectStorage>();
+        await using AsyncServiceScope uploadScope=scopeFactory.CreateAsyncScope();IObjectStorage storage=uploadScope.ServiceProvider.GetRequiredService<IObjectStorage>();string? publicBucket=optionsAccessor.Value.PublicBucket;
         foreach((FileDerivativeType _,string key,string media,byte[] bytes,string _) in prepared)
         {
             await using MemoryStream upload=new(bytes,false);
-            await storage.PutAsync(new(key,upload,bytes.Length,media,"public,max-age=31536000,immutable"),stoppingToken);
+            await storage.PutAsync(new(key,upload,bytes.Length,media,"public,max-age=31536000,immutable",string.IsNullOrWhiteSpace(publicBucket)?null:publicBucket),stoppingToken);
         }
         for(int attempt=1;;attempt++)
         {

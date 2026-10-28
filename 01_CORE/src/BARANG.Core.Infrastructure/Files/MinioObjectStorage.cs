@@ -20,15 +20,15 @@ public sealed class MinioObjectStorage(IMinioClient client, IOptions<FileStorage
         if (ext.Length is < 1 or > 20 || !ext.All(char.IsAsciiLetterOrDigit)) throw new ArgumentException("Invalid extension.", nameof(extension));
         return $"companies/{companyId:N}/files/{fileId:N}/{(derivative ? "derivatives" : "versions")}/{versionId:N}-{Guid.NewGuid():N}.{ext}";
     }
-    public async Task PutAsync(ObjectStorageWrite value,CancellationToken ct){await _clientGate.WaitAsync(ct);try{PutObjectArgs args=new PutObjectArgs().WithBucket(Bucket).WithObject(value.Key).WithStreamData(value.Content).WithObjectSize(value.Length).WithContentType(value.MediaType);if(!string.IsNullOrWhiteSpace(value.CacheControl))args.WithHeaders(new Dictionary<string,string>{{"Cache-Control",value.CacheControl}});await client.PutObjectAsync(args,ct);}finally{_clientGate.Release();}}
-    public async Task<Stream?> OpenReadAsync(string key,CancellationToken ct){await _clientGate.WaitAsync(ct);MemoryStream result=new();try{await client.GetObjectAsync(new GetObjectArgs().WithBucket(Bucket).WithObject(key).WithCallbackStream(async(stream,cancellation)=>await stream.CopyToAsync(result,cancellation)),ct);result.Position=0;return result;}catch(ObjectNotFoundException){result.Dispose();return null;}catch(MinioException ex)when(ex.Message.Contains("not exist",StringComparison.OrdinalIgnoreCase)){result.Dispose();return null;}finally{_clientGate.Release();}}
+    public async Task PutAsync(ObjectStorageWrite value,CancellationToken ct){string targetBucket=string.IsNullOrWhiteSpace(value.Bucket)?Bucket:value.Bucket;await _clientGate.WaitAsync(ct);try{PutObjectArgs args=new PutObjectArgs().WithBucket(targetBucket).WithObject(value.Key).WithStreamData(value.Content).WithObjectSize(value.Length).WithContentType(value.MediaType);if(!string.IsNullOrWhiteSpace(value.CacheControl))args.WithHeaders(new Dictionary<string,string>{{"Cache-Control",value.CacheControl}});await client.PutObjectAsync(args,ct);}finally{_clientGate.Release();}}
+    public async Task<Stream?> OpenReadAsync(string key,CancellationToken ct,string? bucket=null){await _clientGate.WaitAsync(ct);MemoryStream result=new();try{await client.GetObjectAsync(new GetObjectArgs().WithBucket(string.IsNullOrWhiteSpace(bucket)?Bucket:bucket).WithObject(key).WithCallbackStream(async(stream,cancellation)=>await stream.CopyToAsync(result,cancellation)),ct);result.Position=0;return result;}catch(ObjectNotFoundException){result.Dispose();return null;}catch(MinioException ex)when(ex.Message.Contains("not exist",StringComparison.OrdinalIgnoreCase)){result.Dispose();return null;}finally{_clientGate.Release();}}
     public async Task<ObjectStorageHead?> HeadAsync(string key,CancellationToken ct){await _clientGate.WaitAsync(ct);try{var stat=await client.StatObjectAsync(new StatObjectArgs().WithBucket(Bucket).WithObject(key),ct);return new(key,stat.Size,stat.ContentType);}catch(ObjectNotFoundException){return null;}catch(MinioException ex)when(ex.Message.Contains("not exist",StringComparison.OrdinalIgnoreCase)){return null;}finally{_clientGate.Release();}}
     public async Task<bool> RemoveUncommittedAsync(string key,CancellationToken ct){await _clientGate.WaitAsync(ct);try{await client.RemoveObjectAsync(new RemoveObjectArgs().WithBucket(Bucket).WithObject(key),ct);return true;}catch(MinioException){return false;}finally{_clientGate.Release();}}
-    public async Task<string?> GetPresignedReadUrlAsync(string key,int expirySeconds,CancellationToken ct)
+    public async Task<string?> GetPresignedReadUrlAsync(string key,int expirySeconds,CancellationToken ct,string? bucket=null)
     {
         IMinioClient signingClient=ResolveSigningClient();
         await _clientGate.WaitAsync(ct);
-        try{return await signingClient.PresignedGetObjectAsync(new PresignedGetObjectArgs().WithBucket(Bucket).WithObject(key).WithExpiry(Math.Clamp(expirySeconds,1,604800)));}
+        try{return await signingClient.PresignedGetObjectAsync(new PresignedGetObjectArgs().WithBucket(string.IsNullOrWhiteSpace(bucket)?Bucket:bucket).WithObject(key).WithExpiry(Math.Clamp(expirySeconds,1,604800)));}
         catch(MinioException){return null;}
         finally{_clientGate.Release();}
     }
@@ -48,7 +48,24 @@ public sealed class MinioObjectStorage(IMinioClient client, IOptions<FileStorage
 
 internal sealed class MinioBucketInitializer(IMinioClient client,IOptions<FileStorageOptions> settings):IHostedService
 {
-    public async Task StartAsync(CancellationToken ct){string bucket=settings.Value.Bucket;if(!await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket),ct))await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(bucket),ct);}
+    public async Task StartAsync(CancellationToken ct)
+    {
+        string bucket=settings.Value.Bucket;
+        if(!await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket),ct))await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(bucket),ct);
+        string publicBucket=settings.Value.PublicBucket;
+        if(!string.IsNullOrWhiteSpace(publicBucket)&&publicBucket!=bucket)
+        {
+            if(!await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(publicBucket),ct))await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(publicBucket),ct);
+            try
+            {
+                await client.SetPolicyAsync(new SetPolicyArgs().WithBucket(publicBucket).WithPolicy("download"),ct);
+            }
+            catch(MinioException)
+            {
+                // Anonymous download policy is best-effort; presigned access keeps working without it.
+            }
+        }
+    }
     public Task StopAsync(CancellationToken ct)=>Task.CompletedTask;
 }
 internal sealed class MinioHealthCheck(IMinioClient client,IOptions<FileStorageOptions> settings):IHealthCheck

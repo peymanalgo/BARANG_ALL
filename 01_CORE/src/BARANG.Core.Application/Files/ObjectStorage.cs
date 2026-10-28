@@ -1,6 +1,6 @@
 namespace BARANG.Core.Application.Files;
 
-public sealed record ObjectStorageWrite(string Key, Stream Content, long Length, string MediaType, string? CacheControl = null);
+public sealed record ObjectStorageWrite(string Key, Stream Content, long Length, string MediaType, string? CacheControl = null, string? Bucket = null);
 public sealed record ObjectStorageHead(string Key, long Length, string MediaType);
 public interface IObjectStorage
 {
@@ -8,8 +8,8 @@ public interface IObjectStorage
     string Bucket { get; }
     string CreateKey(Guid companyId, Guid fileId, Guid versionId, string extension, bool derivative = false);
     Task PutAsync(ObjectStorageWrite value, CancellationToken ct);
-    Task<Stream?> OpenReadAsync(string key, CancellationToken ct);
-    Task<string?> GetPresignedReadUrlAsync(string key, int expirySeconds, CancellationToken ct);
+    Task<Stream?> OpenReadAsync(string key, CancellationToken ct, string? bucket = null);
+    Task<string?> GetPresignedReadUrlAsync(string key, int expirySeconds, CancellationToken ct, string? bucket = null);
     Task<ObjectStorageHead?> HeadAsync(string key, CancellationToken ct);
     Task<bool> RemoveUncommittedAsync(string key, CancellationToken ct);
 }
@@ -30,5 +30,6 @@ public sealed class FileStorageOptions
     public bool PublicSecure { get; set; }
     public int DerivativeUrlExpirySeconds { get; set; } = 604800;
     public int OriginalUrlExpirySeconds { get; set; } = 3600;
+    public string PublicBucket { get; set; } = "";
     public string[] AllowedMediaTypes { get; set; } = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/tiff", "application/pdf"];
 }

@@ -70,7 +70,7 @@ public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExec
         ArtworkVersion? version = await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentVersionId && x.ArtworkId == artworkId, t);
         FileDerivative? derivative = version is null ? null : await db.FileDerivatives.AsNoTracking().SingleOrDefaultAsync(x => x.SourceFileVersionId == version.FileVersionId && x.DerivativeType == FileDerivativeType.Thumbnail, t);
         if (derivative is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
-        Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t);
+        Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t, string.IsNullOrWhiteSpace(options.Value.PublicBucket)?null:options.Value.PublicBucket);
         return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.png", derivative.MediaType, derivative.SizeBytes, content, derivative.Sha256Hash));
     }, ct);
     public Task<Result<DownloadFile>> GetWebVariantAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
@@ -80,7 +80,7 @@ public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExec
         ArtworkVersion? version = await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentVersionId && x.ArtworkId == artworkId, t);
         FileDerivative? derivative = version is null ? null : await db.FileDerivatives.AsNoTracking().SingleOrDefaultAsync(x => x.SourceFileVersionId == version.FileVersionId && x.DerivativeType == FileDerivativeType.Web, t);
         if (derivative is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
-        Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t);
+        Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t, string.IsNullOrWhiteSpace(options.Value.PublicBucket)?null:options.Value.PublicBucket);
         return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.webp", derivative.MediaType, derivative.SizeBytes, content, derivative.Sha256Hash));
     }, ct);
     public Task<Result<DerivativeUrlView>> GetDerivativeUrlAsync(Guid artworkId, string variant, CancellationToken ct) => tx.ExecuteAsync(async t =>
@@ -96,7 +96,7 @@ public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExec
         DerivativeUrlView? cached = await cache.GetAsync<DerivativeUrlView>(cacheKey, t);
         if (cached is not null) return Result.Success(cached);
         int expiry = Math.Clamp(options.Value.DerivativeUrlExpirySeconds, 600, 604800);
-        string? url = await storage.GetPresignedReadUrlAsync(derivative.StorageKey, expiry, t);
+        string? url = await storage.GetPresignedReadUrlAsync(derivative.StorageKey, expiry, t, string.IsNullOrWhiteSpace(options.Value.PublicBucket)?null:options.Value.PublicBucket);
         if (url is null) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
         DerivativeUrlView view = new(url, derivative.MediaType, expiry, derivative.Sha256Hash);
         await cache.SetAsync(cacheKey, view, TimeSpan.FromMinutes(9), t);

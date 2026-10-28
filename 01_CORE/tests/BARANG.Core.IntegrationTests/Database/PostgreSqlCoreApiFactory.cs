@@ -26,6 +26,7 @@ public sealed class PostgreSqlCoreApiFactory(string connectionString, string env
             builder.UseSetting("FileStorage:Bucket", "barang-phase10-tests");
             builder.UseSetting("FileStorage:MaximumUploadBytes", "1048576");
             builder.UseSetting("FileStorage:PublicEndpoint", "127.0.0.1:9000");
+            builder.UseSetting("FileStorage:PublicBucket", "barang-phase10-tests-public");
         }
     }
 }
