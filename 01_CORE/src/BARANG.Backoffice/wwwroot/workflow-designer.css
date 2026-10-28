@@ -66,3 +66,14 @@
 @media(max-width:1200px){.workflow-designer-grid{grid-template-columns:180px minmax(0,1fr) 240px}}
 @media(max-width:900px){.workflow-designer-grid{grid-template-columns:180px minmax(0,1fr)}.workflow-properties{grid-column:1/-1}}
 .workflow-connections line{stroke-width:3}.workflow-connections line.selected{stroke-width:4.5}.workflow-connections marker path{fill:#7052e8;stroke:#7052e8}.workflow-edge-anchor{fill:#fff;stroke:#7052e8;stroke-width:3;cursor:crosshair;pointer-events:all}.workflow-edge-anchor:hover{fill:#ede8ff;stroke-width:4}
+
+/* ===== v2: grid modes, orthogonal edges, snap preview, connect targets ===== */
+.workflow-canvas-surface.grid-visible{background-image:linear-gradient(to right,#d7d2e4 1px,transparent 1px),linear-gradient(to bottom,#d7d2e4 1px,transparent 1px);background-size:20px 20px}
+.workflow-connections path{stroke:#9a8eaf;stroke-width:2;fill:none;cursor:pointer;pointer-events:stroke}
+.workflow-connections path.selected{stroke:#7052e8;stroke-width:3.5}
+.workflow-edge-snap{fill:rgba(13,148,136,.25);stroke:#0d9488;stroke-width:3;pointer-events:none;animation:workflow-snap-pulse 1s ease-in-out infinite}
+@keyframes workflow-snap-pulse{0%,100%{r:9}50%{r:12}}
+.workflow-node.connect-target{border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,.28);cursor:copy}
+.workflow-node.connect-target .workflow-connection-handle{opacity:1;background:#0d9488;border-color:#fff}
+.workflow-node.connect-source .workflow-connection-handle.handle-out{opacity:1;transform:translateY(-50%) scale(1.5);background:#0d9488;border-color:#fff}
+.workflow-node:hover .workflow-connection-handle{opacity:1;width:12px;height:12px}

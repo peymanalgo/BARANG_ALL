@@ -40,15 +40,13 @@
     @if (ConnectMode) { <small class="workflow-help">@D["ConnectHint"]</small> }
   </aside>
   <main class="workflow-canvas panel" aria-label="@D["Canvas"]">
-    <div class="workflow-canvas-heading"><h2>@D["Canvas"]</h2><div class="workflow-canvas-tools"><BarangIconButton Icon="plus" Label='@D["Fit"]' Clicked="ZoomInClick" Disabled="@ReadOnly" /><span class="workflow-zoom-value">@($"{Zoom:P0}")</span><BarangIconButton Icon="minus" Label='@D["Fit"]' Clicked="ZoomOutClick" Disabled="@ReadOnly" /><BarangButton Variant="secondary" Icon="move" Text='@D["Fit"]' Disabled="@ReadOnly" Clicked="FitClick" /></div></div>
+    <div class="workflow-canvas-heading"><h2>@D["Canvas"]</h2><div class="workflow-canvas-tools"><BarangIconButton Icon="plus" Label='@D["Fit"]' Clicked="ZoomInClick" Disabled="@ReadOnly" /><span class="workflow-zoom-value">@($"{Zoom:P0}")</span><BarangIconButton Icon="minus" Label='@D["Fit"]' Clicked="ZoomOutClick" Disabled="@ReadOnly" /><BarangButton Variant="secondary" Icon="move" Text='@D["Fit"]' Disabled="@ReadOnly" Clicked="FitClick" /><BarangButton Variant="secondary" Icon="@EdgeStyleIcon" Text='@(OrthogonalEdges ? T("خط شکسته", "Elbow", "متعرجة") : T("خط مستقیم", "Straight", "مستقيمة"))' Disabled="@ReadOnly" Clicked="ToggleEdgeStyleClick" /><BarangButton Variant="secondary" Icon="grid" Text='@(SnapToGrid ? T("شبکه: روشن", "Grid: on", "الشبكة: مفعّلة") : T("شبکه: خاموش", "Grid: off", "الشبكة: متوقفة"))' Clicked="ToggleSnapClick" /><BarangButton Variant="secondary" Icon="magic" Text='@T("مرتب‌سازی خودکار", "Auto arrange", "ترتيب تلقائي")' Disabled="@ReadOnly" Clicked="AutoArrangeClick" /><BarangButton Variant="secondary" Icon="align" Text='@T("هم‌ترازی با شبکه", "Snap all", "محاذاة للشبكة")' Disabled="@ReadOnly" Clicked="SnapAllClick" /></div></div>
     <div class="workflow-canvas-viewport"><div class="workflow-canvas-surface @(PaletteDragType is not null ? "drop-active" : null)" tabindex="0" style="width:@($"{SurfaceWidth}px");height:@($"{SurfaceHeight}px")" @ondragover:preventDefault @ondragover="HandleDragOver" @ondrop="HandleDrop" @onpointermove="HandlePointerMove" @onpointerup="HandlePointerUp" @onpointerleave="HandlePointerLeave" @onclick="CanvasClicked" @onkeydown="HandleCanvasKeyDown">
       <svg class="workflow-connections" width="100%" height="100%" aria-hidden="true">
         <defs><marker id="workflow-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" /></marker></defs>
         @foreach (TransitionModel edge in Transitions)
         {
-          <line class="@(SelectedEdge == edge ? "selected" : null)"
-                x1="@(EdgeX(edge, true))" y1="@(EdgeY(edge, true))"
-                x2="@(EdgeX(edge, false))" y2="@(EdgeY(edge, false))"
+          <path class="@(SelectedEdge == edge ? "selected" : null)" d="@EdgePath(edge)" fill="none"
                  marker-end="url(#workflow-arrow)" @onclick="() => SelectEdge(edge)" @onclick:stopPropagation="true" />
           @if (SelectedEdge == edge && !ReadOnly)
           {
@@ -56,13 +54,14 @@
             <circle class="workflow-edge-anchor" cx="@(EdgeX(edge, false))" cy="@(EdgeY(edge, false))" r="7" @onpointerdown="e => StartEdgeAnchorDrag(edge, false, e)" @onpointerdown:stopPropagation="true" />
           }
         }
+        @if (DragEdge is not null && SnapVisible) { <circle class="workflow-edge-snap" cx="@SnapX" cy="@SnapY" r="11" /> }
       </svg>
       @foreach (TransitionModel edge in Transitions.Where(x => !string.IsNullOrWhiteSpace(EdgeLabel(x)))) { <span class="workflow-edge-label" style="left:@($"{EdgeMidX(edge)}px");top:@($"{EdgeMidY(edge)}px")">@EdgeLabel(edge)</span> }
       @if (PaletteDragType is not null) { <div class="workflow-drop-ghost @NodeCss(PaletteDragType.Value)" style="left:@($"{DropX * Zoom}px");top:@($"{DropY * Zoom}px")"><span class="workflow-shape">@NodeIcon(PaletteDragType.Value)</span><span>@NodeType(PaletteDragType.Value)</span></div> }
       @if (Nodes.Count == 0) { <p class="empty-state">@D["NoNodes"]</p> }
       @foreach (NodeModel node in Nodes)
       {
-        <button type="button" aria-label="@NodeTitle(node)" data-node-key="@node.Key" data-node-type="@NodeCss(node.Type)" class="workflow-node @NodeCss(node.Type) @(Selected == node ? "selected" : null) @(ConnectMode && ConnectSource == node ? "connect-source" : null)" style="left:@($"{node.X * Zoom}px");top:@($"{node.Y * Zoom}px")" @onclick="() => NodeClicked(node)" @onclick:stopPropagation="true" @onpointerdown="e => StartDrag(node,e)" @onpointerdown:stopPropagation="true">
+        <button type="button" aria-label="@NodeTitle(node)" data-node-key="@node.Key" data-node-type="@NodeCss(node.Type)" class="workflow-node @NodeCss(node.Type) @(Selected == node ? "selected" : null) @(ConnectMode && ConnectSource == node ? "connect-source" : null) @(ConnectMode && IsValidTarget(ConnectSource, node) ? "connect-target" : null)" style="left:@($"{node.X * Zoom}px");top:@($"{node.Y * Zoom}px")" @onclick="() => NodeClicked(node)" @onclick:stopPropagation="true" @onpointerdown="e => StartDrag(node,e)" @onpointerdown:stopPropagation="true">
           <span class="workflow-connection-handle handle-in" title="@D["From"]" role="button" tabindex="0" @onclick="e => StartHandle(node)" @onclick:stopPropagation="true" @onpointerdown="e => StartHandle(node)" @onpointerdown:stopPropagation="true"></span><span class="workflow-connection-handle handle-out" title="@D["To"]" role="button" tabindex="0" @onclick="e => StartHandle(node)" @onclick:stopPropagation="true" @onpointerdown="e => StartHandle(node)" @onpointerdown:stopPropagation="true"></span>
           <span class="workflow-shape">@NodeIcon(node.Type)</span><span class="workflow-node-label">@NodeTitle(node)</span><small>@(node.Type == 2 ? PositionTitle(node.PositionId) : node.Key)</small>
         </button>
@@ -99,7 +98,10 @@
 </div>
 
 @code {
-  private TransitionModel? DragEdge; private bool DragEdgeSource; private decimal EdgeDragX; private decimal EdgeDragY;
+  private TransitionModel? DragEdge; private bool DragEdgeSource; private decimal EdgeDragX; private decimal EdgeDragY; private bool OrthogonalEdges = true; private bool SnapToGrid = true; private bool SnapVisible; private decimal SnapX; private decimal SnapY; private const decimal GridSize = 20m;
+  private string T(string fa, string en, string ar) => CurrentCulture switch { "en" => en, "ar" => ar, _ => fa };
+  private string EdgeStyleIcon => OrthogonalEdges ? "workflow" : "route";
+  private decimal Snap(decimal value) => SnapToGrid ? Math.Round(value / GridSize) * GridSize : value;
   private List<NodeModel> Nodes = []; private List<TransitionModel> Transitions = []; private List<PositionModel> Positions = []; private List<VersionModel> History = []; private VersionModel Current = new(); private NodeModel? Selected; private TransitionModel? SelectedEdge; private NodeModel? PendingDelete; private TransitionModel? PendingDeleteEdge; private string? Message; private bool Validated; private bool IsDirty; private List<IssueModel> Issues = []; private bool Editing; private bool HistoryOpen; private bool ConnectMode; private NodeModel? ConnectSource; private NodeModel? DragNode; private double DragStartX; private double DragStartY; private decimal DragNodeX; private decimal DragNodeY; private int? PaletteDragType; private bool PalettePointerMoved; private decimal DropX = 160; private decimal DropY = 120; private decimal Zoom = 1m; private bool Saving; private bool Validating; private bool Publishing; private readonly Stack<EditorSnapshot> UndoStack = []; private readonly Stack<EditorSnapshot> RedoStack = []; private bool ReadOnly => Current.ReadOnly && !Editing; private int SurfaceWidth => Math.Max(1400, (int)(Nodes.Count == 0 ? 0 : Nodes.Max(x => x.X) * Zoom) + 420); private int SurfaceHeight => Math.Max(900, (int)(Nodes.Count == 0 ? 0 : Nodes.Max(x => x.Y) * Zoom) + 300);
   [CascadingParameter(Name = "BarangCulture")] private string? Culture { get; set; }
   private string CurrentCulture => LocalePolicy.Resolve(Culture).Code;
@@ -108,7 +110,7 @@
   private async Task Load(Guid? versionId) { var s = await Session(); if (s is null) return; var r = await Core.GetAsync($"api/v1/workflows/definition{(versionId is null ? "" : $"?versionId={versionId}")}", s.Value.Token, s.Value.Company, default); if (!r.IsSuccess) { Message = D["LoadFailed"]; return; } JsonElement root = r.Value; Current = ParseVersion(root.GetProperty("current")); History = root.GetProperty("history").EnumerateArray().Select(ParseHistory).ToList(); Nodes = root.GetProperty("current").GetProperty("nodes").EnumerateArray().Select(ParseNode).ToList(); Transitions = root.GetProperty("current").GetProperty("transitions").EnumerateArray().Select(ParseTransition).ToList(); Selected = Nodes.FirstOrDefault(); SelectedEdge = null; Validated = false; IsDirty = false; Issues = []; UndoStack.Clear(); RedoStack.Clear(); }
   private async Task LoadPositions() { var s = await Session(); if (s is null) return; var r = await Core.GetAsync("api/v1/workflows/definition/positions?limit=100", s.Value.Token, s.Value.Company, default); if (r.IsSuccess) Positions = r.Value.EnumerateArray().Select(x => new PositionModel(x.GetProperty("id").GetGuid(), x.GetProperty("title").GetString() ?? x.GetProperty("code").GetString() ?? "")).ToList(); }
   private void Add(int type) => AddAt(type, 80 + Nodes.Count * 220, 100 + (Nodes.Count % 4) * 140);
-  private void AddAt(int type, decimal x, decimal y) { if (ReadOnly) return; PushUndo(); string key = $"{TypeKey(type)}-{NextKeyNumber(type)}"; NodeModel node = new() { Key = key, Type = type, TitleFa = NodeType(type), TitleEn = NodeType(type), TitleAr = NodeType(type), X = Math.Max(0, x), Y = Math.Max(0, y) }; Nodes.Add(node); Selected = node; SelectedEdge = null; IsDirty = true; }
+  private void AddAt(int type, decimal x, decimal y) { if (ReadOnly) return; PushUndo(); string key = $"{TypeKey(type)}-{NextKeyNumber(type)}"; NodeModel node = new() { Key = key, Type = type, TitleFa = NodeType(type), TitleEn = NodeType(type), TitleAr = NodeType(type), X = Snap(Math.Max(0, x)), Y = Snap(Math.Max(0, y)) }; Nodes.Add(node); Selected = node; SelectedEdge = null; IsDirty = true; }
   private int NextKeyNumber(int type) { HashSet<int> used = Nodes.Select(x => x.Key).Where(x => x.StartsWith(TypeKey(type) + "-", StringComparison.OrdinalIgnoreCase)).Select(x => int.TryParse(x[(TypeKey(type).Length + 1)..], out int n) ? n : 0).ToHashSet(); int value = 1; while (used.Contains(value)) value++; return value; }
   private void PaletteClick(int type) { if (PalettePointerMoved) { PalettePointerMoved = false; return; } Add(type); }
   private void StartPaletteDrag(int type, PointerEventArgs _) { if (ReadOnly) return; PaletteDragType = type; PalettePointerMoved = false; }
@@ -119,7 +121,7 @@
   private void UpdateDropPoint(DragEventArgs e) { DropX = Math.Max(0, (decimal)e.OffsetX / Zoom - 65); DropY = Math.Max(0, (decimal)e.OffsetY / Zoom - 35); }
   private void HandleDragOver(DragEventArgs e) { if (PaletteDragType is not null) UpdateDropPoint(e); }
   private void HandleDrop(DragEventArgs e) { if (ReadOnly || PaletteDragType is not int paletteType) return; UpdateDropPoint(e); AddAt(paletteType, DropX, DropY); PaletteDragType = null; PalettePointerMoved = true; }
-  private void HandlePointerMove(PointerEventArgs e) { if (PaletteDragType is int paletteType) { UpdateDropPoint(e); PalettePointerMoved = true; return; } if (DragEdge is not null) { EdgeDragX = Math.Max(0, (decimal)e.OffsetX / Zoom); EdgeDragY = Math.Max(0, (decimal)e.OffsetY / Zoom); return; } MoveDrag(e); }
+  private void HandlePointerMove(PointerEventArgs e) { if (PaletteDragType is int paletteType) { UpdateDropPoint(e); PalettePointerMoved = true; return; } if (DragEdge is not null) { decimal x = Math.Max(0, (decimal)e.OffsetX / Zoom), y = Math.Max(0, (decimal)e.OffsetY / Zoom); (NodeModel? snapNode, string snapAnchor, decimal distance) = NearestAnchor(x, y, DragEdgeSource); if (snapNode is not null && distance <= 110m) { SnapVisible = true; SnapX = AnchorPoint(snapNode, snapAnchor, true); SnapY = AnchorPoint(snapNode, snapAnchor, false); EdgeDragX = SnapX / Zoom; EdgeDragY = SnapY / Zoom; } else { SnapVisible = false; EdgeDragX = x; EdgeDragY = y; } return; } MoveDrag(e); }
   private void HandlePointerUp(PointerEventArgs e) { if (PaletteDragType is int paletteType) { UpdateDropPoint(e); if (PalettePointerMoved) AddAt(paletteType, DropX, DropY); PaletteDragType = null; PalettePointerMoved = true; return; } if (DragEdge is not null) { FinishEdgeAnchorDrag(e); return; } EndDrag(e); }
   private void HandlePointerLeave(PointerEventArgs e) { if (PaletteDragType is null && DragEdge is null) EndDrag(e); }
   private void CanvasClicked() { if (PaletteDragType is null && DragNode is null) { Selected = null; SelectedEdge = null; } }
@@ -142,7 +144,7 @@
   private void Select(NodeModel node) { Selected = node; SelectedEdge = null; }
   private void SelectEdge(TransitionModel edge) { if (ReadOnly) return; SelectedEdge = edge; Selected = null; }
   private void StartEdgeAnchorDrag(TransitionModel edge, bool source, PointerEventArgs e) { if (ReadOnly) return; PushUndo(); SelectedEdge = edge; Selected = null; DragEdge = edge; DragEdgeSource = source; EdgeDragX = EdgeX(edge, source) / Zoom; EdgeDragY = EdgeY(edge, source) / Zoom; }
-  private void FinishEdgeAnchorDrag(PointerEventArgs e) { if (DragEdge is null) return; decimal x = Math.Max(0, (decimal)e.OffsetX / Zoom); decimal y = Math.Max(0, (decimal)e.OffsetY / Zoom); (NodeModel? node, string anchor, decimal distance) = NearestAnchor(x, y, DragEdgeSource); if (node is not null && distance <= 110m) { if (DragEdgeSource) { DragEdge.FromKey = node.Key; DragEdge.SourceAnchor = anchor; } else { DragEdge.ToKey = node.Key; DragEdge.TargetAnchor = anchor; } IsDirty = true; } DragEdge = null; }
+  private void FinishEdgeAnchorDrag(PointerEventArgs e) { if (DragEdge is null) return; decimal x = EdgeDragX, y = EdgeDragY; (NodeModel? node, string anchor, decimal distance) = NearestAnchor(x, y, DragEdgeSource); if (node is not null && distance <= 110m) { if (DragEdgeSource) { DragEdge.FromKey = node.Key; DragEdge.SourceAnchor = anchor; } else { DragEdge.ToKey = node.Key; DragEdge.TargetAnchor = anchor; } IsDirty = true; } DragEdge = null; SnapVisible = false; }
   private (NodeModel? Node, string Anchor, decimal Distance) NearestAnchor(decimal x, decimal y, bool source) { NodeModel? bestNode = null; string bestAnchor = "Auto"; decimal best = decimal.MaxValue; foreach (NodeModel node in Nodes) { if (source && node.Type == 1 || !source && node.Type == 0) continue; foreach (string anchor in AnchorsForNode(node)) { decimal ax = AnchorPoint(node, anchor, true) / Zoom, ay = AnchorPoint(node, anchor, false) / Zoom; decimal distance = Math.Abs(ax - x) + Math.Abs(ay - y); if (distance < best) { best = distance; bestNode = node; bestAnchor = anchor; } } } return (bestNode, bestAnchor, best); }
   private static IEnumerable<string> AnchorsForNode(NodeModel node) => node.Type is 3 or 4 ? ["Top", "Right", "Bottom", "Left"] : node.Type == 2 ? ["TopCenter", "RightCenter", "BottomCenter", "LeftCenter"] : ["Top", "Right", "Bottom", "Left"];
   private void ToggleConnect() { if (ReadOnly) return; ConnectMode = !ConnectMode; ConnectSource = null; }
@@ -153,25 +155,86 @@
   private void ConfirmDelete() { if (ReadOnly) return; PushUndo(); if (PendingDeleteEdge is not null) Transitions.Remove(PendingDeleteEdge); if (PendingDelete is not null) { string key = PendingDelete.Key; Transitions.RemoveAll(x => x.FromKey == key || x.ToKey == key); Nodes.Remove(PendingDelete); } PendingDelete = null; PendingDeleteEdge = null; Selected = null; SelectedEdge = null; IsDirty = true; }
   private void DuplicateSelected() { if (ReadOnly || Selected is null || Selected.Type != 2) return; PushUndo(); NodeModel copy = CloneNode(Selected); copy.Id = Guid.Empty; copy.Key = $"task-{NextKeyNumber(2)}"; copy.X += 50; copy.Y += 50; Nodes.Add(copy); Selected = copy; SelectedEdge = null; IsDirty = true; }
   private void StartDrag(NodeModel node, PointerEventArgs e) { if (ReadOnly || ConnectMode) return; PushUndo(); DragNode = node; DragStartX = e.ClientX; DragStartY = e.ClientY; DragNodeX = node.X; DragNodeY = node.Y; Select(node); }
-  private void MoveDrag(PointerEventArgs e) { if (DragNode is null || ReadOnly) return; DragNode.X = Math.Max(0, DragNodeX + (decimal)((e.ClientX - DragStartX) / (double)Zoom)); DragNode.Y = Math.Max(0, DragNodeY + (decimal)((e.ClientY - DragStartY) / (double)Zoom)); IsDirty = true; }
+  private void MoveDrag(PointerEventArgs e) { if (DragNode is null || ReadOnly) return; DragNode.X = Snap(Math.Max(0, DragNodeX + (decimal)((e.ClientX - DragStartX) / (double)Zoom))); DragNode.Y = Snap(Math.Max(0, DragNodeY + (decimal)((e.ClientY - DragStartY) / (double)Zoom))); IsDirty = true; }
   private void PushUndo() { UndoStack.Push(Capture()); if (UndoStack.Count > 50) { var items = UndoStack.Take(50).ToArray(); UndoStack.Clear(); foreach (var item in items.Reverse()) UndoStack.Push(item); } RedoStack.Clear(); }
   private EditorSnapshot Capture() => new(Nodes.Select(CloneNode).ToList(), Transitions.Select(CloneTransition).ToList());
   private void Restore(EditorSnapshot snapshot) { Nodes = snapshot.Nodes.Select(CloneNode).ToList(); Transitions = snapshot.Transitions.Select(CloneTransition).ToList(); Selected = null; SelectedEdge = null; IsDirty = true; }
   private void Undo() { if (ReadOnly || UndoStack.Count == 0) return; RedoStack.Push(Capture()); Restore(UndoStack.Pop()); }
   private void Redo() { if (ReadOnly || RedoStack.Count == 0) return; UndoStack.Push(Capture()); Restore(RedoStack.Pop()); }
   private void EndDrag(PointerEventArgs _) { if (DragNode is not null) IsDirty = true; DragNode = null; }
-  private void HandleCanvasKeyDown(KeyboardEventArgs e) { if (ReadOnly) return; if (e.Key is "Delete" or "Backspace") DeleteSelected(); else if (e.CtrlKey && e.Key.Equals("z", StringComparison.OrdinalIgnoreCase)) Undo(); else if (e.CtrlKey && e.Key.Equals("y", StringComparison.OrdinalIgnoreCase)) Redo(); }
+  private void HandleCanvasKeyDown(KeyboardEventArgs e) { if (ReadOnly) return; if (e.Key is "Delete" or "Backspace") DeleteSelected(); else if (e.CtrlKey && e.Key.Equals("z", StringComparison.OrdinalIgnoreCase)) Undo(); else if (e.CtrlKey && e.Key.Equals("y", StringComparison.OrdinalIgnoreCase)) Redo(); else if (Selected is not null && e.Key.StartsWith("Arrow")) { decimal step = SnapToGrid ? GridSize : 5m; decimal dx = e.Key == "ArrowLeft" ? -step : e.Key == "ArrowRight" ? step : 0m; decimal dy = e.Key == "ArrowUp" ? -step : e.Key == "ArrowDown" ? step : 0m; if (dx != 0m || dy != 0m) { Selected.X = Math.Max(0, Selected.X + dx); Selected.Y = Math.Max(0, Selected.Y + dy); IsDirty = true; } } }
   private static NodeModel CloneNode(NodeModel source) => new() { Id = source.Id, Key = source.Key, Type = source.Type, TitleFa = source.TitleFa, TitleEn = source.TitleEn, TitleAr = source.TitleAr, DescriptionFa = source.DescriptionFa, DescriptionEn = source.DescriptionEn, DescriptionAr = source.DescriptionAr, PositionId = source.PositionId, X = source.X, Y = source.Y };
   private static TransitionModel CloneTransition(TransitionModel source) => new() { Id = source.Id, FromKey = source.FromKey, ToKey = source.ToKey, FieldCode = source.FieldCode, Operator = source.Operator, Value = source.Value, IsDefault = source.IsDefault, SortOrder = source.SortOrder, OutcomeCode = source.OutcomeCode, SourceAnchor = source.SourceAnchor, TargetAnchor = source.TargetAnchor, TitleFa = source.TitleFa, TitleEn = source.TitleEn, TitleAr = source.TitleAr };
   private void ZoomBy(decimal delta) => Zoom = Math.Clamp(Zoom + delta, .5m, 2m);
+  private void ToggleEdgeStyleClick(MouseEventArgs _) { OrthogonalEdges = !OrthogonalEdges; IsDirty = true; }
+  private void ToggleSnapClick(MouseEventArgs _) => SnapToGrid = !SnapToGrid;
+  private void AutoArrangeClick(MouseEventArgs _) => AutoArrange();
+  private void SnapAllClick(MouseEventArgs _) { if (ReadOnly || Nodes.Count == 0) return; PushUndo(); foreach (NodeModel node in Nodes) { node.X = Snap(node.X); node.Y = Snap(node.Y); } IsDirty = true; }
+  private bool IsValidTarget(NodeModel? source, NodeModel target) => source is not null && source.Key != target.Key && target.Type != 0 && source.Type != 1 && !Transitions.Any(x => x.FromKey == source.Key && x.ToKey == target.Key);
+  private void AutoArrange()
+  {
+    if (ReadOnly || Nodes.Count == 0) return;
+    PushUndo();
+    NodeModel? start = Nodes.FirstOrDefault(x => x.Type == 0) ?? Nodes.First();
+    Dictionary<string, int> layers = new() { [start.Key] = 0 };
+    Queue<NodeModel> queue = new();
+    queue.Enqueue(start);
+    while (queue.Count > 0)
+    {
+      NodeModel current = queue.Dequeue();
+      foreach (TransitionModel transition in Transitions.Where(x => x.FromKey == current.Key))
+      {
+        NodeModel? next = Nodes.FirstOrDefault(x => x.Key == transition.ToKey);
+        if (next is null || layers.ContainsKey(next.Key)) continue;
+        layers[next.Key] = layers[current.Key] + 1;
+        queue.Enqueue(next);
+      }
+    }
+    int fallback = layers.Values.DefaultIfEmpty(0).Max() + 1;
+    foreach (NodeModel node in Nodes.Where(x => !layers.ContainsKey(x.Key))) layers[node.Key] = fallback;
+    foreach (var column in layers.GroupBy(x => x.Value).OrderBy(x => x.Key))
+    {
+      int row = 0;
+      foreach (string key in column.OrderBy(x => x).Select(x => x.Key))
+      {
+        NodeModel? node = Nodes.FirstOrDefault(x => x.Key == key);
+        if (node is null) continue;
+        node.X = Snap(80 + column.Key * 280);
+        node.Y = Snap(80 + row++ * 160);
+      }
+    }
+    IsDirty = true;
+  }
   private void Fit() { if (Nodes.Count == 0) { Zoom = 1m; return; } decimal width = Math.Max(1m, Nodes.Max(x => x.X) - Nodes.Min(x => x.X) + 180m); decimal height = Math.Max(1m, Nodes.Max(x => x.Y) - Nodes.Min(x => x.Y) + 140m); decimal widthFit = 900m / width; decimal heightFit = 620m / height; Zoom = Math.Clamp(Math.Min(widthFit, heightFit), .5m, 2m); }
   private decimal CenterX(string key) { NodeModel? n = Nodes.FirstOrDefault(x => x.Key == key); return n is null ? 0 : (n.X + 70) * Zoom; }
   private decimal CenterY(string key) { NodeModel? n = Nodes.FirstOrDefault(x => x.Key == key); return n is null ? 0 : (n.Y + 32) * Zoom; }
   private decimal EdgeX(TransitionModel edge, bool source) => DragEdge == edge && DragEdgeSource == source ? EdgeDragX * Zoom : AnchorPoint(Nodes.FirstOrDefault(x => x.Key == (source ? edge.FromKey : edge.ToKey)), source ? edge.SourceAnchor : edge.TargetAnchor, true);
   private decimal EdgeY(TransitionModel edge, bool source) => DragEdge == edge && DragEdgeSource == source ? EdgeDragY * Zoom : AnchorPoint(Nodes.FirstOrDefault(x => x.Key == (source ? edge.FromKey : edge.ToKey)), source ? edge.SourceAnchor : edge.TargetAnchor, false);
   private decimal AnchorPoint(NodeModel? node, string anchor, bool xAxis) { if (node is null) return 0; decimal w = node.Type is 0 or 1 ? 48 : node.Type is 3 or 4 ? 62 : 142; decimal h = node.Type is 0 or 1 ? 48 : node.Type is 3 or 4 ? 62 : 70; decimal x = node.X + w / 2m, y = node.Y + h / 2m; return (anchor, xAxis) switch { ("Top", true) => x, ("Top", false) => node.Y, ("TopCenter", true) => x, ("TopCenter", false) => node.Y, ("Right", true) => node.X + w, ("Right", false) => y, ("RightCenter", true) => node.X + w, ("RightCenter", false) => y, ("Bottom", true) => x, ("Bottom", false) => node.Y + h, ("BottomCenter", true) => x, ("BottomCenter", false) => node.Y + h, ("Left", true) => node.X, ("Left", false) => y, ("LeftCenter", true) => node.X, ("LeftCenter", false) => y, _ => xAxis ? x : y } * Zoom; }
-  private decimal EdgeMidX(TransitionModel edge) => (EdgeX(edge, true) + EdgeX(edge, false)) / 2m;
-  private decimal EdgeMidY(TransitionModel edge) => (EdgeY(edge, true) + EdgeY(edge, false)) / 2m - 5m;
+  private decimal EdgeMidX(TransitionModel edge) { var pts = EdgePoints(edge); int mid = pts.Length / 2 - 1; return (pts[mid].X + pts[mid + 1].X) / 2m; }
+  private decimal EdgeMidY(TransitionModel edge) { var pts = EdgePoints(edge); int mid = pts.Length / 2 - 1; return (pts[mid].Y + pts[mid + 1].Y) / 2m - 5m; }
+  private (decimal X, decimal Y)[] EdgePoints(TransitionModel edge)
+  {
+    decimal x1 = EdgeX(edge, true), y1 = EdgeY(edge, true), x2 = EdgeX(edge, false), y2 = EdgeY(edge, false);
+    if (!OrthogonalEdges) return [(x1, y1), (x2, y2)];
+    NodeModel? source = Nodes.FirstOrDefault(x => x.Key == edge.FromKey);
+    string side = source is null
+      ? (Math.Abs(x2 - x1) >= Math.Abs(y2 - y1) ? "H" : "V")
+      : edge.SourceAnchor switch
+      {
+        "Top" or "TopCenter" or "Bottom" or "BottomCenter" => "V",
+        "Left" or "LeftCenter" or "Right" or "RightCenter" => "H",
+        _ => Math.Abs(x2 - x1) >= Math.Abs(y2 - y1) ? "H" : "V"
+      };
+    return side == "H"
+      ? [(x1, y1), ((x1 + x2) / 2m, y1), ((x1 + x2) / 2m, y2), (x2, y2)]
+      : [(x1, y1), (x1, (y1 + y2) / 2m), (x2, (y1 + y2) / 2m), (x2, y2)];
+  }
+  private string EdgePath(TransitionModel edge)
+  {
+    var pts = EdgePoints(edge);
+    return string.Join(" ", pts.Select((p, i) => (i == 0 ? "M" : "L") + " " + p.X.ToString(System.Globalization.CultureInfo.InvariantCulture) + " " + p.Y.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+  }
   private string OutcomeLabel(string value) => value switch { "Approve" => I["Approve"], "Reject" => I["Reject"], "AuditReject" => I["AuditReject"], _ => value };
   private string AnchorLabel(string value) => I[value];
   private bool IsExclusiveSource(TransitionModel edge) => Nodes.FirstOrDefault(x => x.Key == edge.FromKey)?.Type == 3;
