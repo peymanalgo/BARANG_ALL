@@ -2,22 +2,42 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject IJSRuntime JS
-<div class="language-switch" aria-label="@L["Language"]">
-    <span class="sr-only">@L["Language"]</span>
-    @foreach (var language in Languages)
+<div class="lang-dd @(Open ? "open" : null)">
+    <button type="button" class="lang-dd-toggle" aria-label="@L["Language"]" aria-expanded="@Open" title="@CurrentLabel" @onclick="Toggle">
+        <BarangIcon Name="globe" />
+        <span class="lang-dd-current">@CurrentLabel</span>
+    </button>
+    @if (Open)
     {
-        <a class="@(Current == language.Code ? "selected" : null)" href="@CultureUrl(language.Code)" hreflang="@language.Code" data-enhance-nav="false" aria-disabled="@Busy" @onclick="() => ChangeLanguage(language.Code)" @onclick:preventDefault>@language.Label</a>
+        <button type="button" class="lang-dd-backdrop" aria-hidden="true" tabindex="-1" @onclick="Close"></button>
+        <ul class="lang-dd-menu" role="listbox" aria-label="@L["Language"]">
+            @foreach (var language in Languages)
+            {
+                <li>
+                    <button type="button" role="option" aria-selected="@(Current == language.Code)" class="@(Current == language.Code ? "selected" : null)" hreflang="@language.Code" @onclick="() => ChangeLanguage(language.Code)">
+                        <span>@language.Label</span>
+                        @if (Current == language.Code)
+                        {
+                            <BarangIcon Name="check" />
+                        }
+                    </button>
+                </li>
+            }
+        </ul>
     }
     @if (Failed) { <span class="field-validation" role="alert">@L["ErrorMessage"]</span> }
 </div>
 @code {
     [CascadingParameter] private UiCultureState? Culture { get; set; }
-    private bool Busy, Failed;
+    private bool Busy, Failed, Open;
     [CascadingParameter(Name = "BarangCulture")] private string? BarangCulture { get; set; }
     private string? BrowserCulture;
     private static readonly (string Code, string Label)[] Languages = [("fa", "فارسی"), ("ar", "العربية"), ("en", "English")];
     private string Current => LocalePolicy.Resolve(Culture?.Code ?? BarangCulture ?? BrowserCulture ?? CultureInfo.CurrentUICulture.Name).Code;
+    private string CurrentLabel => Languages.First(l => l.Code == Current).Label;
     private string CultureUrl(string code) => $"/culture?culture={code}&returnUrl={Uri.EscapeDataString('/' + Navigation.ToBaseRelativePath(Navigation.Uri))}";
+    private void Toggle() => Open = !Open;
+    private void Close() => Open = false;
     private async Task ChangeLanguage(string code)
     {
         if (Busy || Current == code) return;
@@ -28,6 +48,7 @@
             await JS.InvokeVoidAsync("barangSetCulture", code);
             if (Culture is not null) await Culture.ChangeAsync(code);
             BrowserCulture = code;
+            Open = false;
         }
         catch (JSException) { Failed = true; }
         finally { Busy = false; }

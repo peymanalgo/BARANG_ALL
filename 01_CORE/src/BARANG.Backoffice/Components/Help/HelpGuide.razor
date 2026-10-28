@@ -1,0 +1,123 @@
+@using System.Globalization
+@using BARANG.Backoffice.Components.Help
+@inject IStringLocalizer<AppStrings> L
+@inject IJSRuntime JS
+<button type="button" class="help-launcher" title="@T("راهنمای سیستم", "System Guide", "دليل النظام")" aria-label="@T("راهنمای سیستم", "System Guide", "دليل النظام")" @onclick="Open">
+    <BarangIcon Name="help" />
+</button>
+
+@if (Visible)
+{
+    <button type="button" class="help-backdrop" aria-hidden="true" tabindex="-1" @onclick="Close" @ref="_backdrop"></button>
+    <div class="help-overlay" role="dialog" aria-modal="true" dir="@Dir" @ref="_overlay">
+        <header class="help-header">
+            <h2><BarangIcon Name="help" /> @T("راهنمای سیستم", "System Guide", "دليل النظام")</h2>
+            <input type="search" class="help-search" placeholder="@T("جستجو در راهنما…", "Search the guide…", "ابحث في الدليل…")" value="@Filter" @oninput="SearchChanged" />
+            <button type="button" class="help-close" aria-label="@L["Close"]" @onclick="Close"><BarangIcon Name="close" /></button>
+        </header>
+        <div class="help-body">
+            <nav class="help-tree" aria-label="@T("درخت منوها", "Menu tree", "شجرة القوائم")">
+                <ul>
+                    @foreach (var root in HelpCatalog.Roots)
+                    {
+                        <HelpTreeNode Node="@root" Culture="@CultureCode" Filter="@TrimmedFilter" SelectedId="@SelectedId" ExpandedIds="@ExpandedIds" Select="Select" Toggle="Toggle" />
+                    }
+                </ul>
+            </nav>
+            <section class="help-detail">
+                @if (Selected is null)
+                {
+                    <div class="help-empty">
+                        <BarangIcon Name="help" />
+                        <p>@T("یکی از منوها را از درخت انتخاب کنید تا راهنمای کامل آن نمایش داده شود.", "Pick a menu from the tree to see its full guide.", "اختر قائمة من الشجرة لعرض دليلها الكامل.")</p>
+                    </div>
+                }
+                else
+                {
+                    <p class="help-breadcrumb">@SelectedPath</p>
+                    <h2>@Selected.Name(CultureCode)</h2>
+                    <div class="help-text"><p>@Selected.Description(CultureCode)</p></div>
+                    @if (!string.IsNullOrWhiteSpace(Selected.Route))
+                    {
+                        <a class="help-go" href="@Selected.Route">@T("رفتن به این بخش", "Open this section", "افتح هذا القسم")</a>
+                    }
+                }
+            </section>
+        </div>
+    </div>
+}
+@code {
+    private bool Visible;
+    private Microsoft.AspNetCore.Components.ElementReference? _backdrop;
+    private Microsoft.AspNetCore.Components.ElementReference? _overlay;
+    private string? SelectedId;
+    private string Filter = "";
+    private readonly HashSet<string> ExpandedIds = new() { "master", "system", "ref-shared", "ref-shared/price.group", "ref-artwork" };
+
+    [CascadingParameter(Name = "BarangCulture")] private string? BarangCulture { get; set; }
+    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() is var c && c is "en" or "ar" ? c : "fa";
+    private string Dir => CultureCode == "en" ? "ltr" : "rtl";
+    private string TrimmedFilter => Filter.Trim();
+
+    private HelpNode? Selected => Find(HelpCatalog.Roots, SelectedId);
+    private string SelectedPath
+    {
+        get
+        {
+            var chain = new List<HelpNode>();
+            PathTo(HelpCatalog.Roots, SelectedId, chain);
+            return string.Join(" › ", chain.Select(n => n.Name(CultureCode)));
+        }
+    }
+
+    private string T(string fa,string en,string ar)=>CultureCode switch{"en"=>en,"ar"=>ar,_=>fa};
+    private void Open() { Visible = true; }
+    private void Close() { Visible = false; }
+    protected override async Task OnAfterRenderAsync(bool first)
+    {
+        if (!Visible) return;
+        try { await JS.InvokeVoidAsync("barangPortalMove", _backdrop, _overlay); } catch (JSDisconnectedException) { }
+    }
+
+    private void Select(HelpNode node) { SelectedId = node.Id; var chain = new List<HelpNode>(); PathTo(HelpCatalog.Roots, node.Id, chain); foreach (var n in chain) if (n.Children is not null) ExpandedIds.Add(n.Id); }
+    private void Toggle(HelpNode node) { if (!ExpandedIds.Remove(node.Id)) ExpandedIds.Add(node.Id); }
+    private void SearchChanged(ChangeEventArgs e)
+    {
+        Filter = e.Value?.ToString() ?? "";
+        if (TrimmedFilter.Length > 0) ExpandMatches();
+    }
+    private void ExpandMatches()
+    {
+        foreach (var root in HelpCatalog.Roots) MarkVisible(root);
+    }
+    private bool MarkVisible(HelpNode node)
+    {
+        bool self = node.Name(CultureCode).Contains(TrimmedFilter, StringComparison.OrdinalIgnoreCase) || node.Description(CultureCode).Contains(TrimmedFilter, StringComparison.OrdinalIgnoreCase);
+        bool child = false;
+        if (node.Children is not null) foreach (var c in node.Children) if (MarkVisible(c)) child = true;
+        if (self || child) ExpandedIds.Add(node.Id); else ExpandedIds.Remove(node.Id);
+        return self || child;
+    }
+
+    private static HelpNode? Find(IReadOnlyList<HelpNode> nodes, string? id)
+    {
+        if (id is null) return null;
+        foreach (var n in nodes)
+        {
+            if (n.Id == id) return n;
+            if (n.Children is not null) { var hit = Find(n.Children, id); if (hit is not null) return hit; }
+        }
+        return null;
+    }
+    private static bool PathTo(IReadOnlyList<HelpNode> nodes, string? id, List<HelpNode> chain)
+    {
+        foreach (var n in nodes)
+        {
+            chain.Add(n);
+            if (n.Id == id) return true;
+            if (n.Children is not null && PathTo(n.Children, id, chain)) return true;
+            chain.RemoveAt(chain.Count - 1);
+        }
+        return false;
+    }
+}

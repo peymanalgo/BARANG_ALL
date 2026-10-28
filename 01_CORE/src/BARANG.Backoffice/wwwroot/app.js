@@ -208,3 +208,12 @@ window.barangCartableShortcuts = {
     focusSearch() { document.querySelector('.cartable-v2-search input')?.focus(); },
     dispose() { if (this.handler) document.removeEventListener('keydown', this.handler); this.handler = null; this.dotnet = null; }
 };
+
+// Portal: move fixed overlays out of stacking contexts that would clip them
+// (e.g. the topbar's backdrop-filter makes it the containing block for
+// position:fixed children).
+window.barangPortalMove = (...elements) => {
+    for (const el of elements) {
+        if (el instanceof Element && el.parentNode !== document.body) document.body.appendChild(el);
+    }
+};

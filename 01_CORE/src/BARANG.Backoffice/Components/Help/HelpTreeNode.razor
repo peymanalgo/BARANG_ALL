@@ -1,0 +1,50 @@
+@namespace BARANG.Backoffice.Components.Help
+@using BARANG.Backoffice.Components.Help
+<ul class="help-branch">
+    @{
+        bool match = Filter.Length == 0 || Matches(Node);
+        if (!match) return;
+    }
+    <li>
+        @if (Node.Children is not null && Node.Children.Count > 0)
+        {
+            <button type="button" class="help-node help-group @(SelectedId==Node.Id ? "is-selected" : null) @(Expanded ? "is-open" : null)" @onclick="() => Toggle.InvokeAsync(Node)">
+                <span class="help-caret">@(Expanded ? "▾" : "▸")</span>
+                <span>@Node.Name(Culture)</span>
+            </button>
+            @if (Expanded)
+            {
+                @foreach (var child in Node.Children)
+                {
+                    <HelpTreeNode Node="@child" Culture="@Culture" Filter="@Filter" SelectedId="@SelectedId" ExpandedIds="@ExpandedIds" Select="@Select" Toggle="@Toggle" />
+                }
+            }
+        }
+        else
+        {
+            <button type="button" class="help-node help-leaf @(SelectedId==Node.Id ? "is-selected" : null)" @onclick="() => Select.InvokeAsync(Node)">
+                <span class="help-dot"></span>
+                <span>@Node.Name(Culture)</span>
+            </button>
+        }
+    </li>
+</ul>
+@code {
+    [Parameter, EditorRequired] public HelpNode Node { get; set; } = default!;
+    [Parameter, EditorRequired] public string Culture { get; set; } = "fa";
+    [Parameter, EditorRequired] public string Filter { get; set; } = "";
+    [Parameter, EditorRequired] public string? SelectedId { get; set; }
+    [Parameter, EditorRequired] public HashSet<string> ExpandedIds { get; set; } = new();
+    [Parameter, EditorRequired] public EventCallback<HelpNode> Select { get; set; }
+    [Parameter, EditorRequired] public EventCallback<HelpNode> Toggle { get; set; }
+
+    private bool Expanded => Filter.Length > 0 || ExpandedIds.Contains(Node.Id);
+
+    private bool Matches(HelpNode node)
+    {
+        if (node.Name(Culture).Contains(Filter, StringComparison.OrdinalIgnoreCase)) return true;
+        if (node.Children is null) return false;
+        foreach (var c in node.Children) if (Matches(c)) return true;
+        return false;
+    }
+}
