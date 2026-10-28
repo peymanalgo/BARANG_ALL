@@ -28,7 +28,7 @@ public enum FileProcessingStatus { Pending, Processing, Succeeded, Failed, NotAp
 public enum FileProcessingJobType { ThumbnailGeneration }
 public enum FileLinkEntityType { Artwork, Order, OrderItem, OrderPrintOperation, SupplierContract, SupplierDocument }
 public enum FileLinkPurpose { Source, Attachment, Reference }
-public enum FileDerivativeType { Thumbnail, Web }
+public enum FileDerivativeType { Thumbnail, Web, PublicWeb }
 
 public sealed class Artwork
 {

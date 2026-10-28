@@ -24,6 +24,12 @@ internal sealed class DatabaseAvailabilityService(
             new EventId(2, nameof(DatabaseUnavailable)),
             "PostgreSQL is unavailable (attempt {Attempt}/{MaximumAttempts}); retrying.");
 
+    private static readonly Action<ILogger, Exception?> MigrationsApplied =
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(3, nameof(MigrationsApplied)),
+            "Database migrations applied on startup.");
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         DatabaseAvailabilityOptions settings = options.Value;
@@ -45,6 +51,13 @@ internal sealed class DatabaseAvailabilityService(
             if (await dbContext.Database.CanConnectAsync(cancellationToken))
             {
                 DatabaseAvailable(logger, attempt, null);
+                if (settings.MigrateOnStartup)
+                {
+                    // Applies pending EF migrations so a fresh environment (e.g. a
+                    // new VPS database) gets the full schema without manual steps.
+                    await dbContext.Database.MigrateAsync(cancellationToken);
+                    MigrationsApplied(logger, null);
+                }
                 return;
             }
 

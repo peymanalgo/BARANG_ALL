@@ -8,4 +8,5 @@ public sealed class DatabaseAvailabilityOptions
     public bool WaitForAvailability { get; init; } = true;
     public int MaximumAttempts { get; init; } = DefaultMaximumAttempts;
     public int DelaySeconds { get; init; } = DefaultDelaySeconds;
+    public bool MigrateOnStartup { get; init; } = true;
 }

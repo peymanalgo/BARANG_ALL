@@ -43,6 +43,13 @@ public sealed class MinioObjectStorage(IMinioClient client, IOptions<FileStorage
         return _signingClient;
     }
     private IMinioClient? _signingClient;
+    public string GetPublicObjectUrl(string key)
+    {
+        string bucket=string.IsNullOrWhiteSpace(_settings.PublicBucket)?Bucket:_settings.PublicBucket;
+        string scheme=_settings.PublicSecure?"https":"http";
+        string endpoint=string.IsNullOrWhiteSpace(_settings.PublicEndpoint)?_settings.Endpoint:_settings.PublicEndpoint;
+        return $"{scheme}://{endpoint}/{bucket}/{key}";
+    }
     public void Dispose() => _clientGate.Dispose();
 }
 
@@ -58,7 +65,8 @@ internal sealed class MinioBucketInitializer(IMinioClient client,IOptions<FileSt
             if(!await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(publicBucket),ct))await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(publicBucket),ct);
             try
             {
-                await client.SetPolicyAsync(new SetPolicyArgs().WithBucket(publicBucket).WithPolicy("download"),ct);
+                string readOnlyPolicy="{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]},\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::"+publicBucket+"/*\"]}]}";
+                await client.SetPolicyAsync(new SetPolicyArgs().WithBucket(publicBucket).WithPolicy(readOnlyPolicy),ct);
             }
             catch(MinioException)
             {
