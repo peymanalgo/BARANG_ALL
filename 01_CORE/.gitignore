@@ -1,0 +1,5 @@
+
+01_CORE/storage/*
+!01_CORE/storage/barang-public.tar.gz.part-aa
+!01_CORE/storage/barang-public.tar.gz.part-ab
+01_CORE/.tmp-*
