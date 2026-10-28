@@ -36,7 +36,18 @@
                 {
                     <p class="help-breadcrumb">@SelectedPath</p>
                     <h2>@Selected.Name(CultureCode)</h2>
-                    <div class="help-text"><p>@Selected.Description(CultureCode)</p></div>
+                    <h3 class="help-section-title">@T("هدف", "Purpose", "الهدف")</h3>
+                    <div class="help-text help-purpose"><p>@Selected.Purpose(CultureCode)</p></div>
+                    @if (Selected.Features(CultureCode).Length > 0)
+                    {
+                        <h3 class="help-section-title">@T("امکانات", "Features", "الميزات")</h3>
+                        <ul class="help-features">
+                            @foreach (var line in Selected.Features(CultureCode).Split('\n'))
+                            {
+                                <li>@line</li>
+                            }
+                        </ul>
+                    }
                     @if (!string.IsNullOrWhiteSpace(Selected.Route))
                     {
                         <a class="help-go" href="@Selected.Route">@T("رفتن به این بخش", "Open this section", "افتح هذا القسم")</a>
@@ -92,7 +103,7 @@
     }
     private bool MarkVisible(HelpNode node)
     {
-        bool self = node.Name(CultureCode).Contains(TrimmedFilter, StringComparison.OrdinalIgnoreCase) || node.Description(CultureCode).Contains(TrimmedFilter, StringComparison.OrdinalIgnoreCase);
+        bool self = node.Name(CultureCode).Contains(TrimmedFilter, StringComparison.OrdinalIgnoreCase) || node.Purpose(CultureCode).Contains(TrimmedFilter, StringComparison.OrdinalIgnoreCase);
         bool child = false;
         if (node.Children is not null) foreach (var c in node.Children) if (MarkVisible(c)) child = true;
         if (self || child) ExpandedIds.Add(node.Id); else ExpandedIds.Remove(node.Id);
