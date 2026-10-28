@@ -77,7 +77,7 @@ internal sealed class FileProcessingWorker(IServiceScopeFactory scopes,IFileProc
         foreach((FileDerivativeType _,string key,string media,byte[] bytes,string _) in prepared)
         {
             await using MemoryStream upload=new(bytes,false);
-            await storage.PutAsync(new(key,upload,bytes.Length,media),stoppingToken);
+            await storage.PutAsync(new(key,upload,bytes.Length,media,"public,max-age=31536000,immutable"),stoppingToken);
         }
         for(int attempt=1;;attempt++)
         {

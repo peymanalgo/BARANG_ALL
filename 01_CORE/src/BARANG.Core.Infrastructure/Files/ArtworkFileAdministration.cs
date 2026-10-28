@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using BARANG.Core.Application.Background;
 using System.Security.Cryptography;
 using System.Text;
 using BARANG.Core.Application.Abstractions.Actors;
@@ -17,7 +18,7 @@ using Microsoft.Extensions.Options;
 
 namespace BARANG.Core.Infrastructure.Files;
 
-public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExecutor tx, ICompanyContext company, ICurrentActor actor, IAuditWriter audit, IAuditReader auditReader, IObjectStorage storage, IFileProcessingQueue processingQueue, IOptions<FileStorageOptions> options, TimeProvider time) : IArtworkFileAdministration
+public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExecutor tx, ICompanyContext company, ICurrentActor actor, IAuditWriter audit, IAuditReader auditReader, IObjectStorage storage, IFileProcessingQueue processingQueue, IOptions<FileStorageOptions> options, TimeProvider time, IApplicationCache cache) : IArtworkFileAdministration
 {
     private Guid Company => company.RequireCompanyId(); private Guid Actor => Guid.TryParse(actor.Actor.UserId, out Guid id) ? id : throw new InvalidOperationException("An authenticated user is required."); private DateTimeOffset Now => time.GetUtcNow();
     public Task<Result<ArtworkView>> CreateArtworkAsync(ArtworkCommand c, CancellationToken ct) => tx.ExecuteAsync(async t => { Result<Artwork> x = Artwork.Create(Guid.NewGuid(), Company, c.Code, c.Title, c.Description, c.CategoryCode, c.DesignerUserId, Now); if (x.IsFailure) return Result.Failure<ArtworkView>(x.Error); if (await db.Artworks.AnyAsync(a => a.Code == x.Value.Code, t)) return Result.Failure<ArtworkView>(FileErrors.DuplicateCode); db.Artworks.Add(x.Value); Log("artwork.created", "artwork", x.Value.Id); return Result.Success(A(x.Value)); }, ct);
@@ -70,7 +71,7 @@ public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExec
         FileDerivative? derivative = version is null ? null : await db.FileDerivatives.AsNoTracking().SingleOrDefaultAsync(x => x.SourceFileVersionId == version.FileVersionId && x.DerivativeType == FileDerivativeType.Thumbnail, t);
         if (derivative is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
         Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t);
-        return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.png", derivative.MediaType, derivative.SizeBytes, content));
+        return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.png", derivative.MediaType, derivative.SizeBytes, content, derivative.Sha256Hash));
     }, ct);
     public Task<Result<DownloadFile>> GetWebVariantAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
     {
@@ -80,7 +81,44 @@ public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExec
         FileDerivative? derivative = version is null ? null : await db.FileDerivatives.AsNoTracking().SingleOrDefaultAsync(x => x.SourceFileVersionId == version.FileVersionId && x.DerivativeType == FileDerivativeType.Web, t);
         if (derivative is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
         Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t);
-        return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.webp", derivative.MediaType, derivative.SizeBytes, content));
+        return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.webp", derivative.MediaType, derivative.SizeBytes, content, derivative.Sha256Hash));
+    }, ct);
+    public Task<Result<DerivativeUrlView>> GetDerivativeUrlAsync(Guid artworkId, string variant, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        bool web = string.Equals(variant, "web", StringComparison.OrdinalIgnoreCase);
+        Artwork? artwork = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(x => x.Id == artworkId, t);
+        if (artwork?.CurrentVersionId is not Guid currentVersionId) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        ArtworkVersion? version = await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentVersionId && x.ArtworkId == artworkId, t);
+        FileDerivative? derivative = version is null ? null : await db.FileDerivatives.AsNoTracking().SingleOrDefaultAsync(x => x.SourceFileVersionId == version.FileVersionId && x.DerivativeType == (web ? FileDerivativeType.Web : FileDerivativeType.Thumbnail), t);
+        if (derivative is null) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        string bucket = (DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 600L).ToString("D10",System.Globalization.CultureInfo.InvariantCulture);
+        CacheKey cacheKey = new(company.RequireCompanyId(), string.Empty, $"artwork-image-url:{artworkId:N}:{(web ? "web" : "thumb")}:{bucket}");
+        DerivativeUrlView? cached = await cache.GetAsync<DerivativeUrlView>(cacheKey, t);
+        if (cached is not null) return Result.Success(cached);
+        int expiry = Math.Clamp(options.Value.DerivativeUrlExpirySeconds, 600, 604800);
+        string? url = await storage.GetPresignedReadUrlAsync(derivative.StorageKey, expiry, t);
+        if (url is null) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        DerivativeUrlView view = new(url, derivative.MediaType, expiry, derivative.Sha256Hash);
+        await cache.SetAsync(cacheKey, view, TimeSpan.FromMinutes(9), t);
+        return Result.Success(view);
+    }, ct);
+    public Task<Result<DerivativeUrlView>> GetOriginalUrlAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        Artwork? artwork = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(x => x.Id == artworkId, t);
+        if (artwork?.CurrentVersionId is not Guid currentVersionId) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        ArtworkVersion? version = await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentVersionId && x.ArtworkId == artworkId, t);
+        FileVersion? file = version is null ? null : await db.FileVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == version.FileVersionId, t);
+        if (file is null || !file.MediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        string bucket = (DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300L).ToString("D10",System.Globalization.CultureInfo.InvariantCulture);
+        CacheKey cacheKey = new(company.RequireCompanyId(), string.Empty, $"artwork-original-url:{artworkId:N}:{bucket}");
+        DerivativeUrlView? cached = await cache.GetAsync<DerivativeUrlView>(cacheKey, t);
+        if (cached is not null) return Result.Success(cached);
+        int expiry = Math.Clamp(options.Value.OriginalUrlExpirySeconds, 300, 604800);
+        string? url = await storage.GetPresignedReadUrlAsync(file.StorageKey, expiry, t);
+        if (url is null) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        DerivativeUrlView view = new(url, file.MediaType, expiry, file.Sha256Hash);
+        await cache.SetAsync(cacheKey, view, TimeSpan.FromMinutes(4), t);
+        return Result.Success(view);
     }, ct);
     public Task<Result<DownloadFile>> GetOriginalArtworkAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
     {
@@ -93,7 +131,7 @@ public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExec
         if (file is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
         Stream? content = await storage.OpenReadAsync(file.StorageKey, t);
         if (content is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
-        return Result.Success(new DownloadFile(file.OriginalFileName, file.MediaType, file.SizeBytes, content));
+        return Result.Success(new DownloadFile(file.OriginalFileName, file.MediaType, file.SizeBytes, content, file.Sha256Hash));
     }, ct);
     public Task<Result<ArtworkTagView>> CreateTagAsync(string code, string name, CancellationToken ct) => tx.ExecuteAsync(async t => { Result<ArtworkTag> x = ArtworkTag.Create(Guid.NewGuid(), Company, code, name, Now); if (x.IsFailure) return Result.Failure<ArtworkTagView>(x.Error); if (await db.ArtworkTags.AnyAsync(a => a.Code == x.Value.Code, t)) return Result.Failure<ArtworkTagView>(FileErrors.DuplicateCode); db.ArtworkTags.Add(x.Value); Log("artwork.tag.created", "artwork_tag", x.Value.Id); return Result.Success(T(x.Value)); }, ct);
     public Task<Result<ArtworkTagView>> UpdateTagAsync(Guid id, string name, bool active, long version, CancellationToken ct) => tx.ExecuteAsync(async t => { ArtworkTag? x = await db.ArtworkTags.SingleOrDefaultAsync(a => a.Id == id, t); if (x is null) return Result.Failure<ArtworkTagView>(FileErrors.NotFound); if (x.Version != version) return Result.Failure<ArtworkTagView>(FileErrors.Concurrency); Result r = x.Update(name, active, Now); return r.IsFailure ? Result.Failure<ArtworkTagView>(r.Error) : Result.Success(T(x)); }, ct);
@@ -108,7 +146,7 @@ public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExec
             Result<bool> duplicate = await tx.ExecuteAsync(async t => Result.Success(await db.FileVersions.AnyAsync(x => x.Sha256Hash == hash, t)), ct); if (duplicate.IsFailure) return Result.Failure<UploadView>(duplicate.Error); if (duplicate.Value) return Result.Failure<UploadView>(FileErrors.Duplicate);
             Guid fileId = c.FileId ?? Guid.NewGuid(), versionId = Guid.NewGuid(); int number = 1; if (c.FileId is not null) { Result<int> next = await tx.ExecuteAsync(async t => { if (!await db.StoredFiles.AnyAsync(x => x.Id == fileId, t)) return Result.Failure<int>(FileErrors.NotFound); return Result.Success((await db.FileVersions.Where(x => x.FileId == fileId).MaxAsync(x => (int?)x.VersionNumber, t) ?? 0) + 1); }, ct); if (next.IsFailure) return Result.Failure<UploadView>(next.Error); number = next.Value; }
             string key = storage.CreateKey(Company, fileId, versionId, meta.Value.Ext);
-            await using (FileStream input = new(temp, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan)) await storage.PutAsync(new(key, input, size, meta.Value.Media), ct);
+            await using (FileStream input = new(temp, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan)) await storage.PutAsync(new(key, input, size, meta.Value.Media, "private,max-age=31536000,immutable"), ct);
             Result<UploadView> saved = await tx.ExecuteAsync(async t => { StoredFile file; if (c.FileId is null) { file = StoredFile.Create(fileId, Company, Actor, Now); db.StoredFiles.Add(file); } else file = (await db.StoredFiles.SingleAsync(x => x.Id == fileId, t)); Result<FileVersion> v = FileVersion.Create(versionId, Company, fileId, number, storage.Provider, storage.Bucket, key, meta.Value.Name, meta.Value.Media, meta.Value.Ext, size, hash, Actor, Now); if (v.IsFailure) return Result.Failure<UploadView>(v.Error); db.FileVersions.Add(v.Value); file.SetCurrent(versionId, Now); db.FileProcessingJobs.Add(FileProcessingJob.Create(Company, versionId, Now)); Log("file.uploaded", "file", fileId); Log("file.version.created", "file_version", versionId); Log("file.processing.requested", "file_version", versionId); return Result.Success(new UploadView(fileId, versionId, number, meta.Value.Name, meta.Value.Media, size, hash, FileProcessingStatus.Pending.ToString(), false)); }, ct); if (saved.IsFailure) await storage.RemoveUncommittedAsync(key, CancellationToken.None); else processingQueue.Enqueue(Company, versionId); return saved;
         }
         catch { throw; }

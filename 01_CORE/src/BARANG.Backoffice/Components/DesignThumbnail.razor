@@ -26,14 +26,16 @@ else
         Source = null;
         // Thumbnail generation is an asynchronous, persisted derivative.  After
         // an upload the grid is reloaded before the worker necessarily finishes;
-        // retry the same authorized read for a bounded period so the row reflects
-        // the persisted result without requiring a second navigation.
+        // retry briefly so the row reflects the result.  The browser fetches the
+        // image itself from object storage via a presigned URL (immutable cache
+        // headers), so the circuit only resolves the URL instead of streaming
+        // bytes through SignalR as base64.
         for (int attempt = 0; attempt < 12; attempt++)
         {
-            ApiResult<FileDownload> result = await Core.DownloadAsync($"api/v1/artworks/{DesignId}/thumbnail", Token, CompanyId, default);
+            ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/artworks/{DesignId}/thumbnail-url?variant=thumb", Token, CompanyId, default);
             if (result.IsSuccess)
             {
-                Source = $"data:{result.Value.ContentType};base64,{Convert.ToBase64String(result.Value.Content)}";
+                Source = result.Value.GetProperty("url").GetString();
                 break;
             }
             if (attempt < 11) await Task.Delay(500);
