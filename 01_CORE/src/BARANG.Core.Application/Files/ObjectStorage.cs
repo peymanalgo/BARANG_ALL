@@ -10,6 +10,7 @@ public interface IObjectStorage
     Task PutAsync(ObjectStorageWrite value, CancellationToken ct);
     Task<Stream?> OpenReadAsync(string key, CancellationToken ct, string? bucket = null);
     Task<string?> GetPresignedReadUrlAsync(string key, int expirySeconds, CancellationToken ct, string? bucket = null);
+    string GetPublicObjectUrl(string key);
     Task<ObjectStorageHead?> HeadAsync(string key, CancellationToken ct);
     Task<bool> RemoveUncommittedAsync(string key, CancellationToken ct);
 }
