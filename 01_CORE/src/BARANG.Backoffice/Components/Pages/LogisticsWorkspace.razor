@@ -73,9 +73,10 @@
 </section>
 
 @if(SelectedShipment is not null){
-<section class="crud-card production-detail" data-logistics-detail>
- <div class="production-detail-head logistics-detail-head"><h2>@T("مرسوله","Shipment","الشحنة") · @SelectedShipment.ShipmentNumber</h2><div class="row-actions"><span class="wh-badge @(SelectedShipment.Status=="Delivered"?"ok":SelectedShipment.Status is "FailedDelivery" or "Returned"?"pending":"none")">@ShSt(SelectedShipment.Status)</span><button type="button" class="btn btn-secondary btn-small" @onclick="CloseShipmentDetail">@L["Cancel"]</button></div></div>
- <div class="form-grid production-spec">
+<BarangModal Open="true" Title="@(T("مرسوله","Shipment","الشحنة") + " · " + SelectedShipment.ShipmentNumber)" Size="large" ShowCloseButton="true" CloseRequested="CloseShipmentDetail">
+ <ChildContent>
+  <div class="form-grid production-spec">
+  <label><span>@T("وضعیت","Status","الحالة")</span><input value="@ShSt(SelectedShipment.Status)" readonly /></label>
   <label><span>@L["Module_orders"]</span><input value="@SelectedShipment.OrderNumber" readonly /></label>
   <label><span>@T("حمل‌کننده","Carrier","الناقل")</span><input value="@CarrierLabel(SelectedShipment.CarrierCode)" readonly /></label>
   <label><span>@T("روش ارسال","Method","الطريقة")</span><input value="@SelectedShipment.ShippingMethodCode" readonly /></label>
@@ -86,7 +87,9 @@
  </div>
  <h3>@T("تاریخچه وضعیت‌ها","Status history","سجل الحالات")</h3>
  @if(ShipmentHistory.Count==0){<p class="field-help">@L["NoRecords"]</p>}else{<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("وضعیت","Status","الحالة")</th><th>@T("زمان","When","الوقت")</th><th>@T("منبع","Source","المصدر")</th><th>@T("دلیل","Reason","السبب")</th></tr></thead><tbody>@foreach(var h in ShipmentHistory){<tr><td>@ShSt(h.Status)</td><td>@Dates.Format(h.At,CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)</td><td dir="ltr">@h.Source</td><td>@(h.Reason??"—")</td></tr>}</tbody></table></div>}
-</section>
+ </ChildContent>
+ <Footer><button type="button" class="btn btn-secondary" @onclick="CloseShipmentDetail">@L["Cancel"]</button></Footer>
+</BarangModal>
 }
 
 <BarangModal Open="@Dialog" Title="@DialogTitle" Size="medium" ShowCloseButton="true" CloseRequested="()=>Dialog=false">
@@ -191,14 +194,14 @@
  private string ReasonKind="";
  private void OpenTracking(QShp row){ActionShipmentId=row.Id;DialogKind="tracking";DialogTitle=T("ثبت کد رهگیری","Register tracking","تسجيل رمز التتبع");FormTracking="";ActionError="";Dialog=true;}
  private void OpenShipmentReason(QShp row,string kind,string title){ActionShipmentId=row.Id;ReasonKind=kind;DialogTitle=title;FormReasonCode=kind=="failed-delivery"?"FAILED":"RETURNED";FormReasonText="";ActionError="";Dialog=true;}
- private RenderFragment ShipmentActions(QShp row)=>@<BarangActionMenu>
+ private RenderFragment ShipmentActions(QShp row)=>@<text>
   @if(row.Status=="Ready"&&row.TrackingCode.Length==0){<BarangIconButton Icon="key" Semantic="info" Label="@T("ثبت رهگیری","Tracking","التتبع")" Clicked="@(()=>OpenTracking(row))" />}
   @if(row.Status=="Ready"){<BarangIconButton Icon="print" Semantic="success" Label="@T("ارسال","Ship","شحن")" Clicked="@(()=>ShipmentSimple(row,"ship"))" />}
   @if(row.Status=="Shipped"){<BarangIconButton Icon="truck" Semantic="info" Label="@T("در حال حمل","In transit","في الطريق")" Clicked="@(()=>ShipmentSimple(row,"in-transit"))" />}
   @if(row.Status=="InTransit"){<BarangIconButton Icon="check" Semantic="success" Label="@T("تحویل شد","Deliver","تسليم")" Clicked="@(()=>ShipmentSimple(row,"deliver"))" />}
   @if(row.Status is "Shipped" or "InTransit"){<BarangIconButton Icon="minus" Semantic="warning" Label="@T("ارسال ناموفق","Fail delivery","فشل التسليم")" Clicked="@(()=>OpenShipmentReason(row,"failed-delivery",@T("ارسال ناموفق","Failed delivery","فشل التسليم")))" />}
   @if(row.Status=="FailedDelivery"){<BarangIconButton Icon="restore" Semantic="warning" Label="@T("برگشت به انبار","Return to warehouse","إرجاع للمستودع")" Clicked="@(()=>OpenShipmentReason(row,"return",@T("برگشت به انبار","Return to warehouse","إرجاع للمستودع")))" />}
- </BarangActionMenu>;
+ </text>;
  private async Task ShipmentSimple(QShp row,string action){if(await Session() is not (string token,Guid company))return;Busy=true;ActionError="";await InvokeAsync(StateHasChanged);try{var r=await Core.SendAsync(HttpMethod.Post,$"api/v1/logistics/shipments/{row.Id}/{action}",new{version=row.Version},token,company,default);if(!r.IsSuccess)ActionError=T("عملیات انجام نشد.","Operation failed.","فشلت العملية.");await Load();}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
  private static string Text(JsonElement x,string n)=>x.TryGetProperty(n,out var p)&&p.ValueKind!=JsonValueKind.Null?p.ToString():"";
  private static Guid NullG(JsonElement x,string n)=>x.TryGetProperty(n,out var p)&&p.ValueKind==JsonValueKind.String&&Guid.TryParse(p.GetString(),out var g)?g:Guid.Empty;

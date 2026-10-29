@@ -13,13 +13,14 @@ public sealed record ServiceInfo(
     string GroupId, int Sort, string Method, string Route, string Permission, string Limiter,
     string NameFa, string NameEn, string NameAr,
     string DescFa, string DescEn, string DescAr,
-    ServiceInput[] Inputs, string Output, string Headers, bool PublicAccess)
+    ServiceInput[] Inputs, string Output, string Headers, bool PublicAccess, bool BearerOnly = false)
 {
     public const string BaseUrl = "/api/v1";
     public string Name(string culture) => culture switch { "en" => NameEn, "ar" => NameAr, _ => NameFa };
     public string FullRoute => BaseUrl + Route;
     public string Auth(string culture) => PublicAccess
         ? culture switch { "en" => "None (public endpoint)", "ar" => "بدون مصادقة (عام)", _ => "بدون احراز هویت (عمومی)" }
+        : BearerOnly ? "Bearer Token"
         : culture switch { "en" => "Bearer Token + X-Company-ID header", "ar" => "Bearer Token + ترويسة X-Company-ID", _ => "Bearer Token + هدر X-Company-ID" };
 }
 
@@ -39,6 +40,7 @@ public static class ServicesCatalogData
         new("catalog", "کاتالوگ محصولات", "Product Catalog", "كتالوج المنتجات"),
         new("files", "فایل‌ها", "Files", "الملفات"),
         new("public", "کاتالوگ عمومی (B2C)", "Public Catalog (B2C)", "الكتالوج العام"),
+        new("auth", "احراز هویت و حساب کاربری", "Auth & Account", "المصادقة والحساب"),
     ];
 
     public static readonly IReadOnlyList<ServiceInfo> All =
@@ -202,7 +204,20 @@ public static class ServicesCatalogData
             Inputs(In("id", "Guid", "Path", true)),
             JsonOut, "X-Company-ID", false),
 
-        N("customers", "13", "POST", "/client/customers/register", "ClientCustomerWrite", "client-mutation + هدر Idempotency-Key",
+        N("orders", "13", "GET", "/client/orders", "ClientOrderRead", "client-read",
+            "لیست سفارش‌های مشتری", "List customer orders", "قائمة طلبات العميل",
+            "سفارش‌های مشتری را با فیلتر مشتری، شماره سفارش و وضعیت و با صفحه‌بندی برمی‌گرداند؛ مشتری فهرست سفارش‌های خود و مرحله فعلی هرکدام را می‌بیند.",
+            "Lists customer orders with customer, order-number and status filters plus pagination; the customer sees their orders and each order's current stage.",
+            "يسرد طلبات العميل مع فلاتر العميل ورقم الطلب والحالة وترقيم الصفحات؛ يرى العميل طلباته ومرحلة كل طلب.",
+            Inputs(
+                In("customerId", "Guid", "Query", false),
+                In("status", "string", "Query", false),
+                In("search", "string", "Query", false),
+                In("page", "int", "Query", false),
+                In("pageSize", "int", "Query", false)),
+            "JSON: صفحه‌ای از خلاصه سفارش‌ها (items + total)", "X-Company-ID", false),
+
+        N("customers", "14", "POST", "/client/customers/register", "ClientCustomerWrite", "client-mutation + هدر Idempotency-Key",
             "ثبت مشتری جدید", "Register customer", "تسجيل عميل",
             "مشتری حقیقی یا حقوقی را با کد یکتا ثبت می‌کند؛ با Idempotency-Key ثبت تکراری جلوگیری می‌شود.",
             "Registers an individual or corporate customer with a unique code; idempotency prevents duplicate registration.",
@@ -224,7 +239,7 @@ public static class ServicesCatalogData
                 In("Idempotency-Key", "string", "Header", true, true)),
             JsonOut, "Idempotency-Key + X-Company-ID", false),
 
-        N("customers", "14", "GET", "/client/customers/{id}", "ClientCustomerRead", "client-read",
+        N("customers", "15", "GET", "/client/customers/{id}", "ClientCustomerRead", "client-read",
             "مشاهده مشتری", "Get customer", "عرض العميل",
             "پروفایل کامل مشتری را برمی‌گرداند.",
             "Returns the full customer profile.",
@@ -232,7 +247,15 @@ public static class ServicesCatalogData
             Inputs(In("id", "Guid", "Path", true)),
             JsonOut, "X-Company-ID", false),
 
-        N("customers", "15", "PUT", "/client/customers/{id}", "ClientCustomerWrite", "client-mutation",
+        N("customers", "16", "GET", "/client/customers/by-code/{code}", "ClientCustomerRead", "client-read",
+            "مشاهده مشتری با کد", "Get customer by code", "عرض العميل بالرمز",
+            "مشتری را با کد یکتا پیدا می‌کند؛ برای ورود مشتری به پورتال B2C و یافتن پروفایل او استفاده می‌شود.",
+            "Finds a customer by its unique code; used by the B2C portal to resolve the signed-in customer's profile.",
+            "يجد العميل برمزه الفريد؛ تستخدمه بوابة B2C لتحديد ملف العميل بعد تسجيل الدخول.",
+            Inputs(In("code", "string", "Path", true)),
+            JsonOut, "X-Company-ID", false),
+
+        N("customers", "17", "PUT", "/client/customers/{id}", "ClientCustomerWrite", "client-mutation",
             "ویرایش مشتری", "Update customer", "تحرير العميل",
             "فیلدهای پروفایل مشتری را با کنترل نسخه (Version + ProfileVersion) به‌روزرسانی می‌کند.",
             "Updates customer profile fields with version control (Version + ProfileVersion).",
@@ -251,7 +274,7 @@ public static class ServicesCatalogData
                 In("status", "string", "Body", false)),
             NoContent, "Idempotency-Key + X-Company-ID", false),
 
-        N("customers", "16", "GET", "/client/customers/{id}/addresses", "ClientCustomerRead", "client-read",
+        N("customers", "18", "GET", "/client/customers/{id}/addresses", "ClientCustomerRead", "client-read",
             "فهرست نشانی‌های مشتری", "List customer addresses", "قائمة عناوين العميل",
             "نشانی‌های فعال مشتری (با نوع: دفتر، انبار، ارسال) را برمی‌گرداند؛ برای انتخاب نشانی ارسال سفارش استفاده می‌شود.",
             "Returns the customer's active addresses (typed: HQ, warehouse, shipping); used when picking an order shipping address.",
@@ -259,7 +282,7 @@ public static class ServicesCatalogData
             Inputs(In("id", "Guid", "Path", true)),
             ListOut, "X-Company-ID", false),
 
-        N("catalog", "17", "GET", "/client/catalog/products", "ClientCatalogRead", "client-read",
+        N("catalog", "19", "GET", "/client/catalog/products", "ClientCatalogRead", "client-read",
             "جستجوی محصولات", "Search products", "بحث في المنتجات",
             "فهرست محصولات قابل سفارش با جستجو و صفحه‌بندی؛ برای انتخاب آیتم در سفارش موبایل/وب استفاده می‌شود.",
             "Lists orderable products with search and pagination; used for item selection in the mobile/web order flow.",
@@ -270,7 +293,7 @@ public static class ServicesCatalogData
                 In("pageSize", "int", "Query", false)),
             ListOut, "X-Company-ID", false),
 
-        N("catalog", "18", "GET", "/client/catalog/products/{id}/variants", "ClientCatalogRead", "client-read",
+        N("catalog", "20", "GET", "/client/catalog/products/{id}/variants", "ClientCatalogRead", "client-read",
             "واریانت‌های محصول", "Product variants", "متغيرات المنتج",
             "واریانت‌های قابل سفارش یک محصول (سایز/رنگ) را برمی‌گرداند.",
             "Returns the orderable variants (size/color) of a product.",
@@ -278,7 +301,7 @@ public static class ServicesCatalogData
             Inputs(In("id", "Guid", "Path", true)),
             ListOut, "X-Company-ID", false),
 
-        N("files", "19", "POST", "/client/files/upload", "ClientFileUpload", "upload + هدر Idempotency-Key",
+        N("files", "21", "POST", "/client/files/upload", "ClientFileUpload", "upload + هدر Idempotency-Key",
             "آپلود فایل طرح", "Upload design file", "رفع ملف التصميم",
             "فایل طرح را (multipart/form-data) آپلود می‌کند؛ با Idempotency-Key آپلود مجدد همان فایل، همان فایل قبلی را برمی‌گرداند. فایل وارد بانک طرح می‌شود و بندانگشتی می‌گیرد.",
             "Uploads a design file (multipart/form-data); with Idempotency-Key, re-uploading the same file returns the existing one. The file enters the design bank and gets a thumbnail.",
@@ -289,7 +312,7 @@ public static class ServicesCatalogData
                 In("sha256", "string", "Form", false)),
             JsonOut, "Idempotency-Key + X-Company-ID", false),
 
-        N("public", "20", "GET", "/public/catalog", "—", "عمومی — OutputCache 60 ثانیه",
+        N("public", "22", "GET", "/public/catalog", "—", "عمومی — OutputCache 60 ثانیه",
             "کاتالوگ عمومی طرح‌ها", "Public catalog", "الكتالوج العام",
             "طرح‌های منتشرشده (Active) را با جستجو و صفحه‌بندی برای وب‌سایت B2C برمی‌گرداند؛ هر آیتم URL مستقیم بندانگشتی و پیش‌نمایش واترمارک‌دار دارد.",
             "Returns published (active) designs with search and pagination for the B2C website; each item has direct thumbnail and watermarked-preview URLs.",
@@ -300,20 +323,54 @@ public static class ServicesCatalogData
                 In("pageSize", "int", "Query", false)),
             JsonOut, "بدون هدر (عمومی)", true),
 
-        N("public", "21", "GET", "/public/catalog/{id}", "—", "عمومی — OutputCache 60 ثانیه",
+        N("public", "23", "GET", "/public/catalog/{id}", "—", "عمومی — OutputCache 60 ثانیه",
             "جزئیات طرح عمومی", "Public design detail", "تفاصيل التصميم",
             "جزئیات یک طرح منتشرشده شامل توضیح و URL های تصاویر برای صفحه محصول B2C.",
             "Details of one published design including description and image URLs for the B2C product page.",
             "تفاصيل تصميم منشور واحد بما فيها الوصف وروابط الصور لصفحة المنتج.",
             Inputs(In("id", "Guid", "Path", true)),
-            JsonOut, "بدون هدر (عمومی)", true)
+            JsonOut, "بدون هدر (عمومی)", true),
+
+        N("auth", "24", "POST", "/auth/login", "—", "عمومی — RateLimiter login",
+            "ورود و دریافت توکن", "Login and issue token", "تسجيل الدخول وإصدار الرمز",
+            "با نام کاربری و کلمه عبور ورود می‌کند و توکن Bearer برای فراخوانی سایر سرویس‌ها صادر می‌کند؛ همان سرویسی که وب‌سایت B2C و اپلیکیشن موبایل برای ورود کاربران استفاده می‌کنند. مدیریت حساب‌ها و کلمه عبور در بک‌آفیس (مدیریت کاربران و دسترسی‌ها) انجام می‌شود.",
+            "Authenticates with username and password and issues the Bearer token used to call all other services; the same login the B2C website and mobile app use. Accounts and passwords are managed in the backoffice (User & access management).",
+            "يوثّق باسم المستخدم وكلمة المرور ويصدر رمز Bearer لاستدعاء الخدمات الأخرى؛ وهي نفس الخدمة التي يستخدمها موقع B2C وتطبيق الهاتف. تُدار الحسابات وكلمات المرور من لوحة التحكم.",
+            Inputs(
+                In("username", "string", "Body", true),
+                In("password", "string", "Body", true)),
+            "JSON: کاربر + توکن Bearer", "بدون هدر", true),
+
+        N("auth", "25", "POST", "/auth/logout", "—", "—",
+            "خروج و ابطال توکن", "Logout and revoke token", "تسجيل الخروج وإبطال الرمز",
+            "توکن جاری را باطل می‌کند؛ برای خروج امن کاربر از وب‌سایت یا اپلیکیشن.",
+            "Revokes the current token for a secure sign-out from the website or app.",
+            "يبطل الرمز الحالي لتسجيل خروج آمن من الموقع أو التطبيق.",
+            Inputs(),
+            NoContent, "Authorization: Bearer Token", false, true),
+
+        N("auth", "26", "GET", "/auth/me", "—", "—",
+            "پروفایل کاربر جاری", "Current user profile", "ملف المستخدم الحالي",
+            "اطلاعات کاربر واردشده (نام، نام کاربری، وضعیت فعال بودن) را برمی‌گرداند.",
+            "Returns the signed-in user's info (name, username, active status).",
+            "يعيد بيانات المستخدم المسجّل (الاسم واسم المستخدم وحالة التنشيط).",
+            Inputs(),
+            JsonOut, "Authorization: Bearer Token", false, true),
+
+        N("auth", "27", "GET", "/auth/me/companies", "—", "—",
+            "شرکت‌های کاربر جاری", "Current user companies", "شركات المستخدم الحالي",
+            "فهرست شرکت‌های مجاز کاربر برای انتخاب شرکت جاری؛ در سامانه چندشرکتی برای انتخاب زمینه (Company-ID) استفاده می‌شود.",
+            "Lists the user's authorized companies for picking the active company context (Company-ID) in the multi-company setup.",
+            "يسرد شركات المستخدم المصرح بها لاختيار سياق الشركة النشط (Company-ID) في النظام متعدد الشركات.",
+            Inputs(),
+            "JSON: آرایه شرکت‌های مجاز", "Authorization: Bearer Token", false, true)
     ];
 
     private static ServiceInfo N(string groupId, string sort, string method, string route, string permission, string limiter,
         string nameFa, string nameEn, string nameAr, string descFa, string descEn, string descAr,
-        ServiceInput[] inputs, string output, string headers, bool publicAccess)
+        ServiceInput[] inputs, string output, string headers, bool publicAccess, bool bearerOnly = false)
         => new(groupId, int.Parse(sort, System.Globalization.CultureInfo.InvariantCulture), method, route, permission, limiter,
-            nameFa, nameEn, nameAr, descFa, descEn, descAr, inputs, output, headers, publicAccess);
+            nameFa, nameEn, nameAr, descFa, descEn, descAr, inputs, output, headers, publicAccess, bearerOnly);
 
     private static ServiceInput[] Inputs(params ServiceInput[] inputs) => inputs;
 }
