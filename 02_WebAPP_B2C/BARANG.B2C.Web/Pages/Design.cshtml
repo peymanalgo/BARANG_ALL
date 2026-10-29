@@ -72,5 +72,29 @@ else
                 </ul>
             </div>
         </div>
+        @if (Model.Similar.Count > 0)
+        {
+            <div class="section-head" style="margin-top:1.6rem">
+                <h2>@T("طرح‌های مشابه", "Similar designs", "تصاميم مشابهة")</h2>
+                <span class="chip">@T("جستجوی مفهومی", "concept search", "بحث مفهومي")</span>
+            </div>
+            <div class="design-grid">
+                @foreach (var sm in Model.Similar)
+                {
+                    <a class="design-card" href="/design/@sm.Id">
+                        <span class="design-thumb">
+                            @if (!string.IsNullOrWhiteSpace(sm.Thumbnail))
+                            {
+                                <img src="@sm.Thumbnail" alt="@sm.Title" width="600" height="600" loading="lazy" decoding="async" />
+                            }
+                        </span>
+                        <span class="design-meta">
+                            <strong>@sm.Title</strong>
+                            <span class="score-chip">@sm.Score٪ @T("تطابق", "match", "تطابق")</span>
+                        </span>
+                    </a>
+                }
+            </div>
+        }
     </section>
 }

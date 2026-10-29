@@ -15,6 +15,7 @@ public sealed class DesignModel(CoreApiClient core) : PageModel
     public string? Preview { get; private set; }
     public string? Thumbnail { get; private set; }
     public bool Found { get; private set; }
+    public IReadOnlyList<SimilarDesign> Similar { get; private set; } = [];
 
     public async Task<IActionResult> OnGet(Guid id)
     {
@@ -30,6 +31,23 @@ public sealed class DesignModel(CoreApiClient core) : PageModel
         Thumbnail = x.TryGetProperty("thumbnailUrl", out JsonElement th) ? th.GetString() : null;
         ViewData["Title"] = Title;
         ViewData["Description"] = Description ?? Title;
+
+        if (!string.IsNullOrWhiteSpace(Title))
+        {
+            JsonElement? similar = await core.GetAsync($"api/v1/public/catalog/concept-search?limit=8&q={Uri.EscapeDataString(Title)}");
+            if (similar is JsonElement sm && sm.ValueKind == JsonValueKind.Array)
+            {
+                Similar = sm.EnumerateArray()
+                    .Select(x => new SimilarDesign(
+                        x.TryGetProperty("id", out JsonElement sid) && Guid.TryParse(sid.GetString(), out Guid sg) ? sg : Guid.Empty,
+                        x.TryGetProperty("title", out JsonElement sti) ? sti.GetString() ?? "" : "",
+                        x.TryGetProperty("thumbnailUrl", out JsonElement sth) ? sth.GetString() : null,
+                        x.TryGetProperty("score", out JsonElement ssc) && ssc.TryGetInt32(out int sv) ? sv : 0))
+                    .Where(x => x.Id != id).ToList();
+            }
+        }
         return Page();
     }
+
+public sealed record SimilarDesign(Guid Id, string Title, string? Thumbnail, int Score);
 }

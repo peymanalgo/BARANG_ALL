@@ -71,6 +71,36 @@ public static class PublicCatalogEndpoints
             return result.IsSuccess?Results.Ok(result.Value):Results.StatusCode(503);
         });
 
+        catalog.MapGet("/concept-search",async(string? q,int? limit,IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,IObjectStorage storage,IArtworkFileAdministration artworks,CancellationToken ct)=>
+        {
+            Guid? publicCompany=ResolvePublicCompany(configuration);
+            if(publicCompany is null)return Results.StatusCode(503);
+            using IDisposable scope=companies.BeginScope(publicCompany.Value);
+            Result<IReadOnlyList<ArtworkConceptMatch>> matches=await artworks.ConceptSearchArtworksAsync(q,Math.Clamp(limit??24,1,60),ct);
+            if(matches.IsFailure)return Results.StatusCode(503);
+            // B2C storefront serves published (active) designs only
+            ArtworkConceptMatch[] active=matches.Value.Where(x=>!x.IsArchived&&string.Equals(x.LifecycleStatus,"Active",StringComparison.OrdinalIgnoreCase)).ToArray();
+            IReadOnlyList<PublicConceptMatch> rows=(await tx.ExecuteAsync<IReadOnlyList<PublicConceptMatch>>(async t=>{
+                Guid[] ids=active.Select(x=>x.Id).ToArray();
+                Dictionary<Guid,(Guid? FileVersion,string Title)> byId=await db.Artworks.AsNoTracking().Where(x=>ids.Contains(x.Id)).Select(x=>new KeyValuePair<Guid,ValueTuple<Guid?,string>>(x.Id,new ValueTuple<Guid?,string>(x.CurrentVersionId,x.Title))).ToDictionaryAsync(p=>p.Key,p=>p.Value,t);
+                Guid[] artworkVersionIds=byId.Values.Where(x=>x.FileVersion is not null).Select(x=>x.FileVersion!.Value).ToArray();
+                Dictionary<Guid,Guid> fileVersionByArtworkVersion=await db.ArtworkVersions.AsNoTracking().Where(x=>artworkVersionIds.Contains(x.Id)).Select(x=>new KeyValuePair<Guid,Guid>(x.Id,x.FileVersionId)).ToDictionaryAsync(p=>p.Key,p=>p.Value,t);
+                Guid[] fileVersionIds=fileVersionByArtworkVersion.Values.ToArray();
+                List<(Guid FileVersion,FileDerivativeType Type,string Key)> derivatives=await db.FileDerivatives.AsNoTracking().Where(d=>fileVersionIds.Contains(d.SourceFileVersionId)).Select(d=>new ValueTuple<Guid,FileDerivativeType,string>(d.SourceFileVersionId,d.DerivativeType,d.StorageKey)).ToListAsync(t);
+                IReadOnlyList<PublicConceptMatch> rows=active.Select(m=>{
+                    string? thumbnail=null,preview=null;
+                    if(byId.TryGetValue(m.Id,out var meta)&&meta.FileVersion is Guid av&&fileVersionByArtworkVersion.TryGetValue(av,out Guid fv))
+                    {
+                        thumbnail=derivatives.Where(d=>d.FileVersion==fv&&d.Type==FileDerivativeType.Thumbnail).Select(d=>(string?)d.Key).FirstOrDefault();
+                        preview=derivatives.Where(d=>d.FileVersion==fv&&(d.Type==FileDerivativeType.PublicWeb||d.Type==FileDerivativeType.Web)).Select(d=>(string?)d.Key).FirstOrDefault();
+                    }
+                    return new PublicConceptMatch(m.Id,m.Code,m.Title,m.CategoryName,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview),m.Score);
+                }).ToArray();
+                return Result.Success(rows);
+            },ct)).Value;
+            return Results.Ok(rows);
+        });
+
         catalog.MapGet("/{id:guid}",async(Guid id,IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,IObjectStorage storage,CancellationToken ct)=>
         {
             Guid? publicCompany=ResolvePublicCompany(configuration);
@@ -109,3 +139,4 @@ public sealed record PublicCatalogItemView(Guid Id,string Code,string Title,stri
 public sealed record PublicCatalogItemDetail(Guid Id,string Code,string Title,string?CategoryCode,string?Description,string?ThumbnailUrl,string?PreviewUrl);
 public sealed record PublicCatalogPage(long Total,int Page,int PageSize,IReadOnlyList<PublicCatalogItemView> Items);
 public sealed record PublicCatalogCategoryView(string Code,int Count);
+public sealed record PublicConceptMatch(Guid Id,string Code,string Title,string?CategoryName,string?ThumbnailUrl,string?PreviewUrl,int Score);

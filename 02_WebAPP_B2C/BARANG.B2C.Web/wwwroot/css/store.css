@@ -214,6 +214,14 @@ html[dir="rtl"] .btn-account { padding: .35rem .45rem .35rem .9rem; }
     padding: .1rem .55rem; border-radius: 999px; letter-spacing: .02em;
 }
 
+/* ---------- concept search ---------- */
+.score-chip {
+    align-self: flex-start; font-size: .74rem; font-weight: 750;
+    color: var(--primary); background: var(--primary-soft);
+    border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+    padding: .08rem .55rem; border-radius: 999px;
+}
+
 /* ---------- design detail ---------- */
 .breadcrumbs { font-size: .85rem; color: var(--muted); margin-bottom: 1rem; }
 .breadcrumbs a { color: var(--text-2); }

@@ -8,6 +8,8 @@ namespace BARANG.B2C.Web.Pages;
 public sealed class CatalogModel(CoreApiClient core) : PageModel
 {
     public IReadOnlyList<DesignCard> Designs { get; private set; } = [];
+    public IReadOnlyList<ConceptMatch> ConceptResults { get; private set; } = [];
+    public bool ConceptActive { get; private set; }
     public long Total { get; private set; }
     public int Page { get; private set; } = 1;
     public int PageSize { get; private set; } = 24;
@@ -26,6 +28,21 @@ public sealed class CatalogModel(CoreApiClient core) : PageModel
         JsonElement? result = await core.GetAsync(path);
         (Designs, Total) = DesignCard.FromPage(result);
 
+        if (search.Length >= 2)
+        {
+            JsonElement? concept = await core.GetAsync($"api/v1/public/catalog/concept-search?limit=24&q={Uri.EscapeDataString(search)}");
+            if (concept is JsonElement ce && ce.ValueKind == JsonValueKind.Array)
+            {
+                ConceptActive = true;
+                ConceptResults = ce.EnumerateArray().Select(x => new ConceptMatch(
+                    x.TryGetProperty("id", out JsonElement cid) && Guid.TryParse(cid.GetString(), out Guid cg) ? cg : Guid.Empty,
+                    x.TryGetProperty("title", out JsonElement ct) ? ct.GetString() ?? "" : "",
+                    x.TryGetProperty("categoryName", out JsonElement cn) ? cn.GetString() : null,
+                    x.TryGetProperty("thumbnailUrl", out JsonElement th) ? th.GetString() : null,
+                    x.TryGetProperty("score", out JsonElement sc) && sc.TryGetInt32(out int sv) ? sv : 0)).ToList();
+            }
+        }
+
         JsonElement? cats = await core.GetAsync("api/v1/public/catalog/categories");
         if (cats is JsonElement c && c.ValueKind == JsonValueKind.Array)
         {
@@ -43,3 +60,5 @@ public sealed class CatalogModel(CoreApiClient core) : PageModel
         ["category"] = string.IsNullOrWhiteSpace(Category) ? null : Category.Trim()
     });
 }
+
+public sealed record ConceptMatch(Guid Id, string Title, string? CategoryName, string? Thumbnail, int Score);

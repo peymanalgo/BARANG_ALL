@@ -438,6 +438,16 @@ public static class ServicesCatalogData
             Inputs(In("id", "Guid", "Path", true)),
             JsonOut, "بدون هدر (عمومی)", true),
 
+        N("public", "33", "GET", "/public/catalog/concept-search", "—", "عمومی — client-read",
+            "جستجوی مفهومی طرح‌ها", "Concept (semantic) search", "البحث المفهومي للتصاميم",
+            "جستجوی هوشمند طرح‌ها بر اساس مفهوم عبارت: کد، عنوان، نام دسته و برچسب‌ها امتیازدهی می‌شوند و مشابه‌ترین طرح‌های منتشرشده با درصد تطابق و تصاویر برمی‌گردند؛ موتور جستجوی سایت B2C و موبایل.",
+            "Smart design search by concept: code, title, category name and tags are scored and the most similar published designs are returned with a match score and images; powers B2C web/mobile search.",
+            "بحث ذكي للتصاميم حسب المفهوم: يتم تقييم الرمز والعنوان واسم الفئة والوسوم وإعادة أكثر التصاميم المنشورة تشابهاً مع نسبة تطابق وصور؛ محرك بحث موقع B2C والتطبيق.",
+            Inputs(
+                In("q", "string", "Query", true),
+                In("limit", "int", "Query", false)),
+            "JSON: آرایه طرح‌های مشابه با score", "بدون هدر (عمومی)", true),
+
         N("notifications", "33", "GET", "/notifications/mine", "NotificationRead", "—",
             "اعلان‌های من", "My notifications", "إشعاراتي",
             "اعلان‌های کاربر جاری را با فیلتر خوانده‌نشده، دسته، اولویت و بازه زمانی و با صفحه‌بندی برمی‌گرداند؛ اپ موبایل/وب تغییر وضعیت سفارش را از همین‌جا نشان می‌دهد.",

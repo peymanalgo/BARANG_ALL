@@ -32,6 +32,38 @@
         </div>
     }
 
+    @if (Model.ConceptActive)
+    {
+        <div class="section-head" style="margin-top:.4rem">
+            <h2>@T("جستجوی مفهومی", "Concept search", "البحث المفهومي")</h2>
+            <span class="chip">@T("مرتب‌شده بر اساس شباهت معنایی", "sorted by semantic match", "مرتب حسب التشابه الدلالي")</span>
+        </div>
+        @if (Model.ConceptResults.Count == 0)
+        {
+            <p class="empty">@T("طرح مشابه‌ای برای این عبارت پیدا نشد.", "No similar designs for this phrase.", "لا توجد تصاميم مشابهة.")</p>
+        }
+        else
+        {
+            <div class="design-grid">
+                @foreach (var m in Model.ConceptResults)
+                {
+                    <a class="design-card" href="/design/@m.Id">
+                        <span class="design-thumb">
+                            @if (!string.IsNullOrWhiteSpace(m.Thumbnail))
+                            {
+                                <img src="@m.Thumbnail" alt="@m.Title" width="600" height="600" loading="lazy" decoding="async" />
+                            }
+                        </span>
+                        <span class="design-meta">
+                            <strong>@m.Title</strong>
+                            <span class="score-chip">@m.Score٪ @T("تطابق", "match", "تطابق")</span>
+                        </span>
+                    </a>
+                }
+            </div>
+        }
+    }
+
     @if (Model.Designs.Count == 0)
     {
         <p class="empty">@T("طرحی با این جستجو پیدا نشد.", "No designs match your search.", "لا توجد تصاميم مطابقة.")</p>
