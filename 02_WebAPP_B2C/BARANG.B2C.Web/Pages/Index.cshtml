@@ -1,0 +1,59 @@
+@page
+@model IndexModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = T("خانه", "Home", "الرئيسية");
+}
+<section class="hero">
+    <div class="container hero-inner">
+        <h1>@T("طرح موردنظرت را انتخاب کن، ما چاپش می‌کنیم", "Pick a design, we print it", "اختر تصميمك وسنطبعه لك")</h1>
+        <p>@T("هزاران طرح آماده چاپ روی پوشاک و هدایای تبلیغاتی — سفارش آنلاین در چند دقیقه.", "Thousands of print-ready designs for apparel and promotional gifts — order online in minutes.", "آلاف التصاميم الجاهزة للطباعة على الملابس والهدايا — اطلب عبر الإنترنت خلال دقائق.")</p>
+        <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم")</a>
+            @if (User.Identity?.IsAuthenticated != true)
+            {
+                <a class="btn btn-ghost btn-lg" href="/account/login">@T("ورود مشتریان", "Customer sign in", "دخول العملاء")</a>
+            }
+        </div>
+        <ul class="hero-points" aria-hidden="true">
+            <li>@T("چاپ حرفه‌ای", "Pro printing", "طباعة احترافية")</li>
+            <li>@T("پیگیری آنلاین سفارش", "Online tracking", "تتبع عبر الإنترنت")</li>
+            <li>@T("فایل و طرح امن", "Safe artwork", "ملفات آمنة")</li>
+        </ul>
+    </div>
+</section>
+
+<section class="container section">
+    <div class="section-head">
+        <h2>@T("طرح‌های منتخب", "Featured designs", "تصاميم مختارة")</h2>
+        <a class="link-more" href="/catalog">@T("همه طرح‌ها ←", "All designs →", "كل التصاميم ←")</a>
+    </div>
+    @if (Model.Featured.Count == 0)
+    {
+        <p class="empty">@T("فعلاً طرحی منتشر نشده است.", "No designs published yet.", "لا توجد تصاميم منشورة بعد.")</p>
+    }
+    else
+    {
+        <div class="design-grid">
+            @foreach (var d in Model.Featured)
+            {
+                <a class="design-card" href="/design/@d.Id">
+                    <span class="design-thumb">
+                        @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
+                        {
+                            <img src="@d.Thumbnail" alt="@d.Title" loading="lazy" />
+                        }
+                    </span>
+                    <span class="design-meta">
+                        <strong>@d.Title</strong>
+                        @if (!string.IsNullOrWhiteSpace(d.CategoryCode))
+                        {
+                            <span class="chip">@d.CategoryCode</span>
+                        }
+                    </span>
+                </a>
+            }
+        </div>
+    }
+</section>

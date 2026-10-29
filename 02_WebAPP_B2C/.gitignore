@@ -1,0 +1,8 @@
+bin/
+obj/
+wwwroot/fonts/licenses/
+*.user
+*.suo
+.vs/
+publish/
+appsettings.Development.json

@@ -1,0 +1,53 @@
+@page "/design/{id:guid}"
+@model DesignModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+}
+@if (!Model.Found)
+{
+    <section class="container section"><p class="empty">@T("این طرح پیدا نشد.", "This design was not found.", "لم يتم العثور على هذا التصميم.")</p></section>
+}
+else
+{
+    <section class="container section design-detail">
+        <nav class="breadcrumbs" aria-label="breadcrumb">
+            <a href="/">@T("خانه", "Home", "الرئيسية")</a> ›
+            <a href="/catalog">@T("کاتالوگ", "Catalog", "الكتالوج")</a> ›
+            <span>@Model.Title</span>
+        </nav>
+        <div class="design-detail-grid">
+            <figure class="design-visual">
+                @if (!string.IsNullOrWhiteSpace(Model.Preview))
+                {
+                    <img src="@Model.Preview" alt="@Model.Title" />
+                }
+                else if (!string.IsNullOrWhiteSpace(Model.Thumbnail))
+                {
+                    <img src="@Model.Thumbnail" alt="@Model.Title" />
+                }
+                <figcaption class="muted">@T("پیش‌نمایش با علامت آب — فایل اصلی پس از سفارش تحویل می‌شود.", "Watermarked preview — the original file is delivered with your order.", "معاينة بعلامة مائية — يُسلّم الملف الأصلي مع طلبك.")</figcaption>
+            </figure>
+            <div class="design-info">
+                <h1>@Model.Title</h1>
+                <p class="design-code" dir="ltr">@Model.Code</p>
+                @if (!string.IsNullOrWhiteSpace(Model.CategoryCode))
+                {
+                    <span class="chip">@Model.CategoryCode</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <p class="design-desc">@Model.Description</p>
+                }
+                <div class="design-cta">
+                    <a class="btn btn-primary btn-lg" href="/account/login">@T("سفارش این طرح", "Order this design", "اطلب هذا التصميم")</a>
+                    <a class="btn btn-ghost" href="/catalog">@T("طرح‌های دیگر", "Other designs", "تصاميم أخرى")</a>
+                </div>
+                <ul class="design-notes">
+                    <li>@T("فایل اصلی بدون علامت آب با کیفیت چاپ تحویل می‌شود.", "Original watermark-free print-quality file is delivered.", "يُسلّم الملف الأصلي بجودة الطباعة بدون علامة مائية.")</li>
+                    <li>@T("امکان افزودن فایل طرح اختصاصی شما.", "You can attach your own custom file.", "يمكنك إرفاق ملفك الخاص.")</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+}

@@ -1,0 +1,65 @@
+@page
+@model IndexModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = T("حساب کاربری", "My account", "حسابي");
+}
+<section class="container section">
+    <header class="section-head">
+        <h1>@T("حساب کاربری", "My account", "حسابي")</h1>
+        @if (Model.Message is not null)
+        {
+            <div class="alert alert-ok" role="status">@T("کلمه عبور با موفقیت تغییر کرد؛ دوباره وارد شوید.", "Password changed; please sign in again.", "تم تغيير كلمة المرور؛ سجّل الدخول مجدداً.")</div>
+        }
+        @if (Model.Error is not null)
+        {
+            <div class="alert alert-error" role="alert">
+                @(Model.Error switch
+                {
+                    "security.invalid_password" or "empty" => T("رمز جدید مطابق سیاست (حداقل ۹ کاراکتر، حرف بزرگ/کوچک و عدد) نیست.", "New password does not meet policy (min 9 chars, upper/lower case and a digit).", "كلمة المرور الجديدة لا تطابق السياسة."),
+                    "security.invalid_credentials" => T("کلمه عبور فعلی اشتباه است.", "Current password is wrong.", "كلمة المرور الحالية غير صحيحة."),
+                    _ => T("تغییر کلمه عبور انجام نشد؛ دوباره تلاش کنید.", "Password change failed; try again.", "فشل تغيير كلمة المرور؛ حاول مجدداً.")
+                })
+            </div>
+        }
+    </header>
+
+    <div class="account-grid">
+        <div class="card">
+            <h2>@T("پروفایل", "Profile", "الملف")</h2>
+            <p><strong>@(Model.DisplayName ?? Model.Username ?? User.Identity?.Name)</strong></p>
+            @if (Model.Username is not null)
+            {
+                <p class="muted" dir="ltr">@Model.Username</p>
+            }
+            <form method="post" asp-page-handler="Logout">
+                <button type="submit" class="btn btn-ghost btn-sm">@T("خروج از حساب", "Sign out", "تسجيل الخروج")</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>@T("تغییر کلمه عبور", "Change password", "تغيير كلمة المرور")</h2>
+            <form method="post" asp-page-handler="ChangePassword" class="auth-form">
+                <label>
+                    <span>@T("کلمه عبور فعلی", "Current password", "كلمة المرور الحالية")</span>
+                    <input type="password" asp-for="CurrentPassword" autocomplete="current-password" required />
+                </label>
+                <label>
+                    <span>@T("کلمه عبور جدید", "New password", "كلمة المرور الجديدة")</span>
+                    <input type="password" asp-for="NewPassword" autocomplete="new-password" minlength="9" required />
+                </label>
+                <button type="submit" class="btn btn-primary">@T("تغییر کلمه عبور", "Change password", "تغيير")</button>
+            </form>
+        </div>
+
+        <div class="card card-coming">
+            <h2>@T("سفارش‌های من", "My orders", "طلباتي")</h2>
+            <p class="muted">@T("به‌زودی: فهرست سفارش‌ها و رهگیری مرسوله.", "Coming soon: order list and shipment tracking.", "قريباً: قائمة الطلبات وتتبع الشحنة.")</p>
+        </div>
+        <div class="card card-coming">
+            <h2>@T("نشانی‌های من", "My addresses", "عناويني")</h2>
+            <p class="muted">@T("به‌زودی: مدیریت نشانی‌های ارسال.", "Coming soon: manage shipping addresses.", "قريباً: إدارة عناوين الشحن.")</p>
+        </div>
+    </div>
+</section>

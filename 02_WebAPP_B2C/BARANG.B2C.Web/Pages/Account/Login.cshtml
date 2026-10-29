@@ -1,0 +1,30 @@
+@page
+@model LoginModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = T("ورود مشتریان", "Customer sign in", "دخول العملاء");
+}
+<section class="container section auth-section">
+    <div class="auth-card">
+        <h1>@T("ورود مشتریان", "Customer sign in", "دخول العملاء")</h1>
+        <p class="muted">@T("برای سفارش طرح و پیگیری سفارش‌ها وارد شوید.", "Sign in to order designs and track your orders.", "سجّل الدخول لطلب التصاميم وتتبع طلباتك.")</p>
+        @if (Model.Error is not null)
+        {
+            <div class="alert alert-error" role="alert">@Model.Error</div>
+        }
+        <form method="post" class="auth-form">
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+            <label>
+                <span>@T("نام کاربری", "Username", "اسم المستخدم")</span>
+                <input type="text" asp-for="Username" autocomplete="username" required />
+            </label>
+            <label>
+                <span>@T("کلمه عبور", "Password", "كلمة المرور")</span>
+                <input type="password" asp-for="Password" autocomplete="current-password" required />
+            </label>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">@T("ورود", "Sign in", "دخول")</button>
+        </form>
+        <p class="muted small">@T("حساب کاربری ندارید؟ با پشتیبانی فروشگاه تماس بگیرید تا برایتان بسازیم.", "No account yet? Contact store support to create one.", "ليس لديك حساب؟ تواصل مع الدعم لإنشائه.")</p>
+    </div>
+</section>

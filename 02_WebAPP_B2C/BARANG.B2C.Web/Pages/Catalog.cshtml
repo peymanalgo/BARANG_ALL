@@ -1,0 +1,62 @@
+@page
+@model CatalogModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = T("کاتالوگ طرح‌ها", "Design catalog", "كتالوج التصاميم");
+}
+<section class="container section">
+    <header class="catalog-head">
+        <h1>@T("کاتالوگ طرح‌ها", "Design catalog", "كتالوج التصاميم")</h1>
+        <p class="muted">@T($"{Model.Total} طرح آماده چاپ", $"{Model.Total} print-ready designs", $"{Model.Total} تصميم جاهز للطباعة")</p>
+    </header>
+
+    <form class="catalog-filter" action="/catalog" method="get">
+        <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@T("جستجو در کد یا نام طرح…", "Search code or title…", "ابحث في الرمز أو العنوان…")" />
+        @if (Model.Page > 1)
+        {
+            <input type="hidden" name="page" value="1" />
+        }
+        <button class="btn btn-primary" type="submit">@T("جستجو", "Search", "بحث")</button>
+    </form>
+
+    @if (Model.Designs.Count == 0)
+    {
+        <p class="empty">@T("طرحی با این جستجو پیدا نشد.", "No designs match your search.", "لا توجد تصاميم مطابقة.")</p>
+    }
+    else
+    {
+        <div class="design-grid">
+            @foreach (var d in Model.Designs)
+            {
+                <a class="design-card" href="/design/@d.Id">
+                    <span class="design-thumb">
+                        @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
+                        {
+                            <img src="@d.Thumbnail" alt="@d.Title" loading="lazy" />
+                        }
+                    </span>
+                    <span class="design-meta">
+                        <strong>@d.Title</strong>
+                        @if (!string.IsNullOrWhiteSpace(d.CategoryCode))
+                        {
+                            <span class="chip">@d.CategoryCode</span>
+                        }
+                    </span>
+                </a>
+            }
+        </div>
+
+        <nav class="pagination" aria-label="@T("صفحه‌بندی", "Pagination", "ترقيم الصفحات")">
+            @if (Model.HasPrev)
+            {
+                <a class="btn btn-ghost btn-sm" href="@Model.PageLink(Model.Page - 1)">← @T("قبلی", "Previous", "السابق")</a>
+            }
+            <span class="page-info">@Model.Page / @Math.Max(1, (int)Math.Ceiling(Model.Total / (double)Model.PageSize))</span>
+            @if (Model.HasNext)
+            {
+                <a class="btn btn-ghost btn-sm" href="@Model.PageLink(Model.Page + 1)">@T("بعدی", "Next", "التالي") →</a>
+            }
+        </nav>
+    }
+</section>
