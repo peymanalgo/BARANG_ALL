@@ -7,6 +7,10 @@
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
     string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.Format(d, culture);
+    string invitedCount = Model.InvitedCount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string earnedText = Model.ReferralEarned.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string InvitedLabel = culture == "en" ? Model.InvitedCount + " invited" : culture == "ar" ? Model.InvitedCount + " مدعو" : invitedCount + " نفر دعوت شده";
+    string EarnedLabel = culture == "en" ? earnedText + " Toman earned" : culture == "ar" ? earnedText + " تومان مكافأة" : earnedText + " تومان هدیه";
     string OrderStatusLabel(string s) => s switch
     {
         "Draft" => T("پیش‌نویس", "Draft", "مسودة"),
@@ -180,6 +184,18 @@
             </section>
 
             <aside class="dash-side">
+                <div class="dash-card invite-card">
+                    <h2>@T("دعوت از دوستان", "Invite friends", "دعوة الأصدقاء")</h2>
+                    <p class="invite-text">@T("کد دعوتت را بفرست؛ با اولین خریدش اعتبار هدیه می‌گیری.", "Share your invite code; earn gift credit on their first purchase.", "شارك رمز الدعوة؛ اربح رصيد هدية على أول عملية شراء.")</p>
+                    <button type="button" class="btn-invite" data-copy="@($"?ref={Model.ReferralCode}")">
+                        <span dir="ltr">@Model.ReferralCode</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                    <div class="invite-stats">
+                        <span>@InvitedLabel</span>
+                        <span>@EarnedLabel</span>
+                    </div>
+                </div>
                 <div class="dash-card wallet-card">
                     <h2>@T("کیف پول من", "My wallet", "محفظتي")</h2>
                     <p class="wallet-balance">@Money(Model.Wallet.Balance) <small>@T("تومان", "Toman", "تومان")</small></p>

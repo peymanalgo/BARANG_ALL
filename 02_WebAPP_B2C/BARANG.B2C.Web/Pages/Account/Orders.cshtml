@@ -46,7 +46,7 @@
                         <span class="order-date muted">@DateText(o.CreatedAtUtc ?? o.OrderDate)</span>
                     </div>
                     <span class="status-chip st-@o.Status.ToLowerInvariant()">@StatusLabel(o.Status)</span>
-                    <span class="order-go" aria-hidden="true">‹</span>
+                    <span class="order-go" dir="ltr" aria-hidden="true">@(culture == "en" ? "›" : "‹")</span>
                 </a>
             }
         </div>

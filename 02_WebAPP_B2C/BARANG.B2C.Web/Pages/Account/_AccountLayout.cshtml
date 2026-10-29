@@ -5,6 +5,7 @@
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     var dir = culture == "en" ? "ltr" : "rtl";
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string Brand() => culture switch { "en" => "Pirang Khan", "ar" => "بيرنگ خان", _ => "پیرنگ خان" };
     string? Active(string key) => ViewData["PanelActive"] as string == key ? "active" : null;
     var displayName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
     var username = User.FindFirst("barang:username")?.Value ?? User.Identity?.Name ?? "";
@@ -16,7 +17,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@(ViewData["Title"] is string t && t.Length > 0 ? $"{t} · پیرنگ خان" : "پیرنگ خان")</title>
+    <title>@(ViewData["Title"] is string t && t.Length > 0 ? $"{t} · {Brand()}" : Brand())</title>
     <meta name="theme-color" content="#15151b" />
     <link rel="manifest" href="~/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="~/icons/apple-touch-icon.png" />
@@ -30,7 +31,7 @@
             <span class="brand-crown" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-1.6 10.2a1.5 1.5 0 0 1-1.48 1.3H6.08a1.5 1.5 0 0 1-1.48-1.3L3 8z"/></svg>
             </span>
-            <span class="panel-brand-text">پیرنگ خان</span>
+            <span class="panel-brand-text">@Brand()</span>
         </a>
 
         <div class="panel-user">
@@ -88,16 +89,6 @@
             </a>
         </nav>
 
-        <div class="panel-invite">
-            <strong>@T("دعوت از دوستان", "Invite friends", "ادعُ أصدقاءك")</strong>
-            <p>@T("کد دعوتی‌ات را بفرست و اعتبار هدیه بگیر.", "Share your invite code and earn gift credit.", "شارك رمز الدعوة واحصل على رصيد هدية.")</p>
-            <button type="button" class="btn-invite" data-copy="@($"?ref={username}")">
-                <span dir="ltr">@($"?ref={username}")</span>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            </button>
-            <small class="invite-hint" data-copied="@T("کپی شد!", "Copied!", "تم النسخ!")" data-default="@T("با اولین سفارش دوستت، اعتبار می‌گیری.", "Earn credit when a friend places their first order.", "اكسب رصيداً عندما يقدم صديقك أول طلب.")">@T("با اولین سفارش دوستت، اعتبار می‌گیری.", "Earn credit when a friend places their first order.", "اكسب رصيداً عندما يقدم صديقك أول طلب.")</small>
-        </div>
-
         <a class="panel-back" href="/">← @T("بازگشت به فروشگاه", "Back to store", "العودة إلى المتجر")</a>
     </aside>
 
@@ -106,7 +97,7 @@
             <label for="panelNavToggle" class="panel-burger" aria-label="@T("منو", "Menu", "القائمة")">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
             </label>
-            <a class="panel-topbar-brand" href="/">پیرنگ خان</a>
+            <a class="panel-topbar-brand" href="/">@Brand()</a>
             <span class="panel-topbar-spacer"></span>
             <details class="panel-lang">
                 <summary aria-label="@T("زبان", "Language", "اللغة")">

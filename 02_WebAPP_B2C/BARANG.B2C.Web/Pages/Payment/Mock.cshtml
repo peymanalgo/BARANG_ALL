@@ -5,6 +5,7 @@
     Layout = null;
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string Brand() => culture switch { "en" => "Pirang Khan", "ar" => "بيرنگ خان", _ => "پیرنگ خان" };
     string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
     ViewData["Title"] = T("درگاه پرداخت آزمایشی", "Sandbox payment gateway", "بوابة الدفع التجريبية");
 }
@@ -13,7 +14,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] · پیرنگ خان</title>
+    <title>@ViewData["Title"] · @Brand()</title>
     <link rel="stylesheet" href="~/css/gateway.css" asp-append-version="true" />
 </head>
 <body class="gateway-body">
@@ -70,7 +71,7 @@
         {
             <section class="gateway-card">
                 <dl class="gateway-rows">
-                    <div><dt>@T("پذیرنده", "Merchant", "التاجر")</dt><dd>پیرنگ خان</dd></div>
+                    <div><dt>@T("پذیرنده", "Merchant", "التاجر")</dt><dd>@Brand()</dd></div>
                     <div><dt>@T("شماره پیگیری", "Tracking number", "رقم التتبع")</dt><dd dir="ltr">@Model.Info.Number</dd></div>
                     <div><dt>@T("مبلغ قابل پرداخت", "Payable amount", "المبلغ المطلوب")</dt><dd class="gateway-amount">@Money(Model.Info.Amount) @T("تومان", "Toman", "تومان")</dd></div>
                 </dl>

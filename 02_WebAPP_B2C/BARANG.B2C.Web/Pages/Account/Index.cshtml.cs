@@ -28,6 +28,9 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
     public long DeliveredCount { get; private set; }
     public long FavoriteCount { get; private set; }
     public WalletSummary Wallet { get; private set; } = new(0, "IRR");
+    public string? ReferralCode { get; private set; }
+    public int InvitedCount { get; private set; }
+    public decimal ReferralEarned { get; private set; }
     public IReadOnlyList<NotificationRow> Notifications { get; private set; } = [];
     public IReadOnlyList<RecentOrder> RecentOrders { get; private set; } = [];
     public IReadOnlyList<FavoriteDesign> Favorites { get; private set; } = [];
@@ -45,9 +48,13 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
         return RedirectToPage("/Account/Login", new { returnUrl = "/account" });
     }
 
-    public async Task<IActionResult> OnGet(string? error)
+    public async Task<IActionResult> OnGet(string? error, [FromQuery(Name = "ref")] string? refCode) 
     {
         Error = error;
+        if (!string.IsNullOrWhiteSpace(refCode) && refCode.Length is >= 4 and <= 20)
+        {
+            Response.Cookies.Append("barang.ref", refCode.Trim().ToUpperInvariant(), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(30), IsEssential = true });
+        }
         Username = User.FindFirst("barang:username")?.Value;
         DisplayName = User.Identity?.Name;
         JsonElement? me = await core.GetAsync("api/v1/auth/me");
@@ -72,7 +79,8 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
             Task<JsonElement?> walletTask = core.GetAsync($"api/v1/client/customers/{customerId}/wallet");
             Task<JsonElement?> notifsTask = core.GetAsync("api/v1/notifications/mine?page=1&pageSize=5");
             Task<JsonElement?> offersTask = core.GetAsync("api/v1/public/catalog?page=1&pageSize=8");
-            await Task.WhenAll(addressesTask, ordersTask, favoritesTask, walletTask, notifsTask, offersTask);
+            Task<JsonElement?> referralTask = core.GetAsync($"api/v1/client/customers/{customerId}/referral");
+            await Task.WhenAll(addressesTask, ordersTask, favoritesTask, walletTask, notifsTask, offersTask, referralTask);
             if (ReauthGuard() is { } r2) return r2;
 
             if (addressesTask.Result is JsonElement a && a.ValueKind == JsonValueKind.Array)
@@ -133,6 +141,13 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
                 foreach (NotificationRow row in Notifications) if (row.Unread) UnreadCount++;
             }
 
+            if (referralTask.Result is JsonElement rf && rf.ValueKind == JsonValueKind.Object)
+            {
+                ReferralCode = rf.TryGetProperty("code", out JsonElement rcode) ? rcode.GetString() : null;
+                InvitedCount = rf.TryGetProperty("invitedCount", out JsonElement ric) && ric.TryGetInt32(out int invited) ? invited : 0;
+                ReferralEarned = rf.TryGetProperty("totalEarned", out JsonElement rte) && rte.TryGetDecimal(out decimal earned) ? earned : 0;
+            }
+
             if (offersTask.Result is JsonElement of && of.TryGetProperty("items", out JsonElement oi2) && oi2.ValueKind == JsonValueKind.Array)
             {
                 Random rnd = Random.Shared;
@@ -171,6 +186,12 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
         }
         JsonElement? created = await customers.RegisterSelfAsync(ProfileFirstName, ProfileLastName, ProfileMobile);
         if (created is null) return RedirectToPage(new { error = "register" });
+        string? refCode = Request.Cookies["barang.ref"];
+        if (!string.IsNullOrWhiteSpace(refCode))
+        {
+            await core.PostRawAsync($"api/v1/client/customers/{created.Value.GetProperty("id").GetString()}/referrals/attach", new { code = refCode.Trim() });
+            Response.Cookies.Delete("barang.ref");
+        }
         return RedirectToPage();
     }
 

@@ -10,21 +10,23 @@
         return "/language/set?culture=" + c + "&returnUrl=" + Uri.EscapeDataString(target);
     }
     var q = Context.Request.Query["search"].ToString();
+    string Brand() => culture switch { "en" => "Pirang Khan", "ar" => "بيرنگ خان", _ => "پیرنگ خان" };
+
 }
 <!DOCTYPE html>
 <html lang="@culture" dir="@dir">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@(ViewData["Title"] is string t && t.Length > 0 ? $"{t} · پیرنگ خان" : "پیرنگ خان — فروشگاه طرح‌های چاپی")</title>
-    <meta name="description" content="@(ViewData["Description"] ?? "پیرنگ خان — سفارش آنلاین چاپ طرح‌های مورد علاقه‌ات روی تیشرت")" />
+    <title>@(ViewData["Title"] is string t && t.Length > 0 ? $"{t} · {Brand()}" : $"{Brand()} — {T("فروشگاه طرح‌های چاپی", "Print-ready designs store", "متجر التصاميم الجاهزة للطباعة")}")</title>
+    <meta name="description" content="@(ViewData["Description"] ?? $"{Brand()} — {T("سفارش آنلاین چاپ طرح‌های مورد علاقه‌ات روی تیشرت", "Order your favourite designs printed on t-shirts online", "اطبع تصاميمك المفضلة على التيشرت عبر الإنترنت")}")" />
     <meta name="theme-color" content="#111114" />
     <link rel="manifest" href="~/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="~/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta property="og:type" content="@(ViewData["OgType"] ?? "website")" />
-    <meta property="og:site_name" content="پیرنگ خان" />
-    <meta property="og:title" content="@(ViewData["Title"] is string ot && ot.Length > 0 ? ot : "پیرنگ خان — فروشگاه طرح‌های چاپی")" />
+    <meta property="og:site_name" content="@Brand()" />
+    <meta property="og:title" content="@(ViewData["Title"] is string ot && ot.Length > 0 ? ot : $"{Brand()} — {T("فروشگاه طرح‌های چاپی", "Print-ready designs store", "متجر التصاميم الجاهزة للطباعة")}")" />
     <meta property="og:description" content="@(ViewData["Description"] ?? "سفارش آنلاین چاپ طرح‌های مورد علاقه‌ات روی تیشرت")" />
     @if (ViewData["OgImage"] is string ogImage && ogImage.Length > 0)
     {
@@ -39,7 +41,7 @@
             <span class="brand-crown" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-1.6 10.2a1.5 1.5 0 0 1-1.48 1.3H6.08a1.5 1.5 0 0 1-1.48-1.3L3 8z"/></svg>
             </span>
-            <span class="brand-name">پیرنگ خان</span>
+            <span class="brand-name">@Brand()</span>
         </a>
         <nav class="main-nav" aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية")">
             <a href="/" class="@(route.Length == 0 ? "active" : null)">@T("صفحه اصلی", "Home", "الرئيسية")</a>
@@ -92,7 +94,7 @@
 <footer class="store-footer" id="contact">
     <div class="container footer-grid">
         <div>
-            <span class="brand-name">پیرنگ خان</span>
+            <span class="brand-name">@Brand()</span>
             <p>@T("طرح‌های آماده چاپ روی پوشاک و هدایای تبلیغاتی؛ سفارش آنلاین، پیگیری تا تحویل.", "Ready-to-print designs for apparel and promotional gifts; order online, track until delivery.", "تصاميم جاهزة للطباعة على الملابس والهدايا الدعائية؛ اطلب عبر الإنترنت وتتبع حتى التسليم.")</p>
         </div>
         <div>
@@ -109,7 +111,7 @@
     </div>
     <div class="footer-base">
         <div class="container">
-            <span>© پیرنگ خان @DateTime.Now.Year</span>
+            <span>© @Brand() @DateTime.Now.Year</span>
             <span dir="ltr" class="muted">PIRANG KHAN · B2C</span>
         </div>
     </div>

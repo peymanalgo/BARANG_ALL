@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using BARANG.B2C.Web.Services;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -10,12 +11,19 @@ public sealed class IndexModel(CoreApiClient core) : PageModel
     public long Total { get; private set; }
     public IReadOnlyList<CategoryRow> Categories { get; private set; } = [];
 
-    public async Task OnGet()
+
+
+    public async Task OnGet([FromQuery(Name = "ref")] string? refCode)
     {
+        if (!string.IsNullOrWhiteSpace(refCode) && refCode.Length is >= 4 and <= 20)
+        {
+            Response.Cookies.Append("barang.ref", refCode.Trim().ToUpperInvariant(), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(30), IsEssential = true });
+        }
         JsonElement? page = await core.GetAsync("api/v1/public/catalog?page=1&pageSize=13");
         (Featured, Total) = DesignCard.FromPage(page);
 
-        JsonElement? cats = await core.GetAsync("api/v1/public/catalog/categories");
+        string culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+        JsonElement? cats = await core.GetAsync($"api/v1/public/catalog/categories?culture={culture}");
         if (cats is JsonElement c && c.ValueKind == JsonValueKind.Array)
         {
             Categories = c.EnumerateArray().Select(x => new CategoryRow(

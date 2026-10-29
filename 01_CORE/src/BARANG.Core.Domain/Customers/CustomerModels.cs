@@ -301,3 +301,62 @@ public sealed class CustomerCustomDesign
         return Result.Success(new CustomerCustomDesign { Id = id, CompanyId = companyId, CustomerId = customerId, Title = t, FileVersionId = fileVersionId, CreatedAtUtc = now });
     }
 }
+
+public sealed class ReferralErrors
+{
+    public static Error CodeNotFound => Error.NotFound("referral.code_not_found");
+    public static Error AlreadyReferred => Error.Conflict("referral.already_referred");
+    public static Error SelfReferral => Error.BusinessRule("referral.self_referral");
+    public static Error NotEligible => Error.BusinessRule("referral.not_eligible");
+    public static Error InvalidCode => Error.Validation("referral.invalid_code");
+}
+
+public enum CustomerReferralStatus { Pending = 1, Rewarded = 2 }
+
+// A referred customer is linked to exactly one referrer; the reward is a gift
+// credit to the referrer wallet when the referred customer pays their first order.
+public sealed class CustomerReferral
+{
+    public Guid Id { get; private set; }
+    public Guid CompanyId { get; private set; }
+    public Guid ReferrerCustomerId { get; private set; }
+    public Guid ReferredCustomerId { get; private set; }
+    public string CodeUsed { get; private set; } = "";
+    public CustomerReferralStatus Status { get; private set; }
+    public decimal RewardAmount { get; private set; }
+    public string CurrencyCode { get; private set; } = "";
+    public Guid? RewardTransactionId { get; private set; }
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+    public DateTimeOffset? RewardedAtUtc { get; private set; }
+
+    public static Result<CustomerReferral> Create(Guid id, Guid companyId, Guid referrerCustomerId, Guid referredCustomerId, string codeUsed, decimal rewardAmount, string currencyCode, DateTimeOffset now)
+    {
+        if (companyId == Guid.Empty || referrerCustomerId == Guid.Empty || referredCustomerId == Guid.Empty) return Result.Failure<CustomerReferral>(ReferralErrors.NotEligible);
+        if (referrerCustomerId == referredCustomerId) return Result.Failure<CustomerReferral>(ReferralErrors.SelfReferral);
+        string code = (codeUsed ?? "").Trim().ToUpperInvariant();
+        if (code.Length is < 4 or > 20) return Result.Failure<CustomerReferral>(ReferralErrors.InvalidCode);
+        return Result.Success(new CustomerReferral { Id = id, CompanyId = companyId, ReferrerCustomerId = referrerCustomerId, ReferredCustomerId = referredCustomerId, CodeUsed = code, Status = CustomerReferralStatus.Pending, RewardAmount = decimal.Round(rewardAmount, 0), CurrencyCode = currencyCode.Trim().ToUpperInvariant(), CreatedAtUtc = now });
+    }
+
+    public Result Reward(Guid transactionId, DateTimeOffset now)
+    {
+        if (Status != CustomerReferralStatus.Pending) return Result.Failure(ReferralErrors.AlreadyReferred);
+        Status = CustomerReferralStatus.Rewarded;
+        RewardTransactionId = transactionId;
+        RewardedAtUtc = now;
+        return Result.Success();
+    }
+}
+
+// One stable invite code per customer, generated lazily on first use.
+public sealed class CustomerReferralCode
+{
+    public Guid Id { get; private set; }
+    public Guid CompanyId { get; private set; }
+    public Guid CustomerId { get; private set; }
+    public string Code { get; private set; } = "";
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public static CustomerReferralCode Create(Guid id, Guid companyId, Guid customerId, string code, DateTimeOffset now)
+        => new() { Id = id, CompanyId = companyId, CustomerId = customerId, Code = code.Trim().ToUpperInvariant(), CreatedAtUtc = now };
+}

@@ -3394,6 +3394,116 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Customers.CustomerReferral", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CodeUsed")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("code_used");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("currency_code");
+
+                    b.Property<Guid>("ReferredCustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("referred_customer_id");
+
+                    b.Property<Guid>("ReferrerCustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("referrer_customer_id");
+
+                    b.Property<decimal>("RewardAmount")
+                        .HasPrecision(18)
+                        .HasColumnType("numeric(18,0)")
+                        .HasColumnName("reward_amount");
+
+                    b.Property<Guid?>("RewardTransactionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reward_transaction_id");
+
+                    b.Property<DateTimeOffset?>("RewardedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rewarded_at_utc");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_referrals");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_customer_referrals_company_id");
+
+                    b.HasIndex("ReferredCustomerId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_customer_referrals_referred");
+
+                    b.HasIndex("ReferrerCustomerId", "CreatedAtUtc")
+                        .HasDatabaseName("ix_customer_referrals_referrer_created");
+
+                    b.ToTable("customer_referrals", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Customers.CustomerReferralCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_referral_codes");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("uq_customer_referral_codes_code");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_customer_referral_codes_company_id");
+
+                    b.HasIndex("CustomerId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_customer_referral_codes_customer");
+
+                    b.ToTable("customer_referral_codes", "barang");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Customers.CustomerWalletTopUp", b =>
                 {
                     b.Property<Guid>("Id")

@@ -341,3 +341,10 @@ button[data-confirm], form[data-confirm] button { cursor: pointer; }
     .charge-form .btn { align-self: stretch; }
     .wallet-pay-row { flex-direction: column; align-items: stretch; }
 }
+
+/* invite card (dashboard) */
+.invite-card { background: linear-gradient(150deg, var(--panel-orange), #d95f00); border: 0; color: #fff8ef; }
+.invite-card h2 { margin: 0 0 6px; font-size: .98rem; color: #fff; }
+.invite-text { margin: 0 0 10px; font-size: .76rem; opacity: .92; line-height: 1.7; }
+.invite-stats { display: flex; gap: 14px; margin-top: 9px; font-size: .72rem; opacity: .95; }
+.invite-stats span { background: rgba(255,255,255,.16); border-radius: 8px; padding: 3px 9px; }

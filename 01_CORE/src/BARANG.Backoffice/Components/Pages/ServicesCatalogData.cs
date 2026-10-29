@@ -766,6 +766,35 @@ public static class ServicesCatalogData
                 In("customerId", "Guid", "Query", false),
                 In("page", "int", "Query", false),
                 In("pageSize", "int", "Query", false)),
+            ListOut, "X-Company-ID", false),
+
+        N("customers", "62", "GET", "/client/customers/{customerId}/referral", "ClientCustomerRead", "client-read",
+            "کد دعوت و وضعیت معرفی‌ها", "Referral code and status", "رمز الدعوة وحالة الإحالات",
+            "کد دعوت یکتای مشتری را (در اولین استفاده تولید می‌کند) همراه تعداد دعوت‌شدگان، اعتبار هدیه کسب‌شده و فهرست معرفی‌ها برمی‌گرداند.",
+            "Returns the customer's unique invite code (generated on first use) with invited count, earned gift credit and the referral list.",
+            "يعيد رمز الدعوة الفريد للعميل (يُنشأ عند أول استخدام) مع عدد المدعوين ورصيد الهدايا المكتسب وقائمة الإحالات.",
+            Inputs(In("customerId", "Guid", "Path", true)),
+            JsonOut, "X-Company-ID", false),
+
+        N("customers", "63", "POST", "/client/customers/{customerId}/referrals/attach", "ClientCustomerWrite", "client-mutation",
+            "اتصال مشتری جدید به کد دعوت", "Attach referred customer to a code", "ربط العميل الجديد برمز الدعوة",
+            "کد دعوت را برای مشتری جدید ثبت می‌کند و او را به معرف پیوند می‌زند؛ فقط برای مشتریان تازه (بدون سفارش ثبت‌شده) و یک‌بار برای هر مشتری.",
+            "Links a referral code to a new customer and connects them to the referrer; only for brand-new customers (no submitted orders) and once per customer.",
+            "يربط رمز الدعوة بالعميل الجديد ويربطه بالمُحيل؛ للعملاء الجدد فقط (بدون طلبات مُرسلة) ومرة واحدة لكل عميل.",
+            Inputs(
+                In("customerId", "Guid", "Path", true),
+                In("code", "string", "Body", true)),
+            JsonOut, "X-Company-ID", false),
+
+        N("customers", "64", "GET", "/api/v1/customers/referrals", "CustomerRead", "client-read",
+            "همه معرفی‌ها (مدیریت)", "All referrals (admin)", "كل الإحالات (إدارة)",
+            "فهرست همه معرفی‌ها با معرف، معرفی‌شده، وضعیت و پاداش؛ منبع مدیریت بخش دعوت از دوستان در سامانه.",
+            "Lists every referral with referrer, referred customer, status and reward; feeds the invite management view in the backoffice.",
+            "يسرد جميع الإحالات مع المُحيل والمُحال والحالة والمكافأة؛ مصدر إدارة قسم دعوة الأصدقاء في النظام.",
+            Inputs(
+                In("status", "string", "Query", false),
+                In("page", "int", "Query", false),
+                In("pageSize", "int", "Query", false)),
             ListOut, "X-Company-ID", false)
     ];
 

@@ -35,5 +35,17 @@ public static class WalletPolicy
     public const string ReasonPurchase = "purchase";
     public const string ReasonRefund = "order_refund";
     public const string ReasonManual = "manual_adjustment";
+    public const string ReasonGift = "gift";
     public const string PaymentMethodWallet = "wallet";
+}
+
+public sealed record ReferralInfoView(string Code, int InvitedCount, decimal TotalEarned, string CurrencyCode, IReadOnlyList<ReferralEntryView> Referrals);
+public sealed record ReferralEntryView(Guid Id, string? ReferredName, string Status, decimal RewardAmount, string CurrencyCode, DateTimeOffset CreatedAtUtc, DateTimeOffset? RewardedAtUtc);
+public sealed record AdminReferralView(Guid Id, string ReferrerCode, string? ReferrerName, string? ReferredName, string? ReferredCode, string Status, decimal RewardAmount, string CurrencyCode, DateTimeOffset CreatedAtUtc, DateTimeOffset? RewardedAtUtc);
+
+public interface IReferralAdministration
+{
+    Task<Result<ReferralInfoView>> GetInfoAsync(Guid customerId, CancellationToken ct);
+    Task<Result<ReferralInfoView>> AttachAsync(Guid customerId, string code, CancellationToken ct);
+    Task<Result<IReadOnlyList<AdminReferralView>>> AdminListAsync(string? status, int page, int pageSize, CancellationToken ct);
 }

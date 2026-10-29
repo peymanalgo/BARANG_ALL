@@ -126,6 +126,7 @@ public sealed class WalletAdministration(CoreDbContext db, ITransactionExecutor 
         if (approved.IsFailure) return Result.Failure<WalletPayResultView>(approved.IsFailure ? approved.Error : WalletErrors.OrderNotEligible);
 
         decimal balanceAfter = balance - remaining;
+        await BARANG.Core.Infrastructure.Customers.ReferralAdministration.RewardFirstPaymentInsideTransactionAsync(db, order.CustomerId, Now);
         return Result.Success(new WalletPayResultView(orderId, order.OrderNumber, remaining, price.CurrencyCode, balanceAfter, payment.Value.Id));
     }, ct);
 

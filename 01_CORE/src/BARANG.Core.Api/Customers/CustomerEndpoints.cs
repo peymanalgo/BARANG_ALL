@@ -82,6 +82,7 @@ public static class CustomerEndpoints
         });
 
         // Customer wallet administration: the ledger inbox for the backoffice.
+        read.MapGet("/referrals",async(string? status,int? page,int? pageSize,IReferralAdministration referrals,CancellationToken ct)=>Map(await referrals.AdminListAsync(status,page??1,pageSize??20,ct)));
         read.MapGet("/wallet/topups",async(string? status,Guid? customerId,int? page,int? pageSize,IWalletAdministration wallet,CancellationToken ct)=>Map(await wallet.AdminListTopUpsAsync(status,customerId,page??1,pageSize??20,ct)));
         read.MapGet("/wallet/transactions",async(Guid? customerId,string? reason,int? page,int? pageSize,IWalletAdministration wallet,CancellationToken ct)=>Map(await wallet.AdminListTransactionsAsync(customerId,reason,page??1,pageSize??20,ct)));
         edit.MapPost("/{customerId:guid}/wallet/adjustments",async(Guid customerId,WalletAdjustRequest r,IWalletAdministration wallet,CancellationToken ct)=>Map(await wallet.AdminAdjustAsync(customerId,new WalletAdjustCommand(r.Direction,r.Amount,r.ReferenceNote),ct)));
