@@ -1,11 +1,14 @@
 using BARANG.Core.Api.Errors;
 using BARANG.Core.Application.Abstractions.Correlation;
+using BARANG.Core.Application.Abstractions.Transactions;
 using BARANG.Core.Application.Customers;
 using BARANG.Core.Application.Security;
 using BARANG.Core.Domain.Common;
 using BARANG.Core.Domain.Customers;
 using BARANG.Core.Domain.Security;
+using BARANG.Core.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BARANG.Core.Api.Customers;
 
@@ -45,7 +48,38 @@ public static class CustomerEndpoints
         read.MapGet("/{id:guid}/addresses/default",async(Guid id,ICustomerDefaultAddressResolver s,CancellationToken ct)=>Map(await s.ResolveDefaultAddressAsync(id,ct)));
         edit.MapDelete("/{id:guid}/addresses/{addressId:guid}",async(Guid id,Guid addressId,long version,ICustomerAdministration s,CancellationToken ct)=>Map(await s.DeleteAddressAsync(id,addressId,version,ct)));
         edit.MapDelete("/{id:guid}/contacts/{contactId:guid}",async(Guid id,Guid contactId,long version,ICustomerAdministration s,CancellationToken ct)=>Map(await s.DeleteContactAsync(id,contactId,version,ct)));
-        financial.MapDelete("/{id:guid}/bank-accounts/{bankId:guid}",async(Guid id,Guid bankId,long version,ICustomerAdministration s,CancellationToken ct)=>Map(await s.DeleteBankAccountAsync(id,bankId,version,ct)));
+        edit.MapDelete("/{id:guid}/bank-accounts/{bankId:guid}",async(Guid id,Guid bankId,long version,ICustomerAdministration s,CancellationToken ct)=>Map(await s.DeleteBankAccountAsync(id,bankId,version,ct)));
+
+        // Customer feedbacks (دیدگاه‌ها و پیشنهادها) — manager view over the store feedback inbox.
+        read.MapGet("/feedbacks",async(string? status,string? type,int? page,int? pageSize,ITransactionExecutor tx,CoreDbContext db,CancellationToken ct)=>
+        {
+            Result<IReadOnlyList<CustomerFeedbackAdminView>> result=await tx.ExecuteAsync(async t=>
+            {
+                string? statusFilter=string.IsNullOrWhiteSpace(status)?null:status.Trim();
+                string? typeFilter=string.IsNullOrWhiteSpace(type)?null:type.Trim();
+                int size=Math.Clamp(pageSize??20,1,100),pageNumber=Math.Max(1,page??1);
+                var rows=await (from f in db.CustomerFeedbacks.AsNoTracking()
+                        join c in db.Customers.AsNoTracking() on f.CustomerId equals c.Id
+                        where (statusFilter==null||f.StatusCode==statusFilter)&&(typeFilter==null||f.FeedbackTypeCode==typeFilter)
+                        orderby f.CreatedAtUtc descending
+                        select new {f.Id,f.CompanyId,f.CustomerId,f.FeedbackTypeCode,f.Subject,f.Body,f.StatusCode,f.CreatedAtUtc,c.CustomerCode,c.DisplayName})
+                    .Skip((pageNumber-1)*size).Take(size).ToListAsync(t);
+                IReadOnlyList<CustomerFeedbackAdminView> items=rows.Select(x=>new CustomerFeedbackAdminView(x.Id,x.CustomerId,x.CustomerCode,x.DisplayName,x.FeedbackTypeCode,x.Subject,x.Body,x.StatusCode,x.CreatedAtUtc)).ToList();
+                return Result.Success<IReadOnlyList<CustomerFeedbackAdminView>>(items);
+            },ct);
+            return Map(result);
+        });
+        edit.MapPost("/feedbacks/{feedbackId:guid}/status",async(Guid feedbackId,FeedbackStatusRequest r,ITransactionExecutor tx,CoreDbContext db,CancellationToken ct)=>
+        {
+            Result result=await tx.ExecuteAsync(async t=>
+            {
+                var feedback=await db.CustomerFeedbacks.SingleOrDefaultAsync(x=>x.Id==feedbackId,t);
+                if(feedback is null)return Result.Failure(BARANG.Core.Domain.Files.FileErrors.NotFound);
+                Result changed=feedback.SetStatus(r.StatusCode);
+                return changed;
+            },ct);
+            return Map(result);
+        });
         return endpoints;
     }
     private static CustomerResult<T>Map<T>(Result<T> result,bool created=false)=>new(result,created);
@@ -63,3 +97,5 @@ public sealed record AddressRequest(string AddressTypeCode,string Title,string C
 public sealed record FinancialRequest(decimal CreditLimit,string? PaymentTermCode=null,string? PaymentConditionCode=null,string? PreferredPaymentMethodCode=null,decimal DefaultDiscountPercent=0,CustomerFinancialStatus FinancialStatus=CustomerFinancialStatus.Normal,string? TaxStatusCode=null,string DefaultCurrencyCode="IRR",long Version=0,Guid? PaymentTermId=null,Guid? PaymentConditionId=null,Guid? PreferredPaymentMethodId=null,Guid? TaxStatusId=null){public FinancialProfileCommand Command()=>new(CreditLimit,PaymentTermCode,PaymentConditionCode,PreferredPaymentMethodCode,DefaultDiscountPercent,FinancialStatus,TaxStatusCode,DefaultCurrencyCode,Version,PaymentTermId,PaymentConditionId,PreferredPaymentMethodId,TaxStatusId);}
 public sealed record BankAccountRequest(string AccountHolderName,string? BankCode=null,string? BankName=null,string? AccountNumber=null,string? Iban=null,string CurrencyCode="IRR",bool IsDefault=false,string? Notes=null,long Version=0,Guid? BankId=null,Guid? AccountTypeId=null,string? AccountTypeCode=null,string? AccountName=null,BankAccountOwnership OwnershipType=BankAccountOwnership.Individual,string? CardNumber=null,string? BranchCode=null){public BankAccountCommand Command()=>new(BankCode,BankName,AccountNumber,Iban,AccountHolderName,CurrencyCode,IsDefault,Notes,Version,BankId,AccountTypeId,AccountTypeCode,AccountName,OwnershipType,CardNumber,BranchCode);}
 public sealed record CustomerStatusRequest(CustomerStatus Status,long Version);public sealed record ActivationRequest(bool IsActive,long Version);public sealed record VersionRequest(long Version);
+public sealed record FeedbackStatusRequest(string StatusCode);
+public sealed record CustomerFeedbackAdminView(Guid Id,Guid CustomerId,string? CustomerCode,string? CustomerDisplayName,string FeedbackTypeCode,string Subject,string Body,string StatusCode,DateTimeOffset CreatedAtUtc);

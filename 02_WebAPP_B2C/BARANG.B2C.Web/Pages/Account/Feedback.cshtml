@@ -5,7 +5,7 @@
     Layout = "_AccountLayout";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.FormatDateTime(d, culture);
     string TypeLabel(string? code) => code switch
     {
         "suggestion" => T("پیشنهاد", "Suggestion", "اقتراح"),

@@ -66,7 +66,7 @@
 .panel-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .panel-topbar { display: none; }
 .panel-nav-toggle { display: none; }
-.panel-content { width: 100%; max-width: 1180px; margin: 0 auto; padding: 26px 26px 60px; display: flex; flex-direction: column; gap: 20px; }
+.panel-content { width: 100%; margin: 0 auto; padding: 26px clamp(16px, 2.5vw, 40px) 60px; display: flex; flex-direction: column; gap: 20px; }
 .panel-main .container { max-width: none; padding: 0; margin: 0; }
 .panel-main .section { margin: 0; padding: 0; }
 
@@ -265,6 +265,10 @@ button[data-confirm], form[data-confirm] button { cursor: pointer; }
     .dash-side { position: static; }
     .dash-row { grid-template-columns: 1fr 1fr; }
     .dash-add-design { min-height: 170px; }
+}
+@media (max-width: 1320px) {
+    .dash-row { grid-template-columns: 1fr 1fr; }
+    .dash-row .addr { grid-column: 1 / -1; }
 }
 @media (max-width: 760px) {
     .panel-shell { display: block; }

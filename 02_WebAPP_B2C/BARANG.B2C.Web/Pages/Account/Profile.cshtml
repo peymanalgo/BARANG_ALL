@@ -50,7 +50,7 @@
     }
     else
     {
-        <form method="post" class="card profile-edit">
+        <form method="post" asp-page-handler="Save" class="card profile-edit">
             <div class="form-cols">
                 <label><span>@T("نام", "First name", "الاسم")</span>
                     <input type="text" asp-for="FirstName" required />
@@ -64,17 +64,29 @@
                 <label><span>@T("موبایل", "Mobile", "الهاتف")</span>
                     <input type="text" asp-for="Mobile" dir="ltr" required />
                 </label>
+                <label><span>@T("تلفن ثابت (اختیاری)", "Phone (optional)", "الهاتف الثابت")</span>
+                    <input type="text" asp-for="PrimaryPhone" dir="ltr" />
+                </label>
                 <label><span>@T("ایمیل", "Email", "البريد")</span>
                     <input type="email" asp-for="Email" dir="ltr" />
                 </label>
                 <label><span>@T("کد ملی", "National ID", "الرمز الوطني")</span>
                     <input type="text" asp-for="NationalId" dir="ltr" />
                 </label>
+                <label><span>@T("نام پدر (اختیاری)", "Father name (optional)", "اسم الأب")</span>
+                    <input type="text" asp-for="FatherName" />
+                </label>
+                <label><span>@T("تاریخ تولد (اختیاری)", "Birth date (optional)", "تاريخ الميلاد")</span>
+                    <input type="hidden" asp-for="BirthDate" />
+                    <input type="text" data-dp data-culture="@culture" data-target="#BirthDate" readonly placeholder="@T("انتخاب تاریخ…", "Pick a date…", "اختر تاريخاً…")" value="@(string.IsNullOrWhiteSpace(Model.BirthDate) ? null : (culture == "fa" ? "" : Model.BirthDate))" />
+                </label>
             </div>
             <div class="form-actions-row">
                 <button type="submit" class="btn btn-primary">@T("ذخیره تغییرات", "Save changes", "حفظ التغييرات")</button>
-                <span class="muted small">@T("برای تغییر کلمه عبور، از کارت «تغییر کلمه عبور» در صفحه حساب استفاده کنید.", "Use the password card on the account page to change your password.", "لتغيير كلمة المرور استخدم بطاقة الحساب.")</span>
+                <span class="muted small">@T("تاریخ‌ها در فارسی شمسی و در دیگر زبان‌ها میلادی هستند.", "Dates are Jalali in Persian and Gregorian in other languages.", "التواريخ هجرية بالفارسية وميلادية ببقية اللغات.")</span>
             </div>
         </form>
     }
 </section>
+<link rel="stylesheet" href="~/css/datepicker.css" asp-append-version="true" />
+<script src="~/js/datepicker.js" defer></script>

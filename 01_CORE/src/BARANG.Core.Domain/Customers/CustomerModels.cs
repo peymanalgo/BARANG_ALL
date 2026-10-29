@@ -194,6 +194,16 @@ public sealed class CustomerFeedback
         if (b is null || b.Length is < BodyMinLength or > BodyMaxLength) return Result.Failure<CustomerFeedback>(CustomerErrors.InvalidData);
         return Result.Success(new CustomerFeedback { Id = id, CompanyId = companyId, CustomerId = customerId, FeedbackTypeCode = type, Subject = s, Body = b, StatusCode = "new", CreatedAtUtc = now });
     }
+
+    public static readonly IReadOnlySet<string> AllowedStatuses = new HashSet<string>(["new", "in_review", "resolved"], StringComparer.Ordinal);
+
+    public Result SetStatus(string statusCode)
+    {
+        string? code = CustomerText.Category(statusCode);
+        if (code is null || !AllowedStatuses.Contains(code)) return Result.Failure(CustomerErrors.InvalidData);
+        StatusCode = code;
+        return Result.Success();
+    }
 }
 
 

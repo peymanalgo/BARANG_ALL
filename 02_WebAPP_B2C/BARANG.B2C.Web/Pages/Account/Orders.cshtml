@@ -14,7 +14,7 @@
         "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم"),
         _ => s
     };
-    string DateText(string? iso) => DateTimeOffset.TryParse(iso, out DateTimeOffset d) ? d.ToLocalTime().ToString("yyyy/MM/dd", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa")) : "—";
+    string DateText(string? iso) => DateTimeOffset.TryParse(iso, out DateTimeOffset d) ? BARANG.B2C.Web.Services.AppDate.Format(d, culture) : "—";
     ViewData["Title"] = T("سفارش‌های من", "My orders", "طلباتي");
 }
 <section class="container section">

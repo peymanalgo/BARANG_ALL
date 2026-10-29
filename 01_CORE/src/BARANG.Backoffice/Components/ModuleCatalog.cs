@@ -46,6 +46,7 @@ public static class ModuleCatalog
                 Item("Nav_Workflow","/workspace/workflow","workflow.read"),
                 Item("Nav_Services","/master/services","lookup.read")),
         Direct("Nav_Customers","users","/manage/customers","customer.read"),
+        Direct("Nav_CustomerFeedbacks","message","/workspace/feedbacks","customer.read"),
         Direct("Nav_ArtworkBank","image","/manage/design-bank","artwork.read"),
         Direct("Nav_Orders","orders","/workspace/orders","order.read"),
         Direct("Nav_Cartable","inbox","/cartable","workflow.read"),

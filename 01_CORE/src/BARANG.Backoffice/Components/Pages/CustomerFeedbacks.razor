@@ -1,0 +1,184 @@
+@page "/workspace/feedbacks"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Auth
+@using BARANG.Backoffice.Localization
+@inject IStringLocalizer<NavigationStrings> N
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+@inject ILocaleDateService Dates
+
+<PageTitle>@T("دیدگاه‌های مشتریان","Customer Feedbacks","ملاحظات العملاء") · BARANG</PageTitle>
+<main class="page-shell feedbacks-page" aria-labelledby="feedbacks-heading">
+    <header class="page-head">
+        <div>
+            <h1 id="feedbacks-heading">@T("دیدگاه‌های مشتریان","Customer Feedbacks","ملاحظات العملاء")</h1>
+            <p class="muted">@T("دیدگاه‌ها، انتقادها و پیشنهادهایی که مشتریان از فروشگاه پیرنگ خان ثبت کرده‌اند.","Suggestions, complaints and reviews submitted by Pirang Khan store customers.","الاقتراحات والشكاوى والمراجعات التي قدمها عملاء متجر بيرانج خان.")</p>
+        </div>
+    </header>
+
+    <section class="feedbacks-toolbar" aria-label="@T("فیلترها","Filters","المرشحات")">
+        @foreach (var (key, label) in StatusFilters)
+        {
+            <button type="button" class="feedback-chip @(Status==key?"is-active":"")" @onclick='()=>SwitchStatus(key)'>@label</button>
+        }
+        <select class="feedback-type" value="@Type" @onchange="TypeChanged" aria-label="@T("نوع","Type","النوع")">
+            <option value="">@T("همه انواع","All types","كل الأنواع")</option>
+            <option value="suggestion">@T("پیشنهاد","Suggestion","اقتراح")</option>
+            <option value="complaint">@T("انتقاد","Complaint","شكوى")</option>
+            <option value="review">@T("دیدگاه","Review","مراجعة")</option>
+            <option value="other">@T("سایر","Other","أخرى")</option>
+        </select>
+    </section>
+
+    @if (Loading)
+    {
+        <p class="muted">@T("در حال بارگذاری…","Loading…","جار التحميل…")</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(Error))
+    {
+        <section class="panel feedback-error" role="alert"><h2>@T("بارگذاری انجام نشد","Could not load","تعذر التحميل")</h2><p>@Error</p><button type="button" class="btn btn-primary" @onclick="Load">@T("تلاش دوباره","Retry","إعادة المحاولة")</button></section>
+    }
+    else if (Rows.Count == 0)
+    {
+        <p class="muted">@T("دیدگاهی ثبت نشده است.","No feedback submitted yet.","لم يتم إرسال أي ملاحظات بعد.")</p>
+    }
+    else
+    {
+        <div class="feedbacks-list">
+            @foreach (var row in Rows)
+            {
+                <article class="panel feedback-item st-@row.StatusCode">
+                    <header class="feedback-item-head">
+                        <div class="feedback-item-titles">
+                            <strong>@row.Subject</strong>
+                            <small class="muted">@row.CustomerDisplayName (@row.CustomerCode) · @TypeLabel(row.FeedbackTypeCode) · @Dates.Format(row.CreatedAtUtc, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)</small>
+                        </div>
+                        <span class="feedback-status st-@row.StatusCode">@StatusLabel(row.StatusCode)</span>
+                    </header>
+                    <p class="feedback-item-body">@row.Body</p>
+                    <footer class="feedback-item-actions">
+                        @if (row.StatusCode != "in_review")
+                        {
+                            <button type="button" class="btn btn-secondary btn-sm" disabled="@Busy" @onclick='()=>SetStatus(row,"in_review")'>@T("در حال بررسی","Mark in review","قيد المراجعة")</button>
+                        }
+                        @if (row.StatusCode != "resolved")
+                        {
+                            <button type="button" class="btn btn-primary btn-sm" disabled="@Busy" @onclick='()=>SetStatus(row,"resolved")'>@T("حل شد","Mark resolved","تم الحل")</button>
+                        }
+                        @if (row.StatusCode != "new")
+                        {
+                            <button type="button" class="btn btn-ghost btn-sm" disabled="@Busy" @onclick='()=>SetStatus(row,"new")'>@T("بازگشت به جدید","Back to new","العودة إلى جديد")</button>
+                        }
+                    </footer>
+                </article>
+            }
+        </div>
+        <nav class="feedbacks-pager" aria-label="@T("صفحه‌بندی","Pagination","ترقيم الصفحات")">
+            <button type="button" class="btn btn-ghost btn-sm" disabled="@(Page<=1)" @onclick="Previous">← @T("قبلی","Previous","السابق")</button>
+            <span>@Page</span>
+            <button type="button" class="btn btn-ghost btn-sm" disabled="@Rows.Count<PageSize" @onclick="Next">@T("بعدی","Next","التالي") →</button>
+        </nav>
+    }
+</main>
+
+@code {
+    private bool Loading = true, Busy;
+    private string? Error;
+    private List<Row> Rows = [];
+    private string Status = "", Type = "";
+    private int Page = 1;
+    private const int PageSize = 20;
+
+    private IReadOnlyList<(string Key, string Label)> StatusFilters => new[]
+    {
+        ("", T("همه","All","الكل")),
+        ("new", T("جدید","New","جديد")),
+        ("in_review", T("در حال بررسی","In review","قيد المراجعة")),
+        ("resolved", T("حل‌شده","Resolved","تم الحل"))
+    };
+
+    private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"ar"=>ar,_=>fa};
+
+    private string StatusLabel(string code)=>code switch
+    {
+        "new"=>T("جدید","New","جديد"),
+        "in_review"=>T("در حال بررسی","In review","قيد المراجعة"),
+        "resolved"=>T("حل‌شده","Resolved","تم الحل"),
+        _=>code
+    };
+
+    private string TypeLabel(string code)=>code switch
+    {
+        "suggestion"=>T("پیشنهاد","Suggestion","اقتراح"),
+        "complaint"=>T("انتقاد","Complaint","شكوى"),
+        "review"=>T("دیدگاه","Review","مراجعة"),
+        "other"=>T("سایر","Other","أخرى"),
+        _=>code
+    };
+
+    protected override Task OnInitializedAsync() => Load();
+
+    private async Task SwitchStatus(string key) { Status = key; Page = 1; await Load(); }
+    private async Task TypeChanged(ChangeEventArgs e) { Type = e.Value?.ToString() ?? ""; Page = 1; await Load(); }
+    private async Task Previous() { if (Page > 1) { Page--; await Load(); } }
+    private async Task Next() { if (Rows.Count >= PageSize) { Page++; await Load(); } }
+
+    private async Task Load()
+    {
+        Loading = true; Error = null;
+        try
+        {
+            var session = await Session();
+            if (session is null) { Error = T("نشست منقضی شده است.","Session expired.","انتهت الجلسة."); Rows = []; return; }
+            string q = $"api/v1/customers/feedbacks?page={Page}&pageSize={PageSize}";
+            if (Status.Length > 0) q += $"&status={Uri.EscapeDataString(Status)}";
+            if (Type.Length > 0) q += $"&type={Uri.EscapeDataString(Type)}";
+            var result = await Core.GetAsync(q, session.Value.Token, session.Value.Company, default);
+            if (!result.IsSuccess) { Error = T("سرویس دیدگاه‌ها پاسخ نداد.","The feedback service did not respond.","لم تستجب خدمة الملاحظات."); Rows = []; return; }
+            Rows = result.Value.ValueKind == JsonValueKind.Array
+                ? result.Value.EnumerateArray().Select(Parse).ToList()
+                : result.Value.TryGetProperty("items", out var a) && a.ValueKind == JsonValueKind.Array
+                    ? a.EnumerateArray().Select(Parse).ToList()
+                    : [];
+        }
+        catch (Exception ex) { Rows = []; Error = ex.Message; }
+        finally { Loading = false; }
+    }
+
+    private async Task SetStatus(Row row, string statusCode)
+    {
+        Busy = true;
+        try
+        {
+            var session = await Session();
+            if (session is null) return;
+            var result = await Core.SendAsync(HttpMethod.Post, $"api/v1/customers/feedbacks/{row.Id}/status", new { statusCode }, session.Value.Token, session.Value.Company, default);
+            if (result.IsSuccess) await Load();
+        }
+        finally { Busy = false; }
+    }
+
+    private static Row Parse(JsonElement x) => new(
+        x.GetProperty("id").GetGuid(),
+        Text(x, "customerCode") ?? "",
+        Text(x, "customerDisplayName") ?? "",
+        Text(x, "feedbackTypeCode") ?? "other",
+        Text(x, "subject") ?? "",
+        Text(x, "body") ?? "",
+        Text(x, "statusCode") ?? "new",
+        x.TryGetProperty("createdAtUtc", out var ca) && ca.ValueKind == JsonValueKind.String && DateTimeOffset.TryParse(ca.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : DateTimeOffset.MinValue);
+
+    private static string? Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind != JsonValueKind.Null ? v.ToString() : null;
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var u = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid c) && u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+
+    private sealed record Row(Guid Id, string CustomerCode, string CustomerDisplayName, string FeedbackTypeCode, string Subject, string Body, string StatusCode, DateTimeOffset CreatedAtUtc);
+}

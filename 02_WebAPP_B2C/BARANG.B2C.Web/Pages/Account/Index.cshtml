@@ -6,7 +6,7 @@
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
-    string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.Format(d, culture);
     string OrderStatusLabel(string s) => s switch
     {
         "Draft" => T("پیش‌نویس", "Draft", "مسودة"),

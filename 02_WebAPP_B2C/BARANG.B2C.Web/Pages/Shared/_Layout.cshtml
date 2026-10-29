@@ -1,4 +1,5 @@
 @{
+    Context.Response.Headers.CacheControl = "no-cache, no-store";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     var dir = culture == "en" ? "ltr" : "rtl";
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };

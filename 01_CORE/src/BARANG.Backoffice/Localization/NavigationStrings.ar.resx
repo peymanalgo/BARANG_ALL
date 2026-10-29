@@ -60,6 +60,9 @@
   <data name="Nav_Equipment">
     <value>معدات الشركة</value>
   </data>
+  <data name="Nav_CustomerFeedbacks">
+    <value>ملاحظات العملاء</value>
+  </data>
   <data name="Nav_Customers">
     <value>العملاء</value>
   </data>

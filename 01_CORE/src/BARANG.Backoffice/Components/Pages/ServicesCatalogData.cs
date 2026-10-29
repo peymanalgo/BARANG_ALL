@@ -305,6 +305,10 @@ public static class ServicesCatalogData
                 In("lastName", "string", "Body", false),
                 In("nationalId", "string", "Body", false),
                 In("primaryMobile", "string", "Body", false),
+                In("primaryPhone", "string", "Body", false),
+                In("primaryEmail", "string", "Body", false),
+                In("fatherName", "string", "Body", false),
+                In("birthDate", "DateOnly", "Body", false),
                 In("customerGroupCode", "string", "Body", false),
                 In("priceGroupCode", "string", "Body", false),
                 In("version", "long", "Body", true),
@@ -633,6 +637,28 @@ public static class ServicesCatalogData
             Inputs(
                 In("customerId", "Guid", "Path", true),
                 In("designId", "Guid", "Path", true)),
+            NoContent, "X-Company-ID", false),
+
+        N("customers", "50", "GET", "/api/v1/customers/feedbacks", "CustomerRead", "client-read",
+            "صندوق دیدگاه‌های مشتریان (مدیریت)", "Customer feedback inbox (admin)", "صندوق ملاحظات العملاء (إدارة)",
+            "فهرست دیدگاه‌ها، انتقادها و پیشنهادهای ثبت‌شده توسط مشتریان در فروشگاه، با فیلتر وضعیت و نوع؛ مبنای صفحه مدیریت دیدگاه‌ها در سامانه.",
+            "Lists the suggestions, complaints and reviews submitted by store customers with status and type filters; feeds the feedback management page in the backoffice.",
+            "يسرد الاقتراحات والشكاوى والمراجعات المقدمة من عملاء المتجر مع مرشحات الحالة والنوع؛ تغذي صفحة إدارة الملاحظات في النظام.",
+            Inputs(
+                In("status", "string", "Query", false),
+                In("type", "string", "Query", false),
+                In("page", "int", "Query", false),
+                In("pageSize", "int", "Query", false)),
+            ListOut, "X-Company-ID", false),
+
+        N("customers", "51", "POST", "/api/v1/customers/feedbacks/{feedbackId}/status", "CustomerManage", "client-mutation",
+            "تغییر وضعیت دیدگاه مشتری", "Set customer feedback status", "تغيير حالة ملاحظة العميل",
+            "وضعیت بررسی دیدگاه را بین new (جدید)، in_review (در حال بررسی) و resolved (حل‌شده) تغییر می‌دهد.",
+            "Moves the review status of a feedback between new, in_review and resolved.",
+            "ينقل حالة مراجعة الملاحظة بين new و in_review و resolved.",
+            Inputs(
+                In("feedbackId", "Guid", "Path", true),
+                In("statusCode", "string", "Body", true)),
             NoContent, "X-Company-ID", false)
     ];
 
