@@ -1,0 +1,147 @@
+@page "/master/services"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using BARANG.Backoffice.Components.Help
+@inject IStringLocalizer<NavigationStrings> N
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@T("سرویس‌ها", "Services", "الخدمات") · BARANG</PageTitle>
+<main class="page-shell services-catalog">
+    <header class="crud-header">
+        <div>
+            <span class="eyebrow">@L["Module_foundation"]</span>
+            <h1>@T("سرویس‌ها", "Services", "الخدمات")</h1>
+            <p>@T("فهرست کامل سرویس‌های آماده‌شده برای وب‌سایت B2C و اپلیکیشن موبایل — فقط مشاهده.","Complete catalog of services ready for the B2C website and mobile app — view only.","كتالوغ كامل للخدمات الجاهزة لموقع B2C وتطبيق الهاتف — للعرض فقط.")</p>
+        </div>
+    </header>
+
+    <section class="panel svc-toolbar-panel">
+        <div class="svc-toolbar">
+            <input type="search" class="svc-search" placeholder="@T("جستجو در نام، مسیر یا توضیح…","Search name, route or description…","ابحث في الاسم أو المسار أو الوصف…")" value="@Filter" @oninput="FilterChanged" />
+            <select class="svc-group-select" @bind="GroupFilter">
+                <option value="">@T("همه گروه‌ها","All groups","كل المجموعات")</option>
+                @foreach (var g in Groups)
+                {
+                    <option value="@g.Id">@g.Name(CultureCode)</option>
+                }
+            </select>
+            <span class="svc-count">@(Filtered.Count()) @T("سرویس","services","خدمة")</span>
+        </div>
+    </section>
+
+    @foreach (var group in Groups)
+    {
+        var items = Filtered.Where(x => x.GroupId == group.Id).ToList();
+        if (items.Count == 0) { continue; }
+        <section class="panel svc-group-panel">
+            <h2 class="svc-group-title">@group.Name(CultureCode) <small>@group.Name("en")</small></h2>
+            <div class="data-grid-wrap">
+                <table class="data-grid svc-grid">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>@T("نام سرویس","Service","الخدمة")</th>
+                            <th>@T("متد","Method","الطريقة")</th>
+                            <th>@T("مسیر","Route","المسار")</th>
+                            <th>@T("پروتکل","Protocol","البروتوكول")</th>
+                            <th class="actions-column">@L["Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @{ int row = 1; }
+                    @foreach (var svc in items)
+                    {
+                        <tr>
+                            <td>@(row++)</td>
+                            <td class="svc-name">@svc.Name(CultureCode)</td>
+                            <td><span class="svc-method svc-@(svc.Method.ToLowerInvariant())">@svc.Method</span></td>
+                            <td dir="ltr" class="svc-route">@svc.FullRoute</td>
+                            <td>HTTPS · REST/JSON</td>
+                            <td>
+                                <BarangIconButton Icon="search" Label="@T("مشاهده","View","عرض")" Semantic="info" Clicked="()=>ViewService(svc)" Disabled="@false" />
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</main>
+
+@if (Selected is not null)
+{
+    <BarangModal Open Size="extra-large" Title="@Selected.Name(CultureCode)" Description="@GroupOf(Selected).Name(CultureCode)" ShowCloseButton="true" CloseRequested="CloseDetail">
+        <ChildContent>
+        <div class="svc-detail" dir="@Dir">
+            <div class="svc-detail-grid">
+                <label><span>@T("پروتکل","Protocol","البروتوكول")</span><input value="HTTPS · REST · JSON" readonly /></label>
+                <label><span>@T("متد","Method","الطريقة")</span><input value="@Selected.Method" readonly /></label>
+                <label><span>@T("مسیر","Route","المسار")</span><input dir="ltr" value="@Selected.Route" readonly /></label>
+                <label><span>@T("آدرس کامل","Full URL","العنوان الكامل")</span><input dir="ltr" value="@Selected.FullRoute" readonly /></label>
+                <label><span>@T("احراز هویت","Authentication","المصادقة")</span><input value="@Selected.Auth(CultureCode)" readonly /></label>
+                <label><span>@T("مجوز موردنیاز","Required permission","الصلاحية المطلوبة")</span><input dir="ltr" value="@Selected.Permission" readonly /></label>
+                <label><span>@T("محدودیت نرخ","Rate limit","حد المعدل")</span><input value="@Selected.Limiter" readonly /></label>
+                <label><span>@T("هدرهای الزامی","Required headers","الترويسات الإلزامية")</span><input dir="ltr" value="@Selected.Headers" readonly /></label>
+            </div>
+
+            <h3 class="svc-section-title">@T("ورودی‌ها","Inputs","المدخلات")</h3>
+            <div class="data-grid-wrap">
+                <table class="data-grid">
+                    <thead><tr><th>@T("نام","Name","الاسم")</th><th>@T("نوع","Type","النوع")</th><th>@T("محل","Location","الموضع")</th><th>@T("الزامی","Required","إلزامي")</th></tr></thead>
+                    <tbody>
+                        @foreach (var input in Selected.Inputs)
+                        {
+                            <tr><td dir="ltr">@input.Name</td><td dir="ltr">@input.Type</td><td>@input.In</td><td>@(input.Required ? T("بله","Yes","نعم") : T("خیر","No","لا"))</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 class="svc-section-title">@T("خروجی","Output","الناتج")</h3>
+            <div class="svc-output" dir="ltr">@Selected.Output</div>
+
+            <h3 class="svc-section-title">@T("توضیحات","Description","الوصف")</h3>
+            <div class="svc-desc">
+                <p><strong>فارسی:</strong> @Selected.DescFa</p>
+                <p><strong>English:</strong> @Selected.DescEn</p>
+                <p><strong>العربية:</strong> @Selected.DescAr</p>
+            </div>
+        </div>
+        </ChildContent>
+    </BarangModal>
+}
+
+@code {
+    private string Filter = "";
+    private string GroupFilter = "";
+    private ServiceInfo? Selected;
+
+    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() is var c && c is "en" or "ar" ? c : "fa";
+    private string Dir => CultureCode == "en" ? "ltr" : "rtl";
+    private string T(string fa, string en, string ar) => CultureCode switch { "en" => en, "ar" => ar, _ => fa };
+
+    private IReadOnlyList<ServiceGroup> Groups => ServicesCatalogData.Groups;
+    private IEnumerable<ServiceInfo> Filtered
+    {
+        get
+        {
+            var term = Filter.Trim();
+            return ServicesCatalogData.All
+                .Where(x => GroupFilter.Length == 0 || x.GroupId == GroupFilter)
+                .Where(x => term.Length == 0
+                    || x.Name(CultureCode).Contains(term, StringComparison.OrdinalIgnoreCase)
+                    || x.NameFa.Contains(term, StringComparison.OrdinalIgnoreCase)
+                    || x.Route.Contains(term, StringComparison.OrdinalIgnoreCase)
+                    || x.Method.Contains(term, StringComparison.OrdinalIgnoreCase)
+                    || x.DescFa.Contains(term, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(x => x.GroupId).ThenBy(x => x.Sort);
+        }
+    }
+    private void FilterChanged(ChangeEventArgs e) { Filter = e.Value?.ToString() ?? ""; }
+    private void ViewService(ServiceInfo svc) => Selected = svc;
+    private ServiceGroup GroupOf(ServiceInfo svc) => Groups.First(g => g.Id == svc.GroupId);
+    private void CloseDetail() => Selected = null;
+
+}

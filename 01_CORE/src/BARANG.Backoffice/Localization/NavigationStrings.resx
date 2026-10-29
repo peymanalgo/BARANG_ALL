@@ -111,6 +111,9 @@
   <data name="Nav_Workflow">
     <value>گردش کار</value>
   </data>
+  <data name="Nav_Services">
+    <value>سرویس‌ها</value>
+  </data>
   <data name="Nav_Notifications">
     <value>اعلان‌ها</value>
   </data>

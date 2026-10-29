@@ -111,6 +111,9 @@
   <data name="Nav_Workflow">
     <value>Workflow</value>
   </data>
+  <data name="Nav_Services">
+    <value>Services</value>
+  </data>
   <data name="Nav_Notifications">
     <value>Notifications</value>
   </data>

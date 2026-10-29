@@ -111,6 +111,9 @@
   <data name="Nav_Workflow">
     <value>سير العمل</value>
   </data>
+  <data name="Nav_Services">
+    <value>الخدمات</value>
+  </data>
   <data name="Nav_Notifications">
     <value>الإشعارات</value>
   </data>
