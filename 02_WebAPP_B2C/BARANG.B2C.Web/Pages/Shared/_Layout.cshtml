@@ -16,6 +16,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@(ViewData["Title"] is string t && t.Length > 0 ? $"{t} · برنگ" : "برنگ — فروشگاه طرح‌های چاپی")</title>
     <meta name="description" content="@(ViewData["Description"] ?? "فروشگاه طرح‌های چاپی برنگ — سفارش آنلاین چاپ روی لباس و هدایا")" />
+    <meta property="og:type" content="@(ViewData["OgType"] ?? "website")" />
+    <meta property="og:site_name" content="برنگ" />
+    <meta property="og:title" content="@(ViewData["Title"] is string ot && ot.Length > 0 ? ot : "برنگ — فروشگاه طرح‌های چاپی")" />
+    <meta property="og:description" content="@(ViewData["Description"] ?? "فروشگاه طرح‌های چاپی برنگ — سفارش آنلاین چاپ روی لباس و هدایا")" />
+    @if (ViewData["OgImage"] is string ogImage && ogImage.Length > 0)
+    {
+        <meta property="og:image" content="@ogImage" />
+    }
     <link rel="stylesheet" href="~/css/store.css" asp-append-version="true" />
 </head>
 <body>

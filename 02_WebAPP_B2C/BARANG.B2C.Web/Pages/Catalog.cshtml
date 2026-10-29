@@ -12,6 +12,7 @@
     </header>
 
     <form class="catalog-filter" action="/catalog" method="get">
+        <input type="hidden" name="category" value="@(Model.Category ?? "")" />
         <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@T("جستجو در کد یا نام طرح…", "Search code or title…", "ابحث في الرمز أو العنوان…")" />
         @if (Model.Page > 1)
         {
@@ -19,6 +20,17 @@
         }
         <button class="btn btn-primary" type="submit">@T("جستجو", "Search", "بحث")</button>
     </form>
+
+    @if (Model.Categories.Count > 0)
+    {
+        <div class="chip-row" role="navigation" aria-label="@T("دسته‌ها", "Categories", "الفئات")">
+            <a class="fchip @(string.IsNullOrWhiteSpace(Model.Category) ? "active" : null)" href="/catalog@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "?search=" + Uri.EscapeDataString(Model.Search.Trim()))">@T("همه", "All", "الكل")</a>
+            @foreach (var cat in Model.Categories)
+            {
+                <a class="fchip @(Model.Category == cat.Code ? "active" : null)" href="/catalog?category=@Uri.EscapeDataString(cat.Code)@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "&search=" + Uri.EscapeDataString(Model.Search.Trim()))"><span dir="ltr">@cat.Code</span> <small>@cat.Count</small></a>
+            }
+        </div>
+    }
 
     @if (Model.Designs.Count == 0)
     {
@@ -33,7 +45,7 @@
                     <span class="design-thumb">
                         @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
                         {
-                            <img src="@d.Thumbnail" alt="@d.Title" loading="lazy" />
+                            <img src="@d.Thumbnail" alt="@d.Title" width="600" height="600" loading="lazy" decoding="async" />
                         }
                     </span>
                     <span class="design-meta">

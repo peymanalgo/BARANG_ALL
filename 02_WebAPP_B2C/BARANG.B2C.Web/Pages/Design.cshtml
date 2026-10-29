@@ -10,6 +10,29 @@
 }
 else
 {
+    ViewData["OgType"] = "product";
+    if (!string.IsNullOrWhiteSpace(Model.Preview))
+    {
+        ViewData["OgImage"] = Model.Preview;
+    }
+
+    var ld = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "Product",
+            ["name"] = Model.Title,
+            ["sku"] = Model.Code,
+            ["category"] = Model.CategoryCode ?? "",
+            ["description"] = Model.Description ?? Model.Title,
+            ["image"] = Model.Thumbnail,
+            ["offers"] = new Dictionary<string, object?>
+            {
+                ["@type"] = "Offer",
+                ["availability"] = "https://schema.org/InStock",
+                ["priceCurrency"] = "IRR"
+            }
+        });
+    <script type="application/ld+json">@Html.Raw(ld)</script>
     <section class="container section design-detail">
         <nav class="breadcrumbs" aria-label="breadcrumb">
             <a href="/">@T("خانه", "Home", "الرئيسية")</a> ›

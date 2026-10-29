@@ -54,6 +54,23 @@ public static class PublicCatalogEndpoints
             return Map(result);
         });
 
+        catalog.MapGet("/categories",async(IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,CancellationToken ct)=>
+        {
+            Guid? publicCompany=ResolvePublicCompany(configuration);
+            if(publicCompany is null)return Results.StatusCode(503);
+            using IDisposable scope=companies.BeginScope(publicCompany.Value);
+            Result<IReadOnlyList<PublicCatalogCategoryView>> result=await tx.ExecuteAsync(async t=>{
+                List<PublicCatalogCategoryView> rows=await db.Artworks.AsNoTracking()
+                    .Where(x=>!x.IsArchived&&x.LifecycleStatus==ArtworkLifecycle.Active&&x.CurrentVersionId!=null&&x.CategoryCode!=null&&x.CategoryCode!="")
+                    .GroupBy(x=>x.CategoryCode!)
+                    .OrderBy(x=>x.Key)
+                    .Select(x=>new PublicCatalogCategoryView(x.Key,x.Count()))
+                    .ToListAsync(t);
+                return Result.Success<IReadOnlyList<PublicCatalogCategoryView>>(rows);
+            },ct);
+            return result.IsSuccess?Results.Ok(result.Value):Results.StatusCode(503);
+        });
+
         catalog.MapGet("/{id:guid}",async(Guid id,IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,IObjectStorage storage,CancellationToken ct)=>
         {
             Guid? publicCompany=ResolvePublicCompany(configuration);
@@ -91,3 +108,4 @@ public static class PublicCatalogEndpoints
 public sealed record PublicCatalogItemView(Guid Id,string Code,string Title,string?CategoryCode,string?ThumbnailUrl,string?PreviewUrl);
 public sealed record PublicCatalogItemDetail(Guid Id,string Code,string Title,string?CategoryCode,string?Description,string?ThumbnailUrl,string?PreviewUrl);
 public sealed record PublicCatalogPage(long Total,int Page,int PageSize,IReadOnlyList<PublicCatalogItemView> Items);
+public sealed record PublicCatalogCategoryView(string Code,int Count);
