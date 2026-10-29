@@ -1,0 +1,105 @@
+@page "/order/print/{orderId:guid}"
+@model PrintModel
+@using System.Globalization
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string PositionLabel(string p) => p switch
+    {
+        "FRONT" => T("جلو", "Front", "الأمام"),
+        "BACK" => T("پشت", "Back", "الخلف"),
+        "SLEEVE" => T("آستین", "Sleeve", "الكم"),
+        "OTHER" => T("سایر", "Other", "أخرى"),
+        _ => p
+    };
+    ViewData["Title"] = T("عملیات چاپ", "Print operation", "عملية الطباعة");
+}
+<partial name="_WizardSteps" model="2" />
+<section class="container section wizard">
+    <nav class="breadcrumbs no-print" aria-label="breadcrumb">
+        <a href="/account/orders">@T("سفارش‌های من", "My orders", "طلباتي")</a> ›
+        <span dir="ltr">@(Model.OrderNumber ?? "—")</span>
+    </nav>
+
+    @if (Model.Error is not null)
+    {
+        <div class="alert alert-error" role="alert">
+            @(Model.Error switch
+            {
+                "upload-failed" or "file.invalid" => T("آپلود فایل انجام نشد؛ حجم/نوع فایل را بررسی کنید.", "Upload failed; check size/type.", "فشل رفع الملف؛ تحقق من الحجم والنوع."),
+                "order.concurrency_conflict" or "core.database.concurrency_conflict" => T("سفارش هم‌زمان تغییر کرده؛ صفحه را تازه کنید.", "Order changed concurrently; refresh.", "تم تغيير الطلب بالتزامن؛ حدّث الصفحة."),
+                "order.not_draft" => T("سفارش دیگر قابل ویرایش نیست.", "The order is no longer editable.", "لم يعد الطلب قابلاً للتحرير."),
+                "order.invalid_print_method" => T("روش چاپ معتبر نیست.", "Print method is invalid.", "طريقة الطباعة غير صالحة."),
+                "order.invalid_artwork_version" => T("نسخه طرح معتبر نیست.", "Artwork version is invalid.", "إصدار التصميم غير صالح."),
+                _ => T("عملیات انجام نشد؛ دوباره تلاش کنید.", "Operation failed; try again.", "فشلت العملية؛ حاول مجدداً.")
+            })
+            <span class="muted small" dir="ltr"> @Model.Error</span>
+        </div>
+    }
+    @if (Model.Message == "saved")
+    {
+        <div class="alert alert-ok" role="status">@T("عملیات چاپ ذخیره شد.", "Print operation saved.", "تم حفظ عملية الطباعة.")</div>
+    }
+
+    <form method="post" asp-page-handler="SavePrint" enctype="multipart/form-data" class="wizard-form">
+        <input type="hidden" name="designId" value="@Model.DesignId" />
+        <div class="wizard-cols">
+            <div class="card wizard-card">
+                <h2>۲. @T("عملیات چاپ", "Print operation", "عملية الطباعة")</h2>
+                @if (!string.IsNullOrWhiteSpace(Model.DesignPreview))
+                {
+                    <div class="wizard-design-strip" style="margin-bottom:.9rem">
+                        <img src="@Model.DesignPreview" alt="@Model.DesignCode" />
+                        <div><strong>@T("طرح انتخابی", "Selected design", "التصميم المختار")</strong><span class="muted small" dir="ltr">@Model.DesignCode</span></div>
+                    </div>
+                }
+                <div class="form-cols">
+                    <label><span>@T("محل چاپ", "Placement", "موضع الطباعة")</span>
+                        <select name="PrintPosition">
+                            @foreach (var p in Model.PrintPositions)
+                            {
+                                <option value="@p" selected="@(p == Model.PrintPosition)">@PositionLabel(p)</option>
+                            }
+                        </select>
+                    </label>
+                    <label><span>@T("روش چاپ", "Print method", "طريقة الطباعة")</span>
+                        <select name="PrintMethod">
+                            <option value="">@T("— انتخاب کنید —", "— select —", "— اختر —")</option>
+                            @foreach (var (code, name) in Model.PrintMethods)
+                            {
+                                <option value="@code">@name</option>
+                            }
+                        </select>
+                    </label>
+                    <label><span>@T("عرض چاپ (cm)", "Print width (cm)", "عرض الطباعة")</span>
+                        <input type="number" name="Width" min="0.1" step="0.1" />
+                    </label>
+                    <label><span>@T("ارتفاع چاپ (cm)", "Print height (cm)", "ارتفاع الطباعة")</span>
+                        <input type="number" name="Height" min="0.1" step="0.1" />
+                    </label>
+                    <label class="span2"><span>@T("فایل اختصاصی شما (اختیاری)", "Your custom file (optional)", "ملفك الخاص (اختياري)")</span>
+                        <input type="file" name="CustomFile" />
+                    </label>
+                    <label class="span2"><span>@T("توضیحات چاپ", "Print notes", "ملاحظات الطباعة")</span>
+                        <input type="text" name="PrintNotes" />
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-ghost">@T("ذخیره عملیات چاپ", "Save print operation", "حفظ عملية الطباعة")</button>
+            </div>
+
+            <div class="card wizard-card">
+                <h2>@T("راهنما", "Guide", "إرشاد")</h2>
+                <ul class="design-notes">
+                    <li>@T("محل چاپ یعنی طرح روی کدام قسمت محصول چاپ شود.", "Placement = which part of the product gets the print.", "الموضع = أي جزء من المنتج يُطبع عليه التصميم.")</li>
+                    <li>@T("روش‌های چاپ از تنظیمات کارگاه ما می‌آید.", "Print methods come from our workshop settings.", "طرق الطباعة من إعدادات ورشتنا.")</li>
+                    <li>@T("فایل اصلی طرح بدون علامت آب پس از تأیید سفارش پیوست می‌شود.", "The original watermark-free file is attached after approval.", "يُرفق الملف الأصلي بعد الاعتماد.")</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="wizard-footer">
+            <a class="btn btn-ghost" href="/design/@Model.DesignId">→ @T("بازگشت به طرح", "Back to design", "العودة للتصميم")</a>
+            <a class="btn btn-primary btn-lg" href="/order/shipping/@Model.OrderId?designId=@Model.DesignId">@T("ادامه: بسته‌بندی و ارسال", "Continue: packaging & shipping", "متابعة: التغليف والشحن")</a>
+        </div>
+    </form>
+</section>

@@ -1,0 +1,102 @@
+@page "/order/review/{orderId:guid}"
+@model ReviewModel
+@using System.Globalization
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string IssueLabel(string code) => code switch
+    {
+        "order.item_required" => T("سفارش باید حداقل یک آیتم داشته باشد.", "The order needs at least one item.", "يحتاج الطلب إلى بند واحد على الأقل."),
+        "order.invalid_customer" => T("مشتری سفارش معتبر نیست.", "The order customer is invalid.", "عميل الطلب غير صالح."),
+        "order.invalid_product" => T("یکی از آیتم‌ها معتبر نیست.", "One of the items is invalid.", "أحد البنود غير صالح."),
+        "order.not_draft" => T("سفارش دیگر در حالت پیش‌نویس نیست.", "The order is no longer a draft.", "لم يعد الطلب مسودة."),
+        _ => code
+    };
+    ViewData["Title"] = T("قیمت و تأیید", "Pricing & review", "السعر والمراجعة");
+}
+<partial name="_WizardSteps" model="4" />
+<section class="container section wizard">
+    <nav class="breadcrumbs no-print" aria-label="breadcrumb">
+        <a href="/account/orders">@T("سفارش‌های من", "My orders", "طلباتي")</a> ›
+        <span dir="ltr">@(Model.OrderNumber ?? "—")</span>
+    </nav>
+
+    @if (!Model.Found)
+    {
+        <p class="empty">@T("سفارش پیدا نشد.", "Order not found.", "لم يتم العثور على الطلب.")</p>
+    }
+    else
+    {
+        @if (Model.Error is not null)
+        {
+            <div class="alert alert-error" role="alert">
+                @(Model.Error switch
+                {
+                    "pricing.tariff.missing" => T("برای این ترکیب هنوز تعرفه ثبت نشده است؛ با پشتیبانی هماهنگ کنید.", "No tariff exists for this combination yet; contact support.", "لا توجد تعريفة لهذا المزيج بعد."),
+                    "order.concurrency_conflict" or "core.database.concurrency_conflict" => T("سفارش هم‌زمان تغییر کرده؛ صفحه را تازه کنید.", "Order changed concurrently; refresh.", "تم تغيير الطلب بالتزامن؛ حدّث الصفحة."),
+                    "order.incomplete" or "order.item_required" => T("سفارش ناقص است؛ موارد اعتبارسنجی را برطرف کنید.", "Order incomplete; resolve validation issues.", "الطلب غير مكتمل؛ عالج ملاحظات التحقق."),
+                    _ => T("ثبت نهایی انجام نشد؛ دوباره تلاش کنید.", "Submit failed; try again.", "فشل الإرسال؛ حاول مجدداً.")
+                })
+                <span class="muted small" dir="ltr"> @Model.Error</span>
+            </div>
+        }
+
+        <div class="wizard-cols">
+            <div style="display:flex;flex-direction:column;gap:1.1rem;min-width:0">
+                <div class="card">
+                    <h2>@T("خلاصه سفارش", "Order summary", "ملخص الطلب")</h2>
+                    <p class="muted small">@T("آیتم‌ها", "Items", "البنود"): @Model.ItemsCount · @T("تعداد کل", "Total qty", "إجمالي الكمية"): @Model.ItemsQty.ToString("0.##", CultureInfo.InvariantCulture)</p>
+                    @if (!string.IsNullOrWhiteSpace(Model.ShippingMethod))
+                    {
+                        <p class="muted small">@T("روش ارسال", "Shipping", "الشحن"): <span dir="ltr">@Model.ShippingMethod</span></p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.PackagingType))
+                    {
+                        <p class="muted small">@T("بسته‌بندی", "Packaging", "التغليف"): <span dir="ltr">@Model.PackagingType</span></p>
+                    }
+                </div>
+                <div class="card">
+                    <h2>@T("اعتبارسنجی", "Validation", "التحقق")</h2>
+                    @if (Model.Issues.Count == 0)
+                    {
+                        <div class="alert alert-ok" role="status" style="margin:0">@T("سفارش آماده ثبت نهایی است.", "The order is ready to submit.", "الطلب جاهز للإرسال.")</div>
+                    }
+                    else
+                    {
+                        <ul class="issue-list">
+                            @foreach (var (code, _) in Model.Issues)
+                            {
+                                <li>@IssueLabel(code)</li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+
+            <div class="card wizard-card price-panel">
+                <h2>@T("قیمت نهایی", "Final pricing", "السعر النهائي")</h2>
+                <ul class="quote-list">
+                    @foreach (var (label, value) in Model.QuoteRows)
+                    {
+                        <li><span>@label</span><strong dir="ltr">@value</strong></li>
+                    }
+                </ul>
+                @if (Model.TotalRow is var (tLabel, tValue))
+                {
+                    <div class="quote-total"><span>@tLabel</span><strong dir="ltr">@tValue</strong></div>
+                }
+            </div>
+        </div>
+
+        <div class="wizard-footer">
+            <a class="btn btn-ghost" href="/order/shipping/@Model.OrderId?designId=@Model.DesignId">→ @T("بازگشت به بسته‌بندی و ارسال", "Back to packaging & shipping", "العودة إلى التغليف والشحن")</a>
+            <form method="post" asp-page-handler="Submit">
+                <input type="hidden" name="orderId" value="@Model.OrderId" />
+                <input type="hidden" name="designId" value="@Model.DesignId" />
+                <button type="submit" class="btn btn-primary btn-lg" disabled="@(Model.Issues.Count > 0)">
+                    ✓ @T("ثبت نهایی سفارش", "Submit order", "إرسال الطلب")
+                </button>
+            </form>
+        </div>
+    }
+</section>

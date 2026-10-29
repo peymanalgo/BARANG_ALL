@@ -13,7 +13,7 @@ namespace BARANG.B2C.Web.Pages.Order;
 // its current artworkVersionId is resolved from the public catalog and sent
 // on the print operation.
 [Authorize(Policy = "LoggedIn")]
-public sealed class DetailsModel(CoreApiClient core) : PageModel
+public sealed class PrintModel(CoreApiClient core) : PageModel
 {
     public Guid OrderId { get; private set; }
     public string? OrderNumber { get; private set; }
@@ -27,8 +27,6 @@ public sealed class DetailsModel(CoreApiClient core) : PageModel
 
     public IReadOnlyList<string> PrintPositions { get; private set; } = ["FRONT", "BACK", "SLEEVE", "OTHER"];
     public IReadOnlyList<(string Code, string Name)> PrintMethods { get; private set; } = [];
-    public JsonElement? Quote { get; private set; }
-    public IReadOnlyList<ValidationIssueRow> Issues { get; private set; } = [];
 
     [BindProperty] public string PrintPosition { get; set; } = "FRONT";
     [BindProperty] public string? PrintMethod { get; set; }
@@ -71,7 +69,7 @@ public sealed class DetailsModel(CoreApiClient core) : PageModel
                 "api/v1/client/files/upload", CustomFile.FileName, CustomFile.ContentType, CustomFile.OpenReadStream(), CustomFile.Length);
             if (!upOk || up is null || !up.Value.TryGetProperty("fileVersionId", out JsonElement fvid))
             {
-                return RedirectToPage(new { orderId, designId, error = upProblem ?? "upload-failed" });
+                return RedirectToPage("Shipping", new { orderId, designId, error = upProblem ?? "upload-failed" });
             }
             fileVersionId = fvid.GetString();
         }
@@ -81,7 +79,7 @@ public sealed class DetailsModel(CoreApiClient core) : PageModel
         string notes = string.Join(" | ", new[] { PrintNotes, designNote }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
         (bool opOk, string? opProblem) = await AddPrintOperationAsync(orderId, version, artworkVersion, fileVersionId, notes);
-        return RedirectToPage(new { orderId, designId, error = opOk ? null : opProblem ?? "print-failed", message = opOk ? "saved" : null });
+        return RedirectToPage("Shipping", new { orderId, designId, message = opOk ? "saved" : null });
     }
 
     public async Task<IActionResult> OnPostSubmitAsync(Guid orderId, Guid designId)
@@ -129,15 +127,7 @@ public sealed class DetailsModel(CoreApiClient core) : PageModel
                 .Where(x => x.Code.Length > 0).ToList();
         }
 
-        Quote = (await core.PostRawWithBodyAsync($"api/v1/client/orders/{OrderId}/pricing/preview", new { version = Version })).Value;
 
-        JsonElement? validation = await core.GetAsync($"api/v1/client/orders/{OrderId}/validate");
-        if (validation is JsonElement va && va.ValueKind == JsonValueKind.Array)
-        {
-            Issues = va.EnumerateArray().Select(x => new ValidationIssueRow(
-                x.TryGetProperty("code", out JsonElement c) ? c.GetString() ?? "" : "",
-                x.TryGetProperty("field", out JsonElement fl) ? fl.GetString() : null)).ToList();
-        }
         return Page();
     }
 
@@ -172,5 +162,4 @@ public sealed class DetailsModel(CoreApiClient core) : PageModel
         return order is JsonElement o && o.TryGetProperty("version", out JsonElement v) && v.TryGetInt64(out long n) ? n : 0;
     }
 
-    public sealed record ValidationIssueRow(string Code, string? Field);
 }

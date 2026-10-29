@@ -1,0 +1,73 @@
+@page "/order/shipping/{orderId:guid}"
+@model ShippingModel
+@using System.Globalization
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = T("بسته‌بندی و ارسال", "Packaging & shipping", "التغليف والشحن");
+}
+<partial name="_WizardSteps" model="3" />
+<section class="container section wizard">
+    <nav class="breadcrumbs no-print" aria-label="breadcrumb">
+        <a href="/account/orders">@T("سفارش‌های من", "My orders", "طلباتي")</a> ›
+        <span dir="ltr">@(Model.OrderNumber ?? "—")</span>
+    </nav>
+
+    @if (Model.Error is not null)
+    {
+        <div class="alert alert-error" role="alert">
+            @(Model.Error switch
+            {
+                "required" => T("بسته‌بندی و روش ارسال را انتخاب کنید.", "Pick packaging and shipping method.", "اختر التغليف وطريقة الشحن."),
+                "order.concurrency_conflict" or "core.database.concurrency_conflict" => T("سفارش هم‌زمان تغییر کرده؛ صفحه را تازه کنید.", "Order changed concurrently; refresh.", "تم تغيير الطلب بالتزامن؛ حدّث الصفحة."),
+                _ => T("عملیات انجام نشد؛ دوباره تلاش کنید.", "Operation failed; try again.", "فشلت العملية؛ حاول مجدداً.")
+            })
+            <span class="muted small" dir="ltr"> @Model.Error</span>
+        </div>
+    }
+    @if (Model.Message == "saved")
+    {
+        <div class="alert alert-ok" role="status">@T("بسته‌بندی و ارسال ذخیره شد.", "Packaging & shipping saved.", "تم حفظ التغليف والشحن.")</div>
+    }
+
+    <form method="post" asp-page-handler="Save" class="wizard-form">
+        <input type="hidden" name="orderId" value="@Model.OrderId" />
+        <input type="hidden" name="designId" value="@Model.DesignId" />
+        <div class="wizard-cols">
+            <div class="card wizard-card">
+                <h2>۳. @T("بسته‌بندی", "Packaging", "التغليف")</h2>
+                <label><span>@T("نوع بسته‌بندی", "Packaging type", "نوع التغليف")</span>
+                    <select name="PackagingCode" required>
+                        <option value="">@T("— انتخاب کنید —", "— select —", "— اختر —")</option>
+                        @foreach (var (code, name) in Model.PackagingOptions)
+                        {
+                            <option value="@code" selected="@(code == Model.PackagingTypeCode)">@name</option>
+                        }
+                    </select>
+                </label>
+                <label class="check mt"><input type="checkbox" name="InvoiceInPackage" value="true" checked="@Model.IncludeInvoice" />
+                    <span>@T("فاکتور داخل بسته قرار بگیرد", "Include invoice in the package", "أدرج الفاتورة في الطرد")</span>
+                </label>
+            </div>
+
+            <div class="card wizard-card">
+                <h2>۴. @T("روش ارسال", "Shipping method", "طريقة الشحن")</h2>
+                <label><span>@T("روش ارسال", "Shipping method", "طريقة الشحن")</span>
+                    <select name="ShippingCode" required>
+                        <option value="">@T("— انتخاب کنید —", "— select —", "— اختر —")</option>
+                        @foreach (var (code, name) in Model.ShippingOptions)
+                        {
+                            <option value="@code" selected="@(code == Model.ShippingMethodCode)">@name</option>
+                        }
+                    </select>
+                </label>
+                <p class="muted small mt">@T("تعرفه ارسال بر اساس همین انتخاب در قیمت نهایی اعمال می‌شود.", "The shipping tariff is applied to the final price based on this choice.", "تُطبق تعريفة الشحن في السعر النهائي حسب هذا الاختيار.")</p>
+            </div>
+        </div>
+
+        <div class="wizard-footer">
+            <a class="btn btn-ghost" href="/order/print/@Model.OrderId?designId=@Model.DesignId">→ @T("بازگشت به چاپ", "Back to printing", "العودة إلى الطباعة")</a>
+            <button type="submit" class="btn btn-primary btn-lg">@T("ادامه: قیمت و ثبت", "Continue: pricing & submit", "متابعة: السعر والإرسال")</button>
+        </div>
+    </form>
+</section>
