@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Localization;
 CultureInfo[] cultures = [new("fa"), new("en"), new("ar")];
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddRazorPages(o => o.Conventions.AuthorizeFolder("/Pages/Account", "LoggedIn").ConfigureFilter(new Microsoft.AspNetCore.Mvc.IgnoreAntiforgeryTokenAttribute()));
+builder.Services.AddRazorPages();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
     {
@@ -22,6 +22,7 @@ builder.Services.AddOutputCache(o => o.AddPolicy("catalog60", b => b.Expire(Time
 builder.Services.AddHttpClient("core", c => c.BaseAddress = new Uri(builder.Configuration["CoreApi:BaseUrl"] ?? "http://localhost:8080/").PlusTrailingSlash());
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CoreApiClient>();
+builder.Services.AddScoped<CustomerContext>();
 builder.Services.AddRequestLocalization(o =>
 {
     o.SetDefaultCulture("fa").AddSupportedCultures("fa", "en", "ar").AddSupportedUICultures("fa", "en", "ar");

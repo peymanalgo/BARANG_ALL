@@ -1,0 +1,96 @@
+@page "/account/orders/{id:guid}"
+@model OrderModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string OrderLabel(string s) => s switch
+    {
+        "Draft" => T("پیش‌نویس", "Draft", "مسودة"),
+        "Submitted" => T("ثبت‌شده — در حال پردازش", "Submitted — in progress", "مُرسل — قيد المعالجة"),
+        "Cancelled" => T("لغوشده", "Cancelled", "ملغى"),
+        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم"),
+        _ => s
+    };
+    string ShipmentLabel(string s) => s switch
+    {
+        "Ready" => T("آماده ارسال", "Ready to ship", "جاهز للشحن"),
+        "Shipped" => T("ارسال‌شده", "Shipped", "مشحون"),
+        "InTransit" => T("در حال حمل", "In transit", "في الطريق"),
+        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم"),
+        "FailedDelivery" => T("ارسال ناموفق", "Failed delivery", "فشل التسليم"),
+        "Returned" => T("برگشتی", "Returned", "مرتجع"),
+        _ => s
+    };
+    string EventLabel(string t) => t switch
+    {
+        "Submitted" => T("سفارش ثبت شد", "Order submitted", "تم إرسال الطلب"),
+        "Cancelled" => T("سفارش لغو شد", "Order cancelled", "تم إلغاء الطلب"),
+        "StatusChanged" => T("به‌روزرسانی وضعیت", "Status updated", "تحديث الحالة"),
+        _ => t
+    };
+}
+@if (!Model.Found)
+{
+    <section class="container section"><p class="empty">@T("سفارش پیدا نشد.", "Order not found.", "لم يتم العثور على الطلب.")</p></section>
+}
+else
+{
+    <section class="container section">
+        <nav class="breadcrumbs" aria-label="breadcrumb">
+            <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a> ›
+            <a href="/account/orders">@T("سفارش‌ها", "Orders", "الطلبات")</a> ›
+            <span dir="ltr">@(Model.OrderNumber ?? "—")</span>
+        </nav>
+        <header class="section-head tracking-head">
+            <div>
+                <h1>@T("رهگیری سفارش", "Order tracking", "تتبع الطلب")</h1>
+                <p class="muted" dir="ltr">@(Model.OrderNumber ?? "—")</p>
+            </div>
+            <span class="status-chip st-@Model.OrderStatus.ToLowerInvariant() status-lg">@OrderLabel(Model.OrderStatus)</span>
+        </header>
+
+        @if (Model.Shipments.Count == 0)
+        {
+            <p class="empty">@T("هنوز مرسوله‌ای برای این سفارش ایجاد نشده است؛ پس از آماده‌سازی، کد رهگیری همین‌جا نمایش داده می‌شود.", "No shipment yet for this order; the tracking code appears here once prepared.", "لا شحنة بعد؛ سيظهر رمز التتبع هنا عند الجهوزية.")</p>
+        }
+        else
+        {
+            <div class="shipment-grid">
+                @foreach (var s in Model.Shipments)
+                {
+                    <div class="card shipment-card">
+                        <div class="address-head">
+                            <h2 dir="ltr">@s.Number</h2>
+                            <span class="status-chip st-@s.Status.ToLowerInvariant()">@ShipmentLabel(s.Status)</span>
+                        </div>
+                        <dl class="shipment-meta">
+                            <div><dt>@T("حمل‌کننده", "Carrier", "الناقل")</dt><dd dir="ltr">@(string.IsNullOrWhiteSpace(s.Carrier) ? "—" : s.Carrier)</dd></div>
+                            <div><dt>@T("کد رهگیری", "Tracking code", "رمز التتبع")</dt><dd dir="ltr" class="tracking-code">@(string.IsNullOrWhiteSpace(s.TrackingCode) ? "—" : s.TrackingCode)</dd></div>
+                            <div><dt>@T("تاریخ ارسال", "Shipped at", "تاريخ الشحن")</dt><dd>@Model.DateText(s.ShippedAt)</dd></div>
+                            <div><dt>@T("تحویل در", "Delivered at", "التسليم في")</dt><dd>@Model.DateText(s.DeliveredAt)</dd></div>
+                        </dl>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (Model.Timeline.Count > 0)
+        {
+            <h2 class="timeline-title">@T("خط زمانی سفارش", "Order timeline", "الخط الزمني للطلب")</h2>
+            <ol class="timeline">
+                @foreach (var e in Model.Timeline)
+                {
+                    <li>
+                        <span class="timeline-dot" aria-hidden="true"></span>
+                        <div>
+                            <strong>@EventLabel(e.Type)</strong>
+                            <small class="muted">@Model.DateText(e.At)</small>
+                        </div>
+                    </li>
+                }
+            </ol>
+        }
+
+        <a class="btn btn-ghost btn-sm" href="/account/orders">→ @T("بازگشت به سفارش‌ها", "Back to orders", "العودة إلى الطلبات")</a>
+    </section>
+}

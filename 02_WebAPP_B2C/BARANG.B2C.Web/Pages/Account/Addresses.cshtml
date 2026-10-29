@@ -1,0 +1,136 @@
+@page
+@model AddressesModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string TypeLabel(string code) => code switch
+    {
+        "shipping" => T("ارسال", "Shipping", "شحن"),
+        "billing" => T("صورتحساب", "Billing", "فاتورة"),
+        "warehouse" => T("انبار", "Warehouse", "مستودع"),
+        "office" => T("دفتر", "Office", "مكتب"),
+        _ => code
+    };
+    ViewData["Title"] = T("نشانی‌های من", "My addresses", "عناويني");
+}
+<section class="container section">
+    <nav class="breadcrumbs" aria-label="breadcrumb">
+        <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a> ›
+        <span>@T("نشانی‌ها", "Addresses", "العناوين")</span>
+    </nav>
+    <header class="section-head">
+        <h1>@T("نشانی‌های من", "My addresses", "عناويني")</h1>
+    </header>
+
+    @if (Model.Error is not null)
+    {
+        <div class="alert alert-error" role="alert">
+            @(Model.Error switch
+            {
+                "noprofile" => T("ابتدا پروفایل مشتری بسازید.", "Create your customer profile first.", "أنشئ ملفك كعميل أولاً."),
+                "customer.not_found" or "files.not_found" => T("نشانی پیدا نشد؛ شاید قبلاً حذف شده باشد.", "Address not found; it may be removed.", "لم يتم العثور على العنوان."),
+                "customer.version_conflict" or "core.database.concurrency_conflict" => T("نشانی هم‌زمان تغییر کرده؛ صفحه را تازه کنید.", "Address changed concurrently; refresh the page.", "تم تغيير العنوان بالتزامن؛ حدّث الصفحة."),
+                "customer.invalid_data" => T("اطلاعات نشانی کامل نیست.", "Address data is incomplete.", "بيانات العنوان غير كاملة."),
+                _ => T("عملیات انجام نشد؛ دوباره تلاش کنید.", "Operation failed; try again.", "فشلت العملية؛ حاول مجدداً.")
+            })
+        </div>
+    }
+
+    @if (!Model.HasProfile)
+    {
+        <p class="empty">@T("برای مدیریت نشانی‌ها ابتدا از «حساب کاربری» پروفایل مشتری بسازید.", "Create your customer profile from the account hub first.", "أنشئ ملفك من مركز الحساب أولاً.")</p>
+    }
+    else
+    {
+        @if (Model.Addresses.Count == 0)
+        {
+            <p class="empty">@T("هنوز نشانی ثبت نکرده‌اید؛ اولین نشانی را اضافه کنید.", "No addresses yet; add your first one.", "لا عناوين بعد؛ أضف أول عنوان.")</p>
+        }
+        else
+        {
+            <div class="address-grid">
+                @foreach (var a in Model.Addresses)
+                {
+                    <div class="card address-card @(a.IsDefault ? "is-default" : null)">
+                        <div class="address-head">
+                            <h2>@a.Title</h2>
+                            @if (a.IsDefault)
+                            {
+                                <span class="chip chip-default">@T("پیش‌فرض", "Default", "افتراضي")</span>
+                            }
+                            else
+                            {
+                                <span class="chip">@TypeLabel(a.TypeCode)</span>
+                            }
+                        </div>
+                        <p class="address-line">@a.Line</p>
+                        @if (!string.IsNullOrWhiteSpace(a.PostalCode))
+                        {
+                            <p class="muted small" dir="ltr">@a.PostalCode</p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(a.RecipientName))
+                        {
+                            <p class="muted small">@T("گیرنده:", "Recipient:", "المستلم:") @a.RecipientName @(a.RecipientMobile is null ? "" : $" · {a.RecipientMobile}")</p>
+                        }
+                        <div class="address-actions">
+                            @if (!a.IsDefault)
+                            {
+                                <form method="post" asp-page-handler="SetDefault">
+                                    <input type="hidden" name="id" value="@a.Id" />
+                                    <input type="hidden" name="version" value="@a.Version" />
+                                    <button type="submit" class="btn btn-ghost btn-sm">@T("پیش‌فرض کن", "Set default", "اجعله افتراضياً")</button>
+                                </form>
+                            }
+                            <details class="address-edit">
+                                <summary class="btn btn-ghost btn-sm">@T("ویرایش", "Edit", "تحرير")</summary>
+                                <form method="post" asp-page-handler="Edit" class="auth-form edit-form">
+                                    <input type="hidden" name="id" value="@a.Id" />
+                                    <input type="hidden" name="version" value="@a.Version" />
+                                    <input type="hidden" name="addressTypeCode" value="@a.TypeCode" />
+                                    <label><span>@T("عنوان", "Title", "العنوان")</span><input type="text" name="title" value="@a.Title" required /></label>
+                                    <label><span>@T("نشانی", "Address line", "سطر العنوان")</span><input type="text" name="addressLine1" value="@a.Line1" required /></label>
+                                    <label><span>@T("تکمیلی", "Line 2", "سطر ٢")</span><input type="text" name="addressLine2" value="@a.Line2" /></label>
+                                    <label><span>@T("کد پستی", "Postal code", "الرمز البريدي")</span><input type="text" name="postalCode" value="@a.PostalCode" /></label>
+                                    <label><span>@T("گیرنده", "Recipient", "المستلم")</span><input type="text" name="recipientName" value="@a.RecipientName" /></label>
+                                    <label><span>@T("موبایل گیرنده", "Recipient mobile", "هاتف المستلم")</span><input type="text" name="recipientMobile" value="@a.RecipientMobile" dir="ltr" /></label>
+                                    <button type="submit" class="btn btn-primary btn-sm">@T("ذخیره", "Save", "حفظ")</button>
+                                </form>
+                            </details>
+                            <form method="post" asp-page-handler="Remove">
+                                <input type="hidden" name="id" value="@a.Id" />
+                                <input type="hidden" name="version" value="@a.Version" />
+                                <button type="submit" class="btn btn-danger btn-sm">@T("حذف", "Remove", "إزالة")</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <details class="card add-address" open="@((Model.Addresses.Count == 0).ToString().ToLower())">
+            <summary><h2>@T("افزودن نشانی جدید", "Add a new address", "إضافة عنوان جديد")</h2></summary>
+            <form method="post" asp-page-handler="Add" class="address-form">
+                <div class="form-cols">
+                    <label><span>@T("نوع", "Type", "النوع")</span>
+                        <select name="addressTypeCode">
+                            <option value="shipping">@T("ارسال", "Shipping", "شحن")</option>
+                            <option value="billing">@T("صورتحساب", "Billing", "فاتورة")</option>
+                            <option value="warehouse">@T("انبار", "Warehouse", "مستودع")</option>
+                            <option value="office">@T("دفتر", "Office", "مكتب")</option>
+                        </select>
+                    </label>
+                    <label><span>@T("عنوان نشانی (نام)", "Title", "عنوان العنوان")</span><input type="text" name="title" placeholder="@T("مثلاً: خانه، محل کار", "e.g. Home, Office", "مثال: المنزل")" required /></label>
+                    <label><span>@T("کشور", "Country", "البلد")</span><input type="text" name="countryCode" value="IR" dir="ltr" required /></label>
+                    <label><span>@T("شهر / محله", "City / district", "المدينة / الحي")</span><input type="text" name="district" /></label>
+                    <label class="span2"><span>@T("نشانی کامل", "Address line 1", "سطر العنوان ١")</span><input type="text" name="addressLine1" required /></label>
+                    <label><span>@T("پلاک/تکمیلی", "Address line 2", "سطر العنوان ٢")</span><input type="text" name="addressLine2" /></label>
+                    <label><span>@T("کد پستی", "Postal code", "الرمز البريدي")</span><input type="text" name="postalCode" dir="ltr" /></label>
+                    <label><span>@T("نام گیرنده", "Recipient name", "اسم المستلم")</span><input type="text" name="recipientName" /></label>
+                    <label><span>@T("موبایل گیرنده", "Recipient mobile", "هاتف المستلم")</span><input type="text" name="recipientMobile" dir="ltr" /></label>
+                    <label class="check"><input type="checkbox" name="isDefault" value="true" /> <span>@T("نشانی پیش‌فرض من باشد", "Make this my default address", "اجعله عنواني الافتراضي")</span></label>
+                </div>
+                <button type="submit" class="btn btn-primary">@T("افزودن نشانی", "Add address", "إضافة")</button>
+            </form>
+        </details>
+    }
+</section>

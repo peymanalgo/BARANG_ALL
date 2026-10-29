@@ -1,0 +1,63 @@
+@page
+@model OrdersModel
+@using System.Globalization
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string StatusLabel(string s) => s switch
+    {
+        "Draft" => T("پیش‌نویس", "Draft", "مسودة"),
+        "Submitted" => T("ثبت‌شده", "Submitted", "مُرسل"),
+        "Cancelled" => T("لغوشده", "Cancelled", "ملغى"),
+        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم"),
+        _ => s
+    };
+    string DateText(string? iso) => DateTimeOffset.TryParse(iso, out DateTimeOffset d) ? d.ToLocalTime().ToString("yyyy/MM/dd", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa")) : "—";
+    ViewData["Title"] = T("سفارش‌های من", "My orders", "طلباتي");
+}
+<section class="container section">
+    <nav class="breadcrumbs" aria-label="breadcrumb">
+        <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a> ›
+        <span>@T("سفارش‌ها", "Orders", "الطلبات")</span>
+    </nav>
+    <header class="section-head">
+        <h1>@T("سفارش‌های من", "My orders", "طلباتي")</h1>
+        <a class="btn btn-primary btn-sm" href="/catalog">@T("سفارش جدید", "New order", "طلب جديد")</a>
+    </header>
+
+    @if (!Model.HasProfile)
+    {
+        <p class="empty">@T("برای دیدن سفارش‌ها ابتدا از «حساب کاربری» پروفایل مشتری بسازید.", "Create your customer profile from the account hub first.", "أنشئ ملفك من مركز الحساب أولاً.")</p>
+    }
+    else if (Model.Orders.Count == 0)
+    {
+        <p class="empty">@T("هنوز سفارشی ثبت نکرده‌اید.", "You have no orders yet.", "لا توجد طلبات بعد.")</p>
+    }
+    else
+    {
+        <div class="order-list">
+            @foreach (var o in Model.Orders)
+            {
+                <a class="card order-card" href="/account/orders/@o.Id">
+                    <div class="order-main">
+                        <strong class="order-number" dir="ltr">@o.Number</strong>
+                        <span class="order-date muted">@DateText(o.CreatedAtUtc ?? o.OrderDate)</span>
+                    </div>
+                    <span class="status-chip st-@o.Status.ToLowerInvariant()">@StatusLabel(o.Status)</span>
+                    <span class="order-go" aria-hidden="true">‹</span>
+                </a>
+            }
+        </div>
+        <nav class="pagination" aria-label="pagination">
+            @if (Model.HasPrev)
+            {
+                <a class="btn btn-ghost btn-sm" href="/account/orders?page=@(Model.Page - 1)">← @T("قبلی", "Previous", "السابق")</a>
+            }
+            <span class="page-info">@Model.Page / @Math.Max(1, (int)Math.Ceiling(Model.Total / 8.0))</span>
+            @if (Model.HasNext)
+            {
+                <a class="btn btn-ghost btn-sm" href="/account/orders?page=@(Model.Page + 1)">@T("بعدی", "Next", "التالي") →</a>
+            }
+        </nav>
+    }
+</section>

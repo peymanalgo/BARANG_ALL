@@ -1,65 +1,137 @@
 @page
 @model IndexModel
+@using System.Globalization
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
     ViewData["Title"] = T("حساب کاربری", "My account", "حسابي");
 }
 <section class="container section">
-    <header class="section-head">
-        <h1>@T("حساب کاربری", "My account", "حسابي")</h1>
-        @if (Model.Message is not null)
-        {
-            <div class="alert alert-ok" role="status">@T("کلمه عبور با موفقیت تغییر کرد؛ دوباره وارد شوید.", "Password changed; please sign in again.", "تم تغيير كلمة المرور؛ سجّل الدخول مجدداً.")</div>
-        }
-        @if (Model.Error is not null)
-        {
-            <div class="alert alert-error" role="alert">
-                @(Model.Error switch
-                {
-                    "security.invalid_password" or "empty" => T("رمز جدید مطابق سیاست (حداقل ۹ کاراکتر، حرف بزرگ/کوچک و عدد) نیست.", "New password does not meet policy (min 9 chars, upper/lower case and a digit).", "كلمة المرور الجديدة لا تطابق السياسة."),
-                    "security.invalid_credentials" => T("کلمه عبور فعلی اشتباه است.", "Current password is wrong.", "كلمة المرور الحالية غير صحيحة."),
-                    _ => T("تغییر کلمه عبور انجام نشد؛ دوباره تلاش کنید.", "Password change failed; try again.", "فشل تغيير كلمة المرور؛ حاول مجدداً.")
-                })
-            </div>
-        }
+    <header class="account-hub-head">
+        <div>
+            <h1>@T("سلام،", "Hello,", "مرحباً،") @(Model.DisplayName ?? Model.Username)</h1>
+            <p class="muted">@T("از این‌جا سفارش‌ها، نشانی‌ها و اعلان‌هایتان را مدیریت کنید.", "Manage your orders, addresses and notifications here.", "أدر طلباتك وعناوينك وإشعاراتك من هنا.")</p>
+        </div>
+        <form method="post" asp-page-handler="MarkAllRead">
+            <button type="submit" class="btn btn-ghost btn-sm">@T("خواندن همه اعلان‌ها", "Mark all read", "تعليم الكل مقروءاً")</button>
+        </form>
     </header>
 
-    <div class="account-grid">
-        <div class="card">
-            <h2>@T("پروفایل", "Profile", "الملف")</h2>
-            <p><strong>@(Model.DisplayName ?? Model.Username ?? User.Identity?.Name)</strong></p>
-            @if (Model.Username is not null)
+    @if (!Model.HasProfile)
+    {
+        <div class="card profile-create">
+            <h2>@T("پروفایل مشتری بسازید", "Create your customer profile", "أنشئ ملفك كعميل")</h2>
+            <p class="muted">@T("برای سفارش دادن و ثبت نشانی، پروفایل مشتری شما باید ساخته شود؛ کد مشتری همان نام کاربری شما خواهد بود.", "To order and add addresses, your customer profile is required; your username becomes your customer code.", "للطلب وإضافة العناوين يلزم ملفك كعميل؛ رمز العميل سيكون اسم المستخدم الخاص بك.")</p>
+            @if (Model.Error == "profile-fields")
             {
-                <p class="muted" dir="ltr">@Model.Username</p>
+                <div class="alert alert-error" role="alert">@T("نام، نام خانوادگی و موبایل الزامی است.", "First name, last name and mobile are required.", "الاسم واسم العائلة والهاتف مطلوبة.")</div>
             }
-            <form method="post" asp-page-handler="Logout">
-                <button type="submit" class="btn btn-ghost btn-sm">@T("خروج از حساب", "Sign out", "تسجيل الخروج")</button>
+            @if (Model.Error == "customer.duplicate_code")
+            {
+                <div class="alert alert-error" role="alert">@T("این کد مشتری قبلاً ثبت شده است.", "This customer code is already registered.", "رمز العميل مسجل مسبقاً.")</div>
+            }
+            @if (Model.Error == "customer.invalid_mobile" || Model.Error == "customer.invalid_phone")
+            {
+                <div class="alert alert-error" role="alert">@T("شماره موبایل معتبر نیست.", "The mobile number is not valid.", "رقم الهاتف غير صالح.")</div>
+            }
+            <form method="post" asp-page-handler="CreateProfile" class="auth-form profile-form">
+                <div class="form-cols">
+                    <label>
+                        <span>@T("نام", "First name", "الاسم")</span>
+                        <input type="text" asp-for="ProfileFirstName" required />
+                    </label>
+                    <label>
+                        <span>@T("نام خانوادگی", "Last name", "اسم العائلة")</span>
+                        <input type="text" asp-for="ProfileLastName" required />
+                    </label>
+                    <label>
+                        <span>@T("موبایل", "Mobile", "الهاتف")</span>
+                        <input type="text" asp-for="ProfileMobile" dir="ltr" placeholder="09…" required />
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">@T("ساخت پروفایل", "Create profile", "إنشاء الملف")</button>
             </form>
         </div>
-
-        <div class="card">
-            <h2>@T("تغییر کلمه عبور", "Change password", "تغيير كلمة المرور")</h2>
-            <form method="post" asp-page-handler="ChangePassword" class="auth-form">
-                <label>
-                    <span>@T("کلمه عبور فعلی", "Current password", "كلمة المرور الحالية")</span>
-                    <input type="password" asp-for="CurrentPassword" autocomplete="current-password" required />
-                </label>
-                <label>
-                    <span>@T("کلمه عبور جدید", "New password", "كلمة المرور الجديدة")</span>
-                    <input type="password" asp-for="NewPassword" autocomplete="new-password" minlength="9" required />
-                </label>
-                <button type="submit" class="btn btn-primary">@T("تغییر کلمه عبور", "Change password", "تغيير")</button>
-            </form>
+    }
+    else
+    {
+        <div class="hub-stats">
+            <a class="stat-card" href="/account/addresses">
+                <strong>@Model.AddressCount</strong>
+                <span>@T("نشانی ثبت‌شده", "Saved addresses", "عناوين محفوظة")</span>
+            </a>
+            <a class="stat-card" href="/account/orders">
+                <strong>@Model.OrderCount</strong>
+                <span>@T("سفارش", "Orders", "طلبات")</span>
+            </a>
+            <div class="stat-card stat-id">
+                <strong>@(Model.CustomerName ?? Model.CustomerCode)</strong>
+                <span dir="ltr" class="muted">@Model.CustomerCode</span>
+            </div>
         </div>
 
-        <div class="card card-coming">
-            <h2>@T("سفارش‌های من", "My orders", "طلباتي")</h2>
-            <p class="muted">@T("به‌زودی: فهرست سفارش‌ها و رهگیری مرسوله.", "Coming soon: order list and shipment tracking.", "قريباً: قائمة الطلبات وتتبع الشحنة.")</p>
+        <div class="hub-links">
+            <a class="hub-link" href="/account/addresses">
+                <h2>@T("نشانی‌های من", "My addresses", "عناويني")</h2>
+                <p class="muted">@T("افزودن، ویرایش و انتخاب نشانی پیش‌فرض ارسال.", "Add, edit and pick a default shipping address.", "إضافة وتحرير العناوين واختيار الافتراضي.")</p>
+            </a>
+            <a class="hub-link" href="/account/orders">
+                <h2>@T("سفارش‌های من", "My orders", "طلباتي")</h2>
+                <p class="muted">@T("فهرست سفارش‌ها و رهگیری مرسوله تا تحویل.", "Order list and shipment tracking until delivery.", "قائمة الطلبات وتتبع الشحنة حتى التسليم.")</p>
+            </a>
+            <a class="hub-link" href="/catalog">
+                <h2>@T("سفارش جدید", "New order", "طلب جديد")</h2>
+                <p class="muted">@T("از کاتالوگ طرح‌ها انتخاب کنید.", "Pick a design from the catalog.", "اختر تصميماً من الكتالوج.")</p>
+            </a>
         </div>
-        <div class="card card-coming">
-            <h2>@T("نشانی‌های من", "My addresses", "عناويني")</h2>
-            <p class="muted">@T("به‌زودی: مدیریت نشانی‌های ارسال.", "Coming soon: manage shipping addresses.", "قريباً: إدارة عناوين الشحن.")</p>
+    }
+
+    <section class="notif-section">
+        <div class="section-head">
+            <h2>@T("اعلان‌های اخیر", "Recent notifications", "أحدث الإشعارات")</h2>
+            @if (Model.UnreadCount > 0)
+            {
+                <span class="chip chip-unread">@T($"{Model.UnreadCount} خوانده‌نشده", $"{Model.UnreadCount} unread", "{Model.UnreadCount} غير مقروء")</span>
+            }
         </div>
-    </div>
+        @if (Model.Notifications.Count == 0)
+        {
+            <p class="empty">@T("اعلانی ندارید.", "No notifications.", "لا إشعارات.")</p>
+        }
+        else
+        {
+            <ul class="notif-list">
+                @foreach (var n in Model.Notifications)
+                {
+                    <li class="@(n.Unread ? "unread" : null)">
+                        <span class="notif-dot" aria-hidden="true"></span>
+                        <div class="notif-body">
+                            <p>@n.Summary</p>
+                            <small class="muted">@Date(n.CreatedAtUtc) · @n.Category</small>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    <details class="card password-card">
+        <summary><h2>@T("تغییر کلمه عبور", "Change password", "تغيير كلمة المرور")</h2></summary>
+        <form method="post" asp-page="/Account/ChangePassword" class="auth-form">
+            <label>
+                <span>@T("کلمه عبور فعلی", "Current password", "كلمة المرور الحالية")</span>
+                <input type="password" name="currentPassword" autocomplete="current-password" required />
+            </label>
+            <label>
+                <span>@T("کلمه عبور جدید", "New password", "كلمة المرور الجديدة")</span>
+                <input type="password" name="newPassword" autocomplete="new-password" minlength="9" required />
+            </label>
+            <button type="submit" class="btn btn-primary">@T("تغییر کلمه عبور", "Change password", "تغيير")</button>
+        </form>
+    </details>
+
+    <form method="post" asp-page-handler="Logout" class="logout-row">
+        <button type="submit" class="btn btn-ghost btn-sm">@T("خروج از حساب", "Sign out", "تسجيل الخروج")</button>
+    </form>
 </section>

@@ -9,10 +9,13 @@ namespace BARANG.B2C.Web.Services;
 
 // Thin backend-for-frontend client. The store never exposes the customer's
 // bearer token to the browser: pages call this client server-side, which
-// attaches the token stored in the auth cookie's claims.
-public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccessor accessor)
+// attaches the token stored in the auth cookie's claims. Client API
+// endpoints are company-scoped, so the configured store company id is sent
+// as X-Company-ID on every call (public catalog resolves its company itself).
+public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccessor accessor, IConfiguration configuration)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+    private string? CompanyId => configuration["CoreApi:CompanyId"];
     private HttpClient Create() => factory.CreateClient("core");
 
     public async Task<JsonElement?> GetAsync(string path)
@@ -29,6 +32,31 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
         AttachToken(request);
         using HttpResponseMessage response = await Create().SendAsync(request);
         return response.IsSuccessStatusCode ? await ReadJsonAsync(response) : null;
+    }
+
+    public async Task<JsonElement?> PutAsync(string path, object? body)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Put, path) { Content = Body(body) };
+        AttachToken(request);
+        using HttpResponseMessage response = await Create().SendAsync(request);
+        return response.IsSuccessStatusCode ? await ReadJsonAsync(response) : null;
+    }
+
+    public async Task<(bool Ok, string? ProblemCode)> PutRawAsync(string path, object? body)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Put, path) { Content = Body(body) };
+        AttachToken(request);
+        using HttpResponseMessage response = await Create().SendAsync(request);
+        if (response.IsSuccessStatusCode) return (true, null);
+        try
+        {
+            JsonElement? problem = await ReadJsonAsync(response);
+            return (false, problem is JsonElement p && p.TryGetProperty("code", out JsonElement code) ? code.GetString() : null);
+        }
+        catch (JsonException)
+        {
+            return (false, null);
+        }
     }
 
     public async Task<(bool Ok, string? ProblemCode)> PostRawAsync(string path, object? body)
@@ -97,6 +125,7 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
     {
         string? token = accessor.HttpContext?.User.FindFirstValue("barang:token");
         if (!string.IsNullOrWhiteSpace(token)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        if (!string.IsNullOrWhiteSpace(CompanyId)) request.Headers.Add("X-Company-ID", CompanyId);
     }
 
     private static async Task<JsonElement?> ReadJsonAsync(HttpResponseMessage response)
