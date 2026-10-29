@@ -223,6 +223,11 @@
 /* feedback page */
 .feedback-form-card h2 { margin: 0 0 12px; font-size: 1.02rem; }
 .feedback-form-card form { display: flex; flex-direction: column; gap: 12px; max-width: 560px; }
+.feedback-form-card form { max-width: none; width: 100%; }
+.feedback-form-card form .btn { align-self: center; min-width: 220px; }
+.feedback-form-card form input,
+.feedback-form-card form select,
+.feedback-form-card form textarea { width: 100%; box-sizing: border-box; }
 .feedback-form-card label { display: flex; flex-direction: column; gap: 5px; font-size: .82rem; color: var(--panel-ink); }
 .feedback-form-card input, .feedback-form-card select, .feedback-form-card textarea { border: 1px solid var(--panel-border); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: .88rem; background: #fff; color: var(--panel-ink); }
 .feedback-form-card textarea { resize: vertical; }
