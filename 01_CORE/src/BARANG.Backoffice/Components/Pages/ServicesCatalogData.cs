@@ -1,5 +1,3 @@
-using BARANG.Backoffice.Components.Help;
-
 namespace BARANG.Backoffice.Components.Pages;
 
 public sealed record ServiceGroup(string Id, string Fa, string En, string Ar)
@@ -37,9 +35,10 @@ public static class ServicesCatalogData
     [
         new("orders", "سفارشات", "Orders", "الطلبات"),
         new("customers", "مشتریان", "Customers", "العملاء"),
-        new("catalog", "کاتالوگ محصولات", "Product Catalog", "كتالوج المنتجات"),
+        new("catalog", "کاتالوگ و مرجع", "Catalog & Reference", "الكتالوج والمرجع"),
         new("files", "فایل‌ها", "Files", "الملفات"),
         new("public", "کاتالوگ عمومی (B2C)", "Public Catalog (B2C)", "الكتالوج العام"),
+        new("notifications", "اعلان‌ها", "Notifications", "الإشعارات"),
         new("auth", "احراز هویت و حساب کاربری", "Auth & Account", "المصادقة والحساب"),
     ];
 
@@ -61,7 +60,20 @@ public static class ServicesCatalogData
                 In("Idempotency-Key", "string", "Header", true, true)),
             JsonOut, "Idempotency-Key + X-Company-ID", false),
 
-        N("orders", "2", "GET", "/client/orders/{id}", "ClientOrderRead", "client-read",
+        N("orders", "2", "GET", "/client/orders", "ClientOrderRead", "client-read",
+            "لیست سفارش‌های مشتری", "List customer orders", "قائمة طلبات العميل",
+            "سفارش‌های مشتری را با فیلتر مشتری، شماره سفارش و وضعیت و با صفحه‌بندی برمی‌گرداند؛ مشتری فهرست سفارش‌های خود و مرحله فعلی هرکدام را می‌بیند.",
+            "Lists customer orders with customer, order-number and status filters plus pagination; the customer sees their orders and each order's current stage.",
+            "يسرد طلبات العميل مع فلاتر العميل ورقم الطلب والحالة وترقيم الصفحات؛ يرى العميل طلباته ومرحلة كل طلب.",
+            Inputs(
+                In("customerId", "Guid", "Query", false),
+                In("status", "string", "Query", false),
+                In("search", "string", "Query", false),
+                In("page", "int", "Query", false),
+                In("pageSize", "int", "Query", false)),
+            "JSON: صفحه‌ای از خلاصه سفارش‌ها (items + total)", "X-Company-ID", false),
+
+        N("orders", "3", "GET", "/client/orders/{id}", "ClientOrderRead", "client-read",
             "مشاهده سفارش", "Get order", "عرض الطلب",
             "جزئیات کامل سفارش شامل آیتم‌ها، عملیات چاپ، وضعیت و قیمت را برمی‌گرداند.",
             "Returns full order details including items, print operations, status and pricing.",
@@ -69,7 +81,7 @@ public static class ServicesCatalogData
             Inputs(In("id", "Guid", "Path", true)),
             JsonOut, "X-Company-ID", false),
 
-        N("orders", "3", "PUT", "/client/orders/{id}", "ClientOrderWrite", "client-mutation",
+        N("orders", "4", "PUT", "/client/orders/{id}", "ClientOrderWrite", "client-mutation",
             "ویرایش پیش‌نویس", "Edit draft", "تحرير المسودة",
             "فیلدهای سرصفحه پیش‌نویس (شعبه، مشتری، تاریخ‌ها) را با کنترل نسخه ویرایش می‌کند.",
             "Edits draft header fields (branch, customer, dates) with optimistic version control.",
@@ -84,7 +96,7 @@ public static class ServicesCatalogData
                 In("version", "long", "Body", true)),
             NoContent, "Idempotency-Key + X-Company-ID", false),
 
-        N("orders", "4", "POST", "/client/orders/{id}/items", "ClientOrderWrite", "client-mutation",
+        N("orders", "5", "POST", "/client/orders/{id}/items", "ClientOrderWrite", "client-mutation",
             "افزودن آیتم", "Add order item", "إضافة بند",
             "یک آیتم (محصول + واریانت + تعداد) به پیش‌نویس سفارش اضافه می‌کند.",
             "Adds an item (product + variant + quantity) to the order draft.",
@@ -98,7 +110,7 @@ public static class ServicesCatalogData
                 In("version", "long", "Body", true)),
             JsonOut, "Idempotency-Key + X-Company-ID", false),
 
-        N("orders", "5", "PUT", "/client/orders/{id}/items/{itemId}", "ClientOrderWrite", "client-mutation",
+        N("orders", "6", "PUT", "/client/orders/{id}/items/{itemId}", "ClientOrderWrite", "client-mutation",
             "ویرایش آیتم", "Update order item", "تحرير بند",
             "مقدار و یادداشت‌های یک آیتم موجود را با کنترل نسخه به‌روزرسانی می‌کند.",
             "Updates quantity and notes of an existing item with version control.",
@@ -113,7 +125,7 @@ public static class ServicesCatalogData
                 In("version", "long", "Body", true)),
             NoContent, "Idempotency-Key + X-Company-ID", false),
 
-        N("orders", "6", "POST", "/client/orders/{id}/items/{itemId}/remove", "ClientOrderWrite", "client-mutation",
+        N("orders", "7", "POST", "/client/orders/{id}/items/{itemId}/remove", "ClientOrderWrite", "client-mutation",
             "حذف آیتم", "Remove order item", "إزالة بند",
             "آیتم را از پیش‌نویس حذف می‌کند؛ حذف نیازمند شماره نسخه جاری است.",
             "Removes an item from the draft; removal requires the current version number.",
@@ -124,12 +136,12 @@ public static class ServicesCatalogData
                 In("version", "long", "Body", true)),
             NoContent, "Idempotency-Key + X-Company-ID", false),
 
-        N("orders", "7", "POST", "/client/orders/{id}/items/{itemId}/print-operations", "ClientOrderWrite", "client-mutation",
+        N("orders", "8", "POST", "/client/orders/{id}/items/{itemId}/print-operations", "ClientOrderWrite", "client-mutation",
             "افزودن عملیات چاپ", "Add print operation", "إضافة عملية طباعة",
             "یک عملیات چاپ (ترتیب، محل، روش، ابعاد، طرح یا فایل) برای آیتم ثبت می‌کند.",
             "Registers a print operation (sequence, placement, method, dimensions, artwork/file) for the item.",
             "يسجل عملية طباعة (الترتيب، الموضع، الطريقة، الأبعاد، التصميم أو الملف) للبند.",
-        Inputs(
+            Inputs(
                 In("id", "Guid", "Path", true),
                 In("itemId", "Guid", "Path", true),
                 In("sequence", "int", "Body", true),
@@ -143,12 +155,12 @@ public static class ServicesCatalogData
                 In("version", "long", "Body", true)),
             JsonOut, "Idempotency-Key + X-Company-ID", false),
 
-        N("orders", "8", "PUT", "/client/orders/{id}/items/{itemId}/print-operations/{operationId}", "ClientOrderWrite", "client-mutation",
+        N("orders", "9", "PUT", "/client/orders/{id}/items/{itemId}/print-operations/{operationId}", "ClientOrderWrite", "client-mutation",
             "ویرایش عملیات چاپ", "Update print operation", "تحرير عملية الطباعة",
             "عملیات چاپ ثبت‌شده را ویرایش می‌کند.",
             "Edits a registered print operation.",
             "يحرر عملية الطباعة المسجلة.",
-        Inputs(
+            Inputs(
                 In("id", "Guid", "Path", true),
                 In("itemId", "Guid", "Path", true),
                 In("operationId", "Guid", "Path", true),
@@ -163,17 +175,17 @@ public static class ServicesCatalogData
                 In("version", "long", "Body", true)),
             NoContent, "Idempotency-Key + X-Company-ID", false),
 
-        N("orders", "9", "POST", "/client/orders/{id}/pricing/preview", "ClientPricingPreview", "client-read",
+        N("orders", "10", "POST", "/client/orders/{id}/pricing/preview", "ClientPricingPreview", "client-read",
             "پیش‌نمایش قیمت", "Pricing preview", "معاينة السعر",
             "بدون تغییر سفارش، قیمت نهایی را با تعرفه‌ها و تخفیف‌های جاری محاسبه و جزئیات هر مؤلفه را برمی‌گرداند.",
             "Computes the final price with current tariffs and discounts without modifying the order, returning each price component.",
             "يحسب السعر النهائي بالتعریفات والخصومات الحالية دون تعديل الطلب ويعيد تفاصيل كل مكوّن.",
-        Inputs(
+            Inputs(
                 In("id", "Guid", "Path", true),
                 In("version", "long", "Body", true)),
             JsonOut, "Idempotency-Key + X-Company-ID", false),
 
-        N("orders", "10", "POST", "/client/orders/{id}/submit", "ClientOrderWrite", "submit + هدر Idempotency-Key",
+        N("orders", "11", "POST", "/client/orders/{id}/submit", "ClientOrderWrite", "submit + هدر Idempotency-Key",
             "ثبت نهایی سفارش", "Submit order", "إرسال الطلب",
             "سفارش کامل‌شده را برای ورود به گردش کار تأیید ثبت می‌کند؛ پس از ثبت، سفارش قفل می‌شود.",
             "Submits the completed order into the approval workflow; after submission the order is locked.",
@@ -184,7 +196,7 @@ public static class ServicesCatalogData
                 In("Idempotency-Key", "string", "Header", true, true)),
             JsonOut, "Idempotency-Key + X-Company-ID", false),
 
-        N("orders", "11", "POST", "/client/orders/{id}/cancel", "ClientOrderWrite", "client-mutation",
+        N("orders", "12", "POST", "/client/orders/{id}/cancel", "ClientOrderWrite", "client-mutation",
             "لغو سفارش", "Cancel order", "إلغاء الطلب",
             "سفارش را با کد دلیل لغو می‌کند؛ دلیل در تاریخچه سفارش ثبت می‌شود.",
             "Cancels the order with a reason code; the reason is stored in the order history.",
@@ -196,7 +208,7 @@ public static class ServicesCatalogData
                 In("version", "long", "Body", true)),
             NoContent, "Idempotency-Key + X-Company-ID", false),
 
-        N("orders", "12", "GET", "/client/orders/{id}/tracking", "ClientTrackingRead", "client-read",
+        N("orders", "13", "GET", "/client/orders/{id}/tracking", "ClientTrackingRead", "client-read",
             "رهگیری سفارش", "Order tracking", "تتبع الطلب",
             "وضعیت سفارش، مرسولات (شماره، حمل‌کننده، کد رهگیری، تاریخ) و رویدادهای خط زمانی را برای نمایش به مشتری نهایی برمی‌گرداند.",
             "Returns order status, shipments (number, carrier, tracking code, dates) and timeline events for display to the end customer.",
@@ -204,20 +216,23 @@ public static class ServicesCatalogData
             Inputs(In("id", "Guid", "Path", true)),
             JsonOut, "X-Company-ID", false),
 
-        N("orders", "13", "GET", "/client/orders", "ClientOrderRead", "client-read",
-            "لیست سفارش‌های مشتری", "List customer orders", "قائمة طلبات العميل",
-            "سفارش‌های مشتری را با فیلتر مشتری، شماره سفارش و وضعیت و با صفحه‌بندی برمی‌گرداند؛ مشتری فهرست سفارش‌های خود و مرحله فعلی هرکدام را می‌بیند.",
-            "Lists customer orders with customer, order-number and status filters plus pagination; the customer sees their orders and each order's current stage.",
-            "يسرد طلبات العميل مع فلاتر العميل ورقم الطلب والحالة وترقيم الصفحات؛ يرى العميل طلباته ومرحلة كل طلب.",
-            Inputs(
-                In("customerId", "Guid", "Query", false),
-                In("status", "string", "Query", false),
-                In("search", "string", "Query", false),
-                In("page", "int", "Query", false),
-                In("pageSize", "int", "Query", false)),
-            "JSON: صفحه‌ای از خلاصه سفارش‌ها (items + total)", "X-Company-ID", false),
+        N("orders", "14", "GET", "/client/orders/{id}/validate", "ClientOrderRead", "client-read",
+            "اعتبارسنجی سفارش", "Validate order", "التحقق من الطلب",
+            "قبل از ثبت نهایی، نقص‌های سفارش (آیتم خالی، نشانی، عملیات چاپ و…) را فهرست می‌کند تا رابط کاربری B2C بتواند قبل از Submit به مشتری نشان دهد.",
+            "Before submission, lists order deficiencies (missing items, address, print operations, …) so the B2C UI can show them to the customer prior to Submit.",
+            "قبل من الإرسال، يسرد نقص الطلب (البنود، العنوان، عمليات الطباعة…) ليعرضها مطقم B2C على العميل.",
+            Inputs(In("id", "Guid", "Path", true)),
+            ListOut, "X-Company-ID", false),
 
-        N("customers", "14", "POST", "/client/customers/register", "ClientCustomerWrite", "client-mutation + هدر Idempotency-Key",
+        N("orders", "15", "GET", "/client/orders/form", "ClientOrderRead", "client-read",
+            "فراداده فرم سفارش", "Order form metadata", "بيانات نموذج الطلب",
+            "مقادیر مجاز فرم سفارش را برمی‌گرداند: محل‌های چاپ مجاز (FRONT/BACK/SLEEVE/OTHER)، انواع مشتری و انواع نشانی؛ برای ساخت فرم سفارش در وب و موبایل.",
+            "Returns allowed order-form values: permitted print placements (FRONT/BACK/SLEEVE/OTHER), customer types and address types; used to build the web/mobile order form.",
+            "يعيد القيم المسموحة لنموذج الطلب: مواضع الطباعة، أنواع العملاء وأنواع العناوين؛ لبناء نموذج الطلب في الويب والهاتف.",
+            Inputs(),
+            JsonOut, "X-Company-ID", false),
+
+        N("customers", "16", "POST", "/client/customers/register", "ClientCustomerWrite", "client-mutation + هدر Idempotency-Key",
             "ثبت مشتری جدید", "Register customer", "تسجيل عميل",
             "مشتری حقیقی یا حقوقی را با کد یکتا ثبت می‌کند؛ با Idempotency-Key ثبت تکراری جلوگیری می‌شود.",
             "Registers an individual or corporate customer with a unique code; idempotency prevents duplicate registration.",
@@ -239,15 +254,7 @@ public static class ServicesCatalogData
                 In("Idempotency-Key", "string", "Header", true, true)),
             JsonOut, "Idempotency-Key + X-Company-ID", false),
 
-        N("customers", "15", "GET", "/client/customers/{id}", "ClientCustomerRead", "client-read",
-            "مشاهده مشتری", "Get customer", "عرض العميل",
-            "پروفایل کامل مشتری را برمی‌گرداند.",
-            "Returns the full customer profile.",
-            "يعيد ملف العميل الكامل.",
-            Inputs(In("id", "Guid", "Path", true)),
-            JsonOut, "X-Company-ID", false),
-
-        N("customers", "16", "GET", "/client/customers/by-code/{code}", "ClientCustomerRead", "client-read",
+        N("customers", "17", "GET", "/client/customers/by-code/{code}", "ClientCustomerRead", "client-read",
             "مشاهده مشتری با کد", "Get customer by code", "عرض العميل بالرمز",
             "مشتری را با کد یکتا پیدا می‌کند؛ برای ورود مشتری به پورتال B2C و یافتن پروفایل او استفاده می‌شود.",
             "Finds a customer by its unique code; used by the B2C portal to resolve the signed-in customer's profile.",
@@ -255,7 +262,15 @@ public static class ServicesCatalogData
             Inputs(In("code", "string", "Path", true)),
             JsonOut, "X-Company-ID", false),
 
-        N("customers", "17", "PUT", "/client/customers/{id}", "ClientCustomerWrite", "client-mutation",
+        N("customers", "18", "GET", "/client/customers/{id}", "ClientCustomerRead", "client-read",
+            "مشاهده مشتری", "Get customer", "عرض العميل",
+            "پروفایل کامل مشتری را برمی‌گرداند.",
+            "Returns the full customer profile.",
+            "يعيد ملف العميل الكامل.",
+            Inputs(In("id", "Guid", "Path", true)),
+            JsonOut, "X-Company-ID", false),
+
+        N("customers", "19", "PUT", "/client/customers/{id}", "ClientCustomerWrite", "client-mutation",
             "ویرایش مشتری", "Update customer", "تحرير العميل",
             "فیلدهای پروفایل مشتری را با کنترل نسخه (Version + ProfileVersion) به‌روزرسانی می‌کند.",
             "Updates customer profile fields with version control (Version + ProfileVersion).",
@@ -274,7 +289,7 @@ public static class ServicesCatalogData
                 In("status", "string", "Body", false)),
             NoContent, "Idempotency-Key + X-Company-ID", false),
 
-        N("customers", "18", "GET", "/client/customers/{id}/addresses", "ClientCustomerRead", "client-read",
+        N("customers", "20", "GET", "/client/customers/{id}/addresses", "ClientCustomerRead", "client-read",
             "فهرست نشانی‌های مشتری", "List customer addresses", "قائمة عناوين العميل",
             "نشانی‌های فعال مشتری (با نوع: دفتر، انبار، ارسال) را برمی‌گرداند؛ برای انتخاب نشانی ارسال سفارش استفاده می‌شود.",
             "Returns the customer's active addresses (typed: HQ, warehouse, shipping); used when picking an order shipping address.",
@@ -282,7 +297,73 @@ public static class ServicesCatalogData
             Inputs(In("id", "Guid", "Path", true)),
             ListOut, "X-Company-ID", false),
 
-        N("catalog", "19", "GET", "/client/catalog/products", "ClientCatalogRead", "client-read",
+        N("customers", "21", "POST", "/client/customers/{id}/addresses", "ClientCustomerWrite", "client-mutation",
+            "افزودن نشانی", "Add address", "إضافة عنوان",
+            "یک نشانی جدید (کشور، شهر، خط نشانی، گیرنده و…) برای مشتری ثبت می‌کند؛ مشتری B2C از همین سرویس نشانی ارسال خود را در پنل کاربری اضافه می‌کند.",
+            "Registers a new address (country, city, address line, recipient, …) for the customer; B2C customers use it to add shipping addresses in their account panel.",
+            "يسجل عنواناً جديداً (البلد، المدينة، العنوان، المستلم…) للعميل؛ يستخدمه عميل B2C لإضافة عناوين الشحن في لوحته.",
+            Inputs(
+                In("id", "Guid", "Path", true),
+                In("addressTypeCode", "string", "Body", true),
+                In("title", "string", "Body", true),
+                In("countryCode", "string", "Body", true),
+                In("provinceCode", "string", "Body", false),
+                In("cityCode", "string", "Body", false),
+                In("district", "string", "Body", false),
+                In("addressLine1", "string", "Body", true),
+                In("addressLine2", "string", "Body", false),
+                In("postalCode", "string", "Body", false),
+                In("recipientName", "string", "Body", false),
+                In("recipientPhone", "string", "Body", false),
+                In("recipientMobile", "string", "Body", false),
+                In("isDefault", "bool", "Body", true),
+                In("displayOrder", "int", "Body", true),
+                In("email", "string", "Body", false),
+                In("notes", "string", "Body", false)),
+            JsonOut, "Idempotency-Key + X-Company-ID", false),
+
+        N("customers", "22", "PUT", "/client/customers/{id}/addresses/{addressId}", "ClientCustomerWrite", "client-mutation",
+            "ویرایش نشانی", "Update address", "تحرير العنوان",
+            "فیلدهای یک نشانی موجود را با کنترل نسخه به‌روزرسانی می‌کند.",
+            "Updates the fields of an existing address with version control.",
+            "يحدّث حقول عنوان موجود مع التحكم بالإصدار.",
+            Inputs(
+                In("id", "Guid", "Path", true),
+                In("addressId", "Guid", "Path", true),
+                In("addressTypeCode", "string", "Body", true),
+                In("title", "string", "Body", true),
+                In("countryCode", "string", "Body", true),
+                In("addressLine1", "string", "Body", true),
+                In("recipientName", "string", "Body", false),
+                In("recipientMobile", "string", "Body", false),
+                In("isDefault", "bool", "Body", true),
+                In("displayOrder", "int", "Body", true),
+                In("version", "long", "Body", true)),
+            NoContent, "Idempotency-Key + X-Company-ID", false),
+
+        N("customers", "23", "POST", "/client/customers/{id}/addresses/{addressId}/remove", "ClientCustomerWrite", "client-mutation",
+            "حذف نشانی", "Remove address", "إزالة العنوان",
+            "نشانی را از پروفایل مشتری حذف می‌کند؛ نیازمند شماره نسخه جاری است.",
+            "Deletes an address from the customer profile; requires the current version number.",
+            "يحذف عنواناً من ملف العميل؛ يتطلب رقم الإصدار الحالي.",
+            Inputs(
+                In("id", "Guid", "Path", true),
+                In("addressId", "Guid", "Path", true),
+                In("version", "long", "Body", true)),
+            NoContent, "Idempotency-Key + X-Company-ID", false),
+
+        N("customers", "24", "POST", "/client/customers/{id}/addresses/{addressId}/default", "ClientCustomerWrite", "client-mutation",
+            "نشانی پیش‌فرض", "Set default address", "العنوان الافتراضي",
+            "نشانی انتخاب‌شده را به‌عنوان نشانی پیش‌فرض مشتری (برای تسویه‌حساب و ارسال) تنظیم می‌کند.",
+            "Marks the selected address as the customer's default (for checkout and shipping).",
+            "يعيّن العنوان المحدد كعنوان افتراضي للعميل (للدفع والشحن).",
+            Inputs(
+                In("id", "Guid", "Path", true),
+                In("addressId", "Guid", "Path", true),
+                In("version", "long", "Body", true)),
+            NoContent, "Idempotency-Key + X-Company-ID", false),
+
+        N("catalog", "25", "GET", "/client/catalog/products", "ClientCatalogRead", "client-read",
             "جستجوی محصولات", "Search products", "بحث في المنتجات",
             "فهرست محصولات قابل سفارش با جستجو و صفحه‌بندی؛ برای انتخاب آیتم در سفارش موبایل/وب استفاده می‌شود.",
             "Lists orderable products with search and pagination; used for item selection in the mobile/web order flow.",
@@ -293,7 +374,15 @@ public static class ServicesCatalogData
                 In("pageSize", "int", "Query", false)),
             ListOut, "X-Company-ID", false),
 
-        N("catalog", "20", "GET", "/client/catalog/products/{id}/variants", "ClientCatalogRead", "client-read",
+        N("catalog", "26", "GET", "/client/catalog/products/{id}", "ClientCatalogRead", "client-read",
+            "جزئیات محصول", "Product detail", "تفاصيل المنتج",
+            "کامل‌ترین اطلاعات یک محصول (کد، نام، نوع، واحد، وضعیت) را برای صفحه محصول در وب/موبایل برمی‌گرداند.",
+            "Returns the full product info (code, name, type, unit, status) for the product page in web/mobile.",
+            "يعيد بيانات المنتج الكاملة (الرمز، الاسم، النوع، الوحدة، الحالة) لصفحة المنتج.",
+            Inputs(In("id", "Guid", "Path", true)),
+            JsonOut, "X-Company-ID", false),
+
+        N("catalog", "27", "GET", "/client/catalog/products/{id}/variants", "ClientCatalogRead", "client-read",
             "واریانت‌های محصول", "Product variants", "متغيرات المنتج",
             "واریانت‌های قابل سفارش یک محصول (سایز/رنگ) را برمی‌گرداند.",
             "Returns the orderable variants (size/color) of a product.",
@@ -301,7 +390,25 @@ public static class ServicesCatalogData
             Inputs(In("id", "Guid", "Path", true)),
             ListOut, "X-Company-ID", false),
 
-        N("files", "21", "POST", "/client/files/upload", "ClientFileUpload", "upload + هدر Idempotency-Key",
+        N("catalog", "28", "GET", "/client/branches", "ClientOrderRead", "client-read",
+            "شعبه‌های فعال", "Active branches", "الفروع النشطة",
+            "شعبه‌های فعال شرکت را برای انتخاب شعبه در فرم سفارش برمی‌گرداند؛ فیلد branchId در ایجاد سفارش از همین لیست انتخاب می‌شود.",
+            "Lists the company's active branches for branch selection on the order form; the order-create branchId is picked from this list.",
+            "يسرد فروع الشركة النشطة لاختيار الفرع في نموذج الطلب؛ يُختار branchId من هذه القائمة.",
+            Inputs(),
+            ListOut, "X-Company-ID", false),
+
+        N("catalog", "29", "GET", "/client/lookups/{typeCode}/options", "ClientCatalogRead", "client-read",
+            "گزینه‌های داده مرجع", "Reference lookup options", "خيارات البيانات المرجعية",
+            "گزینه‌های مرجعِ مجاز برای فرم‌های B2C را با whitelist برمی‌گرداند: روش ارسال (shipping.method)، حمل‌کننده (shipping.carrier)، نوع بسته (packaging.type)، نوع نشانی (customer.address.type) و دلیل لغو (order.cancellation.reason). سایر نوع‌ها 404 می‌دهند.",
+            "Returns whitelisted reference options for B2C forms: shipping method, carrier, packaging type, address type and cancellation reason. Other type codes return 404.",
+            "يعيد الخيارات المرجعية المسموحة لنماذج B2C: طريقة الشحن، الناقل، نوع التغليف، نوع العنوان وسبب الإلغاء. الأنواع الأخرى تعيد 404.",
+            Inputs(
+                In("typeCode", "string", "Path", true),
+                In("culture", "string", "Query", false)),
+            ListOut, "X-Company-ID", false),
+
+        N("files", "30", "POST", "/client/files/upload", "ClientFileUpload", "upload + هدر Idempotency-Key",
             "آپلود فایل طرح", "Upload design file", "رفع ملف التصميم",
             "فایل طرح را (multipart/form-data) آپلود می‌کند؛ با Idempotency-Key آپلود مجدد همان فایل، همان فایل قبلی را برمی‌گرداند. فایل وارد بانک طرح می‌شود و بندانگشتی می‌گیرد.",
             "Uploads a design file (multipart/form-data); with Idempotency-Key, re-uploading the same file returns the existing one. The file enters the design bank and gets a thumbnail.",
@@ -312,7 +419,7 @@ public static class ServicesCatalogData
                 In("sha256", "string", "Form", false)),
             JsonOut, "Idempotency-Key + X-Company-ID", false),
 
-        N("public", "22", "GET", "/public/catalog", "—", "عمومی — OutputCache 60 ثانیه",
+        N("public", "31", "GET", "/public/catalog", "—", "عمومی — OutputCache 60 ثانیه",
             "کاتالوگ عمومی طرح‌ها", "Public catalog", "الكتالوج العام",
             "طرح‌های منتشرشده (Active) را با جستجو و صفحه‌بندی برای وب‌سایت B2C برمی‌گرداند؛ هر آیتم URL مستقیم بندانگشتی و پیش‌نمایش واترمارک‌دار دارد.",
             "Returns published (active) designs with search and pagination for the B2C website; each item has direct thumbnail and watermarked-preview URLs.",
@@ -323,7 +430,7 @@ public static class ServicesCatalogData
                 In("pageSize", "int", "Query", false)),
             JsonOut, "بدون هدر (عمومی)", true),
 
-        N("public", "23", "GET", "/public/catalog/{id}", "—", "عمومی — OutputCache 60 ثانیه",
+        N("public", "32", "GET", "/public/catalog/{id}", "—", "عمومی — OutputCache 60 ثانیه",
             "جزئیات طرح عمومی", "Public design detail", "تفاصيل التصميم",
             "جزئیات یک طرح منتشرشده شامل توضیح و URL های تصاویر برای صفحه محصول B2C.",
             "Details of one published design including description and image URLs for the B2C product page.",
@@ -331,7 +438,42 @@ public static class ServicesCatalogData
             Inputs(In("id", "Guid", "Path", true)),
             JsonOut, "بدون هدر (عمومی)", true),
 
-        N("auth", "24", "POST", "/auth/login", "—", "عمومی — RateLimiter login",
+        N("notifications", "33", "GET", "/notifications/mine", "NotificationRead", "—",
+            "اعلان‌های من", "My notifications", "إشعاراتي",
+            "اعلان‌های کاربر جاری را با فیلتر خوانده‌نشده، دسته، اولویت و بازه زمانی و با صفحه‌بندی برمی‌گرداند؛ اپ موبایل/وب تغییر وضعیت سفارش را از همین‌جا نشان می‌دهد.",
+            "Lists the current user's notifications with unread/category/priority/date filters and pagination; the mobile/web app surfaces order status changes from here.",
+            "يسرد إشعارات المستخدم الحالي مع فلاتر غير المقروء والفئة والأولوية والتاريخ وترقيم الصفحات.",
+            Inputs(
+                In("unread", "bool", "Query", false),
+                In("search", "string", "Query", false),
+                In("category", "string", "Query", false),
+                In("priority", "string", "Query", false),
+                In("actionable", "bool", "Query", false),
+                In("fromUtc", "date", "Query", false),
+                In("toUtc", "date", "Query", false),
+                In("page", "int", "Query", false),
+                In("pageSize", "int", "Query", false)),
+            "JSON: صفحه‌ای از اعلان‌ها (items + total)", "Authorization: Bearer Token", false, true),
+
+        N("notifications", "34", "POST", "/notifications/{id}/read", "NotificationRead", "—",
+            "خوانده‌شدن اعلان", "Mark notification read", "تعليم الإشعار مقروءاً",
+            "یک اعلان را خوانده‌شده علامت می‌زند؛ نیازمند شماره نسخه است.",
+            "Marks a single notification as read; requires the version number.",
+            "يعلّم إشعاراً واحداً مقروءاً؛ يتطلب رقم الإصدار.",
+            Inputs(
+                In("id", "Guid", "Path", true),
+                In("version", "long", "Body", true)),
+            NoContent, "Authorization: Bearer Token", false, true),
+
+        N("notifications", "35", "POST", "/notifications/read-all", "NotificationRead", "—",
+            "خواندن همه اعلان‌ها", "Mark all read", "تعليم الكل مقروءاً",
+            "تمام اعلان‌های خوانده‌نشده کاربر جاری را خوانده‌شده علامت می‌زند.",
+            "Marks all of the current user's unread notifications as read.",
+            "يعلّم جميع إشعارات المستخدم غير المقروءة كمقروءة.",
+            Inputs(),
+            NoContent, "Authorization: Bearer Token", false, true),
+
+        N("auth", "36", "POST", "/auth/login", "—", "عمومی — RateLimiter login",
             "ورود و دریافت توکن", "Login and issue token", "تسجيل الدخول وإصدار الرمز",
             "با نام کاربری و کلمه عبور ورود می‌کند و توکن Bearer برای فراخوانی سایر سرویس‌ها صادر می‌کند؛ همان سرویسی که وب‌سایت B2C و اپلیکیشن موبایل برای ورود کاربران استفاده می‌کنند. مدیریت حساب‌ها و کلمه عبور در بک‌آفیس (مدیریت کاربران و دسترسی‌ها) انجام می‌شود.",
             "Authenticates with username and password and issues the Bearer token used to call all other services; the same login the B2C website and mobile app use. Accounts and passwords are managed in the backoffice (User & access management).",
@@ -341,7 +483,17 @@ public static class ServicesCatalogData
                 In("password", "string", "Body", true)),
             "JSON: کاربر + توکن Bearer", "بدون هدر", true),
 
-        N("auth", "25", "POST", "/auth/logout", "—", "—",
+        N("auth", "37", "POST", "/auth/change-password", "—", "RateLimiter login",
+            "تغییر کلمه عبور", "Change password", "تغيير كلمة المرور",
+            "کاربر واردشده با تأیید کلمه عبور فعلی، رمز جدید تنظیم می‌کند؛ پس از تغییر، همه نشست‌ها (از جمله نشست جاری) باطل می‌شود و ورود مجدد لازم است. سیاست رمز (طول، حروف بزرگ/کوچک، رقم) اعمال می‌شود.",
+            "Lets the signed-in user set a new password after verifying the current one; all sessions (including the current one) are revoked afterwards and re-login is required. Password policy (length, cases, digit) is enforced.",
+            "يتيح للمستخدم المسجّل تعيين كلمة مرور جديدة بعد التحقق من الحالية؛ تُبطل جميع الجلسات (بما فيها الحالية) ويلزم تسجيل الدخول مجدداً. تُطبق سياسة كلمة المرور.",
+            Inputs(
+                In("currentPassword", "string", "Body", true),
+                In("newPassword", "string", "Body", true)),
+            NoContent, "Authorization: Bearer Token", false, true),
+
+        N("auth", "38", "POST", "/auth/logout", "—", "—",
             "خروج و ابطال توکن", "Logout and revoke token", "تسجيل الخروج وإبطال الرمز",
             "توکن جاری را باطل می‌کند؛ برای خروج امن کاربر از وب‌سایت یا اپلیکیشن.",
             "Revokes the current token for a secure sign-out from the website or app.",
@@ -349,7 +501,7 @@ public static class ServicesCatalogData
             Inputs(),
             NoContent, "Authorization: Bearer Token", false, true),
 
-        N("auth", "26", "GET", "/auth/me", "—", "—",
+        N("auth", "39", "GET", "/auth/me", "—", "—",
             "پروفایل کاربر جاری", "Current user profile", "ملف المستخدم الحالي",
             "اطلاعات کاربر واردشده (نام، نام کاربری، وضعیت فعال بودن) را برمی‌گرداند.",
             "Returns the signed-in user's info (name, username, active status).",
@@ -357,7 +509,7 @@ public static class ServicesCatalogData
             Inputs(),
             JsonOut, "Authorization: Bearer Token", false, true),
 
-        N("auth", "27", "GET", "/auth/me/companies", "—", "—",
+        N("auth", "40", "GET", "/auth/me/companies", "—", "—",
             "شرکت‌های کاربر جاری", "Current user companies", "شركات المستخدم الحالي",
             "فهرست شرکت‌های مجاز کاربر برای انتخاب شرکت جاری؛ در سامانه چندشرکتی برای انتخاب زمینه (Company-ID) استفاده می‌شود.",
             "Lists the user's authorized companies for picking the active company context (Company-ID) in the multi-company setup.",

@@ -184,6 +184,20 @@ public sealed class SecurityAdministration(
         return Result.Success();
     }, ct);
 
+    public Task<Result> ChangeMyPasswordAsync(string currentPassword, string newPassword, CancellationToken ct) => transactions.ExecuteAsync(async token =>
+    {
+        if (!TryGetCurrentUserId(out Guid userId)) return Result.Failure(SecurityErrors.UserContextUnavailable);
+        ApplicationUser? user = await store.FindUserAsync(userId, token);
+        if (user is null) return Result.Failure(SecurityErrors.UserContextUnavailable);
+        Result<PasswordAuthenticationOutcome> checkedPassword = await identity.CheckPasswordAsync(user, currentPassword, token);
+        if (checkedPassword.IsFailure || checkedPassword.Value != PasswordAuthenticationOutcome.Success) return Result.Failure(SecurityErrors.InvalidCredentials);
+        Result reset = await identity.ResetPasswordAsync(user, newPassword, token);
+        if (reset.IsFailure) return reset;
+        int revoked = RevokeSessions(await store.ListActiveSessionsAsync(userId, time.GetUtcNow(), token));
+        Audit(AuditActions.UserPasswordReset, "user", userId, company.IsAvailable ? company.RequireCompanyId() : null, AuditChangeKind.Modified, new Dictionary<string, object?> { ["self"] = true, ["revokedSessionCount"] = revoked });
+        return Result.Success();
+    }, ct);
+
     public Task<Result<RoleView>> CreateRoleAsync(string code, string title, CancellationToken ct) => CreateRoleAsync(code, title, null, ct);
     public Task<Result<RoleView>> CreateRoleAsync(string code, string title, string? description, CancellationToken ct) => transactions.ExecuteAsync(async token =>
     {

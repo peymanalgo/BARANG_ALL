@@ -27,6 +27,7 @@ public static class SecurityEndpoints
         auth.MapGet("/me", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.GetCurrentUserAsync(ct))).RequireAuthorization();
         auth.MapGet("/me/companies", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.ListMyCompaniesAsync(ct))).RequireAuthorization();
         auth.MapPost("/me/company", async (CompanySelectionRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.SelectMyCompanyAsync(r.CompanyId, ct))).RequireAuthorization();
+        auth.MapPost("/change-password", async (ChangeMyPasswordRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.ChangeMyPasswordAsync(r.CurrentPassword, r.NewPassword, ct))).RequireAuthorization().RequireRateLimiting("login");
         endpoints.MapPost("/api/v1/security/bootstrap", BootstrapAsync).AllowAnonymous();
         endpoints.MapPost("/api/v1/security/development-admin/recover", RecoverDevelopmentAdminAsync).AllowAnonymous();
 
@@ -188,6 +189,7 @@ public static class SecurityEndpoints
 }
 public sealed record LoginRequest(string Username, string Password);
 public sealed record CompanySelectionRequest(Guid CompanyId);
+public sealed record ChangeMyPasswordRequest(string CurrentPassword, string NewPassword);
 public sealed record BootstrapRequest(Guid CompanyId, string Username, string DisplayName, string? Email, string Password);
 public sealed record CreateUserRequest(string Username, string DisplayName, string? Email, string Password);
 public sealed record UpdateUserRequest(string DisplayName, string? Email, long Version);
