@@ -146,7 +146,7 @@ public static class ServicesCatalogData
                 In("itemId", "Guid", "Path", true),
                 In("sequence", "int", "Body", true),
                 In("printPositionCode", "string", "Body", true),
-                In("printMethodCode", "string", "Body", false),
+                In("printMethodCode", "string", "Body", false), // از lookup print.method
                 In("width", "decimal", "Body", false),
                 In("height", "decimal", "Body", false),
                 In("artworkVersionId", "Guid", "Body", false),

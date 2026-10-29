@@ -26,6 +26,8 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
     public bool Found { get; private set; }
     public string? Error { get; private set; }
     [BindProperty] public string? CancelText { get; set; }
+    [BindProperty] public string? CancelReason { get; set; }
+    public IReadOnlyList<(string Code, string Name)> CancelReasons { get; private set; } = [];
 
     private IActionResult? ReauthGuard()
     {
@@ -51,7 +53,7 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
     {
         long version = await CurrentVersionAsync(id);
         (bool ok, _, string? problem) = await core.PostRawWithBodyAsync($"api/v1/client/orders/{id}/cancel",
-            new { reasonCode = "CUSTOMER_REQUEST", reasonText = string.IsNullOrWhiteSpace(CancelText) ? null : CancelText.Trim(), version });
+            new { reasonCode = string.IsNullOrWhiteSpace(CancelReason) ? "customer-change" : CancelReason.Trim(), reasonText = string.IsNullOrWhiteSpace(CancelText) ? null : CancelText.Trim(), version });
         return RedirectToPage(new { error = ok ? null : problem ?? "cancel-failed" });
     }
 
@@ -131,6 +133,14 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
                     .OrderByDescending(e => e.At).ToList();
             }
         }
+        JsonElement? reasons = await core.GetAsync("api/v1/client/lookups/order.cancellation.reason/options?culture=" + CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
+        if (reasons is JsonElement rr && rr.ValueKind == JsonValueKind.Array)
+        {
+            CancelReasons = rr.EnumerateArray().Select(x => (
+                x.TryGetProperty("code", out JsonElement rc) ? rc.GetString() ?? "" : "",
+                x.TryGetProperty("displayName", out JsonElement rn) ? (rn.GetString() ?? "") : "")).Where(x => x.Item1.Length > 0).ToList();
+        }
+
         Quote = (await core.PostRawWithBodyAsync($"api/v1/client/orders/{Id}/pricing/preview", new { version = Version })).Value;
     }
 

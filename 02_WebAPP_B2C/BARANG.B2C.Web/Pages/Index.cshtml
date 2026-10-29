@@ -167,7 +167,7 @@
     <div class="cta-band reveal">
         <div class="cta-blobs" aria-hidden="true"><span></span><span></span><span></span></div>
         <h2>@T("امروز اولین سفارشت را بزن", "Start your first order today", "ابدأ طلبك الأول اليوم")</h2>
-        <p>@T("از ۵۹۵ طرح آماده شروع کن؛ ثبت سفارش کمتر از ۵ دقیقه است.", "Start from hundreds of ready designs; ordering takes under 5 minutes.", "ابدأ من مئات التصاميم الجاهزة؛ الطلب أقل من ٥ دقائق.")</p>
+        <p>@T($"از {Model.Total} طرح آماده شروع کن؛ ثبت سفارش کمتر از ۵ دقیقه است.", $"Start from {Model.Total} ready designs; ordering takes under 5 minutes.", $"ابدأ من {Model.Total} تصميم جاهزاً؛ الطلب أقل من ٥ دقائق.")</p>
         <a class="btn btn-lg cta-btn" href="/catalog">@T("شروع کن", "Get started", "ابدأ الآن")</a>
     </div>
 </section>

@@ -44,10 +44,10 @@ public static class PublicCatalogEndpoints
                 List<(Guid FileVersion,FileDerivativeType Type,string Key)> derivatives=await db.FileDerivatives.AsNoTracking().Where(d=>fileVersionIds.Contains(d.SourceFileVersionId)).Select(d=>new ValueTuple<Guid,FileDerivativeType,string>(d.SourceFileVersionId,d.DerivativeType,d.StorageKey)).ToListAsync(t);
                 PublicCatalogItemView[] rows=items.Select(item=>{
                     Guid artworkVersion=item.CurrentVersionId!.Value;
-                    if(!fileVersionByArtworkVersion.TryGetValue(artworkVersion,out Guid fileVersion))return new PublicCatalogItemView(item.Id,item.Code,item.Title,item.CategoryCode,null,null);
+                    if(!fileVersionByArtworkVersion.TryGetValue(artworkVersion,out Guid fileVersion))return new PublicCatalogItemView(item.Id,item.Code,item.Title,item.CategoryCode,artworkVersion,null,null);
                     string? thumbnail=derivatives.Where(d=>d.FileVersion==fileVersion&&d.Type==FileDerivativeType.Thumbnail).Select(d=>(string?)d.Key).FirstOrDefault();
                     string? preview=derivatives.Where(d=>d.FileVersion==fileVersion&&(d.Type==FileDerivativeType.PublicWeb||d.Type==FileDerivativeType.Web)).Select(d=>(string?)d.Key).FirstOrDefault();
-                    return new PublicCatalogItemView(item.Id,item.Code,item.Title,item.CategoryCode,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview));
+                    return new PublicCatalogItemView(item.Id,item.Code,item.Title,item.CategoryCode,artworkVersion,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview));
                 }).ToArray();
                 return Result.Success(new PublicCatalogPage(total,pageNumber,size,rows));
             },ct);
@@ -94,7 +94,7 @@ public static class PublicCatalogEndpoints
                         thumbnail=derivatives.Where(d=>d.FileVersion==fv&&d.Type==FileDerivativeType.Thumbnail).Select(d=>(string?)d.Key).FirstOrDefault();
                         preview=derivatives.Where(d=>d.FileVersion==fv&&(d.Type==FileDerivativeType.PublicWeb||d.Type==FileDerivativeType.Web)).Select(d=>(string?)d.Key).FirstOrDefault();
                     }
-                    return new PublicConceptMatch(m.Id,m.Code,m.Title,m.CategoryName,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview),m.Score);
+                    return new PublicConceptMatch(m.Id,m.Code,m.Title,m.CategoryName,meta.FileVersion is Guid avv?(Guid?)avv:null,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview),m.Score);
                 }).ToArray();
                 return Result.Success(rows);
             },ct)).Value;
@@ -114,7 +114,7 @@ public static class PublicCatalogEndpoints
                 List<(FileDerivativeType Type,string Key)> derivatives=await db.FileDerivatives.AsNoTracking().Where(d=>d.SourceFileVersionId==fileVersionId).Select(d=>new ValueTuple<FileDerivativeType,string>(d.DerivativeType,d.StorageKey)).ToListAsync(t);
                 string? thumbnail=derivatives.Where(d=>d.Type==FileDerivativeType.Thumbnail).Select(d=>(string?)d.Key).FirstOrDefault();
                 string? preview=derivatives.Where(d=>d.Type is FileDerivativeType.PublicWeb or FileDerivativeType.Web).Select(d=>(string?)d.Key).FirstOrDefault();
-                return Result.Success(new PublicCatalogItemDetail(artwork.Id,artwork.Code,artwork.Title,artwork.CategoryCode,artwork.Description,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview)));
+                return Result.Success(new PublicCatalogItemDetail(artwork.Id,artwork.Code,artwork.Title,artwork.CategoryCode,artwork.Description,artworkVersion,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview)));
             },ct);
             return Map(result);
         });
@@ -135,8 +135,8 @@ public static class PublicCatalogEndpoints
     }
 }
 
-public sealed record PublicCatalogItemView(Guid Id,string Code,string Title,string?CategoryCode,string?ThumbnailUrl,string?PreviewUrl);
-public sealed record PublicCatalogItemDetail(Guid Id,string Code,string Title,string?CategoryCode,string?Description,string?ThumbnailUrl,string?PreviewUrl);
+public sealed record PublicCatalogItemView(Guid Id,string Code,string Title,string?CategoryCode,Guid? ArtworkVersionId,string?ThumbnailUrl,string?PreviewUrl);
+public sealed record PublicCatalogItemDetail(Guid Id,string Code,string Title,string?CategoryCode,string?Description,Guid? ArtworkVersionId,string?ThumbnailUrl,string?PreviewUrl);
 public sealed record PublicCatalogPage(long Total,int Page,int PageSize,IReadOnlyList<PublicCatalogItemView> Items);
 public sealed record PublicCatalogCategoryView(string Code,int Count);
-public sealed record PublicConceptMatch(Guid Id,string Code,string Title,string?CategoryName,string?ThumbnailUrl,string?PreviewUrl,int Score);
+public sealed record PublicConceptMatch(Guid Id,string Code,string Title,string?CategoryName,Guid? ArtworkVersionId,string?ThumbnailUrl,string?PreviewUrl,int Score);

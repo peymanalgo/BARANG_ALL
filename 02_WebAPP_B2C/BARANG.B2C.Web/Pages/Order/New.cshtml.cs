@@ -193,12 +193,8 @@ public sealed class NewModel(CoreApiClient core, CustomerContext customers) : Pa
         }
         long itemVersion = item is JsonElement i && i.TryGetProperty("version", out JsonElement iv) && iv.TryGetInt64(out long ivn) ? ivn : await CurrentVersionAsync(orderId);
 
-        TempData["ow:draft"] = idempotencyKey;
-        TempData["ow:version"] = itemVersion.ToString();
-        TempData["ow:designId"] = designId.ToString();
-        TempData["ow:designCode"] = DesignCode;
-        TempData.Keep();
-        return RedirectToPage("Details", new { orderId });
+        // design context travels in the details URL (designId + code)
+                                        return RedirectToPage("Details", new { orderId, designId, designCode = DesignCode });
     }
 
     private async Task<long> CurrentVersionAsync(Guid orderId)

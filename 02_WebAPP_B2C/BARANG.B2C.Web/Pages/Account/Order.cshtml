@@ -212,7 +212,18 @@ else
                     <div class="card cancel-card no-print">
                         <h2>@T("لغو سفارش", "Cancel order", "إلغاء الطلب")</h2>
                         <form method="post" asp-page-handler="Cancel" class="auth-form">
-                            <label><span>@T("دلیل لغو (اختیاری)", "Cancellation reason (optional)", "سبب الإلغاء")</span>
+                            @if (Model.CancelReasons.Count > 0)
+                            {
+                                <label><span>@T("دلیل لغو", "Reason", "السبب")</span>
+                                    <select asp-for="CancelReason">
+                                        @foreach (var (code, name) in Model.CancelReasons)
+                                        {
+                                            <option value="@code">@name</option>
+                                        }
+                                    </select>
+                                </label>
+                            }
+                            <label><span>@T("توضیح (اختیاری)", "Details (optional)", "تفاصيل")</span>
                                 <input type="text" asp-for="CancelText" />
                             </label>
                             <button type="submit" class="btn btn-danger">@T("لغو این سفارش", "Cancel this order", "إلغاء هذا الطلب")</button>
