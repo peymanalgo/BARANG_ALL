@@ -1,11 +1,13 @@
 using System.Globalization;
 using BARANG.B2C.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 
 CultureInfo[] cultures = [new("fa"), new("en"), new("ar")];
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseWindowsService();
 builder.Services.AddRazorPages();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
@@ -32,6 +34,8 @@ builder.Services.AddRequestLocalization(o =>
 var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
+    app.UseForwardedHeaders(new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto });
+    app.UseHttpsRedirection();
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }

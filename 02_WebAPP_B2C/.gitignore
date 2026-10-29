@@ -6,3 +6,4 @@ wwwroot/fonts/licenses/
 .vs/
 publish/
 appsettings.Development.json
+deploy/publish/

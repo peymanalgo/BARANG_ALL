@@ -24,5 +24,5 @@ dotnet run --project BARANG.B2C.Web
 - فاز 2: پنل مشتری (نشانی‌ها، سفارش‌های من، رهگیری)
 - فاز 3: سبد خرید و ویزارد سفارش (آیتم + عملیات چاپ + قیمت + validate + submit)
 - فاز 4: اعلان‌ها، جستجوی پیشرفته، بهینه‌سازی تصویر
-- فاز 5: استقرار نهایی VPS + TLS + دامنه
+- فاز 5 ✅: بسته استقرار ویندوزی (deploy/: publish.ps1، install-service.ps1، update.ps1، web.config نمونه IIS، runbook کامل در deploy/VPS-DEPLOY.md) — UseWindowsService + ForwardedHeaders/HTTPS
 - فاز 6 (آینده): ثبت‌نام خودکار مشتری، لینک کاربر↔مشتری، درگاه پرداخت
