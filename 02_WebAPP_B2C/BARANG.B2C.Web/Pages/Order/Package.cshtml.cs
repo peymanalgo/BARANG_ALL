@@ -7,32 +7,29 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace BARANG.B2C.Web.Pages.Order;
 
-// Order wizard step 3 — packaging + shipping method + invoice-in-package,
-// stored on the order via the business-profile endpoint (ERP step 4/5
-// equivalent). Pricing in the next step recalculates from these values.
+// Order wizard step 4 — packaging + invoice-in-package, stored on the order
+// via the business-profile endpoint (ERP step 4 equivalent). Pricing in the
+// next step recalculates from these values.
 [Authorize(Policy = "LoggedIn")]
-public sealed class ShippingModel(CoreApiClient core) : PageModel
+public sealed class PackageModel(CoreApiClient core) : PageModel
 {
     public Guid OrderId { get; private set; }
     public Guid DesignId { get; set; }
     public string? OrderNumber { get; private set; }
     public long Version { get; private set; }
     public string? PackagingTypeCode { get; private set; }
-    public string? ShippingMethodCode { get; private set; }
     public bool IncludeInvoice { get; private set; }
     public IReadOnlyList<(string Code, string Name)> PackagingOptions { get; private set; } = [];
-    public IReadOnlyList<(string Code, string Name)> ShippingOptions { get; private set; } = [];
     public string? Error { get; private set; }
     public string? Message { get; private set; }
 
     [BindProperty] public string? PackagingCode { get; set; }
-    [BindProperty] public string? ShippingCode { get; set; }
     [BindProperty] public bool InvoiceInPackage { get; set; }
 
     private IActionResult? ReauthGuard()
     {
         if (!core.SawUnauthorized) return null;
-        return RedirectToPage("/Account/Login", new { returnUrl = $"/order/shipping/{OrderId}" });
+        return RedirectToPage("/Account/Login", new { returnUrl = $"/order/package/{OrderId}" });
     }
 
     public async Task<IActionResult> OnGetAsync(Guid orderId, Guid? designId, string? error, string? message)
@@ -52,28 +49,29 @@ public sealed class ShippingModel(CoreApiClient core) : PageModel
         if (profile is JsonElement p && p.ValueKind == JsonValueKind.Object)
         {
             PackagingTypeCode = p.TryGetProperty("packagingTypeCode", out JsonElement pc) ? pc.GetString() : null;
-            ShippingMethodCode = p.TryGetProperty("shippingMethodCode", out JsonElement sc) ? sc.GetString() : null;
             IncludeInvoice = p.TryGetProperty("includeInvoiceInPackage", out JsonElement ii) && ii.ValueKind == JsonValueKind.True;
             Version = p.TryGetProperty("version", out JsonElement pv) && pv.TryGetInt64(out long pvv) ? pvv : Version;
         }
 
         PackagingOptions = await LookupOptionsAsync("packaging.type");
-        ShippingOptions = await LookupOptionsAsync("shipping.method");
-        if (DesignId == Guid.Empty && TempData.Peek("ow:designId") is string ds && Guid.TryParse(ds, out Guid dg)) DesignId = dg;
+        if (DesignId == Guid.Empty)
+        {
+            var qs = Request.Query["designId"].ToString();
+            if (Guid.TryParse(qs, out Guid dg)) DesignId = dg;
+        }
         return Page();
     }
 
-    public async Task<IActionResult> OnPostSaveAsync(Guid orderId, Guid? designId)
+    public async Task<IActionResult> OnPostSaveAsync(Guid orderId, Guid designId)
     {
-        if (designId is Guid d) DesignId = d;
-        if (string.IsNullOrWhiteSpace(PackagingCode) || string.IsNullOrWhiteSpace(ShippingCode))
+        if (string.IsNullOrWhiteSpace(PackagingCode))
         {
             return RedirectToPage(new { orderId, designId, error = "required" });
         }
         long version = await CurrentBusinessProfileVersionAsync(orderId);
         (bool ok, string? problem) = await core.PutRawAsync($"api/v1/client/orders/{orderId}/business-profile", new
         {
-            shippingMethodCode = ShippingCode.Trim(),
+            shippingMethodCode = (string?)null,
             packagingTypeCode = PackagingCode.Trim(),
             includeInvoiceInPackage = InvoiceInPackage,
             orderTypeCode = (string?)null,
@@ -101,6 +99,6 @@ public sealed class ShippingModel(CoreApiClient core) : PageModel
         if (result is not JsonElement arr || arr.ValueKind != JsonValueKind.Array) return [];
         return arr.EnumerateArray().Select(x => (
             Code: x.TryGetProperty("code", out JsonElement c) ? c.GetString() ?? "" : "",
-            Name: x.TryGetProperty("displayName", out JsonElement n) ? (n.GetString() ?? "") : "")).Where(x => x.Code.Length > 0).ToList();
+            Name: x.TryGetProperty("displayName", out JsonElement n) ? (n.GetString() ?? "") : "") ).Where(x => x.Code.Length > 0).ToList();
     }
 }

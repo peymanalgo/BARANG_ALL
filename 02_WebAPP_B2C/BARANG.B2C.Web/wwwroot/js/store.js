@@ -31,3 +31,10 @@ if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(() => {});
     });
 }
+// فلش‌های نوار دسته‌ها
+document.querySelectorAll('[data-strip-scroll]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+        const strip = btn.parentElement.querySelector('[data-strip]');
+        if (strip) strip.scrollBy({ left: (btn.dataset.stripScroll === '1' ? 1 : -1) * 320 * (document.dir === 'ltr' ? 1 : -1), behavior: 'smooth' });
+    });
+});

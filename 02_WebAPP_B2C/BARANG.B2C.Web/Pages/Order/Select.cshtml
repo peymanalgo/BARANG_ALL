@@ -1,0 +1,83 @@
+@page "/order/select"
+@model SelectModel
+@using System.Globalization
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = T("انتخاب طرح", "Choose design", "اختر التصميم");
+}
+<partial name="_WizardSteps" model="1" />
+<section class="container section wizard wizard-select">
+    <div class="wizard-cols select-cols">
+        @* ---- preview panel (left in RTL) ---- *@
+        <aside class="card select-preview">
+            @if (Model.HasSelection)
+            {
+                @if (!string.IsNullOrWhiteSpace(Model.SelectedPreview))
+                {
+                    <img class="select-preview-img" src="@Model.SelectedPreview" alt="@Model.SelectedTitle" />
+                }
+                <div class="select-preview-meta">
+                    <strong>@(Model.SelectedTitle ?? "—")</strong>
+                    <span class="muted small" dir="ltr">@(Model.SelectedCode ?? "")</span>
+                </div>
+            }
+            <a class="btn btn-primary btn-block btn-lg" href="/order/shirt/@(Model.SelectedId == Guid.Empty ? "" : Model.SelectedId.ToString())">@T("مرحله بعد», «انتخاب تیشرت", "Next — choose shirt", "التالي — اختر التيشرت")</a>
+        </aside>
+
+        @* ---- catalog panel ---- *@
+        <div class="select-catalog">
+            <h1>@T("طرح مورد نظر خود را انتخاب کنید", "Pick the design you want", "اختر التصميم الذي تريده")</h1>
+            <p class="muted">@T("از میان صدها طرح آماده، طرح دلخواه خود را از این لیست انتخاب کنید.", "Pick your favorite design from hundreds of ready designs.", "اختر تصميمك المفضل من مئات التصاميم الجاهزة.")</p>
+
+            <form class="catalog-filter" method="get">
+                <input type="hidden" name="designId" value="@Model.SelectedId" />
+                <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@T("جستجوی طرح یا کلمه کلیدی...", "Search a design or keyword...", "ابحث عن تصميم أو كلمة...")" />
+                <button class="btn btn-primary" type="submit">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    @T("جستجو", "Search", "بحث")
+                </button>
+            </form>
+
+            <div class="chip-row">
+                <a class="fchip @(string.IsNullOrWhiteSpace(Model.Category) ? "active" : null)" href="/order/select?designId=@Model.SelectedId@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "&search=" + Uri.EscapeDataString(Model.Search.Trim()))">@T("همه طرح‌ها", "All designs", "كل التصاميم")</a>
+                @foreach (var cat in Model.Categories)
+                {
+                    <a class="fchip @(Model.Category == cat.Code ? "active" : null)" href="/order/select?category=@Uri.EscapeDataString(cat.Code)@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "&search=" + Uri.EscapeDataString(Model.Search.Trim()))&designId=@Model.SelectedId">@cat.DisplayName</a>
+                }
+            </div>
+
+            @if (Model.Designs.Count == 0)
+            {
+                <p class="empty">@T("طرحی یافت نشد.", "No designs found.", "لا توجد تصاميم.")</p>
+            }
+            else
+            {
+                <div class="select-grid">
+                    @foreach (var d in Model.Designs)
+                    {
+                        <a class="select-card @(Model.SelectedId == d.Id ? "picked" : null)" href="@Model.SelectLink(d.Id)">
+                            <span class="design-thumb">
+                                @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
+                                {
+                                    <img src="@d.Thumbnail" alt="@d.Title" width="600" height="600" loading="lazy" decoding="async" />
+                                }
+                            </span>
+                        </a>
+                    }
+                </div>
+                <nav class="pagination" aria-label="pagination">
+                    @if (Model.HasPrev)
+                    {
+                        <a class="btn btn-ghost btn-sm" href="@Model.PageLink(Model.Page - 1)">← @T("قبلی", "Previous", "السابق")</a>
+                    }
+                    <span class="page-info">@Model.Page / @Math.Max(1, (int)Math.Ceiling(Model.Total / (double)Model.PageSize))</span>
+                    @if (Model.HasNext)
+                    {
+                        <a class="btn btn-ghost btn-sm" href="@Model.PageLink(Model.Page + 1)">@T("بعدی", "Next", "التالي") →</a>
+                    }
+                </nav>
+            }
+        </div>
+    </div>
+</section>

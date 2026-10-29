@@ -7,13 +7,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace BARANG.B2C.Web.Pages.Order;
 
-// Order wizard step 1 — pick the product to print the chosen design on,
-// select the shipping address, then create the order draft (with the item)
-// and move to the details step. The design itself is recorded on the item
-// and print operation notes; linking public designs to artwork versions
-// automatically is planned as a dedicated service.
-[Authorize(Policy = "LoggedIn")]
-public sealed class NewModel(CoreApiClient core, CustomerContext customers) : PageModel
+// Order wizard step 2 — choose the shirt (product + variant + quantity),
+// branch and shipping address, then create the order draft with the item.
+public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : PageModel
 {
     public Guid DesignId { get; private set; }
     public string DesignTitle { get; private set; } = "";
@@ -27,6 +23,15 @@ public sealed class NewModel(CoreApiClient core, CustomerContext customers) : Pa
     public IReadOnlyList<BranchRow> Branches { get; private set; } = [];
     public bool HasProfile { get; private set; }
     public string? Error { get; private set; }
+    public string ErrorText => Error switch
+    {
+        "variant" => "واریانت و تعداد را انتخاب کنید.",
+        "branch" => "شعبه در دسترس نیست؛ بعداً تلاش کنید.",
+        "customer.not_found" => "پروفایل مشتری یافت نشد.",
+        "order.duplicate_external_reference" => "درخواست تکراری؛ چند لحظه بعد دوباره تلاش کنید.",
+        _ => "ایجاد سفارش انجام نشد؛ دوباره تلاش کنید."
+    };
+
     [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty(SupportsGet = true)] public Guid? ProductId { get; set; }
     [BindProperty] public Guid? VariantId { get; set; }
@@ -34,19 +39,12 @@ public sealed class NewModel(CoreApiClient core, CustomerContext customers) : Pa
     [BindProperty] public Guid? BranchId { get; set; }
     [BindProperty] public Guid? AddressId { get; set; }
     [BindProperty] public string? Notes { get; set; }
-    private IActionResult? ReauthGuard()
-    {
-        if (!core.SawUnauthorized) return null;
-        return RedirectToPage("/Account/Login", new { returnUrl = "/account" });
-    }
 
-
-    public async Task<IActionResult> OnGetAsync(Guid designId, string? error)
+    public async Task<IActionResult> OnGetAsync(Guid designId, [FromQuery] Guid? product, string? error)
     {
         Error = error;
         DesignId = designId;
         await LoadDesignAsync();
-        if (ReauthGuard() is { } r0) return r0;
         if (!DesignFound) return NotFound();
 
         JsonElement? customer = await customers.CurrentAsync();
@@ -56,6 +54,8 @@ public sealed class NewModel(CoreApiClient core, CustomerContext customers) : Pa
         }
         HasProfile = true;
         string customerId = cid.GetString() ?? "";
+
+        if (ProductId is null && Products.Count > 0) ProductId = Products[0].Id;
 
         JsonElement? products = await core.GetAsync("api/v1/client/catalog/products?page=1&pageSize=50" + (string.IsNullOrWhiteSpace(Search) ? "" : $"&search={Uri.EscapeDataString(Search.Trim())}"));
         if (products is JsonElement p)
@@ -69,6 +69,7 @@ public sealed class NewModel(CoreApiClient core, CustomerContext customers) : Pa
                     x.TryGetProperty("id", out JsonElement id) && Guid.TryParse(id.GetString(), out Guid pid) ? pid : Guid.Empty,
                     x.TryGetProperty("name", out JsonElement nm) ? nm.GetString() ?? "" : "",
                     x.TryGetProperty("productCode", out JsonElement pc) ? pc.GetString() ?? "" : "")).ToList();
+                ProductId ??= Products[0].Id;
             }
         }
 
@@ -106,12 +107,8 @@ public sealed class NewModel(CoreApiClient core, CustomerContext customers) : Pa
                 x.TryGetProperty("displayName", out JsonElement nm) ? nm.GetString() ?? "" : "")).ToList();
             if (Branches.Count == 1) BranchId ??= Branches[0].Id;
         }
+        ViewData["Title"] = "انتخاب تیشرت · پیرنگ خان";
         return Page();
-    }
-
-    public async Task<IActionResult> OnPostPickAsync()
-    {
-        return RedirectToPage(new { designId = DesignId, search = Search, productId = ProductId });
     }
 
     public async Task<IActionResult> OnPostCreateAsync(Guid designId)
@@ -176,7 +173,7 @@ public sealed class NewModel(CoreApiClient core, CustomerContext customers) : Pa
             return RedirectToPage(new { designId, search = Search, productId = ProductId, error = problem ?? "draft-failed" });
         }
         Guid orderId = did.GetGuid();
-        long version = d.TryGetProperty("version", out JsonElement v) && v.TryGetInt64(out long ver) ? ver : 0;
+        long version = d.TryGetProperty("version", out JsonElement ver) && ver.TryGetInt64(out long vv) ? vv : 0;
 
         (bool itemOk, JsonElement? item, string? itemProblem) = await core.PostRawWithBodyAsync($"api/v1/client/orders/{orderId}/items", new
         {
@@ -188,13 +185,11 @@ public sealed class NewModel(CoreApiClient core, CustomerContext customers) : Pa
         }, idempotencyKey);
         if (!itemOk)
         {
-            await core.PostRawAsync($"api/v1/client/orders/{orderId}/cancel", new { reasonCode = "WIZARD_ABORT", reasonText = "ایجاد سفارش ناتمام", version = await CurrentVersionAsync(orderId) });
+            await core.PostRawAsync($"api/v1/client/orders/{orderId}/cancel", new { reasonCode = "customer-change", reasonText = "ایجاد سفارش ناتمام", version = await CurrentVersionAsync(orderId) });
             return RedirectToPage(new { designId, search = Search, productId = ProductId, error = itemProblem ?? "item-failed" });
         }
-        long itemVersion = item is JsonElement i && i.TryGetProperty("version", out JsonElement iv) && iv.TryGetInt64(out long ivn) ? ivn : await CurrentVersionAsync(orderId);
 
-        // design context travels in the details URL (designId + code)
-                                        return RedirectToPage("Print", new { orderId, designId });
+        return RedirectToPage("Print", new { orderId, designId });
     }
 
     private async Task<long> CurrentVersionAsync(Guid orderId)
@@ -211,8 +206,7 @@ public sealed class NewModel(CoreApiClient core, CustomerContext customers) : Pa
             DesignFound = true;
             DesignTitle = x.TryGetProperty("title", out JsonElement t) ? t.GetString() ?? "" : "";
             DesignCode = x.TryGetProperty("code", out JsonElement cd) ? cd.GetString() ?? "" : "";
-            DesignPreview = x.TryGetProperty("thumbnailUrl", out JsonElement th) ? th.GetString() : null;
-            ViewData["Title"] = $"{DesignTitle} — سفارش";
+            DesignPreview = x.TryGetProperty("previewUrl", out JsonElement th) ? th.GetString() : null;
         }
     }
 
@@ -227,7 +221,7 @@ public sealed class NewModel(CoreApiClient core, CustomerContext customers) : Pa
     }
     private static string Prop(JsonElement x, string name) => x.TryGetProperty(name, out JsonElement p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? "" : "";
 
-    private string T(string fa) => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en" ? fa : fa;
+    private string T(string fa, string en) => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en" ? en : fa;
 
     public sealed record ProductRow(Guid Id, string Name, string Code);
     public sealed record VariantRow(Guid Id, string Sku, string? DisplayName, string? SizeCode, string? ColorCode)

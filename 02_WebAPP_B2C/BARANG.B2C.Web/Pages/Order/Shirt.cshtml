@@ -1,0 +1,154 @@
+@page "/order/shirt/{designId:guid}"
+@model ShirtModel
+@using System.Globalization
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = T("انتخاب تیشرت", "Choose shirt", "اختر التيشرت");
+}
+<partial name="_WizardSteps" model="2" />
+<section class="container section wizard">
+    @if (!Model.DesignFound)
+    {
+        <p class="empty">@T("طرح پیدا نشد.", "Design not found.", "لم يتم العثور على التصميم.")</p>
+    }
+    else
+    {
+        @if (Model.Error is not null)
+        {
+            <div class="alert alert-error" role="alert">@Model.ErrorText</div>
+        }}
+
+        <div class="shirt-cols">
+            <aside class="card shirt-design-card">
+                <h3>@T("طرح منتخب شما", "Your selected design", "تصميمك المختار")</h3>
+                @if (!string.IsNullOrWhiteSpace(Model.DesignPreview))
+                {
+                    <img class="shirt-design-img" src="@Model.DesignPreview" alt="@Model.DesignTitle" />
+                }
+                <p><strong>@Model.DesignTitle</strong></p>
+                <span class="muted small" dir="ltr">@Model.DesignCode</span>
+                <a class="btn btn-ghost btn-sm mt" href="/order/select">@T("تغییر طرح", "Change design", "تغيير التصميم")</a>
+                <div class="shirt-love">
+                    <span class="love-icon">♡</span>
+                    @T("آیا این طرح را می‌پسندید؟", "Do you like this design?", "هل يعجبك هذا التصميم؟")
+                </div>
+                <div class="shirt-note">
+                    <strong>@T("رنگ قابل چاپ طرح", "Design printable colors", "ألوان التصميم القابلة للطباعة")</strong>
+                    <div class="swatch-row">
+                        <span class="swatch" style="background:#ffffff"></span>
+                        <span class="swatch" style="background:#111114"></span>
+                        <span class="swatch" style="background:#6b7280"></span>
+                        <span class="swatch" style="background:#1d4ed8"></span>
+                        <span class="swatch" style="background:#16a34a"></span>
+                        <span class="swatch" style="background:#dc2626"></span>
+                        <span class="swatch" style="background:#fbbf24"></span>
+                    </div>
+                    <p class="muted small">@T("این طرح با همه رنگ‌ها هم‌خوان نیست.", "This design doesn't suit every color.", "هذا التصميم لا يناسب كل الألوان.")</p>
+                </div>
+                <div class="shirt-bonus">
+                    <strong>@T("کیفیت چاپ تضمینی", "Guaranteed print quality", "جودة طباعة مضمونة")</strong>
+                    <p class="muted small">@T("استفاده از رنگ‌های دائم با ماندگاری بالا و کیفیت چاپ عالی.", "Long-lasting colors and excellent print quality.", "ألوان دائمة وجودة طباعة ممتازة.")</p>
+                </div>
+            </aside>
+
+            <div class="shirt-picker">
+                @if (!Model.HasProfile)
+                {
+                    <p class="empty">@T("برای سفارش ابتدا پروفایل مشتری بسازید.", "Create your customer profile first.", "أنشئ ملفك كعميل أولاً.")</p>
+                }
+                else
+                {
+                    <form class="wizard-form" method="get">
+                        <input type="hidden" name="designId" value="@Model.DesignId" />
+                        <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@T("جستجوی محصول…", "Search products…", "ابحث عن منتج…")" />
+                        <button class="btn btn-ghost" type="submit">
+                            @T("فیلتر", "Filter", "تصفية")
+                        </button>
+                    </form>
+
+                    <form method="post" asp-page-handler="Create" class="wizard-form">
+                        <input type="hidden" name="designId" value="@Model.DesignId" />
+                        <div class="wizard-cols">
+                            <div class="card wizard-card">
+                                <h2>@T("انتخاب محصول و واریانت", "Product & variant", "المنتج والمتغير")</h2>
+                                @if (Model.Products.Count == 0)
+                                {
+                                    <p class="muted">@T("محصولی یافت نشد.", "No products found.", "لا توجد منتجات.")</p>
+                                }
+                                else
+                                {
+                                    <label class="pick-label"><span>@T("محصول", "Product", "المنتج")</span>
+                                        <select name="ProductId">
+                                            @foreach (var p in Model.Products)
+                                            {
+                                                <option value="@p.Id" selected="@(Model.ProductId == p.Id)">@p.Name — @p.Code</option>
+                                            }
+                                        </select>
+                                    </label>
+                                }
+                                @if (Model.Variants.Count > 0)
+                                {
+                                    <h3 class="mt">@T("واریانت (سایز/رنگ)", "Variant (size/color)", "المتغير")</h3>
+                                    <div class="pick-list">
+                                        @foreach (var v in Model.Variants)
+                                        {
+                                            <label class="pick-item @(Model.VariantId == v.Id ? "picked" : null)">
+                                                <input type="radio" name="VariantId" value="@v.Id" checked="@(Model.VariantId == v.Id)" />
+                                                <span class="pick-body"><span dir="ltr">@v.Label</span></span>
+                                            </label>
+                                        }
+                                    </div>
+                                    <label class="qty-row"><span>@T("تعداد", "Quantity", "الكمية")</span>
+                                        <input type="number" name="Quantity" value="@(Model.Quantity == 0 ? 1 : Model.Quantity)" min="1" step="1" />
+                                    </label>
+                                }
+                            </div>
+
+                            <div class="card wizard-card">
+                                <h2>@T("ارسال به", "Shipping to", "الشحن إلى")</h2>
+                                @if (Model.Addresses.Count == 0)
+                                {
+                                    <p class="muted">@T("نشانی ذخیره‌شده ندارید.", "No saved address.", "لا عناوين محفوظة.")</p>
+                                    <a class="btn btn-ghost btn-sm" href="/account/addresses">@T("افزودن نشانی", "Add address", "إضافة عنوان")</a>
+                                }
+                                else
+                                {
+                                    <div class="pick-list">
+                                        @foreach (var a in Model.Addresses)
+                                        {
+                                            <label class="pick-item @(Model.AddressId == a.Id || (Model.AddressId is null && a.IsDefault) ? "picked" : null)">
+                                                <input type="radio" name="AddressId" value="@a.Id" checked="@(Model.AddressId == a.Id || (Model.AddressId is null && a.IsDefault))" />
+                                                <span class="pick-body"><strong>@a.Title</strong><small>@a.Line</small></span>
+                                            </label>
+                                        }
+                                    </div>
+                                }
+
+                                <h3 class="mt">@T("شعبه اجرای سفارش", "Fulfilling branch", "فرع التنفيذ")</h3>
+                                @if (Model.Branches.Count <= 1)
+                                {
+                                    <p class="muted">@(Model.Branches.Count == 1 ? Model.Branches[0].Name : "—")</p>
+                                    <input type="hidden" name="BranchId" value="@(Model.Branches.Count == 1 ? Model.Branches[0].Id : "")" />
+                                }
+                                else
+                                {
+                                    <select name="BranchId" required>
+                                        @foreach (var b in Model.Branches)
+                                        {
+                                            <option value="@b.Id">@b.Name</option>
+                                        }
+                                    </select>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="wizard-footer">
+                            <a class="btn btn-ghost" href="/order/select?designId=@Model.DesignId">→ @T("بازگشت", "Back", "رجوع")</a>
+                            <button type="submit" class="btn btn-primary btn-lg">@T("ادامه: تنظیمات چاپ", "Continue: print settings", "متابعة: إعدادات الطباعة")</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </section>

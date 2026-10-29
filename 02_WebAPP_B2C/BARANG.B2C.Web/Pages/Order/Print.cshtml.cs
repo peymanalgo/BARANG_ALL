@@ -69,7 +69,7 @@ public sealed class PrintModel(CoreApiClient core) : PageModel
                 "api/v1/client/files/upload", CustomFile.FileName, CustomFile.ContentType, CustomFile.OpenReadStream(), CustomFile.Length);
             if (!upOk || up is null || !up.Value.TryGetProperty("fileVersionId", out JsonElement fvid))
             {
-                return RedirectToPage("Shipping", new { orderId, designId, error = upProblem ?? "upload-failed" });
+                return RedirectToPage("Package", new { orderId, designId, error = upProblem ?? "upload-failed" });
             }
             fileVersionId = fvid.GetString();
         }
@@ -79,7 +79,7 @@ public sealed class PrintModel(CoreApiClient core) : PageModel
         string notes = string.Join(" | ", new[] { PrintNotes, designNote }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
         (bool opOk, string? opProblem) = await AddPrintOperationAsync(orderId, version, artworkVersion, fileVersionId, notes);
-        return RedirectToPage("Shipping", new { orderId, designId, message = opOk ? "saved" : null });
+        return RedirectToPage("Package", new { orderId, designId, message = opOk ? "saved" : null });
     }
 
     public async Task<IActionResult> OnPostSubmitAsync(Guid orderId, Guid designId)

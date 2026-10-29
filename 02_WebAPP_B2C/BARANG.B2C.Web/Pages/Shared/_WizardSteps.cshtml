@@ -3,10 +3,11 @@
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     string[] steps = {
-        T("محصول و آیتم", "Product & item", "المنتج والبند"),
-        T("عملیات چاپ", "Printing", "الطباعة"),
-        T("بسته‌بندی و ارسال", "Packaging & shipping", "التغليف والشحن"),
-        T("قیمت و ثبت", "Pricing & submit", "السعر والإرسال")
+        T("انتخاب طرح", "Choose design", "اختر التصميم"),
+        T("انتخاب تیشرت", "Choose shirt", "اختر التيشرت"),
+        T("تنظیمات چاپ", "Print settings", "إعدادات الطباعة"),
+        T("بسته‌بندی", "Packaging", "التغليف"),
+        T("ثبت سفارش", "Submit order", "إرسال الطلب")
     };
 }
 <div class="container wizard-steps" aria-label="steps">
@@ -16,7 +17,7 @@
         <span class="wstep @state"><b>@(i + 1)</b> @steps[i]</span>
         @if (i < steps.Length - 1)
         {
-            <span class="wstep-line" aria-hidden="true"></span>
+            <span class="wstep-line @(i + 1 < Model ? "done" : "")"></span>
         }
     }
 </div>

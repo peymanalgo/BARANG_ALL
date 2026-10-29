@@ -14,7 +14,7 @@
     };
     ViewData["Title"] = T("عملیات چاپ", "Print operation", "عملية الطباعة");
 }
-<partial name="_WizardSteps" model="2" />
+<partial name="_WizardSteps" model="3" />
 <section class="container section wizard">
     <nav class="breadcrumbs no-print" aria-label="breadcrumb">
         <a href="/account/orders">@T("سفارش‌های من", "My orders", "طلباتي")</a> ›
@@ -99,7 +99,7 @@
 
         <div class="wizard-footer">
             <a class="btn btn-ghost" href="/design/@Model.DesignId">→ @T("بازگشت به طرح", "Back to design", "العودة للتصميم")</a>
-            <a class="btn btn-primary btn-lg" href="/order/shipping/@Model.OrderId?designId=@Model.DesignId">@T("ادامه: بسته‌بندی و ارسال", "Continue: packaging & shipping", "متابعة: التغليف والشحن")</a>
+            <a class="btn btn-primary btn-lg" href="/order/package/@Model.OrderId?designId=@Model.DesignId">@T("ادامه: بسته‌بندی", "Continue: packaging", "متابعة: التغليف")</a>
         </div>
     </form>
 </section>
