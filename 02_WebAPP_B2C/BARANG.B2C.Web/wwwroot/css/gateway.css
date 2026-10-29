@@ -1,0 +1,40 @@
+/* sandbox payment gateway (mock) */
+.gateway-body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: linear-gradient(140deg, #10243e 0%, #16345c 55%, #1d4272 100%);
+    font-family: "BarangStore", "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
+}
+.gateway { width: min(460px, 100%); }
+.gateway-head { display: flex; gap: 12px; align-items: center; color: #fff; margin-bottom: 16px; }
+.gateway-mark { width: 46px; height: 46px; border-radius: 12px; background: rgba(255,255,255,.14); display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem; flex: 0 0 46px; }
+.gateway-head strong { display: block; font-size: 1.05rem; }
+.gateway-head small { display: block; opacity: .8; font-size: .74rem; line-height: 1.7; margin-top: 3px; }
+.gateway-card { background: #fff; border-radius: 18px; padding: 26px 24px; box-shadow: 0 24px 70px rgba(4,14,30,.45); }
+.gateway-rows { margin: 0 0 20px; display: flex; flex-direction: column; gap: 0; }
+.gateway-rows > div { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px dashed #e5e8f0; }
+.gateway-rows > div:last-child { border-bottom: 0; }
+.gateway-rows dt { color: #5b6478; font-size: .84rem; }
+.gateway-rows dd { margin: 0; font-weight: 700; color: #131a2a; font-size: .9rem; }
+.gateway-amount { color: #116d34 !important; font-size: 1.15rem !important; }
+.gateway-actions { display: flex; gap: 10px; }
+.gateway-actions button { flex: 1; border: 0; border-radius: 12px; padding: 13px 10px; font: inherit; font-weight: 700; cursor: pointer; font-size: .9rem; transition: filter .15s; }
+.gateway-actions button:hover { filter: brightness(1.06); }
+.btn-pay { background: #128a43; color: #fff; }
+.btn-fail { background: #fff; color: #b91c1c; border: 1.5px solid #f3c1c1 !important; }
+.gateway-note { margin: 16px 0 0; font-size: .72rem; color: #8a92a6; line-height: 1.8; text-align: center; }
+.gateway-done { text-align: center; }
+.gateway-check { width: 64px; height: 64px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 1.7rem; font-weight: 800; margin-bottom: 12px; }
+.gateway-done.ok .gateway-check { background: #e7f8ec; color: #128a43; }
+.gateway-done.fail .gateway-check { background: #fdeaea; color: #b91c1c; }
+.gateway-done h1 { font-size: 1.15rem; margin: 0 0 8px; color: #131a2a; }
+.gateway-done p { color: #5b6478; font-size: .88rem; line-height: 1.8; margin: 0 0 18px; }
+.btn-ok { display: inline-block; background: #2b5cff; color: #fff; text-decoration: none; border-radius: 12px; padding: 11px 26px; font-weight: 700; font-size: .88rem; }
+.btn-ok:hover { background: #1e46d4; }
+.gateway-error { text-align: center; }
+.gateway-error h1 { font-size: 1.05rem; color: #b91c1c; margin: 0 0 8px; }
+.gateway-error p { color: #5b6478; font-size: .86rem; margin: 0; }

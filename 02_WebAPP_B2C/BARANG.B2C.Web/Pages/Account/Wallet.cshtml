@@ -9,11 +9,20 @@
     string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.FormatDateTime(d, culture);
     string ReasonLabel(string? code) => code switch
     {
+        "topup" => T("شارژ کیف پول", "Wallet top-up", "شحن المحفظة"),
         "manual_adjustment" => T("تنظیم دستی", "Manual adjustment", "تعديل يدوي"),
         "purchase" => T("خرید", "Purchase", "شراء"),
         "order_refund" => T("بازگشت وجه سفارش", "Order refund", "استرداد الطلب"),
         "gift" => T("هدیه", "Gift", "هدية"),
         _ => code ?? "—"
+    };
+    string StatusLabel(string s) => s switch
+    {
+        "Pending" => T("در انتظار پرداخت", "Pending", "قيد الدفع"),
+        "Paid" => T("پرداخت‌شده", "Paid", "مدفوع"),
+        "Failed" => T("ناموفق", "Failed", "فاشل"),
+        "Cancelled" => T("لغوشده", "Cancelled", "ملغى"),
+        _ => s
     };
     ViewData["PanelActive"] = "wallet";
     ViewData["PanelTitle"] = T("کیف پول و تراکنش‌ها", "Wallet & transactions", "المحفظة والمعاملات");
@@ -25,11 +34,73 @@
         <p class="muted">@T("اعتبار کیف پولت برای پرداخت سریع‌تر سفارش‌ها.", "Your wallet credit for faster order payments.", "رصيد محفظتك للدفع أسرع.")</p>
     </header>
 
+    @if (Model.Charged == "1")
+    {
+        <div class="alert alert-success" role="alert">@T("کیف پول با موفقیت شارژ شد.", "Your wallet was topped up successfully.", "تم شحن المحفظة بنجاح.")</div>
+    }
+    @if (Model.Failed == "1")
+    {
+        <div class="alert alert-error" role="alert">@T("پرداخت ناموفق بود؛ مبلغی به کیف پول اضافه نشد.", "The payment failed; nothing was added to your wallet.", "فشل الدفع؛ لم يُضف أي مبلغ إلى المحفظة.")</div>
+    }
+    @if (Model.Error == "amount" || Model.Error == "topup-failed")
+    {
+        <div class="alert alert-error" role="alert">@T("درخواست شارژ انجام نشد؛ مبلغ را بررسی و دوباره تلاش کن.", "The top-up request failed; check the amount and retry.", "فشل طلب الشحن؛ تحقق من المبلغ وحاول مجدداً.")</div>
+    }
+    @if (Model.Error == "below-minimum")
+    {
+        <div class="alert alert-error" role="alert">@T("حداقل مبلغ شارژ ۱۰٬۰۰۰ است.", "The minimum top-up amount is 10,000.", "الحد الأدنى للشحن هو 10,000.")</div>
+    }
+
     <div class="wallet-hero">
         <span class="wallet-hero-label">@T("اعتبار فعلی", "Current balance", "الرصيد الحالي")</span>
         <strong>@Money(Model.Balance) <small>@T("تومان", "Toman", "تومان")</small></strong>
-        <p class="muted wallet-note">@T("برای افزایش اعتبار با پشتیبانی در تماس باش؛ به‌زودی شارژ آنلاین فعال می‌شود.", "Contact support to top up; online recharge is coming soon.", "تواصل مع الدعم للشحن؛ الشحن الإلكتروني قريباً.")</p>
     </div>
+
+    <div class="dash-card charge-card">
+        <h2>@T("شارژ کیف پول", "Top up wallet", "شحن المحفظة")</h2>
+        <form method="post" asp-page-handler="Charge" class="charge-form">
+            <div class="charge-presets">
+                @foreach (var preset in new[] { 100000m, 300000m, 500000m, 1000000m })
+                {
+                    <button type="button" class="charge-preset" data-amount="@preset" onclick="document.getElementById('chargeAmount').value = this.getAttribute('data-amount')">@Money(preset)</button>
+                }
+            </div>
+            <label class="charge-amount">
+                <span>@T("مبلغ (تومان)", "Amount (Toman)", "المبلغ (تومان)")</span>
+                <input type="number" id="chargeAmount" name="amount" min="10000" step="1000" required />
+            </label>
+            <button type="submit" class="btn btn-primary">@T("رفتن به درگاه پرداخت", "Go to payment gateway", "الذهاب إلى بوابة الدفع")</button>
+        </form>
+        <small class="muted">@T("پرداخت از طریق درگاه آزمایشی انجام می‌شود (نسخه تستی).", "Payment goes through the sandbox gateway (test version).", "الدفع عبر بوابة اختبارية (نسخة تجريبية).")</small>
+    </div>
+
+    @if (Model.TopUps.Count > 0)
+    {
+        <div class="dash-card">
+            <div class="dash-card-head"><h2>@T("درخواست‌های شارژ", "Top-up requests", "طلبات الشحن")</h2></div>
+            <div class="topup-list">
+                @foreach (var t in Model.TopUps)
+                {
+                    <div class="topup-row">
+                        <span class="topup-status st-@t.Status.ToLowerInvariant()">@StatusLabel(t.Status)</span>
+                        <div class="wallet-meta">
+                            <strong dir="ltr">@t.Number</strong>
+                            <small class="muted">@Date(t.CreatedAtUtc)</small>
+                        </div>
+                        <span class="wallet-amount in">+@Money(t.Amount)</span>
+                        @if (t.Status == "Pending")
+                        {
+                            <form method="post" asp-page-handler="CancelTopUp" class="inline-form">
+                                <input type="hidden" name="topUpId" value="@t.Id" />
+                                <input type="hidden" name="version" value="@t.Version" />
+                                <button type="submit" class="btn btn-ghost btn-sm">@T("لغو", "Cancel", "إلغاء")</button>
+                            </form>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
 
     <div class="dash-card">
         <div class="dash-card-head">

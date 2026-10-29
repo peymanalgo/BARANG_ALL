@@ -288,3 +288,40 @@ button[data-confirm], form[data-confirm] button { cursor: pointer; }
     .settings-grid { grid-template-columns: 1fr; }
     .fav-page-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 }
+
+/* ---------- wallet v2: charge, top-ups, order payment ---------- */
+.charge-card h2 { margin: 0 0 12px; font-size: 1.02rem; }
+.charge-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px; }
+.charge-presets { display: flex; gap: 8px; flex-wrap: wrap; }
+.charge-preset { border: 1px solid var(--panel-border); background: #fff; border-radius: 10px; padding: 8px 16px; font: inherit; font-size: .86rem; cursor: pointer; color: var(--panel-ink); }
+.charge-preset:hover { border-color: var(--panel-orange-2); color: var(--panel-orange-2); }
+.charge-amount { display: flex; flex-direction: column; gap: 5px; font-size: .84rem; color: var(--panel-ink); max-width: 280px; }
+.charge-amount input { border: 1px solid var(--panel-border); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: .95rem; }
+.charge-form .btn { align-self: flex-start; }
+.topup-list { display: flex; flex-direction: column; }
+.topup-row { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--panel-border); }
+.topup-row:last-child { border-bottom: 0; }
+.topup-status { border-radius: 999px; padding: 3px 12px; font-size: .7rem; white-space: nowrap; }
+.topup-status.st-paid { background: #e7f8ec; color: #116d34; }
+.topup-status.st-pending { background: #ffefe1; color: var(--panel-orange-2); }
+.topup-status.st-failed { background: #fdeaea; color: #dc2626; }
+.topup-status.st-cancelled { background: #f1f3f9; color: var(--panel-muted); }
+.inline-form { margin: 0; }
+.pay-choice { margin-top: 16px; border-top: 1px dashed var(--panel-border); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.pay-choice h3 { margin: 0 0 4px; font-size: .92rem; }
+.pay-option { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--panel-border); border-radius: 12px; padding: 11px 13px; cursor: pointer; background: #fff; }
+.pay-option input { margin-top: 4px; }
+.pay-option strong { display: block; font-size: .88rem; color: var(--panel-ink); }
+.pay-option small { color: var(--panel-muted); font-size: .74rem; }
+.pay-option:has(input:checked) { border-color: var(--panel-orange-2); background: #fff7ec; }
+.pay-option.disabled { opacity: .6; cursor: not-allowed; }
+.wallet-pay-card { margin-bottom: 16px; }
+.wallet-pay-card .wallet-pay-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.wallet-pay-row > div:first-child { display: flex; align-items: center; gap: 10px; }
+.wallet-pay-row strong { font-size: .92rem; }
+.wallet-pay-amounts { display: flex; gap: 18px; flex-wrap: wrap; font-size: .82rem; color: var(--panel-muted); }
+.wallet-pay-amounts strong { color: var(--panel-ink); }
+@media (max-width: 760px) {
+    .charge-form .btn { align-self: stretch; }
+    .wallet-pay-row { flex-direction: column; align-items: stretch; }
+}

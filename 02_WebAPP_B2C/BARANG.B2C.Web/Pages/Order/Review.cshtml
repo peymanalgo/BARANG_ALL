@@ -85,6 +85,28 @@
                 {
                     <div class="quote-total"><span>@tLabel</span><strong dir="ltr">@tValue</strong></div>
                 }
+
+                <div class="pay-choice">
+                    <h3>@T("روش پرداخت", "Payment method", "طريقة الدفع")</h3>
+                    <label class="pay-option @(Model.WalletPayable ? null : "disabled")">
+                        <input type="radio" name="PayWithWallet" value="true" checked="@(Model.WalletPayable)" disabled="@(!Model.WalletPayable)" />
+                        <span>
+                            <strong>@T("پرداخت آنی از کیف پول", "Pay now from wallet", "الدفع فوراً من المحفظة")</strong>
+                            <small>@T($"موجودی: {Model.WalletBalance:N0} تومان", $"Balance: {Model.WalletBalance:N0} Toman", $"الرصيد: {Model.WalletBalance:N0} تومان")</small>
+                        </span>
+                    </label>
+                    <label class="pay-option">
+                        <input type="radio" name="PayWithWallet" value="false" checked="@(!Model.WalletPayable)" />
+                        <span>
+                            <strong>@T("پرداخت بعدی (بدون پرداخت آنلاین)", "Pay later (no online payment)", "الدفع لاحقاً")</strong>
+                            <small>@T("سفارش ثبت می‌شود و پرداخت آن جداگانه انجام می‌شود.", "The order is submitted; payment is handled separately.", "يُرسل الطلب ويُدفع لاحقاً.")</small>
+                        </span>
+                    </label>
+                    @if (!Model.WalletPayable && Model.TotalAmount > 0)
+                    {
+                        <p class="muted small">@T("موجودی کیف پول برای پرداخت آنی کافی نیست — ", "Wallet balance is not enough for instant payment — ", "رصيد المحفظة غير كافٍ — ")<a href="/account/wallet">@T("شارژ کیف پول", "top up wallet", "شحن المحفظة")</a></p>
+                    }
+                </div>
             </div>
         </div>
 

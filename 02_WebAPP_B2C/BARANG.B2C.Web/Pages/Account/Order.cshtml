@@ -86,6 +86,60 @@ else
             <span class="status-chip st-@Model.OrderStatus.ToLowerInvariant() status-lg">@OrderLabel(Model.OrderStatus)</span>
         </header>
 
+        @if (Model.Paid == "1")
+        {
+            <div class="alert alert-ok" role="status">✓ @T("پرداخت از کیف پول با موفقیت انجام شد.", "Wallet payment completed successfully.", "تم الدفع من المحفظة بنجاح.")</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.PayError))
+        {
+            <div class="alert alert-error" role="alert">
+                @(Model.PayError == "wallet.insufficient_balance"
+                    ? T("موجودی کیف پول برای پرداخت این سفارش کافی نیست.", "Your wallet balance is not enough for this order.", "رصيد المحفظة غير كافٍ لهذا الطلب.")
+                    : T("پرداخت انجام نشد؛ دوباره تلاش کنید.", "Payment failed; try again.", "فشل الدفع؛ حاول مجدداً."))
+                <a href="/account/wallet">@T("شارژ کیف پول", "Top up wallet", "شحن المحفظة")</a>
+            </div>
+        }
+
+        @if (Model.WalletPayment is { } wp && Model.OrderStatus != "Cancelled" && Model.OrderStatus != "Draft")
+        {
+            <div class="card wallet-pay-card">
+                <div class="wallet-pay-row">
+                    <div>
+                        <strong>@T("وضعیت پرداخت", "Payment status", "حالة الدفع")</strong>
+                        @if (wp.FullyPaid)
+                        {
+                            <span class="topup-status st-paid">@T("پرداخت‌شده", "Paid", "مدفوع")</span>
+                        }
+                        else
+                        {
+                            <span class="topup-status st-pending">@T("پرداخت‌نشده", "Unpaid", "غير مدفوع")</span>
+                        }
+                    </div>
+                    <div class="wallet-pay-amounts">
+                        <span>@T("مبلغ کل", "Total", "الإجمالي"): <strong dir="ltr">@wp.Total.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong></span>
+                        <span>@T("پرداخت‌شده", "Paid", "المدفوع"): <strong dir="ltr">@wp.Paid.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong></span>
+                        @if (!wp.FullyPaid)
+                        {
+                            <span>@T("باقی‌مانده", "Remaining", "المتبقي"): <strong dir="ltr">@wp.Remaining.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong></span>
+                        }
+                    </div>
+                    @if (!wp.FullyPaid && Model.OrderStatus == "Submitted")
+                    {
+                        <form method="post" asp-page-handler="PayWallet" class="inline-form">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button type="submit" class="btn btn-primary" disabled="@(wp.WalletBalance < wp.Remaining)">
+                                @T($"پرداخت {wp.Remaining:N0} تومانی از کیف پول", $"Pay {wp.Remaining:N0} Toman from wallet", $"دفع {wp.Remaining:N0} تومان من المحفظة")
+                            </button>
+                            @if (wp.WalletBalance < wp.Remaining)
+                            {
+                                <small class="muted">@T("موجودی کافی نیست.", "Insufficient balance.", "الرصيد غير كافٍ.")</small>
+                            }
+                        </form>
+                    }
+                </div>
+            </div>
+        }
+
         @if (Model.OrderStatus == "Cancelled")
         {
             <div class="alert alert-error cancelled-banner" role="alert">✕ @T("این سفارش لغو شده است.", "This order was cancelled.", "تم إلغاء هذا الطلب.")</div>

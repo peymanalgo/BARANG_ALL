@@ -168,6 +168,83 @@ public sealed class CustomerWalletTransaction
 }
 
 
+public static class WalletErrors
+{
+    public static Error NotFound => Error.NotFound("wallet.topup_not_found");
+    public static Error CustomerNotFound => Error.NotFound("wallet.customer_not_found");
+    public static Error InvalidAmount => Error.Validation("wallet.invalid_amount");
+    public static Error BelowMinimum => Error.Validation("wallet.below_minimum");
+    public static Error NotPending => Error.BusinessRule("wallet.topup_not_pending");
+    public static Error AlreadyProcessed => Error.BusinessRule("wallet.topup_already_processed");
+    public static Error InsufficientBalance => Error.BusinessRule("wallet.insufficient_balance");
+    public static Error AlreadyPaid => Error.BusinessRule("wallet.order_already_paid");
+    public static Error OrderNotEligible => Error.BusinessRule("wallet.order_not_eligible");
+    public static Error PricingRequired => Error.BusinessRule("wallet.pricing_required");
+    public static Error CurrencyMismatch => Error.BusinessRule("wallet.currency_mismatch");
+    public static Error Concurrency => Error.Conflict("wallet.concurrency");
+}
+
+public enum CustomerWalletTopUpStatus { Pending = 1, Paid = 2, Failed = 3, Cancelled = 4 }
+
+public sealed class CustomerWalletTopUp
+{
+    public const string DefaultGatewayCode = "mock";
+
+    public Guid Id { get; private set; }
+    public Guid CompanyId { get; private set; }
+    public Guid CustomerId { get; private set; }
+    public string Number { get; private set; } = "";
+    public decimal Amount { get; private set; }
+    public string CurrencyCode { get; private set; } = "";
+    public CustomerWalletTopUpStatus Status { get; private set; }
+    public string GatewayCode { get; private set; } = DefaultGatewayCode;
+    public Guid PaymentToken { get; private set; }
+    public string? GatewayReference { get; private set; }
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+    public DateTimeOffset? PaidAtUtc { get; private set; }
+    public long Version { get; private set; }
+
+    public static Result<CustomerWalletTopUp> Create(Guid id, Guid companyId, Guid customerId, string number, decimal amount, string currencyCode, Guid paymentToken, DateTimeOffset now)
+    {
+        if (companyId == Guid.Empty || customerId == Guid.Empty) return Result.Failure<CustomerWalletTopUp>(WalletErrors.CustomerNotFound);
+        if (amount <= 0) return Result.Failure<CustomerWalletTopUp>(WalletErrors.InvalidAmount);
+        string currency = (currencyCode ?? "").Trim().ToUpperInvariant();
+        if (currency.Length != 3 || !currency.All(char.IsAsciiLetter)) return Result.Failure<CustomerWalletTopUp>(WalletErrors.InvalidAmount);
+        if (paymentToken == Guid.Empty) return Result.Failure<CustomerWalletTopUp>(WalletErrors.InvalidAmount);
+        return Result.Success(new CustomerWalletTopUp { Id = id, CompanyId = companyId, CustomerId = customerId, Number = number.Trim(), Amount = decimal.Round(amount, 0), CurrencyCode = currency, Status = CustomerWalletTopUpStatus.Pending, GatewayCode = DefaultGatewayCode, PaymentToken = paymentToken, CreatedAtUtc = now, Version = 1 });
+    }
+
+    public Result MarkPaid(string? gatewayReference, DateTimeOffset now)
+    {
+        if (Status != CustomerWalletTopUpStatus.Pending) return Result.Failure(WalletErrors.AlreadyProcessed);
+        Status = CustomerWalletTopUpStatus.Paid;
+        GatewayReference = CustomerWalletTopUp.Text(gatewayReference, 100) ?? $"GATEWAY-{now.Ticks}";
+        PaidAtUtc = now;
+        Version++;
+        return Result.Success();
+    }
+
+    public Result MarkFailed(string? gatewayReference, DateTimeOffset now)
+    {
+        if (Status != CustomerWalletTopUpStatus.Pending) return Result.Failure(WalletErrors.AlreadyProcessed);
+        Status = CustomerWalletTopUpStatus.Failed;
+        GatewayReference = CustomerWalletTopUp.Text(gatewayReference, 100);
+        Version++;
+        return Result.Success();
+    }
+
+    public Result Cancel(DateTimeOffset now)
+    {
+        if (Status != CustomerWalletTopUpStatus.Pending) return Result.Failure(WalletErrors.NotPending);
+        Status = CustomerWalletTopUpStatus.Cancelled;
+        Version++;
+        return Result.Success();
+    }
+
+    internal static string? Text(string? value, int max) { if (string.IsNullOrWhiteSpace(value)) return null; string x = value.Trim(); return x.Length <= max ? x : null; }
+}
+
+
 public sealed class CustomerFeedback
 {
     public const int SubjectMinLength = 3;

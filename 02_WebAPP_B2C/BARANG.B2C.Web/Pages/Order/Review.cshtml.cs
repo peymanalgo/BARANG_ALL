@@ -10,7 +10,7 @@ namespace BARANG.B2C.Web.Pages.Order;
 // Order wizard final step — pricing breakdown, validation issues and
 // submit. Mirrors ERP steps 6+7.
 [Authorize(Policy = "LoggedIn")]
-public sealed class ReviewModel(CoreApiClient core) : PageModel
+public sealed class ReviewModel(CoreApiClient core, CustomerContext customers) : PageModel
 {
     public Guid OrderId { get; private set; }
     public Guid DesignId { get; set; }
@@ -27,6 +27,10 @@ public sealed class ReviewModel(CoreApiClient core) : PageModel
     public IReadOnlyList<(string Code, string? Field)> Issues { get; private set; } = [];
     public bool Found { get; private set; }
     public string? Error { get; private set; }
+    public decimal WalletBalance { get; private set; }
+    public decimal TotalAmount { get; private set; }
+    public bool WalletPayable => WalletBalance >= TotalAmount && TotalAmount > 0;
+    [BindProperty] public string? PayWithWallet { get; set; }
 
     private IActionResult? ReauthGuard()
     {
@@ -62,6 +66,13 @@ public sealed class ReviewModel(CoreApiClient core) : PageModel
 
         Quote = (await core.PostRawWithBodyAsync($"api/v1/client/orders/{orderId}/pricing/preview", new { version = Version })).Value;
         ParseQuote(Quote);
+        if (TotalRow is { } total && decimal.TryParse(total.Value.Replace(",", ""), System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out decimal parsedTotal)) TotalAmount = parsedTotal;
+        JsonElement? customer = await customers.CurrentAsync();
+        if (customer is JsonElement cj && cj.TryGetProperty("id", out JsonElement cid))
+        {
+            JsonElement? wallet = await core.GetAsync($"api/v1/client/customers/{cid.GetString()}/wallet");
+            if (wallet is JsonElement wl && wl.TryGetProperty("balance", out JsonElement bal) && bal.TryGetDecimal(out decimal b)) WalletBalance = b;
+        }
 
         JsonElement? validation = await core.GetAsync($"api/v1/client/orders/{orderId}/validate");
         if (validation is JsonElement va && va.ValueKind == JsonValueKind.Array)
@@ -123,6 +134,12 @@ public sealed class ReviewModel(CoreApiClient core) : PageModel
         if (!ok)
         {
             return RedirectToPage(new { orderId, designId, error = problem ?? "submit-failed" });
+        }
+        if (string.Equals(PayWithWallet, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            long payVersion = await CurrentVersionAsync(orderId);
+            (bool paid, string? payProblem) = await core.PostRawAsync($"api/v1/client/orders/{orderId}/pay-with-wallet", new { version = payVersion });
+            return RedirectToPage("/Account/Order", new { id = orderId, paid = paid ? "1" : null, payerror = paid ? null : (payProblem ?? "wallet-failed") });
         }
         return RedirectToPage("/Account/Order", new { id = orderId });
     }

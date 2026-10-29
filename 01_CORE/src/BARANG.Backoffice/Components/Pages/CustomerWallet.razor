@@ -1,0 +1,257 @@
+@page "/workspace/wallet"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Auth
+@using BARANG.Backoffice.Localization
+@inject IStringLocalizer<NavigationStrings> N
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+@inject ILocaleDateService Dates
+
+<PageTitle>@T("کیف پول مشتریان","Customer Wallets","محافظ العملاء") · BARANG</PageTitle>
+<main class="page-shell wallet-page" aria-labelledby="wallet-heading">
+    <header class="page-head">
+        <div>
+            <h1 id="wallet-heading">@T("کیف پول مشتریان","Customer Wallets","محافظ العملاء")</h1>
+            <p class="muted">@T("دفتر تراکنش‌ها، درخواست‌های شارژ و اصلاح دستی موجودی مشتریان.","The ledger of transactions, top-up requests and manual balance adjustments.","دفتر المعاملات وطلبات الشحن والتسويات اليدوية لأرصدة العملاء.")</p>
+        </div>
+        <button type="button" class="btn btn-primary" @onclick="OpenAdjust">@T("اصلاح دستی موجودی","Manual adjustment","تسوية يدوية")</button>
+    </header>
+
+    <section class="wallet-tabs" role="tablist">
+        <button type="button" class="feedback-chip @(Tab=="transactions"?"is-active":"")" @onclick='()=>SwitchTab("transactions")'>@T("دفتر تراکنش‌ها","Transactions","المعاملات")</button>
+        <button type="button" class="feedback-chip @(Tab=="topups"?"is-active":"")" @onclick='()=>SwitchTab("topups")'>@T("درخواست‌های شارژ","Top-up requests","طلبات الشحن")</button>
+    </section>
+
+    <section class="wallet-filters" aria-label="@T("فیلترها","Filters","المرشحات")">
+        <label class="wallet-filter"><span>@T("کد مشتری","Customer code","رمز العميل")</span><input type="text" @bind="CustomerFilter" @bind:after="SearchChanged" /></label>
+        @if (Tab == "transactions")
+        {
+            <label class="wallet-filter"><span>@T("دلیل","Reason","السبب")</span>
+                <select @bind="Reason" @bind:after="SearchChanged">
+                    <option value="">@T("همه","All","الكل")</option>
+                    <option value="topup">@T("شارژ کیف پول","Top-up","شحن المحفظة")</option>
+                    <option value="purchase">@T("خرید","Purchase","شراء")</option>
+                    <option value="order_refund">@T("بازگشت وجه سفارش","Order refund","استرداد الطلب")</option>
+                    <option value="gift">@T("هدیه","Gift","هدية")</option>
+                    <option value="manual_adjustment">@T("تنظیم دستی","Manual","تعديل يدوي")</option>
+                </select>
+            </label>
+        }
+        else
+        {
+            <label class="wallet-filter"><span>@T("وضعیت","Status","الحالة")</span>
+                <select @bind="Status" @bind:after="SearchChanged">
+                    <option value="">@T("همه","All","الكل")</option>
+                    <option value="Pending">@T("در انتظار پرداخت","Pending","قيد الدفع")</option>
+                    <option value="Paid">@T("پرداخت‌شده","Paid","مدفوع")</option>
+                    <option value="Failed">@T("ناموفق","Failed","فاشل")</option>
+                    <option value="Cancelled">@T("لغوشده","Cancelled","ملغى")</option>
+                </select>
+            </label>
+        }
+    </section>
+
+    @if (Loading)
+    {
+        <p class="muted">@T("در حال بارگذاری…","Loading…","جار التحميل…")</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(Error))
+    {
+        <section class="panel feedback-error" role="alert"><h2>@T("بارگذاری انجام نشد","Could not load","تعذر التحميل")</h2><p>@Error</p><button type="button" class="btn btn-primary" @onclick="Load">@T("تلاش دوباره","Retry","إعادة المحاولة")</button></section>
+    }
+    else if (RowsCount == 0)
+    {
+        <p class="muted">@T("موردی ثبت نشده است.","Nothing recorded yet.","لا شيء مسجل بعد.")</p>
+    }
+    else if (Tab == "transactions")
+    {
+        <div class="panel wallet-table-wrap">
+            <table class="wallet-table">
+                <thead><tr><th>@T("مشتری","Customer","العميل")</th><th>@T("جهت","Direction","الاتجاه")</th><th>@T("مبلغ","Amount","المبلغ")</th><th>@T("دلیل","Reason","السبب")</th><th>@T("مرجع","Reference","المرجع")</th><th>@T("زمان","Time","الوقت")</th></tr></thead>
+                <tbody>
+                    @foreach (var r in TxRows)
+                    {
+                        <tr class="@(r.Direction == "credit" ? "in" : "out")">
+                            <td>@r.CustomerDisplayName <small class="muted" dir="ltr">@r.CustomerCode</small></td>
+                            <td><span class="wallet-dir-chip @(r.Direction == "credit" ? "in" : "out")">@(r.Direction == "credit" ? T("بستانکار","Credit","دائن") : T("بدهکار","Debit","مدين"))</span></td>
+                            <td>@r.Amount.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</td>
+                            <td>@ReasonLabel(r.ReasonCode)</td>
+                            <td class="muted">@r.ReferenceNote</td>
+                            <td>@Dates.Format(r.CreatedAtUtc, culture)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="panel wallet-table-wrap">
+            <table class="wallet-table">
+                <thead><tr><th>@T("شماره","Number","الرقم")</th><th>@T("مبلغ","Amount","المبلغ")</th><th>@T("وضعیت","Status","الحالة")</th><th>@T("درگاه","Gateway","البوابة")</th><th>@T("مرجع درگاه","Gateway ref.","مرجع البوابة")</th><th>@T("زمان","Time","الوقت")</th></tr></thead>
+                <tbody>
+                    @foreach (var r in TopUpRows)
+                    {
+                        <tr>
+                            <td dir="ltr">@r.Number</td>
+                            <td>@r.Amount.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</td>
+                            <td><span class="wallet-status st-@r.Status.ToLowerInvariant()">@StatusLabel(r.Status)</span></td>
+                            <td>@r.GatewayCode</td>
+                            <td class="muted" dir="ltr">@r.GatewayReference</td>
+                            <td>@Dates.Format(r.CreatedAtUtc, culture)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <nav class="feedbacks-pager" aria-label="@T("صفحه‌بندی","Pagination","ترقيم الصفحات")">
+        <button type="button" class="btn btn-ghost btn-sm" disabled="@(Page<=1)" @onclick="Previous">← @T("قبلی","Previous","السابق")</button>
+        <span>@Page</span>
+        <button type="button" class="btn btn-ghost btn-sm" disabled="@RowsCount<PageSize" @onclick="Next">@T("بعدی","Next","التالي") →</button>
+    </nav>
+
+    @if (AdjustOpen)
+    {
+        <div class="wallet-adjust-backdrop" @onclick="CloseAdjust"></div>
+        <div class="panel wallet-adjust" role="dialog" aria-modal="true">
+            <h2>@T("اصلاح دستی موجودی","Manual balance adjustment","تسوية يدوية للرصيد")</h2>
+            @if (!string.IsNullOrWhiteSpace(AdjustMessage))
+            {
+                <p class="muted">@AdjustMessage</p>
+            }
+            <label><span>@T("کد مشتری","Customer code","رمز العميل")</span><input type="text" @bind="AdjustCustomerCode" @bind:event="oninput" /></label>
+            <label><span>@T("جهت","Direction","الاتجاه")</span>
+                <select @bind="AdjustDirection" @bind:event="onchange">
+                    <option value="credit">@T("بستانکار (افزایش)","Credit (increase)","دائن (زيادة)")</option>
+                    <option value="debit">@T("بدهکار (کاهش)","Debit (decrease)","مدين (نقصان)")</option>
+                </select>
+            </label>
+            <label><span>@T("مبلغ (ریال)","Amount (Rial)","المبلغ (ريال)")</span><input type="number" @bind="AdjustAmount" @bind:event="oninput" /></label>
+            <label><span>@T("یادداشت","Note","ملاحظة")</span><input type="text" @bind="AdjustNote" @bind:event="oninput" /></label>
+            <div class="feedback-item-actions">
+                <button type="button" class="btn btn-primary" disabled="@Busy" @onclick="SubmitAdjust">@T("ثبت","Apply","تطبيق")</button>
+                <button type="button" class="btn btn-ghost" @onclick="CloseAdjust">@T("بستن","Close","إغلاق")</button>
+            </div>
+        </div>
+    }
+</main>
+
+@code {
+    private bool Loading = true, Busy;
+    private int RowsCount => Tab == "transactions" ? TxRows.Count : TopUpRows.Count;
+    private string? Error;
+    private List<TxRow> TxRows = [];
+    private List<TopUpRow> TopUpRows = [];
+    private string Tab = "transactions", Status = "", Reason = "", CustomerFilter = "";
+    private string culture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    private int Page = 1;
+    private const int PageSize = 20;
+    private bool AdjustOpen; private string AdjustCustomerCode = "", AdjustDirection = "credit", AdjustNote = ""; private decimal AdjustAmount; private string? AdjustMessage;
+
+    private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"ar"=>ar,_=>fa};
+
+    private string StatusLabel(string s)=>s switch
+    {
+        "Pending"=>T("در انتظار پرداخت","Pending","قيد الدفع"),
+        "Paid"=>T("پرداخت‌شده","Paid","مدفوع"),
+        "Failed"=>T("ناموفق","Failed","فاشل"),
+        "Cancelled"=>T("لغوشده","Cancelled","ملغى"),
+        _=>s
+    };
+
+    private string ReasonLabel(string? code)=>code switch
+    {
+        "topup"=>T("شارژ کیف پول","Top-up","شحن المحفظة"),
+        "purchase"=>T("خرید","Purchase","شراء"),
+        "order_refund"=>T("بازگشت وجه سفارش","Order refund","استرداد الطلب"),
+        "gift"=>T("هدیه","Gift","هدية"),
+        "manual_adjustment"=>T("تنظیم دستی","Manual","تعديل يدوي"),
+        _=>code ?? "—"
+    };
+
+    protected override Task OnInitializedAsync() => Load();
+
+    private async Task SwitchTab(string tab){Tab=tab;Page=1;await Load();}
+    private async Task SearchChanged(){Page=1;await Load();}
+    private async Task Previous(){if(Page>1){Page--;await Load();}}
+    private async Task Next(){if(RowsCount>=PageSize){Page++;await Load();}}
+
+    private async Task Load()
+    {
+        Loading = true; Error = null;
+        try
+        {
+            var session = await Session();
+            if (session is null) { Error = T("نشست منقضی شده است.","Session expired.","انتهت الجلسة."); TxRows = []; TopUpRows = []; TopUpRows = []; return; }
+            string q = Tab == "transactions"
+                ? $"api/v1/customers/wallet/transactions?page={Page}&pageSize={PageSize}"
+                : $"api/v1/customers/wallet/topups?page={Page}&pageSize={PageSize}";
+            if (!string.IsNullOrWhiteSpace(Reason) && Tab == "transactions") q += $"&reason={Uri.EscapeDataString(Reason)}";
+            if (!string.IsNullOrWhiteSpace(Status) && Tab == "topups") q += $"&status={Uri.EscapeDataString(Status)}";
+            if (Guid.TryParse(CustomerFilter.Trim(), out Guid cid)) q += $"&customerId={cid}";
+            var result = await Core.GetAsync(q, session.Value.Token, session.Value.Company, default);
+            if (!result.IsSuccess) { Error = T("سرویس کیف پول پاسخ نداد.","The wallet service did not respond.","لم تستجب خدمة المحفظة."); TxRows = []; TopUpRows = []; return; }
+            var arr = result.Value.ValueKind == JsonValueKind.Array ? result.Value
+                : result.Value.TryGetProperty("items", out var a) && a.ValueKind == JsonValueKind.Array ? a : default;
+            if (Tab == "transactions") TxRows = arr.ValueKind == JsonValueKind.Array ? arr.EnumerateArray().Select(ParseTx).ToList() : [];
+            else TopUpRows = arr.ValueKind == JsonValueKind.Array ? arr.EnumerateArray().Select(ParseTopUp).ToList() : [];
+        }
+        catch (Exception ex) { TxRows = []; TopUpRows = []; Error = ex.Message; }
+        finally { Loading = false; }
+    }
+
+    private static TxRow ParseTx(JsonElement x) => new(
+            Text(x, "referenceNote") ?? "",
+            Dec(x, "amount"),
+            Text(x, "direction") == "credit" ? "credit" : "debit",
+            Text(x, "reasonCode") ?? "",
+            Text(x, "customerCode") ?? "",
+            Text(x, "customerDisplayName") ?? "",
+            x.TryGetProperty("createdAtUtc", out var ct) && ct.ValueKind == JsonValueKind.String && DateTimeOffset.TryParse(ct.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : DateTimeOffset.MinValue);
+
+    private static TopUpRow ParseTopUp(JsonElement x) => new(
+            Text(x, "number") ?? "",
+            Dec(x, "amount"),
+            Text(x, "status") ?? "",
+            Text(x, "gatewayCode") ?? "",
+            Text(x, "gatewayReference"),
+            x.TryGetProperty("createdAtUtc", out var ca) && ca.ValueKind == JsonValueKind.String && DateTimeOffset.TryParse(ca.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : DateTimeOffset.MinValue);
+
+    private static decimal Dec(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.TryGetDecimal(out var d) ? d : 0m;
+    private static string? Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind != JsonValueKind.Null ? v.ToString() : null;
+
+    private void OpenAdjust(){AdjustOpen=true;AdjustMessage=null;AdjustCustomerCode=CustomerFilter;AdjustDirection="credit";AdjustAmount=0;AdjustNote="";}
+    private void CloseAdjust()=>AdjustOpen=false;
+
+    private async Task SubmitAdjust()
+    {
+        Busy = true; AdjustMessage = null;
+        try
+        {
+            var session = await Session();
+            if (session is null) { AdjustMessage = T("نشست منقضی شده است.","Session expired.","انتهت الجلسة."); return; }
+            var byCode = await Core.GetAsync($"api/v1/customers/by-code/{Uri.EscapeDataString(AdjustCustomerCode.Trim())}", session.Value.Token, session.Value.Company, default);
+            if (!byCode.IsSuccess || !byCode.Value.TryGetProperty("id", out var idEl) || !Guid.TryParse(idEl.GetString(), out Guid customerId))
+            { AdjustMessage = T("کد مشتری یافت نشد.","Customer code not found.","لم يتم العثور على رمز العميل."); return; }
+            var result = await Core.SendAsync(HttpMethod.Post, $"api/v1/customers/{customerId}/wallet/adjustments", new { direction = AdjustDirection, amount = AdjustAmount, referenceNote = AdjustNote }, session.Value.Token, session.Value.Company, default);
+            AdjustMessage = result.IsSuccess ? T("ثبت شد.","Applied.","تم التطبيق.") : T("ثبت نشد.","Failed.","فشل.");
+            if (result.IsSuccess) await Load();
+        }
+        catch (Exception ex) { AdjustMessage = ex.Message; }
+        finally { Busy = false; }
+    }
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var u = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid c) && u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+
+    private sealed record TxRow(string ReferenceNote, decimal Amount, string Direction, string ReasonCode, string CustomerCode, string CustomerDisplayName, DateTimeOffset CreatedAtUtc);
+    private sealed record TopUpRow(string Number, decimal Amount, string Status, string GatewayCode, string? GatewayReference, DateTimeOffset CreatedAtUtc);
+}

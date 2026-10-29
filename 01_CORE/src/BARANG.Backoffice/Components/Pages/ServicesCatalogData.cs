@@ -659,7 +659,114 @@ public static class ServicesCatalogData
             Inputs(
                 In("feedbackId", "Guid", "Path", true),
                 In("statusCode", "string", "Body", true)),
-            NoContent, "X-Company-ID", false)
+            NoContent, "X-Company-ID", false),
+
+        N("customers", "52", "POST", "/client/customers/{customerId}/wallet/topups", "ClientCustomerWrite", "client-mutation + هدر Idempotency-Key",
+            "درخواست شارژ کیف پول", "Request wallet top-up", "درخواست شحن المحفظة",
+            "برای مشتری یک درخواست شارژ در وضعیت Pending با شماره و توکن پرداخت یکتا می‌سازد؛ حداقل مبلغ ۱۰٬۰۰۰ است و توکن برای هدایت به درگاه پرداخت استفاده می‌شود. تکرار همان Idempotency-Key همان درخواست را برمی‌گرداند.",
+            "Creates a Pending top-up request with a unique number and payment token; the minimum amount is 10,000 and the token routes the customer to the payment gateway. Replaying the same Idempotency-Key returns the same request.",
+            "ينشئ طلب شحن بحالة Pending برقم ورمز دفع فريدين؛ الحد الأدنى 10,000 والرمز يوجه العميل إلى بوابة الدفع.",
+            Inputs(
+                In("customerId", "Guid", "Path", true),
+                In("amount", "decimal", "Body", true),
+                In("currencyCode", "string", "Body", false)),
+            JsonOut, "Idempotency-Key + X-Company-ID", false),
+
+        N("customers", "53", "GET", "/client/customers/{customerId}/wallet/topups", "ClientCustomerRead", "client-read",
+            "تاریخچه شارژهای کیف پول", "Wallet top-up history", "سجل شحن المحفظة",
+            "فهرست درخواست‌های شارژ مشتری با وضعیت (Pending/Paid/Failed/Cancelled) و فیلتر وضعیت.",
+            "Lists the customer's top-up requests with status (Pending/Paid/Failed/Cancelled) and a status filter.",
+            "يسرد طلبات شحن العميل مع الحالة (Pending/Paid/Failed/Cancelled) ومرشح الحالة.",
+            Inputs(
+                In("customerId", "Guid", "Path", true),
+                In("status", "string", "Query", false),
+                In("page", "int", "Query", false),
+                In("pageSize", "int", "Query", false)),
+            ListOut, "X-Company-ID", false),
+
+        N("customers", "54", "POST", "/client/customers/{customerId}/wallet/topups/{topUpId}/cancel", "ClientCustomerWrite", "client-mutation",
+            "لغو درخواست شارژ", "Cancel wallet top-up", "إلغاء طلب الشحن",
+            "درخواست شارژ در وضعیت Pending را لغو می‌کند؛ درخواست پرداخت‌شده قابل لغو نیست.",
+            "Cancels a Pending top-up request; paid requests cannot be cancelled.",
+            "يلغي طلب الشحن بحالة Pending؛ الطلبات المدفوعة لا تُلغى.",
+            Inputs(
+                In("customerId", "Guid", "Path", true),
+                In("topUpId", "Guid", "Path", true),
+                In("version", "long", "Body", true)),
+            JsonOut, "X-Company-ID", false),
+
+        N("customers", "55", "GET", "/api/v1/public/wallet/topups/{token}", "—", "client-read",
+            "مشاهده درخواست شارژ برای درگاه", "Top-up view for gateway", "عرض طلب الشحن للبوابة",
+            "درگاه پرداخت با توکن یکتا، مبلغ و شماره و وضعیت درخواست شارژ را می‌خواند؛ دسترسی عمومی با توکن محافظت می‌شود.",
+            "The payment gateway reads a top-up's amount, number and status by its unique token; public access is protected by the token.",
+            "تقرأ بوابة الدفع مبلغ ورقم وحالة طلب الشحن بالرمز الفريد؛ الوصول العام محمي بالرمز.",
+            Inputs(In("token", "Guid", "Path", true)),
+            JsonOut, "X-Company-ID (عمومی/عام/Public)", true),
+
+        N("customers", "56", "POST", "/api/v1/public/wallet/topups/{token}/mock-callback", "—", "client-mutation",
+            "بازگشت از درگاه (ماک تستی)", "Gateway callback (mock)", "استدعاء البوابة (تجريبي)",
+            "نتیجه پرداخت درگاه تستی را ثبت می‌کند: موفق → درخواست Paid و یک تراکنش بستانکار به کیف پول؛ ناموفق → Failed. فراخوانی تکراری idempotent است. این اندپوینت در اتصال درگاه واقعی جایگزین می‌شود.",
+            "Records the mock gateway's result: success marks the top-up Paid and credits the wallet ledger; failure marks it Failed. Repeat calls are idempotent. This endpoint is replaced when the real gateway is connected.",
+            "يسجل نتيجة البوابة التجريبية: النجاح يجعل الطلب Paid ويقيد دائناً للمحفظة؛ الفشل يجعله Failed. الاستدعاء المتكرر idempotent. يُستبدل هذا المسار عند ربط البوابة الحقيقية.",
+            Inputs(
+                In("token", "Guid", "Path", true),
+                In("success", "bool", "Body", true),
+                In("gatewayReference", "string", "Body", false)),
+            JsonOut, "X-Company-ID (عمومی/عام/Public)", true),
+
+        N("customers", "57", "POST", "/client/orders/{id}/pay-with-wallet", "ClientOrderWrite", "client-mutation",
+            "پرداخت سفارش از کیف پول", "Pay order from wallet", "دفع الطلب من المحفظة",
+            "مانده باقی‌مانده سفارش ثبت‌شده را از کیف پول بستانکار می‌کند: کنترل موجودی با قفل همزمانی، ثبت تراکنش بدهکار، ثبت Payment با روش wallet و تأیید خودکار وضعیت مالی سفارش.",
+            "Pays the submitted order's remaining amount from the wallet: balance check under a per-customer advisory lock, a debit ledger entry, a Payment record with the wallet method and automatic financial-state approval.",
+            "يدفع المتبقي للطلب المرسل من المحفظة: فحص الرصيد بقفل تزامني، قيد مدين، تسجيل دفعة بطريقة wallet وموافقة مالية تلقائية.",
+            Inputs(
+                In("id", "Guid", "Path", true),
+                In("version", "long", "Body", true)),
+            JsonOut, "X-Company-ID", false),
+
+        N("customers", "58", "GET", "/client/orders/{id}/wallet-payment", "ClientOrderRead", "client-read",
+            "وضعیت پرداخت کیف پولی سفارش", "Order wallet-payment status", "حالة دفع المحفظة للطلب",
+            "جمع کل، پرداخت‌شده، باقی‌مانده و موجودی کیف پول مشتری را برای نمایش دکمه پرداخت برمی‌گرداند.",
+            "Returns the order total, paid and remaining amounts plus the customer's wallet balance for rendering the pay button.",
+            "يعيد إجمالي الطلب والمدفوع والمتبقي ورصيد محفظة العميل لعرض زر الدفع.",
+            Inputs(In("id", "Guid", "Path", true)),
+            JsonOut, "X-Company-ID", false),
+
+        N("customers", "59", "GET", "/api/v1/customers/wallet/transactions", "CustomerRead", "client-read",
+            "دفتر کل کیف پول‌ها (مدیریت)", "Wallet ledger (admin)", "دفتر المحافظ (إدارة)",
+            "همه تراکنش‌های کیف پول مشتریان با فیلتر مشتری و دلیل؛ همان دفتری که صفحه مدیریت کیف پول سامانه نمایش می‌دهد.",
+            "All customer wallet transactions with customer and reason filters; the same ledger the backoffice wallet page renders.",
+            "جميع معاملات محافظ العملاء مع مرشح العميل والسبب؛ نفس الدفتر الذي تعرضه صفحة إدارة المحفظة.",
+            Inputs(
+                In("customerId", "Guid", "Query", false),
+                In("reason", "string", "Query", false),
+                In("page", "int", "Query", false),
+                In("pageSize", "int", "Query", false)),
+            ListOut, "X-Company-ID", false),
+
+        N("customers", "60", "POST", "/api/v1/customers/{customerId}/wallet/adjustments", "CustomerManage", "client-mutation",
+            "اصلاح دستی کیف پول", "Manual wallet adjustment", "تسوية يدوية للمحفظة",
+            "تراکنش بستانکار/بدهکار دستی (reason=manual_adjustment) با یادداشت برای پشتیبانی یا تصحیح ثبت می‌کند.",
+            "Registers a manual credit/debit ledger entry (reason=manual_adjustment) with a note for support or corrections.",
+            "يسجل قيداً دائناً/مديناً يدوياً (reason=manual_adjustment) مع ملاحظة للدعم أو التصحيح.",
+            Inputs(
+                In("customerId", "Guid", "Path", true),
+                In("direction", "string", "Body", true),
+                In("amount", "decimal", "Body", true),
+                In("referenceNote", "string", "Body", false)),
+            JsonOut, "X-Company-ID", false),
+
+        N("customers", "61", "GET", "/api/v1/customers/wallet/topups", "CustomerRead", "client-read",
+            "همه درخواست‌های شارژ (مدیریت)", "All top-ups (admin)", "كل طلبات الشحن (إدارة)",
+            "فهرست همه درخواست‌های شارژ مشتریان با فیلتر وضعیت و مشتری؛ منبع صفحه مدیریت کیف پول.",
+            "Lists every customer's top-up requests with status and customer filters; feeds the backoffice wallet page.",
+            "يسرد جميع طلبات شحن العملاء مع مرشحات الحالة والعميل؛ مصدر صفحة إدارة المحفظة.",
+            Inputs(
+                In("status", "string", "Query", false),
+                In("customerId", "Guid", "Query", false),
+                In("page", "int", "Query", false),
+                In("pageSize", "int", "Query", false)),
+            ListOut, "X-Company-ID", false)
     ];
 
     private static ServiceInfo N(string groupId, string sort, string method, string route, string permission, string limiter,

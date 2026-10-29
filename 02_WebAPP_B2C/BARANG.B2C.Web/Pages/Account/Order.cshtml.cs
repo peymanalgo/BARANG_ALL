@@ -28,6 +28,21 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
     [BindProperty] public string? CancelText { get; set; }
     [BindProperty] public string? CancelReason { get; set; }
     public IReadOnlyList<(string Code, string Name)> CancelReasons { get; private set; } = [];
+    public WalletPaymentInfo? WalletPayment { get; private set; }
+    public string? Paid { get; private set; }
+    public string? PayError { get; private set; }
+
+    public sealed record WalletPaymentInfo(string? OrderNumber, string OrderStatus, string CurrencyCode, decimal Total, decimal Paid, decimal Remaining, decimal WalletBalance, bool FullyPaid);
+
+
+    public async Task<IActionResult> OnPostPayWalletAsync(Guid id)
+    {
+        long version = 0;
+        JsonElement? order = await core.GetAsync($"api/v1/client/orders/{id}");
+        if (order is JsonElement o && o.TryGetProperty("version", out JsonElement v) && v.TryGetInt64(out long n)) version = n;
+        (bool ok, string? problem) = await core.PostRawAsync($"api/v1/client/orders/{id}/pay-with-wallet", new { version });
+        return RedirectToPage(new { id, paid = ok ? "1" : null, payerror = ok ? null : (problem ?? "wallet-failed") });
+    }
 
     private IActionResult? ReauthGuard()
     {
@@ -35,16 +50,31 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
         return RedirectToPage("/Account/Login", new { returnUrl = $"/account/orders/{Id}" });
     }
 
-    public async Task<IActionResult> OnGetAsync(Guid id, string? error)
+    public async Task<IActionResult> OnGetAsync(Guid id, string? error, string? paid, string? payerror)
     {
         Id = id;
         Error = error;
+        Paid = paid;
+        PayError = payerror;
         JsonElement? order = await core.GetAsync($"api/v1/client/orders/{id}");
         if (ReauthGuard() is { } r0) return r0;
         if (order is not JsonElement o || o.ValueKind != JsonValueKind.Object) return NotFound();
         Found = true;
         ParseOrder(o);
         await LoadTrackingAsync();
+        JsonElement? wp = await core.GetAsync($"api/v1/client/orders/{id}/wallet-payment");
+        if (wp is JsonElement w && w.ValueKind == JsonValueKind.Object)
+        {
+            WalletPayment = new WalletPaymentInfo(
+                w.TryGetProperty("orderNumber", out JsonElement won) ? won.GetString() : null,
+                w.TryGetProperty("orderStatus", out JsonElement wst) ? wst.GetString() ?? "" : "",
+                w.TryGetProperty("currencyCode", out JsonElement wcu) ? wcu.GetString() ?? "IRR" : "IRR",
+                w.TryGetProperty("total", out JsonElement wto) && wto.TryGetDecimal(out decimal wtot) ? wtot : 0,
+                w.TryGetProperty("paid", out JsonElement wpa) && wpa.TryGetDecimal(out decimal wpd) ? wpd : 0,
+                w.TryGetProperty("remaining", out JsonElement wre) && wre.TryGetDecimal(out decimal wre2) ? wre2 : 0,
+                w.TryGetProperty("walletBalance", out JsonElement wba) && wba.TryGetDecimal(out decimal wbal) ? wbal : 0,
+                w.TryGetProperty("fullyPaid", out JsonElement wfu) && wfu.ValueKind == JsonValueKind.True);
+        }
         ViewData["Title"] = $"{OrderNumber ?? "—"} · پیرنگ";
         return Page();
     }

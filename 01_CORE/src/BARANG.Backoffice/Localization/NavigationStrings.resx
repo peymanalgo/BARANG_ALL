@@ -60,6 +60,9 @@
   <data name="Nav_Equipment">
     <value>تجهیزات شرکت</value>
   </data>
+  <data name="Nav_CustomerWallet">
+    <value>کیف پول مشتریان</value>
+  </data>
   <data name="Nav_CustomerFeedbacks">
     <value>دیدگاه‌های مشتریان</value>
   </data>

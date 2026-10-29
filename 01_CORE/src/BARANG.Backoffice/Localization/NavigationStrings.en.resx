@@ -60,6 +60,9 @@
   <data name="Nav_Equipment">
     <value>Company Equipment</value>
   </data>
+  <data name="Nav_CustomerWallet">
+    <value>Customer Wallets</value>
+  </data>
   <data name="Nav_CustomerFeedbacks">
     <value>Customer Feedbacks</value>
   </data>

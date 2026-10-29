@@ -80,6 +80,11 @@ public static class CustomerEndpoints
             },ct);
             return Map(result);
         });
+
+        // Customer wallet administration: the ledger inbox for the backoffice.
+        read.MapGet("/wallet/topups",async(string? status,Guid? customerId,int? page,int? pageSize,IWalletAdministration wallet,CancellationToken ct)=>Map(await wallet.AdminListTopUpsAsync(status,customerId,page??1,pageSize??20,ct)));
+        read.MapGet("/wallet/transactions",async(Guid? customerId,string? reason,int? page,int? pageSize,IWalletAdministration wallet,CancellationToken ct)=>Map(await wallet.AdminListTransactionsAsync(customerId,reason,page??1,pageSize??20,ct)));
+        edit.MapPost("/{customerId:guid}/wallet/adjustments",async(Guid customerId,WalletAdjustRequest r,IWalletAdministration wallet,CancellationToken ct)=>Map(await wallet.AdminAdjustAsync(customerId,new WalletAdjustCommand(r.Direction,r.Amount,r.ReferenceNote),ct)));
         return endpoints;
     }
     private static CustomerResult<T>Map<T>(Result<T> result,bool created=false)=>new(result,created);
@@ -98,4 +103,5 @@ public sealed record FinancialRequest(decimal CreditLimit,string? PaymentTermCod
 public sealed record BankAccountRequest(string AccountHolderName,string? BankCode=null,string? BankName=null,string? AccountNumber=null,string? Iban=null,string CurrencyCode="IRR",bool IsDefault=false,string? Notes=null,long Version=0,Guid? BankId=null,Guid? AccountTypeId=null,string? AccountTypeCode=null,string? AccountName=null,BankAccountOwnership OwnershipType=BankAccountOwnership.Individual,string? CardNumber=null,string? BranchCode=null){public BankAccountCommand Command()=>new(BankCode,BankName,AccountNumber,Iban,AccountHolderName,CurrencyCode,IsDefault,Notes,Version,BankId,AccountTypeId,AccountTypeCode,AccountName,OwnershipType,CardNumber,BranchCode);}
 public sealed record CustomerStatusRequest(CustomerStatus Status,long Version);public sealed record ActivationRequest(bool IsActive,long Version);public sealed record VersionRequest(long Version);
 public sealed record FeedbackStatusRequest(string StatusCode);
+public sealed record WalletAdjustRequest(string Direction,decimal Amount,string? ReferenceNote);
 public sealed record CustomerFeedbackAdminView(Guid Id,Guid CustomerId,string? CustomerCode,string? CustomerDisplayName,string FeedbackTypeCode,string Subject,string Body,string StatusCode,DateTimeOffset CreatedAtUtc);
