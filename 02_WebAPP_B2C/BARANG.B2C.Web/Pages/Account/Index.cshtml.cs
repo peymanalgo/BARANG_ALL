@@ -58,7 +58,7 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
             AddressCount = addresses is JsonElement a && a.ValueKind == JsonValueKind.Array ? a.GetArrayLength() : 0;
 
             JsonElement? orders = await core.GetAsync($"api/v1/client/orders?customerId={customerId}&page=1&pageSize=3");
-            OrderCount = orders is JsonElement o && o.TryGetProperty("total", out JsonElement t) && t.TryGetInt64(out long orderTotal) ? orderTotal : 0;
+            OrderCount = orders is JsonElement o && o.TryGetProperty("totalCount", out JsonElement t) && t.TryGetInt64(out long orderTotal) ? orderTotal : 0;
             if (orders is JsonElement oo && oo.TryGetProperty("items", out JsonElement oi) && oi.ValueKind == JsonValueKind.Array)
             {
                 RecentOrders = oi.EnumerateArray().Select(x => new RecentOrder(

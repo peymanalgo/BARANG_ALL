@@ -22,6 +22,7 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
     public IReadOnlyList<ShipmentRow> Shipments { get; private set; } = [];
     public IReadOnlyList<TimelineRow> Timeline { get; private set; } = [];
     public JsonElement? Quote { get; private set; }
+    public int Stage { get; private set; } = 1; // 1=ثبت, 2=ارسال, 3=تحویل; 0=لغو
     public bool Found { get; private set; }
     public string? Error { get; private set; }
     [BindProperty] public string? CancelText { get; set; }
@@ -58,6 +59,13 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
     {
         OrderNumber = o.TryGetProperty("orderNumber", out JsonElement num) ? num.GetString() : null;
         OrderStatus = o.TryGetProperty("status", out JsonElement st) ? st.GetString() ?? "" : "";
+        Stage = OrderStatus switch
+        {
+            "Delivered" => 3,
+            "Submitted" => 2,
+            "Draft" => 1,
+            _ => 1
+        };
         Version = o.TryGetProperty("version", out JsonElement v) && v.TryGetInt64(out long n) ? n : 0;
         OrderDate = ParseDateOnly(o.TryGetProperty("orderDate", out JsonElement od) ? od.GetString() : null);
         RequestedDelivery = ParseDateOnly(o.TryGetProperty("requestedDeliveryDate", out JsonElement rd) ? rd.GetString() : null);

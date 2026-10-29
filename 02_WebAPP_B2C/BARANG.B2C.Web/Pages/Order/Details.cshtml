@@ -34,13 +34,26 @@
                 _ => ""
             };
             if (text.Length == 0) continue;
+            string ql = prop.Name switch
+            {
+                "rawProductTotal" => T("محصول خام", "Raw product", "المنتج الخام"),
+                "printTotal" => T("چاپ", "Printing", "الطباعة"),
+                "packagingTotal" => T("بسته‌بندی", "Packaging", "التغليف"),
+                "shippingTotal" => T("ارسال", "Shipping", "الشحن"),
+                "additionalServiceTotal" => T("خدمات افزوده", "Additional services", "خدمات إضافية"),
+                "subtotal" => T("جمع کل", "Subtotal", "المجموع"),
+                "discountTotal" => T("تخفیف", "Discount", "الخصم"),
+                "taxableTotal" => T("مشمول مالیات", "Taxable", "خاضع للضريبة"),
+                "taxTotal" => T("مالیات", "Tax", "الضريبة"),
+                _ => prop.Name
+            };
             if (prop.Name.Equals("total", StringComparison.OrdinalIgnoreCase) || prop.Name.Equals("totalAmount", StringComparison.OrdinalIgnoreCase) || prop.Name.Equals("grandTotal", StringComparison.OrdinalIgnoreCase))
             {
                 TotalRow = (T("مبلغ کل", "Total", "الإجمالي"), text);
             }
             else if (prop.Value.ValueKind == JsonValueKind.Number)
             {
-                QuoteRows.Add((prop.Name, text));
+                QuoteRows.Add((ql, text));
             }
         }
     }

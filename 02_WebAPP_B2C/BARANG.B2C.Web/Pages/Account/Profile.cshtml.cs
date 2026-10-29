@@ -23,6 +23,7 @@ public sealed class ProfileModel(CoreApiClient core, CustomerContext customers) 
     [BindProperty] public string? NationalId { get; set; }
     public long Version { get; private set; }
     public long ProfileVersion { get; private set; }
+    public int Completeness { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(string? error, string? saved)
     {
@@ -46,6 +47,13 @@ public sealed class ProfileModel(CoreApiClient core, CustomerContext customers) 
             NationalId = ip.TryGetProperty("nationalId", out JsonElement ni) ? ni.GetString() : null;
             ProfileVersion = ip.TryGetProperty("version", out JsonElement pv) && pv.TryGetInt64(out long pvv) ? pvv : 0;
         }
+        int filled = 0;
+        if (!string.IsNullOrWhiteSpace(FirstName)) filled++;
+        if (!string.IsNullOrWhiteSpace(LastName)) filled++;
+        if (!string.IsNullOrWhiteSpace(Mobile)) filled++;
+        if (!string.IsNullOrWhiteSpace(Email)) filled++;
+        if (!string.IsNullOrWhiteSpace(NationalId)) filled++;
+        Completeness = filled * 100 / 5;
         return Page();
     }
 

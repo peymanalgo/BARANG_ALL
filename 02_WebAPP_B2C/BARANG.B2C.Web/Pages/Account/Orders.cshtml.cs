@@ -31,7 +31,7 @@ public sealed class OrdersModel(CoreApiClient core, CustomerContext customers) :
         JsonElement? result = await core.GetAsync($"api/v1/client/orders?customerId={cid.GetString()}&page={Page}&pageSize={PageSize}");
         if (result is JsonElement el && el.ValueKind == JsonValueKind.Object)
         {
-            Total = el.TryGetProperty("total", out JsonElement t) && t.TryGetInt64(out long n) ? n : 0;
+            Total = el.TryGetProperty("totalCount", out JsonElement t) && t.TryGetInt64(out long n) ? n : 0;
             if (el.TryGetProperty("items", out JsonElement items) && items.ValueKind == JsonValueKind.Array)
             {
                 Orders = items.EnumerateArray().Select(x => new OrderRow(

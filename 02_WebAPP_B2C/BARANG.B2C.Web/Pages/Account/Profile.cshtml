@@ -12,6 +12,10 @@
     </nav>
     <header class="section-head">
         <h1>@T("پروفایل من", "My profile", "ملفي")</h1>
+        <div class="completeness" title="@T("کامل بودن پروفایل", "Profile completeness", "اكتمال الملف")">
+            <div class="completeness-bar"><span style="width:@(Model.Completeness)%"></span></div>
+            <small class="muted">@Model.Completeness٪ @T("تکمیل", "complete", "مكتمل")</small>
+        </div>
         @if (Model.CustomerCode is not null)
         {
             <span class="chip" dir="ltr">@Model.CustomerCode</span>

@@ -71,7 +71,7 @@
 else
 {
     <section class="container section">
-        <nav class="breadcrumbs" aria-label="breadcrumb">
+        <nav class="breadcrumbs no-print" aria-label="breadcrumb">
             <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a> ›
             <a href="/account/orders">@T("سفارش‌ها", "Orders", "الطلبات")</a> ›
             <span dir="ltr">@(Model.OrderNumber ?? "—")</span>
@@ -83,6 +83,26 @@ else
             </div>
             <span class="status-chip st-@Model.OrderStatus.ToLowerInvariant() status-lg">@OrderLabel(Model.OrderStatus)</span>
         </header>
+
+        @if (Model.OrderStatus == "Cancelled")
+        {
+            <div class="alert alert-error cancelled-banner" role="alert">✕ @T("این سفارش لغو شده است.", "This order was cancelled.", "تم إلغاء هذا الطلب.")</div>
+        }
+        else
+        {
+            <div class="order-stepper" role="progressbar">
+                @{ var labels = new[] { T("ثبت سفارش", "Submitted", "إرسال الطلب"), T("ارسال", "Shipped", "الشحن"), T("تحویل", "Delivered", "التسليم") }; }
+                @for (int i = 1; i <= 3; i++)
+                {
+                    var st = Model.Stage >= i ? "done" : Model.Stage + 1 == i ? "next" : "todo";
+                    <span class="ostep @st"><b>@(Model.Stage > i ? "✓" : i)</b> @labels[i - 1]</span>
+                    @if (i < 3)
+                    {
+                        <span class="ostep-line @(Model.Stage >= i ? "done" : "")"></span>
+                    }
+                }
+            </div>
+        }
 
         @if (Model.Error is not null)
         {
@@ -189,7 +209,7 @@ else
 
                 @if (Cancellable)
                 {
-                    <div class="card cancel-card">
+                    <div class="card cancel-card no-print">
                         <h2>@T("لغو سفارش", "Cancel order", "إلغاء الطلب")</h2>
                         <form method="post" asp-page-handler="Cancel" class="auth-form">
                             <label><span>@T("دلیل لغو (اختیاری)", "Cancellation reason (optional)", "سبب الإلغاء")</span>
@@ -221,6 +241,9 @@ else
             </div>
         </div>
 
-        <a class="btn btn-ghost btn-sm" href="/account/orders" style="margin-top:1.4rem">→ @T("بازگشت به سفارش‌ها", "Back to orders", "العودة إلى الطلبات")</a>
+        <div class="row-actions" style="margin-top:1.4rem">
+            <button type="button" class="btn btn-ghost btn-sm no-print" onclick="window.print()">🖨 @T("چاپ رسید", "Print receipt", "طباعة الإيصال")</button>
+            <a class="btn btn-ghost btn-sm" href="/account/orders">→ @T("بازگشت به سفارش‌ها", "Back to orders", "العودة إلى الطلبات")</a>
+        </div>
     </section>
 }

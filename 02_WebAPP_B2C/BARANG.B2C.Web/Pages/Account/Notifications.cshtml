@@ -5,6 +5,16 @@
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string CategoryLabel(string c) => c switch
+    {
+        "order" => T("سفارش", "Order", "طلب"),
+        "logistics" => T("لجستیک", "Logistics", "لوجستيات"),
+        "quality" => T("کیفیت", "Quality", "الجودة"),
+        "production" => T("تولید", "Production", "الإنتاج"),
+        "account" => T("حساب", "Account", "الحساب"),
+        "system" => T("سیستم", "System", "النظام"),
+        _ => c
+    };
     ViewData["Title"] = T("اعلان‌های من", "My notifications", "إشعاراتي");
 }
 <section class="container section">
@@ -36,7 +46,7 @@
                     <span class="notif-dot" aria-hidden="true"></span>
                     <div class="notif-body">
                         <p>@n.Summary</p>
-                        <small class="muted">@Date(n.CreatedAtUtc) · @n.Category</small>
+                        <small class="muted">@Date(n.CreatedAtUtc) · @CategoryLabel(n.Category)</small>
                     </div>
                     @if (n.Unread)
                     {

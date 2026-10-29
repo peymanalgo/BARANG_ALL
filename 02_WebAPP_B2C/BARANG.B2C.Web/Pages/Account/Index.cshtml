@@ -4,6 +4,14 @@
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string OrderStatusLabel(string s) => s switch
+    {
+        "Draft" => T("پیش‌نویس", "Draft", "مسودة"),
+        "Submitted" => T("ثبت‌شده", "Submitted", "مُرسل"),
+        "Cancelled" => T("لغوشده", "Cancelled", "ملغى"),
+        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم"),
+        _ => s
+    };
     string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
     ViewData["Title"] = T("حساب کاربری", "My account", "حسابي");
 }
@@ -79,7 +87,7 @@
                 {
                     <a class="card order-card" href="/account/orders/@ro.Id">
                         <div class="order-main"><strong class="order-number" dir="ltr">@(ro.OrderNumber ?? "—")</strong></div>
-                        <span class="status-chip st-@ro.Status.ToLowerInvariant()">@ro.Status</span>
+                        <span class="status-chip st-@ro.Status.ToLowerInvariant()">@OrderStatusLabel(ro.Status)</span>
                     </a>
                 }
             </div>
@@ -89,6 +97,10 @@
             <a class="hub-link" href="/account/addresses">
                 <h2>@T("نشانی‌های من", "My addresses", "عناويني")</h2>
                 <p class="muted">@T("افزودن، ویرایش و انتخاب نشانی پیش‌فرض ارسال.", "Add, edit and pick a default shipping address.", "إضافة وتحرير العناوين واختيار الافتراضي.")</p>
+            </a>
+            <a class="hub-link" href="/account/notifications">
+                <h2>@T("اعلان‌ها", "Notifications", "الإشعارات") @if (Model.UnreadCount > 0) { <span class="hub-badge">@Model.UnreadCount</span> }</h2>
+                <p class="muted">@T("آخرین خبرهای سفارش و وضعیت‌ها.", "Latest order news and statuses.", "أحدث أخبار الطلبات والحالات.")</p>
             </a>
             <a class="hub-link" href="/account/orders">
                 <h2>@T("سفارش‌های من", "My orders", "طلباتي")</h2>
