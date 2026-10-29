@@ -25,11 +25,16 @@ public sealed class AddressesModel(CoreApiClient core, CustomerContext customers
     [BindProperty] public string? RecipientMobile { get; set; }
     [BindProperty] public bool IsDefault { get; set; }
 
-    public async Task OnGet(string? error)
+    private IActionResult? ReauthGuard()
+    {
+        if (!core.SawUnauthorized) return null;
+        return RedirectToPage("/Account/Login", new { returnUrl = "/account" });
+    }
+    public async Task<IActionResult> OnGet(string? error)
     {
         Error = error;
         JsonElement? customer = await customers.CurrentAsync();
-        if (customer is not JsonElement c || c.ValueKind != JsonValueKind.Object || !c.TryGetProperty("id", out JsonElement cid)) return;
+        if (customer is not JsonElement c || c.ValueKind != JsonValueKind.Object || !c.TryGetProperty("id", out JsonElement cid)) return RedirectToPage(new { error = "noprofile" });
         HasProfile = true;
         JsonElement? list = await core.GetAsync($"api/v1/client/customers/{cid.GetString()}/addresses");
         if (list is JsonElement arr && arr.ValueKind == JsonValueKind.Array)
@@ -52,6 +57,8 @@ public sealed class AddressesModel(CoreApiClient core, CustomerContext customers
                     x.TryGetProperty("isDefault", out JsonElement df) && df.ValueKind == JsonValueKind.True,
                     x.TryGetProperty("version", out JsonElement v) && v.TryGetInt64(out long ver) ? ver : 0)).ToList();
         }
+        if (ReauthGuard() is { } r) return r;
+        return Page();
     }
 
     public async Task<IActionResult> OnPostAddAsync()

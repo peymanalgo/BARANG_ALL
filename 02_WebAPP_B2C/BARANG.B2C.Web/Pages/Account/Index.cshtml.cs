@@ -25,12 +25,18 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
     [BindProperty] public string? ProfileLastName { get; set; }
     [BindProperty] public string? ProfileMobile { get; set; }
 
-    public async Task OnGet(string? error)
+    private IActionResult? ReauthGuard()
+    {
+        if (!core.SawUnauthorized) return null;
+        return RedirectToPage("/Account/Login", new { returnUrl = "/account" });
+    }
+    public async Task<IActionResult> OnGet(string? error)
     {
         Error = error;
         Username = User.FindFirst("barang:username")?.Value;
         DisplayName = User.Identity?.Name;
         JsonElement? me = await core.GetAsync("api/v1/auth/me");
+        if (ReauthGuard() is { } r1) return r1;
         if (me is JsonElement x && x.ValueKind == JsonValueKind.Object)
         {
             DisplayName = x.TryGetProperty("displayName", out JsonElement dn) ? dn.GetString() ?? DisplayName : DisplayName;
@@ -59,6 +65,7 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
             UnreadCount = 0;
             foreach (NotificationRow row in Notifications) if (row.Unread) UnreadCount++;
         }
+        return Page();
     }
 
     public async Task<IActionResult> OnPostCreateProfileAsync()

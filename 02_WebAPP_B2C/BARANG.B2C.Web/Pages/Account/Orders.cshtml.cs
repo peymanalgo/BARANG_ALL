@@ -17,11 +17,16 @@ public sealed class OrdersModel(CoreApiClient core, CustomerContext customers) :
     public bool HasNext => Page * PageSize < Total;
     public bool HasPrev => Page > 1;
 
-    public async Task OnGet([FromQuery] int? page)
+    private IActionResult? ReauthGuard()
+    {
+        if (!core.SawUnauthorized) return null;
+        return RedirectToPage("/Account/Login", new { returnUrl = "/account" });
+    }
+    public async Task<IActionResult> OnGet([FromQuery] int? page)
     {
         Page = Math.Max(1, page ?? 1);
         JsonElement? customer = await customers.CurrentAsync();
-        if (customer is not JsonElement c || c.ValueKind != JsonValueKind.Object || !c.TryGetProperty("id", out JsonElement cid)) return;
+        if (customer is not JsonElement c || c.ValueKind != JsonValueKind.Object || !c.TryGetProperty("id", out JsonElement cid)) return Page();
         HasProfile = true;
         JsonElement? result = await core.GetAsync($"api/v1/client/orders?customerId={cid.GetString()}&page={Page}&pageSize={PageSize}");
         if (result is JsonElement el && el.ValueKind == JsonValueKind.Object)
@@ -37,6 +42,8 @@ public sealed class OrdersModel(CoreApiClient core, CustomerContext customers) :
                     x.TryGetProperty("createdAtUtc", out JsonElement ca) ? ca.GetString() : null)).ToList();
             }
         }
+        if (ReauthGuard() is { } r) return r;
+        return Page();
     }
 
     public sealed record OrderRow(Guid Id, string? OrderNumber, string Status, string? OrderDate, string? CreatedAtUtc)

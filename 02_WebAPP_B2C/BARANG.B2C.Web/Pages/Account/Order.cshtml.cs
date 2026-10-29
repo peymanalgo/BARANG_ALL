@@ -16,6 +16,12 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
     public IReadOnlyList<ShipmentRow> Shipments { get; private set; } = [];
     public IReadOnlyList<TimelineRow> Timeline { get; private set; } = [];
     public bool Found { get; private set; }
+    private IActionResult? ReauthGuard()
+    {
+        if (!core.SawUnauthorized) return null;
+        return RedirectToPage("/Account/Login", new { returnUrl = "/account" });
+    }
+
 
     public async Task<IActionResult> OnGet(Guid id)
     {

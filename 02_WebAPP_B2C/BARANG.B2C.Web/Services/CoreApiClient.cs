@@ -18,11 +18,29 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
     private string? CompanyId => configuration["CoreApi:CompanyId"];
     private HttpClient Create() => factory.CreateClient("core");
 
+    // The API session token (inside the auth cookie) expires after 30 minutes;
+    // when a call comes back 401 the caller should sign the user out and send
+    // them to login again.
+    public bool SawUnauthorized => accessor.HttpContext?.Items.ContainsKey("core:401") == true;
+    private void MarkStatus(int statusCode)
+    {
+        if (statusCode == 401) accessor.HttpContext?.Items["core:401"] = true;
+    }
+
     public async Task<JsonElement?> GetAsync(string path)
     {
         using HttpRequestMessage request = new(HttpMethod.Get, path);
         AttachToken(request);
         using HttpResponseMessage response = await Create().SendAsync(request);
+        MarkStatus((int)response.StatusCode);
+        if (!response.IsSuccessStatusCode && (int)response.StatusCode == 401)
+        {
+            // Expired token: retry anonymously so public endpoints still work.
+            using HttpRequestMessage anonymous = new(HttpMethod.Get, path);
+            using HttpResponseMessage retry = await Create().SendAsync(anonymous);
+            if (retry.IsSuccessStatusCode) return await ReadJsonAsync(retry);
+            return null;
+        }
         return response.IsSuccessStatusCode ? await ReadJsonAsync(response) : null;
     }
 
@@ -31,6 +49,7 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
         using HttpRequestMessage request = new(HttpMethod.Post, path) { Content = Body(body) };
         AttachToken(request);
         using HttpResponseMessage response = await Create().SendAsync(request);
+        MarkStatus((int)response.StatusCode);
         return response.IsSuccessStatusCode ? await ReadJsonAsync(response) : null;
     }
 
@@ -39,6 +58,7 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
         using HttpRequestMessage request = new(HttpMethod.Put, path) { Content = Body(body) };
         AttachToken(request);
         using HttpResponseMessage response = await Create().SendAsync(request);
+        MarkStatus((int)response.StatusCode);
         return response.IsSuccessStatusCode ? await ReadJsonAsync(response) : null;
     }
 
@@ -47,6 +67,7 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
         using HttpRequestMessage request = new(HttpMethod.Put, path) { Content = Body(body) };
         AttachToken(request);
         using HttpResponseMessage response = await Create().SendAsync(request);
+        MarkStatus((int)response.StatusCode);
         if (response.IsSuccessStatusCode) return (true, null);
         try
         {
@@ -59,11 +80,31 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
         }
     }
 
+    public async Task<(bool Ok, JsonElement? Value, string? ProblemCode)> PostRawWithBodyAsync(string path, object? body, string? idempotencyKey = null)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Post, path) { Content = Body(body) };
+        AttachToken(request);
+        if (!string.IsNullOrWhiteSpace(idempotencyKey)) request.Headers.Add("Idempotency-Key", idempotencyKey);
+        using HttpResponseMessage response = await Create().SendAsync(request);
+        MarkStatus((int)response.StatusCode);
+        if (response.IsSuccessStatusCode) return (true, await ReadJsonAsync(response), null);
+        try
+        {
+            JsonElement? problem = await ReadJsonAsync(response);
+            return (false, null, problem is JsonElement p && p.TryGetProperty("code", out JsonElement code) ? code.GetString() : null);
+        }
+        catch (JsonException)
+        {
+            return (false, null, null);
+        }
+    }
+
     public async Task<(bool Ok, string? ProblemCode)> PostRawAsync(string path, object? body)
     {
         using HttpRequestMessage request = new(HttpMethod.Post, path) { Content = Body(body) };
         AttachToken(request);
         using HttpResponseMessage response = await Create().SendAsync(request);
+        MarkStatus((int)response.StatusCode);
         if (response.IsSuccessStatusCode) return (true, null);
         try
         {
@@ -73,6 +114,29 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
         catch (JsonException)
         {
             return (false, null);
+        }
+    }
+
+    public async Task<(bool Ok, JsonElement? Value, string? ProblemCode)> PostMultipartAsync(string path, string fileName, string contentType, Stream content, long length)
+    {
+        using MultipartFormDataContent form = new();
+        StreamContent file = new(content);
+        file.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
+        file.Headers.ContentLength = length;
+        form.Add(file, "file", fileName);
+        using HttpRequestMessage request = new(HttpMethod.Post, path) { Content = form };
+        AttachToken(request);
+        using HttpResponseMessage response = await Create().SendAsync(request);
+        MarkStatus((int)response.StatusCode);
+        if (response.IsSuccessStatusCode) return (true, await ReadJsonAsync(response), null);
+        try
+        {
+            JsonElement? problem = await ReadJsonAsync(response);
+            return (false, null, problem is JsonElement p && p.TryGetProperty("code", out JsonElement code) ? code.GetString() : null);
+        }
+        catch (JsonException)
+        {
+            return (false, null, null);
         }
     }
 
@@ -113,6 +177,7 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
                 using HttpRequestMessage request = new(HttpMethod.Post, "api/v1/auth/logout") { Content = Body(null) };
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 using HttpResponseMessage response = await Create().SendAsync(request);
+        MarkStatus((int)response.StatusCode);
             }
             catch (HttpRequestException) { /* best effort - the session expires server-side anyway */ }
         }

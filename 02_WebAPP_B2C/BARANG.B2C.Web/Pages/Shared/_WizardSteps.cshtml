@@ -1,0 +1,17 @@
+@model int
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string[] steps = { T("انتخاب محصول", "Product", "المنتج"), T("چاپ و قیمت", "Print & price", "الطباعة والسعر"), T("ثبت نهایی", "Submit", "الإرسال") };
+}
+<div class="container wizard-steps" aria-label="steps">
+    @for (int i = 0; i < steps.Length; i++)
+    {
+        var state = i + 1 < Model ? "done" : i + 1 == Model ? "current" : "todo";
+        <span class="wstep @state"><b>@(i + 1)</b> @steps[i]</span>
+        @if (i < steps.Length - 1)
+        {
+            <span class="wstep-line" aria-hidden="true"></span>
+        }
+    }
+</div>
