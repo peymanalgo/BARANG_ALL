@@ -631,3 +631,13 @@ html[dir="ltr"] .order-go { transform: scaleX(-1); }
     .order-card { padding: .75rem .85rem; }
     .status-lg { font-size: .8rem; padding: .22rem .6rem; }
 }
+
+/* ---------- mascot band (پیرنگ‌خان) ---------- */
+.mascot-band { display: flex; align-items: center; gap: 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 1.2rem 1.4rem; box-shadow: var(--shadow); margin-top: .6rem; }
+.mascot-img { width: 130px; height: 130px; flex: none; filter: drop-shadow(0 10px 18px rgba(19,26,42,.18)); animation: floaty 6s ease-in-out infinite; }
+.mascot-bubble { position: relative; background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent); border-radius: 16px; padding: .9rem 1.2rem; flex: 1; }
+.mascot-bubble::before { content: ""; position: absolute; top: 50%; inset-inline-start: -9px; width: 16px; height: 16px; background: inherit; border-inline-start: 1px solid color-mix(in srgb, var(--primary) 30%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--primary) 30%, transparent); transform: translateY(-50%) rotate(45deg); }
+html[dir="ltr"] .mascot-bubble::before { transform: translateY(-50%) rotate(-135deg); }
+.mascot-bubble strong { color: var(--primary); font-size: .95rem; }
+.mascot-bubble p { margin: .25rem 0 0; font-size: .95rem; color: var(--text); }
+@media (max-width: 560px) { .mascot-band { flex-direction: column; text-align: center; } .mascot-bubble::before { display: none; } }

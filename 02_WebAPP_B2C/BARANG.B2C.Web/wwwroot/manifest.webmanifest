@@ -1,0 +1,23 @@
+{
+  "name": "پیرنگ — فروشگاه طرح‌های چاپی",
+  "short_name": "پیرنگ",
+  "description": "فروشگاه طرح‌های چاپی پیرنگ — سفارش آنلاین چاپ روی پوشاک و هدایا",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "browser"],
+  "orientation": "portrait",
+  "theme_color": "#2b5cff",
+  "background_color": "#f6f7fb",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "کاتالوگ طرح‌ها", "url": "/catalog", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "سفارش‌های من", "url": "/account/orders", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

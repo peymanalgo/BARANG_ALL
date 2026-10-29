@@ -45,7 +45,7 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
         Found = true;
         ParseOrder(o);
         await LoadTrackingAsync();
-        ViewData["Title"] = $"{OrderNumber ?? "—"} · برنگ";
+        ViewData["Title"] = $"{OrderNumber ?? "—"} · پیرنگ";
         return Page();
     }
 

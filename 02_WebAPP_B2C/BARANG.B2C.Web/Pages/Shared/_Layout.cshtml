@@ -14,12 +14,17 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@(ViewData["Title"] is string t && t.Length > 0 ? $"{t} · برنگ" : "برنگ — فروشگاه طرح‌های چاپی")</title>
-    <meta name="description" content="@(ViewData["Description"] ?? "فروشگاه طرح‌های چاپی برنگ — سفارش آنلاین چاپ روی لباس و هدایا")" />
+    <title>@(ViewData["Title"] is string t && t.Length > 0 ? $"{t} · پیرنگ" : "پیرنگ — فروشگاه طرح‌های چاپی")</title>
+    <meta name="description" content="@(ViewData["Description"] ?? "فروشگاه طرح‌های چاپی پیرنگ — سفارش آنلاین چاپ روی لباس و هدایا")" />
+    <meta name="theme-color" content="#2b5cff" />
+    <link rel="manifest" href="~/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="~/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta property="og:type" content="@(ViewData["OgType"] ?? "website")" />
-    <meta property="og:site_name" content="برنگ" />
-    <meta property="og:title" content="@(ViewData["Title"] is string ot && ot.Length > 0 ? ot : "برنگ — فروشگاه طرح‌های چاپی")" />
-    <meta property="og:description" content="@(ViewData["Description"] ?? "فروشگاه طرح‌های چاپی برنگ — سفارش آنلاین چاپ روی لباس و هدایا")" />
+    <meta property="og:site_name" content="پیرنگ" />
+    <meta property="og:title" content="@(ViewData["Title"] is string ot && ot.Length > 0 ? ot : "پیرنگ — فروشگاه طرح‌های چاپی")" />
+    <meta property="og:description" content="@(ViewData["Description"] ?? "فروشگاه طرح‌های چاپی پیرنگ — سفارش آنلاین چاپ روی لباس و هدایا")" />
     @if (ViewData["OgImage"] is string ogImage && ogImage.Length > 0)
     {
         <meta property="og:image" content="@ogImage" />
@@ -30,7 +35,7 @@
 <header class="store-header">
     <div class="container header-inner">
         <a class="brand" href="/">
-            <span class="brand-word">برنگ</span>
+            <span class="brand-word">پیرنگ</span>
             <span class="brand-sub">@T("فروشگاه طرح‌های چاپی", "Print design store", "متجر تصاميم الطباعة")</span>
         </a>
         <form class="header-search" action="/catalog" method="get" role="search">
@@ -72,7 +77,7 @@
 <footer class="store-footer">
     <div class="container footer-grid">
         <div>
-            <span class="brand-word">برنگ</span>
+            <span class="brand-word">پیرنگ</span>
             <p>@T("طرح‌های آماده چاپ روی پوشاک و هدایای تبلیغاتی؛ سفارش آنلاین، پیگیری تا تحویل.", "Ready-to-print designs for apparel and promotional gifts; order online and track until delivery.", "تصاميم جاهزة للطباعة على الملابس والهدايا الدعائية؛ اطلب عبر الإنترنت وتتبع حتى التسليم.")</p>
         </div>
         <div>
@@ -88,7 +93,7 @@
     </div>
     <div class="footer-base">
         <div class="container">
-            <span>© برنگ @DateTime.Now.Year</span>
+            <span>© پیرنگ @DateTime.Now.Year</span>
             <span dir="ltr" class="muted">BARANG · B2C</span>
         </div>
     </div>
