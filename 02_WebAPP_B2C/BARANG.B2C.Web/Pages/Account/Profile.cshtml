@@ -1,6 +1,8 @@
 @page
 @model ProfileModel
 @{
+    Layout = "_AccountLayout";
+    ViewData["PanelActive"] = "profile";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     ViewData["Title"] = T("پروفایل من", "My profile", "ملفي");

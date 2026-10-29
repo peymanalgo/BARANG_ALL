@@ -60,12 +60,10 @@ public static class PublicCatalogEndpoints
             if(publicCompany is null)return Results.StatusCode(503);
             using IDisposable scope=companies.BeginScope(publicCompany.Value);
             Result<IReadOnlyList<PublicCatalogCategoryView>> result=await tx.ExecuteAsync(async t=>{
-                List<PublicCatalogCategoryView> rows=await db.Artworks.AsNoTracking()
-                    .Where(x=>!x.IsArchived&&x.LifecycleStatus==ArtworkLifecycle.Active&&x.CurrentVersionId!=null&&x.CategoryCode!=null&&x.CategoryCode!="")
-                    .GroupBy(x=>x.CategoryCode!)
-                    .OrderBy(x=>x.Key)
-                    .Select(x=>new PublicCatalogCategoryView(x.Key,x.Count()))
-                    .ToListAsync(t);
+                List<Artwork> arts=await db.Artworks.AsNoTracking().Where(x=>!x.IsArchived&&x.LifecycleStatus==ArtworkLifecycle.Active&&x.CurrentVersionId!=null).ToListAsync(t);
+                string[] codes=arts.Where(x=>!string.IsNullOrWhiteSpace(x.CategoryCode)).Select(x=>x.CategoryCode!).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                Dictionary<string,string> names=codes.Length==0?[]:(await (from v in db.LookupValues.AsNoTracking().Where(v=>codes.Contains(v.Code)) join ty in db.LookupTypes.AsNoTracking() on v.LookupTypeId equals ty.Id where ty.Code=="artwork.category" join tr in db.LookupValueTranslations.AsNoTracking() on v.Id equals tr.LookupValueId select new {v.Code,tr.DisplayName}).ToListAsync(t)).GroupBy(x=>x.Code,StringComparer.OrdinalIgnoreCase).ToDictionary(g=>g.Key,g=>string.Join(' ',g.Select(x=>x.DisplayName)),StringComparer.OrdinalIgnoreCase);
+                List<PublicCatalogCategoryView> rows=arts.Where(x=>!string.IsNullOrWhiteSpace(x.CategoryCode)).GroupBy(x=>x.CategoryCode!).OrderByDescending(g=>g.Count()).Select(g=>new PublicCatalogCategoryView(g.Key,names.TryGetValue(g.Key,out var n)?n:g.Key,g.Count())).ToList();
                 return Result.Success<IReadOnlyList<PublicCatalogCategoryView>>(rows);
             },ct);
             return result.IsSuccess?Results.Ok(result.Value):Results.StatusCode(503);
@@ -138,5 +136,5 @@ public static class PublicCatalogEndpoints
 public sealed record PublicCatalogItemView(Guid Id,string Code,string Title,string?CategoryCode,Guid? ArtworkVersionId,string?ThumbnailUrl,string?PreviewUrl);
 public sealed record PublicCatalogItemDetail(Guid Id,string Code,string Title,string?CategoryCode,string?Description,Guid? ArtworkVersionId,string?ThumbnailUrl,string?PreviewUrl);
 public sealed record PublicCatalogPage(long Total,int Page,int PageSize,IReadOnlyList<PublicCatalogItemView> Items);
-public sealed record PublicCatalogCategoryView(string Code,int Count);
+public sealed record PublicCatalogCategoryView(string Code,string DisplayName,int Count);
 public sealed record PublicConceptMatch(Guid Id,string Code,string Title,string?CategoryName,Guid? ArtworkVersionId,string?ThumbnailUrl,string?PreviewUrl,int Score);

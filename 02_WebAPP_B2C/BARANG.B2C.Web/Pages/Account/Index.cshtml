@@ -2,8 +2,11 @@
 @model IndexModel
 @using System.Globalization
 @{
+    Layout = "_AccountLayout";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
     string OrderStatusLabel(string s) => s switch
     {
         "Draft" => T("پیش‌نویس", "Draft", "مسودة"),
@@ -12,20 +15,22 @@
         "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم"),
         _ => s
     };
-    string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
-    ViewData["Title"] = T("حساب کاربری", "My account", "حسابي");
+    int StepIndex(string s) => s switch { "Delivered" => 4, "Submitted" => 2, "Cancelled" => -1, _ => 1 };
+    string[] StepLabels() => [T("ثبت سفارش", "Placed", "تسجيل"), T("در حال تولید", "In production", "في الإنتاج"), T("ارسال", "Shipped", "الشحن"), T("تحویل", "Delivered", "التسليم")];
+    string AddressTypeLabel(string? t) => t switch
+    {
+        "home" => T("خانه", "Home", "المنزل"),
+        "work" => T("محل کار", "Work", "العمل"),
+        "billing" => T("صورتحساب", "Billing", "الفوترة"),
+        "shipping" => T("ارسال", "Shipping", "الشحن"),
+        "warehouse" => T("انبار", "Warehouse", "المستودع"),
+        _ => T("سایر", "Other", "أخرى")
+    };
+    ViewData["PanelActive"] = "dashboard";
+    ViewData["PanelTitle"] = T("داشبورد", "Dashboard", "لوحة التحكم");
 }
-<section class="container section">
-    <header class="account-hub-head">
-        <div>
-            <h1>@T("سلام،", "Hello,", "مرحباً،") @(Model.DisplayName ?? Model.Username)</h1>
-            <p class="muted">@T("از این‌جا سفارش‌ها، نشانی‌ها و اعلان‌هایتان را مدیریت کنید.", "Manage your orders, addresses and notifications here.", "أدر طلباتك وعناوينك وإشعاراتك من هنا.")</p>
-        </div>
-        <form method="post" asp-page-handler="MarkAllRead">
-            <button type="submit" class="btn btn-ghost btn-sm">@T("خواندن همه اعلان‌ها", "Mark all read", "تعليم الكل مقروءاً")</button>
-        </form>
-    </header>
 
+<div class="panel-content">
     @if (!Model.HasProfile)
     {
         <div class="card profile-create">
@@ -39,24 +44,11 @@
             {
                 <div class="alert alert-error" role="alert">@T("این کد مشتری قبلاً ثبت شده است.", "This customer code is already registered.", "رمز العميل مسجل مسبقاً.")</div>
             }
-            @if (Model.Error == "customer.invalid_mobile" || Model.Error == "customer.invalid_phone")
-            {
-                <div class="alert alert-error" role="alert">@T("شماره موبایل معتبر نیست.", "The mobile number is not valid.", "رقم الهاتف غير صالح.")</div>
-            }
             <form method="post" asp-page-handler="CreateProfile" class="auth-form profile-form">
                 <div class="form-cols">
-                    <label>
-                        <span>@T("نام", "First name", "الاسم")</span>
-                        <input type="text" asp-for="ProfileFirstName" required />
-                    </label>
-                    <label>
-                        <span>@T("نام خانوادگی", "Last name", "اسم العائلة")</span>
-                        <input type="text" asp-for="ProfileLastName" required />
-                    </label>
-                    <label>
-                        <span>@T("موبایل", "Mobile", "الهاتف")</span>
-                        <input type="text" asp-for="ProfileMobile" dir="ltr" placeholder="09…" required />
-                    </label>
+                    <label><span>@T("نام", "First name", "الاسم")</span><input type="text" asp-for="ProfileFirstName" required /></label>
+                    <label><span>@T("نام خانوادگی", "Last name", "اسم العائلة")</span><input type="text" asp-for="ProfileLastName" required /></label>
+                    <label><span>@T("موبایل", "Mobile", "الهاتف")</span><input type="text" asp-for="ProfileMobile" dir="ltr" placeholder="09…" required /></label>
                 </div>
                 <button type="submit" class="btn btn-primary">@T("ساخت پروفایل", "Create profile", "إنشاء الملف")</button>
             </form>
@@ -64,100 +56,230 @@
     }
     else
     {
-        <div class="hub-stats">
-            <a class="stat-card" href="/account/addresses">
-                <strong>@Model.AddressCount</strong>
-                <span>@T("نشانی ثبت‌شده", "Saved addresses", "عناوين محفوظة")</span>
-            </a>
-            <a class="stat-card" href="/account/orders">
-                <strong>@Model.OrderCount</strong>
-                <span>@T("سفارش", "Orders", "طلبات")</span>
-            </a>
-            <div class="stat-card stat-id">
-                <strong>@(Model.CustomerName ?? Model.CustomerCode)</strong>
-                <span dir="ltr" class="muted">@Model.CustomerCode</span>
+        <section class="dash-hero">
+            <div class="dash-hero-text">
+                <h1>@T("سلام", "Hi", "مرحباً") @(Model.CustomerName ?? Model.DisplayName) <span class="wave">👋</span></h1>
+                <p>@T("خوش آمدی به دنیای طرح‌ها و تیشرت‌های خاص!", "Welcome to the world of special designs and t-shirts!", "مرحباً بك في عالم التصاميم والتيشرتات الخاصة!")</p>
+                <div class="dash-hero-actions">
+                    <a class="btn btn-primary" href="/order/select">@T("سفارش جدید", "New order", "طلب جديد")</a>
+                    <a class="btn btn-light" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم")</a>
+                </div>
             </div>
-        </div>
+            <img class="dash-hero-art" src="~/images/pirang-khan.png" alt="" aria-hidden="true" />
+        </section>
 
-        @if (Model.RecentOrders.Count > 0)
-        {
-            <div class="section-head" style="margin-bottom:.7rem"><h2>@T("آخرین سفارش‌ها", "Latest orders", "أحدث الطلبات")</h2><a class="link-more" href="/account/orders">@T("همه ←", "All →", "الكل ←")</a></div>
-            <div class="order-list" style="margin-bottom:1.6rem">
-                @foreach (var ro in Model.RecentOrders)
-                {
-                    <a class="card order-card" href="/account/orders/@ro.Id">
-                        <div class="order-main"><strong class="order-number" dir="ltr">@(ro.OrderNumber ?? "—")</strong></div>
-                        <span class="status-chip st-@ro.Status.ToLowerInvariant()">@OrderStatusLabel(ro.Status)</span>
-                    </a>
-                }
-            </div>
-        }
+        <section class="dash-stats">
+            <a class="dash-stat wallet" href="/account/wallet">
+                <span class="dash-stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+                </span>
+                <strong>@Money(Model.Wallet.Balance)</strong>
+                <span>@T("اعتبار کیف پول (تومان)", "Wallet credit (Toman)", "رصيد المحفظة")</span>
+            </a>
+            <a class="dash-stat" href="/account/orders">
+                <span class="dash-stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                </span>
+                <strong>@Model.InProgressCount.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong>
+                <span>@T("در حال انجام", "In progress", "قيد التنفيذ")</span>
+            </a>
+            <a class="dash-stat" href="/account/orders">
+                <span class="dash-stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                </span>
+                <strong>@Model.DeliveredCount.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong>
+                <span>@T("سفارش موفق", "Delivered orders", "طلبات مسلمة")</span>
+            </a>
+            <a class="dash-stat" href="/account/favorites">
+                <span class="dash-stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7z"/></svg>
+                </span>
+                <strong>@Model.FavoriteCount.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong>
+                <span>@T("طرح مورد علاقه", "Favorites", "مفضلة")</span>
+            </a>
+            <a class="dash-stat" href="/account/addresses">
+                <span class="dash-stat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                </span>
+                <strong>@Model.AddressCount.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong>
+                <span>@T("آدرس ثبت‌شده", "Saved addresses", "عناوين محفوظة")</span>
+            </a>
+        </section>
 
-        <div class="hub-links">
-            <a class="hub-link" href="/account/addresses">
-                <h2>@T("نشانی‌های من", "My addresses", "عناويني")</h2>
-                <p class="muted">@T("افزودن، ویرایش و انتخاب نشانی پیش‌فرض ارسال.", "Add, edit and pick a default shipping address.", "إضافة وتحرير العناوين واختيار الافتراضي.")</p>
-            </a>
-            <a class="hub-link" href="/account/notifications">
-                <h2>@T("اعلان‌ها", "Notifications", "الإشعارات") @if (Model.UnreadCount > 0) { <span class="hub-badge">@Model.UnreadCount</span> }</h2>
-                <p class="muted">@T("آخرین خبرهای سفارش و وضعیت‌ها.", "Latest order news and statuses.", "أحدث أخبار الطلبات والحالات.")</p>
-            </a>
-            <a class="hub-link" href="/account/orders">
-                <h2>@T("سفارش‌های من", "My orders", "طلباتي")</h2>
-                <p class="muted">@T("فهرست سفارش‌ها و رهگیری مرسوله تا تحویل.", "Order list and shipment tracking until delivery.", "قائمة الطلبات وتتبع الشحنة حتى التسليم.")</p>
-            </a>
-            <a class="hub-link" href="/catalog">
-                <h2>@T("سفارش جدید", "New order", "طلب جديد")</h2>
-                <p class="muted">@T("از کاتالوگ طرح‌ها انتخاب کنید.", "Pick a design from the catalog.", "اختر تصميماً من الكتالوج.")</p>
-            </a>
-        </div>
-    }
-
-    <section class="notif-section">
-        <div class="section-head">
-            <h2>@T("اعلان‌های اخیر", "Recent notifications", "أحدث الإشعارات")</h2>
-            @if (Model.UnreadCount > 0)
-            {
-                <span class="chip chip-unread">@T($"{Model.UnreadCount} خوانده‌نشده", $"{Model.UnreadCount} unread", "{Model.UnreadCount} غير مقروء")</span>
-            }
-        </div>
-        @if (Model.Notifications.Count == 0)
-        {
-            <p class="empty">@T("اعلانی ندارید.", "No notifications.", "لا إشعارات.")</p>
-        }
-        else
-        {
-            <ul class="notif-list">
-                @foreach (var n in Model.Notifications)
-                {
-                    <li class="@(n.Unread ? "unread" : null)">
-                        <span class="notif-dot" aria-hidden="true"></span>
-                        <div class="notif-body">
-                            <p>@n.Summary</p>
-                            <small class="muted">@Date(n.CreatedAtUtc) · @n.Category</small>
+        <div class="dash-grid">
+            <section class="dash-col">
+                <div class="dash-card">
+                    <div class="dash-card-head">
+                        <h2>@T("طرح‌های مورد علاقه", "Favorite designs", "التصاميم المفضلة")</h2>
+                        <a class="link-more" href="/account/favorites">@T("همه ←", "All →", "الكل ←")</a>
+                    </div>
+                    @if (Model.Favorites.Count == 0)
+                    {
+                        <p class="empty">@T("هنوز طرحی به علاقه‌مندی‌ها اضافه نکرده‌اید.", "No favorites yet.", "لا مفضلات بعد.")</p>
+                    }
+                    else
+                    {
+                        <div class="fav-grid">
+                            @foreach (var f in Model.Favorites)
+                            {
+                                <a class="fav-item" href="/order/select?design=@f.ArtworkId" title="@f.Title">
+                                    @if (!string.IsNullOrWhiteSpace(f.ThumbnailUrl))
+                                    {
+                                        <img src="@f.ThumbnailUrl" alt="@f.Title" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="fav-placeholder" aria-hidden="true"></span>
+                                    }
+                                    <form method="post" asp-page="/Account/Favorites" asp-page-handler="Toggle" class="fav-heart-form">
+                                        <input type="hidden" name="artworkId" value="@f.ArtworkId" />
+                                        <input type="hidden" name="returnUrl" value="/account" />
+                                        <button type="submit" class="fav-heart on" title="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة")" aria-label="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة")">♥</button>
+                                    </form>
+                                </a>
+                            }
                         </div>
-                    </li>
+                    }
+                </div>
+
+                <div class="dash-card">
+                    <div class="dash-card-head">
+                        <h2>@T("آخرین سفارش‌ها", "Latest orders", "أحدث الطلبات")</h2>
+                        <a class="link-more" href="/account/orders">@T("همه ←", "All →", "الكل ←")</a>
+                    </div>
+                    @if (Model.RecentOrders.Count == 0)
+                    {
+                        <p class="empty">@T("هنوز سفارشی ثبت نکرده‌اید.", "No orders yet.", "لا طلبات بعد.")</p>
+                    }
+                    else
+                    {
+                        <div class="mini-orders">
+                            @foreach (var ro in Model.RecentOrders)
+                            {
+                                var step = StepIndex(ro.Status);
+                                var labels = StepLabels();
+                                <a class="mini-order" href="/account/orders/@ro.Id">
+                                    <div class="mini-order-head">
+                                        <strong dir="ltr">@(ro.OrderNumber ?? "—")</strong>
+                                        <span class="status-chip st-@ro.Status.ToLowerInvariant()">@OrderStatusLabel(ro.Status)</span>
+                                    </div>
+                                    @if (step > 0)
+                                    {
+                                        <div class="mini-timeline" role="img" aria-label="@OrderStatusLabel(ro.Status)">
+                                            @for (int i = 1; i <= 4; i++)
+                                            {
+                                                <span class="mini-step @(i <= step ? "done" : null)"><i></i><small>@labels[i - 1]</small></span>
+                                            }
+                                        </div>
+                                    }
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <aside class="dash-side">
+                <div class="dash-card wallet-card">
+                    <h2>@T("کیف پول من", "My wallet", "محفظتي")</h2>
+                    <p class="wallet-balance">@Money(Model.Wallet.Balance) <small>@T("تومان", "Toman", "تومان")</small></p>
+                    <a class="btn btn-light btn-sm" href="/account/wallet">@T("تراکنش‌ها", "Transactions", "المعاملات")</a>
+                </div>
+                <a class="dash-quick" href="/order/select">
+                    <strong>@T("سفارش سریع", "Quick order", "طلب سريع")</strong>
+                    <span>@T("طرح را انتخاب کن و در چند دقیقه سفارش بده.", "Pick a design and order in minutes.", "اختر تصميماً واطلب في دقائق.")</span>
+                </a>
+                <a class="dash-quick" href="/account/custom-designs">
+                    <strong>@T("طراحی اختصاصی", "Custom design", "تصميم مخصص")</strong>
+                    <span>@T("طرح خودت را آپلود کن.", "Upload your own design.", "ارفع تصميمك الخاص.")</span>
+                </a>
+                <a class="dash-quick accent" href="/account/feedback">
+                    <strong>@T("نیاز به راهنمایی داری؟", "Need help?", "تحتاج مساعدة؟")</strong>
+                    <span>@T("سؤالت را بپرس یا پیشنهادت را بنویس.", "Ask a question or share a suggestion.", "اسأل أو شارك اقتراحك.")</span>
+                </a>
+                @if (Model.Notifications.Count > 0)
+                {
+                    <div class="dash-card notif-mini">
+                        <div class="dash-card-head">
+                            <h2>@T("اعلان‌ها", "Notifications", "الإشعارات")</h2>
+                            <form method="post" asp-page-handler="MarkAllRead">
+                                <button type="submit" class="link-more as-button">@T("خواندن همه", "Mark all read", "الكل مقروء")</button>
+                            </form>
+                        </div>
+                        <ul class="notif-list compact">
+                            @foreach (var n in Model.Notifications.Take(3))
+                            {
+                                <li class="@(n.Unread ? "unread" : null)">
+                                    <span class="notif-dot" aria-hidden="true"></span>
+                                    <div class="notif-body"><p>@n.Summary</p><small class="muted">@Date(n.CreatedAtUtc)</small></div>
+                                </li>
+                            }
+                        </ul>
+                        <a class="link-more" href="/account/notifications">@T("همه اعلان‌ها ←", "All notifications →", "كل الإشعارات ←")</a>
+                    </div>
                 }
-            </ul>
-        }
-    </section>
+            </aside>
+        </div>
 
-    <details class="card password-card">
-        <summary><h2>@T("تغییر کلمه عبور", "Change password", "تغيير كلمة المرور")</h2></summary>
-        <form method="post" asp-page="/Account/ChangePassword" class="auth-form">
-            <label>
-                <span>@T("کلمه عبور فعلی", "Current password", "كلمة المرور الحالية")</span>
-                <input type="password" name="currentPassword" autocomplete="current-password" required />
-            </label>
-            <label>
-                <span>@T("کلمه عبور جدید", "New password", "كلمة المرور الجديدة")</span>
-                <input type="password" name="newPassword" autocomplete="new-password" minlength="9" required />
-            </label>
-            <button type="submit" class="btn btn-primary">@T("تغییر کلمه عبور", "Change password", "تغيير")</button>
-        </form>
-    </details>
+        <section class="dash-row">
+            <div class="dash-card offers">
+                <div class="dash-card-head">
+                    <h2>@T("پیشنهادهای ویژه", "Special picks", "اختيارات مميزة")</h2>
+                    <a class="link-more" href="/catalog">@T("همه طرح‌ها ←", "All designs →", "كل التصاميم ←")</a>
+                </div>
+                <div class="offer-grid">
+                    @foreach (var o in Model.Offers)
+                    {
+                        <a class="offer-item" href="/order/select?design=@o.Id">
+                            @if (!string.IsNullOrWhiteSpace(o.ThumbnailUrl))
+                            {
+                                <img src="@o.ThumbnailUrl" alt="@o.Title" loading="lazy" />
+                            }
+                            <span class="offer-title">@o.Title</span>
+                        </a>
+                    }
+                    @if (Model.Offers.Count == 0)
+                    {
+                        <p class="empty">@T("طرحی برای نمایش نیست.", "No designs to show.", "لا تصاميم للعرض.")</p>
+                    }
+                </div>
+            </div>
 
-    <form method="post" asp-page-handler="Logout" class="logout-row">
-        <button type="submit" class="btn btn-ghost btn-sm">@T("خروج از حساب", "Sign out", "تسجيل الخروج")</button>
-    </form>
-</section>
+            <a class="dash-add-design" href="/account/custom-designs">
+                <span class="plus" aria-hidden="true">+</span>
+                <strong>@T("افزودن طرح جدید", "Add new design", "إضافة تصميم جديد")</strong>
+                <span>@T("طرح اختصاصی‌ات را آپلود کن", "Upload your custom design", "ارفع تصميمك المخصص")</span>
+            </a>
+
+            <div class="dash-card addr">
+                <div class="dash-card-head">
+                    <h2>@T("آدرس‌های من", "My addresses", "عناويني")</h2>
+                    <a class="link-more" href="/account/addresses">@T("مدیریت ←", "Manage →", "إدارة ←")</a>
+                </div>
+                @if (Model.Addresses.Count == 0)
+                {
+                    <p class="empty">@T("هنوز آدرسی ثبت نکرده‌اید.", "No addresses yet.", "لا عناوين بعد.")</p>
+                }
+                else
+                {
+                    <div class="addr-list">
+                        @foreach (var ad in Model.Addresses)
+                        {
+                            <div class="addr-item">
+                                <div class="addr-item-head">
+                                    <strong>@(string.IsNullOrWhiteSpace(ad.Title) ? AddressTypeLabel(ad.TypeCode) : ad.Title)</strong>
+                                    <span class="addr-chip">@AddressTypeLabel(ad.TypeCode)</span>
+                                    @if (ad.IsDefault)
+                                    {
+                                        <span class="addr-chip default">@T("پیش‌فرض", "Default", "افتراضي")</span>
+                                    }
+                                </div>
+                                <p class="muted">@(string.IsNullOrWhiteSpace(ad.AddressLine) ? ad.City : $"{ad.City} — {ad.AddressLine}")</p>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</div>

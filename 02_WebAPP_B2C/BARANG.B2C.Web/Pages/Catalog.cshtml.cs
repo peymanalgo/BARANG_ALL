@@ -19,13 +19,25 @@ public sealed class CatalogModel(CoreApiClient core) : PageModel
 
     public bool HasNext => Page * PageSize < Total;
     public bool HasPrev => Page > 1;
+    public bool IsAuthenticated => User.Identity?.IsAuthenticated == true;
+    public HashSet<string> FavoriteIds { get; private set; } = new(StringComparer.Ordinal);
+    public string CurrentUrl => "/catalog" + QueryString.Create(new Dictionary<string, string?>
+    {
+        ["page"] = Page.ToString(),
+        ["search"] = string.IsNullOrWhiteSpace(Search) ? null : Search.Trim(),
+        ["category"] = string.IsNullOrWhiteSpace(Category) ? null : Category.Trim()
+    }).Value;
 
     public async Task OnGet([FromQuery] int? page)
     {
         Page = Math.Max(1, page ?? 1);
         string search = (Search ?? "").Trim();
         string path = $"api/v1/public/catalog?page={Page}&pageSize={PageSize}" + (search.Length > 0 ? $"&search={Uri.EscapeDataString(search)}" : "") + (string.IsNullOrWhiteSpace(Category) ? "" : $"&categoryCode={Uri.EscapeDataString(Category.Trim())}");
-        JsonElement? result = await core.GetAsync(path);
+        Task<JsonElement?> catalogTask = core.GetAsync(path);
+        Task<JsonElement?> favoritesTask = IsAuthenticated
+            ? LoadFavoriteIdsAsync()
+            : Task.FromResult<JsonElement?>(null);
+        JsonElement? result = await catalogTask;
         (Designs, Total) = DesignCard.FromPage(result);
 
         if (search.Length >= 2)
@@ -51,6 +63,24 @@ public sealed class CatalogModel(CoreApiClient core) : PageModel
                 x.TryGetProperty("count", out JsonElement cnt) && cnt.TryGetInt32(out int n) ? n : 0))
                 .Where(x => x.Item1.Length > 0).ToList();
         }
+
+        if (await favoritesTask is JsonElement f && f.ValueKind == JsonValueKind.Array)
+        {
+            FavoriteIds = f.EnumerateArray()
+                .Select(x => x.TryGetProperty("artworkId", out JsonElement fid) ? fid.GetString() : null)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .ToHashSet(StringComparer.Ordinal);
+        }
+    }
+
+    private async Task<JsonElement?> LoadFavoriteIdsAsync()
+    {
+        string? username = User.FindFirst("barang:username")?.Value;
+        if (string.IsNullOrWhiteSpace(username)) return null;
+        JsonElement? customer = await core.GetAsync($"api/v1/client/customers/by-code/{Uri.EscapeDataString(username)}");
+        if (customer is not JsonElement c || !c.TryGetProperty("id", out JsonElement cid)) return null;
+        return await core.GetAsync($"api/v1/client/customers/{cid.GetString()}/favorites");
     }
 
     public string PageLink(int pageNumber) => "/catalog" + QueryString.Create(new Dictionary<string, string?>

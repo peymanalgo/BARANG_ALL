@@ -128,3 +128,89 @@ public sealed partial class Customer
     private void Touch(DateTimeOffset now){UpdatedAtUtc=now;Version++;}
     private sealed record CustomerData(string DisplayName,string? Mobile,string? Phone,string? Email,string? EconomicCode,string? CustomerGroupCode,string? PriceGroupCode,Guid? SalesRepresentativePersonId,string? Notes);
 }
+
+
+public sealed class CustomerFavoriteDesign
+{
+    public Guid Id { get; private set; }
+    public Guid CompanyId { get; private set; }
+    public Guid CustomerId { get; private set; }
+    public Guid ArtworkId { get; private set; }
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public static CustomerFavoriteDesign Create(Guid id, Guid companyId, Guid customerId, Guid artworkId, DateTimeOffset now)
+        => new() { Id = id, CompanyId = companyId, CustomerId = customerId, ArtworkId = artworkId, CreatedAtUtc = now };
+}
+
+
+public enum CustomerWalletDirection { Credit = 1, Debit = 2 }
+
+public sealed class CustomerWalletTransaction
+{
+    public Guid Id { get; private set; }
+    public Guid CompanyId { get; private set; }
+    public Guid CustomerId { get; private set; }
+    public CustomerWalletDirection Direction { get; private set; }
+    public decimal Amount { get; private set; }
+    public string CurrencyCode { get; private set; } = "";
+    public string ReasonCode { get; private set; } = "";
+    public string? ReferenceNote { get; private set; }
+    public Guid? OrderId { get; private set; }
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public static Result<CustomerWalletTransaction> Create(Guid id, Guid companyId, Guid customerId, CustomerWalletDirection direction, decimal amount, string currencyCode, string reasonCode, string? referenceNote, Guid? orderId, DateTimeOffset now)
+    {
+        if (customerId == Guid.Empty) return Result.Failure<CustomerWalletTransaction>(CustomerErrors.InvalidData);
+        if (amount <= 0) return Result.Failure<CustomerWalletTransaction>(CustomerErrors.InvalidData);
+        if (string.IsNullOrWhiteSpace(currencyCode) || string.IsNullOrWhiteSpace(reasonCode)) return Result.Failure<CustomerWalletTransaction>(CustomerErrors.InvalidData);
+        return Result.Success(new CustomerWalletTransaction { Id = id, CompanyId = companyId, CustomerId = customerId, Direction = direction, Amount = decimal.Round(amount, 0), CurrencyCode = currencyCode.Trim().ToUpperInvariant(), ReasonCode = reasonCode.Trim(), ReferenceNote = CustomerText.Name(referenceNote, 500, true), OrderId = orderId is Guid o && o != Guid.Empty ? o : null, CreatedAtUtc = now });
+    }
+}
+
+
+public sealed class CustomerFeedback
+{
+    public const int SubjectMinLength = 3;
+    public const int SubjectMaxLength = 120;
+    public const int BodyMinLength = 10;
+    public const int BodyMaxLength = 2000;
+
+    public Guid Id { get; private set; }
+    public Guid CompanyId { get; private set; }
+    public Guid CustomerId { get; private set; }
+    public string FeedbackTypeCode { get; private set; } = "";
+    public string Subject { get; private set; } = "";
+    public string Body { get; private set; } = "";
+    public string StatusCode { get; private set; } = "new";
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public static Result<CustomerFeedback> Create(Guid id, Guid companyId, Guid customerId, string feedbackTypeCode, string subject, string body, DateTimeOffset now)
+    {
+        string? type = CustomerText.Category(feedbackTypeCode);
+        string? s = CustomerText.Name(subject);
+        string? b = CustomerText.Name(body);
+        if (type is null) return Result.Failure<CustomerFeedback>(CustomerErrors.InvalidData);
+        if (s is null || s.Length is < SubjectMinLength or > SubjectMaxLength) return Result.Failure<CustomerFeedback>(CustomerErrors.InvalidData);
+        if (b is null || b.Length is < BodyMinLength or > BodyMaxLength) return Result.Failure<CustomerFeedback>(CustomerErrors.InvalidData);
+        return Result.Success(new CustomerFeedback { Id = id, CompanyId = companyId, CustomerId = customerId, FeedbackTypeCode = type, Subject = s, Body = b, StatusCode = "new", CreatedAtUtc = now });
+    }
+}
+
+
+public sealed class CustomerCustomDesign
+{
+    public Guid Id { get; private set; }
+    public Guid CompanyId { get; private set; }
+    public Guid CustomerId { get; private set; }
+    public string Title { get; private set; } = "";
+    public Guid FileVersionId { get; private set; }
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public static Result<CustomerCustomDesign> Create(Guid id, Guid companyId, Guid customerId, string title, Guid fileVersionId, DateTimeOffset now)
+    {
+        string? t = CustomerText.Name(title);
+        if (t is null || t.Length > 120) return Result.Failure<CustomerCustomDesign>(CustomerErrors.InvalidData);
+        if (fileVersionId == Guid.Empty) return Result.Failure<CustomerCustomDesign>(CustomerErrors.InvalidData);
+        return Result.Success(new CustomerCustomDesign { Id = id, CompanyId = companyId, CustomerId = customerId, Title = t, FileVersionId = fileVersionId, CreatedAtUtc = now });
+    }
+}

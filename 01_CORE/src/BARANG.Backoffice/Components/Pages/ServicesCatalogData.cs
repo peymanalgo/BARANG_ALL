@@ -548,7 +548,92 @@ public static class ServicesCatalogData
             "Lists the user's authorized companies for picking the active company context (Company-ID) in the multi-company setup.",
             "يسرد شركات المستخدم المصرح بها لاختيار سياق الشركة النشط (Company-ID) في النظام متعدد الشركات.",
             Inputs(),
-            "JSON: آرایه شرکت‌های مجاز", "Authorization: Bearer Token", false, true)
+            "JSON: آرایه شرکت‌های مجاز", "Authorization: Bearer Token", false, true),
+
+        N("customers", "41", "GET", "/client/customers/{customerId}/favorites", "ClientCustomerRead", "client-read",
+            "طرح‌های مورد علاقه مشتری", "Customer favorite designs", "تصاميم العميل المفضلة",
+            "فهرست طرح‌هایی که مشتری به علاقه‌مندی‌هایش افزوده است؛ همراه عنوان، دسته‌بندی و تصویر بندانگشتی هر طرح.",
+            "Lists the designs a customer added to favorites, with each design's title, category and thumbnail.",
+            "يسرد التصاميم التي أضافها العميل إلى المفضلة، مع العنوان والفئة والصورة المصغرة لكل تصميم.",
+            Inputs(In("customerId", "Guid", "Path", true)),
+            ListOut, "X-Company-ID", false),
+
+        N("customers", "42", "PUT", "/client/customers/{customerId}/favorites/{artworkId}", "ClientCustomerWrite", "client-mutation",
+            "افزودن طرح به علاقه‌مندی‌ها", "Add design to favorites", "إضافة تصميم إلى المفضلة",
+            "طرح را به فهرست علاقه‌مندی‌های مشتری اضافه می‌کند؛ افزودن تکراری نادیده گرفته می‌شود.",
+            "Adds a design to the customer's favorites; duplicates are ignored.",
+            "يضيف تصميماً إلى مفضلة العميل؛ يتم تجاهل التكرار.",
+            Inputs(
+                In("customerId", "Guid", "Path", true),
+                In("artworkId", "Guid", "Path", true)),
+            NoContent, "X-Company-ID", false),
+
+        N("customers", "43", "DELETE", "/client/customers/{customerId}/favorites/{artworkId}", "ClientCustomerWrite", "—",
+            "حذف طرح از علاقه‌مندی‌ها", "Remove design from favorites", "إزالة تصميم من المفضلة",
+            "طرح را از فهرست علاقه‌مندی‌های مشتری حذف می‌کند.",
+            "Removes a design from the customer's favorites.",
+            "يزيل تصميماً من مفضلة العميل.",
+            Inputs(
+                In("customerId", "Guid", "Path", true),
+                In("artworkId", "Guid", "Path", true)),
+            NoContent, "X-Company-ID", false),
+
+        N("customers", "44", "GET", "/client/customers/{customerId}/wallet", "ClientCustomerRead", "client-read",
+            "کیف پول و تراکنش‌ها", "Wallet and transactions", "المحفظة والمعاملات",
+            "مانده کیف پول مشتری (جمع بستانکار منهای بدهکار) و ۵۰ تراکنش اخیر با دلیل و مرجع را برمی‌گرداند.",
+            "Returns the customer's wallet balance (total credits minus debits) and the 50 most recent transactions with reason and reference.",
+            "يعيد رصيد محفظة العميل (مجموع الدائن ناقص المدين) وآخر 50 معاملة مع السبب والمرجع.",
+            Inputs(In("customerId", "Guid", "Path", true)),
+            JsonOut, "X-Company-ID", false),
+
+        N("customers", "45", "GET", "/client/customers/{customerId}/feedback", "ClientCustomerRead", "client-read",
+            "دیدگاه‌ها و پیشنهادهای مشتری", "Customer feedback list", "ملاحظات و اقتراحات العميل",
+            "فهرست دیدگاه‌ها، انتقادها و پیشنهادهای ثبت‌شده مشتری با نوع و وضعیت بررسی.",
+            "Lists the customer's submitted suggestions, complaints and reviews with type and review status.",
+            "يسرد اقتراحات وشكاوى ومراجعات العميل مع النوع وحالة المراجعة.",
+            Inputs(In("customerId", "Guid", "Path", true)),
+            ListOut, "X-Company-ID", false),
+
+        N("customers", "46", "POST", "/client/customers/{customerId}/feedback", "ClientCustomerWrite", "client-mutation",
+            "ثبت دیدگاه یا پیشنهاد", "Submit feedback", "إرسال ملاحظة",
+            "دیدگاه، انتقاد یا پیشنهاد جدید مشتری را با نوع (از lookup با کد feedback.type) و موضوع و متن ثبت می‌کند.",
+            "Registers a new customer suggestion, complaint or review with a type (from the feedback.type lookup), subject and body.",
+            "يسجل اقتراحاً أو شكوى أو مراجعة جديدة للعميل مع النوع (من lookup.feedback.type) والموضوع والنص.",
+            Inputs(
+                In("customerId", "Guid", "Path", true),
+                In("feedbackTypeCode", "string", "Body", true),
+                In("subject", "string", "Body", true),
+                In("body", "string", "Body", true)),
+            JsonOut, "X-Company-ID", false),
+
+        N("customers", "47", "POST", "/client/customers/{customerId}/custom-designs", "ClientCustomerWrite", "client-mutation + هدر Idempotency-Key",
+            "بارگذاری طرح سفارشی", "Upload custom design", "تحميل تصميم مخصص",
+            "فایل طرح اختصاصی مشتری را آپلود و به‌عنوان طرح سفارشی او ثبت می‌کند؛ شناسه قطعی فایل به‌همراه هدر Idempotency-Key از بارگذاری تکراری جلوگیری می‌کند.",
+            "Uploads the customer's custom design file and registers it as his custom design; deterministic file ids plus the Idempotency-Key header prevent duplicate uploads.",
+            "يحمّل ملف التصميم المخصص للعميل ويسجله كتصميم خاص به؛ المعرّفات الحتمية للملفات ومفتاح عدم التكرار يمنعان الرفع المكرر.",
+            Inputs(
+                In("customerId", "Guid", "Path", true),
+                In("file", "file", "Form", true),
+                In("title", "string", "Form", true)),
+            JsonOut, "Idempotency-Key + X-Company-ID", false),
+
+        N("customers", "48", "GET", "/client/customers/{customerId}/custom-designs", "ClientCustomerRead", "client-read",
+            "طرح‌های سفارشی مشتری", "Customer custom designs", "تصاميم العميل المخصصة",
+            "فهرست طرح‌های اختصاصی بارگذاری‌شده توسط مشتری با تصویر بندانگشتی و پیش‌نمایش.",
+            "Lists the custom designs the customer uploaded, with thumbnails and previews.",
+            "يسرد التصاميم المخصصة التي رفعها العميل مع الصور المصغرة والمعاينات.",
+            Inputs(In("customerId", "Guid", "Path", true)),
+            ListOut, "X-Company-ID", false),
+
+        N("customers", "49", "DELETE", "/client/customers/{customerId}/custom-designs/{designId}", "ClientCustomerWrite", "—",
+            "حذف طرح سفارشی", "Delete custom design", "حذف تصميم مخصص",
+            "طرح سفارشی مشخص‌شده را از فهرست طرح‌های مشتری حذف می‌کند.",
+            "Deletes the specified custom design from the customer's list.",
+            "يحذف التصميم المخصص المحدد من قائمة العميل.",
+            Inputs(
+                In("customerId", "Guid", "Path", true),
+                In("designId", "Guid", "Path", true)),
+            NoContent, "X-Company-ID", false)
     ];
 
     private static ServiceInfo N(string groupId, string sort, string method, string route, string permission, string limiter,

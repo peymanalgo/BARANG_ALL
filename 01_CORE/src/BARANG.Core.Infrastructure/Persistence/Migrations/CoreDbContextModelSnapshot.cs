@@ -3160,6 +3160,137 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Customers.CustomerCustomDesign", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<Guid>("FileVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_version_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_custom_designs");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_customer_custom_designs_company_id");
+
+                    b.HasIndex("CustomerId", "CreatedAtUtc")
+                        .HasDatabaseName("ix_customer_custom_designs_customer_created");
+
+                    b.ToTable("customer_custom_designs", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Customers.CustomerFavoriteDesign", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ArtworkId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("artwork_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_favorite_designs");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_customer_favorite_designs_company_id");
+
+                    b.HasIndex("CustomerId", "ArtworkId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_customer_favorite_designs_customer_artwork");
+
+                    b.ToTable("customer_favorite_designs", "barang");
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Customers.CustomerFeedback", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("body");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("FeedbackTypeCode")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("feedback_type_code");
+
+                    b.Property<string>("StatusCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status_code");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("subject");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_feedbacks");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_customer_feedbacks_company_id");
+
+                    b.HasIndex("CustomerId", "CreatedAtUtc")
+                        .HasDatabaseName("ix_customer_feedbacks_customer_created");
+
+                    b.ToTable("customer_feedbacks", "barang");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Customers.CustomerFinancialProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3261,6 +3392,67 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_customer_financial_profiles_version_positive", "version > 0");
                         });
+                });
+
+            modelBuilder.Entity("BARANG.Core.Domain.Customers.CustomerWalletTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18)
+                        .HasColumnType("numeric(18,0)")
+                        .HasColumnName("amount");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("currency_code");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<int>("Direction")
+                        .HasColumnType("integer")
+                        .HasColumnName("direction");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("reason_code");
+
+                    b.Property<string>("ReferenceNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reference_note");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_wallet_transactions");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_customer_wallet_transactions_company_id");
+
+                    b.HasIndex("CustomerId", "CreatedAtUtc")
+                        .HasDatabaseName("ix_customer_wallet_transactions_customer_created");
+
+                    b.ToTable("customer_wallet_transactions", "barang");
                 });
 
             modelBuilder.Entity("BARANG.Core.Domain.Customers.IndividualCustomerProfile", b =>

@@ -3,6 +3,8 @@
 @using System.Globalization
 @using System.Text.Json
 @{
+    Layout = "_AccountLayout";
+    ViewData["PanelActive"] = "orders";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     string OrderLabel(string s) => s switch

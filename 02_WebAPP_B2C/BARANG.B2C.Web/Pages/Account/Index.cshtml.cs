@@ -7,7 +7,11 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace BARANG.B2C.Web.Pages.Account;
 
-public sealed record RecentOrder(Guid Id, string? OrderNumber, string Status);
+public sealed record RecentOrder(Guid Id, string? OrderNumber, string Status, string? OrderDate, DateTimeOffset CreatedAtUtc);
+public sealed record FavoriteDesign(Guid ArtworkId, string Title, string? ThumbnailUrl);
+public sealed record OfferDesign(Guid Id, string Title, string? ThumbnailUrl);
+public sealed record AddressCard(Guid Id, string? Title, string? TypeCode, string? City, string? AddressLine, bool IsDefault);
+public sealed record WalletSummary(decimal Balance, string CurrencyCode);
 
 [Authorize(Policy = "LoggedIn")]
 public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : PageModel
@@ -20,8 +24,15 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
     public string? CustomerCode { get; private set; }
     public long AddressCount { get; private set; }
     public long OrderCount { get; private set; }
+    public long InProgressCount { get; private set; }
+    public long DeliveredCount { get; private set; }
+    public long FavoriteCount { get; private set; }
+    public WalletSummary Wallet { get; private set; } = new(0, "IRR");
     public IReadOnlyList<NotificationRow> Notifications { get; private set; } = [];
     public IReadOnlyList<RecentOrder> RecentOrders { get; private set; } = [];
+    public IReadOnlyList<FavoriteDesign> Favorites { get; private set; } = [];
+    public IReadOnlyList<OfferDesign> Offers { get; private set; } = [];
+    public IReadOnlyList<AddressCard> Addresses { get; private set; } = [];
     public long UnreadCount { get; private set; }
 
     [BindProperty] public string? ProfileFirstName { get; set; }
@@ -33,6 +44,7 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
         if (!core.SawUnauthorized) return null;
         return RedirectToPage("/Account/Login", new { returnUrl = "/account" });
     }
+
     public async Task<IActionResult> OnGet(string? error)
     {
         Error = error;
@@ -54,28 +66,101 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
             CustomerCode = c.TryGetProperty("customerCode", out JsonElement code) ? code.GetString() : null;
             string customerId = cid.GetString() ?? "";
 
-            JsonElement? addresses = await core.GetAsync($"api/v1/client/customers/{customerId}/addresses");
-            AddressCount = addresses is JsonElement a && a.ValueKind == JsonValueKind.Array ? a.GetArrayLength() : 0;
+            Task<JsonElement?> addressesTask = core.GetAsync($"api/v1/client/customers/{customerId}/addresses");
+            Task<JsonElement?> ordersTask = core.GetAsync($"api/v1/client/orders?customerId={customerId}&page=1&pageSize=5");
+            Task<JsonElement?> favoritesTask = core.GetAsync($"api/v1/client/customers/{customerId}/favorites");
+            Task<JsonElement?> walletTask = core.GetAsync($"api/v1/client/customers/{customerId}/wallet");
+            Task<JsonElement?> notifsTask = core.GetAsync("api/v1/notifications/mine?page=1&pageSize=5");
+            Task<JsonElement?> offersTask = core.GetAsync("api/v1/public/catalog?page=1&pageSize=8");
+            await Task.WhenAll(addressesTask, ordersTask, favoritesTask, walletTask, notifsTask, offersTask);
+            if (ReauthGuard() is { } r2) return r2;
 
-            JsonElement? orders = await core.GetAsync($"api/v1/client/orders?customerId={customerId}&page=1&pageSize=3");
-            OrderCount = orders is JsonElement o && o.TryGetProperty("totalCount", out JsonElement t) && t.TryGetInt64(out long orderTotal) ? orderTotal : 0;
-            if (orders is JsonElement oo && oo.TryGetProperty("items", out JsonElement oi) && oi.ValueKind == JsonValueKind.Array)
+            if (addressesTask.Result is JsonElement a && a.ValueKind == JsonValueKind.Array)
             {
-                RecentOrders = oi.EnumerateArray().Select(x => new RecentOrder(
-                    x.TryGetProperty("id", out JsonElement rid) && Guid.TryParse(rid.GetString(), out Guid rg) ? rg : Guid.Empty,
-                    x.TryGetProperty("orderNumber", out JsonElement rnum) ? rnum.GetString() : null,
-                    x.TryGetProperty("status", out JsonElement rst) ? rst.GetString() ?? "" : "")).ToList();
+                AddressCount = a.GetArrayLength();
+                Addresses = a.EnumerateArray().Take(2).Select(x => new AddressCard(
+                    x.TryGetProperty("id", out JsonElement aid) && Guid.TryParse(aid.GetString(), out Guid ag) ? ag : Guid.Empty,
+                    x.TryGetProperty("title", out JsonElement ti) ? ti.GetString() : null,
+                    x.TryGetProperty("addressTypeCode", out JsonElement ty) ? ty.GetString() : null,
+                    x.TryGetProperty("cityCode", out JsonElement ci) ? ci.GetString() : null,
+                    x.TryGetProperty("addressLine1", out JsonElement al) ? al.GetString() : null,
+                    x.TryGetProperty("isDefault", out JsonElement df) && df.ValueKind == JsonValueKind.True)).ToList();
+            }
+
+            if (ordersTask.Result is JsonElement o)
+            {
+                OrderCount = o.TryGetProperty("totalCount", out JsonElement t) && t.TryGetInt64(out long orderTotal) ? orderTotal : 0;
+                if (o.TryGetProperty("items", out JsonElement oi) && oi.ValueKind == JsonValueKind.Array)
+                {
+                    List<RecentOrder> recent = [];
+                    foreach (JsonElement x2 in oi.EnumerateArray())
+                    {
+                        string status = x2.TryGetProperty("status", out JsonElement st) ? st.GetString() ?? "" : "";
+                        if (status is "Draft" or "Cancelled") { }
+                        else if (status == "Delivered") DeliveredCount++;
+                        else InProgressCount++;
+                        recent.Add(new RecentOrder(
+                            x2.TryGetProperty("id", out JsonElement rid) && Guid.TryParse(rid.GetString(), out Guid rg) ? rg : Guid.Empty,
+                            x2.TryGetProperty("orderNumber", out JsonElement rnum) ? rnum.GetString() : null,
+                            status,
+                            x2.TryGetProperty("orderDate", out JsonElement od) ? od.GetString() : null,
+                            x2.TryGetProperty("createdAtUtc", out JsonElement ca) && ca.ValueKind == JsonValueKind.String && DateTimeOffset.TryParse(ca.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset d) ? d : default));
+                    }
+                    RecentOrders = recent;
+                }
+            }
+
+            if (favoritesTask.Result is JsonElement f && f.ValueKind == JsonValueKind.Array)
+            {
+                FavoriteCount = f.GetArrayLength();
+                Favorites = f.EnumerateArray().Take(4).Select(x => new FavoriteDesign(
+                    x.TryGetProperty("artworkId", out JsonElement fid) && Guid.TryParse(fid.GetString(), out Guid fg) ? fg : Guid.Empty,
+                    x.TryGetProperty("title", out JsonElement ft) ? ft.GetString() ?? "" : "",
+                    x.TryGetProperty("thumbnailUrl", out JsonElement th) ? th.GetString() : null)).ToList();
+            }
+
+            if (walletTask.Result is JsonElement w && w.ValueKind == JsonValueKind.Object)
+            {
+                Wallet = new WalletSummary(
+                    w.TryGetProperty("balance", out JsonElement b) && b.TryGetDecimal(out decimal bal) ? bal : 0,
+                    w.TryGetProperty("currencyCode", out JsonElement cur) ? cur.GetString() ?? "IRR" : "IRR");
+            }
+
+            if (notifsTask.Result is JsonElement n && n.ValueKind == JsonValueKind.Object)
+            {
+                Notifications = NotificationRow.FromPage(n);
+                UnreadCount = 0;
+                foreach (NotificationRow row in Notifications) if (row.Unread) UnreadCount++;
+            }
+
+            if (offersTask.Result is JsonElement of && of.TryGetProperty("items", out JsonElement oi2) && oi2.ValueKind == JsonValueKind.Array)
+            {
+                Random rnd = Random.Shared;
+                List<OfferDesign> pool = oi2.EnumerateArray().Select(x => new OfferDesign(
+                    x.TryGetProperty("id", out JsonElement oid) && Guid.TryParse(oid.GetString(), out Guid og) ? og : Guid.Empty,
+                    x.TryGetProperty("title", out JsonElement ot) ? ot.GetString() ?? "" : "",
+                    x.TryGetProperty("thumbnailUrl", out JsonElement oth) ? oth.GetString() : null)).ToList();
+                Offers = pool.OrderBy(_ => rnd.Next()).Take(4).ToList();
             }
         }
-
-        JsonElement? notifs = await core.GetAsync("api/v1/notifications/mine?page=1&pageSize=5");
-        if (notifs is JsonElement n && n.ValueKind == JsonValueKind.Object)
+        else
         {
-            Notifications = NotificationRow.FromPage(n);
-            UnreadCount = 0;
-            foreach (NotificationRow row in Notifications) if (row.Unread) UnreadCount++;
+            await LoadOffersAsync();
         }
         return Page();
+    }
+
+    private async Task LoadOffersAsync()
+    {
+        JsonElement? offers = await core.GetAsync("api/v1/public/catalog?page=1&pageSize=8");
+        if (offers is JsonElement of && of.TryGetProperty("items", out JsonElement oi) && oi.ValueKind == JsonValueKind.Array)
+        {
+            List<OfferDesign> pool = oi.EnumerateArray().Select(x => new OfferDesign(
+                x.TryGetProperty("id", out JsonElement oid) && Guid.TryParse(oid.GetString(), out Guid og) ? og : Guid.Empty,
+                x.TryGetProperty("title", out JsonElement ot) ? ot.GetString() ?? "" : "",
+                x.TryGetProperty("thumbnailUrl", out JsonElement oth) ? oth.GetString() : null)).ToList();
+            Offers = pool.OrderBy(_ => Random.Shared.Next()).Take(4).ToList();
+        }
     }
 
     public async Task<IActionResult> OnPostCreateProfileAsync()

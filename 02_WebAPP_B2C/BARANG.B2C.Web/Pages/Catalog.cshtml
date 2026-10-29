@@ -73,21 +73,31 @@
         <div class="design-grid">
             @foreach (var d in Model.Designs)
             {
-                <a class="design-card" href="/design/@d.Id">
-                    <span class="design-thumb">
-                        @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
-                        {
-                            <img src="@d.Thumbnail" alt="@d.Title" width="600" height="600" loading="lazy" decoding="async" />
-                        }
-                    </span>
-                    <span class="design-meta">
-                        <strong>@d.Title</strong>
-                        @if (!string.IsNullOrWhiteSpace(d.CategoryCode))
-                        {
-                            <span class="chip">@d.CategoryCode</span>
-                        }
-                    </span>
-                </a>
+                <div class="design-card-wrap">
+                    <a class="design-card" href="/design/@d.Id">
+                        <span class="design-thumb">
+                            @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
+                            {
+                                <img src="@d.Thumbnail" alt="@d.Title" width="600" height="600" loading="lazy" decoding="async" />
+                            }
+                        </span>
+                        <span class="design-meta">
+                            <strong>@d.Title</strong>
+                            @if (!string.IsNullOrWhiteSpace(d.CategoryCode))
+                            {
+                                <span class="chip">@d.CategoryCode</span>
+                            }
+                        </span>
+                    </a>
+                    @if (Model.IsAuthenticated)
+                    {
+                        <form method="post" asp-page="/Account/Favorites" asp-page-handler="Toggle" class="fav-heart-form">
+                            <input type="hidden" name="artworkId" value="@d.Id" />
+                            <input type="hidden" name="returnUrl" value="@Model.CurrentUrl" />
+                            <button type="submit" class="fav-heart @(Model.FavoriteIds.Contains(d.Id.ToString()) ? "on" : null)" title="@T("علاقه‌مندی", "Favorite", "مفضل")" aria-label="@T("افزودن/حذف از علاقه‌مندی‌ها", "Toggle favorite", "تبديل المفضلة")">♥</button>
+                        </form>
+                    }
+                </div>
             }
         </div>
 

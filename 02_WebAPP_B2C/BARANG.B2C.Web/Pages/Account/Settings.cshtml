@@ -1,0 +1,66 @@
+@page
+@model SettingsModel
+@using System.Globalization
+@{
+    Layout = "_AccountLayout";
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["PanelActive"] = "settings";
+    ViewData["PanelTitle"] = T("تنظیمات", "Settings", "الإعدادات");
+}
+
+<div class="panel-content">
+    <header class="panel-page-head">
+        <h1>@T("تنظیمات", "Settings", "الإعدادات")</h1>
+        <p class="muted">@T("حسابت، امنیت و زبان فروشگاه را از همین‌جا مدیریت کن.", "Manage your account, security and store language here.", "أدر حسابك وأمنك ولغة المتجر من هنا.")</p>
+    </header>
+
+    <div class="settings-grid">
+        <a class="dash-quick" href="/account/profile">
+            <strong>@T("اطلاعات حساب", "Account info", "بيانات الحساب")</strong>
+            <span>@T("نام، موبایل و اطلاعات تماس.", "Name, mobile and contact info.", "الاسم والهاتف وبيانات الاتصال.")</span>
+        </a>
+        <a class="dash-quick" href="/account/addresses">
+            <strong>@T("آدرس‌ها", "Addresses", "العناوين")</strong>
+            <span>@T("نشانی‌های ارسال و نشانی پیش‌فرض.", "Shipping addresses and the default one.", "عناوين الشحن والعنوان الافتراضي.")</span>
+        </a>
+
+        <div class="dash-card settings-password">
+            <h2>@T("تغییر کلمه عبور", "Change password", "تغيير كلمة المرور")</h2>
+            @if (Model.Error == "empty" || Model.Error == "failed")
+            {
+                <div class="alert alert-error" role="alert">@T("تغییر کلمه عبور ناموفق بود؛ کلمه عبور فعلی و کلمه جدید (حداقل ۹ نویسه) را درست وارد کن.", "Password change failed; check the current password and the new one (min 9 chars).", "فشل تغيير كلمة المرور؛ تحقق من الحالية والجديدة (٩ أحرف على الأقل).")</div>
+            }
+            @if (Model.Error == "empty")
+            {
+                <div class="alert alert-error" role="alert">@T("هر دو کلمه عبور الزامی است.", "Both passwords are required.", "كلا كلمتي المرور مطلوبتان.")</div>
+            }
+            <form method="post" asp-page="/Account/ChangePassword" class="auth-form">
+                <label>
+                    <span>@T("کلمه عبور فعلی", "Current password", "كلمة المرور الحالية")</span>
+                    <input type="password" name="currentPassword" autocomplete="current-password" required />
+                </label>
+                <label>
+                    <span>@T("کلمه عبور جدید", "New password", "كلمة المرور الجديدة")</span>
+                    <input type="password" name="newPassword" autocomplete="new-password" minlength="9" required />
+                </label>
+                <button type="submit" class="btn btn-primary">@T("تغییر کلمه عبور", "Change password", "تغيير")</button>
+                <small class="muted">@T("پس از تغییر، همه نشست‌ها بسته می‌شوند و دوباره وارد می‌شوی.", "All sessions are revoked after the change and you sign in again.", "تُبطل جميع الجلسات بعد التغيير وتسجل الدخول مجدداً.")</small>
+            </form>
+        </div>
+
+        <div class="dash-card settings-lang">
+            <h2>@T("زبان", "Language", "اللغة")</h2>
+            <div class="lang-choices">
+                <a class="lang-choice @(culture == "fa" ? "on" : null)" href="?culture=fa">فارسی</a>
+                <a class="lang-choice @(culture == "en" ? "on" : null)" href="?culture=en">English</a>
+                <a class="lang-choice @(culture == "ar" ? "on" : null)" href="?culture=ar">العربية</a>
+            </div>
+        </div>
+
+        <form method="post" asp-page="/Account/Index" asp-page-handler="Logout" class="dash-card settings-logout">
+            <h2>@T("خروج از حساب", "Sign out", "تسجيل الخروج")</h2>
+            <button type="submit" class="btn btn-ghost danger">@T("خروج", "Sign out", "خروج")</button>
+        </form>
+    </div>
+</div>

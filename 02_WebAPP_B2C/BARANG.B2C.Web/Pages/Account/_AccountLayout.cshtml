@@ -1,0 +1,130 @@
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    var dir = culture == "en" ? "ltr" : "rtl";
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string? Active(string key) => ViewData["PanelActive"] as string == key ? "active" : null;
+    var displayName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+    var username = User.FindFirst("barang:username")?.Value ?? User.Identity?.Name ?? "";
+    var initial = string.IsNullOrWhiteSpace(displayName) ? "ک" : displayName.Trim()[0].ToString();
+    if (ViewData["Title"] is not string) ViewData["Title"] = ViewData["PanelTitle"] as string ?? T("حساب کاربری", "My account", "حسابي");
+}
+<!DOCTYPE html>
+<html lang="@culture" dir="@dir">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(ViewData["Title"] is string t && t.Length > 0 ? $"{t} · پیرنگ خان" : "پیرنگ خان")</title>
+    <meta name="theme-color" content="#15151b" />
+    <link rel="manifest" href="~/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="~/icons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="~/css/store.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true" />
+</head>
+<body class="panel-body">
+<div class="panel-shell">
+    <aside class="panel-sidebar" id="panelSidebar">
+        <a class="panel-brand" href="/">
+            <span class="brand-crown" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-1.6 10.2a1.5 1.5 0 0 1-1.48 1.3H6.08a1.5 1.5 0 0 1-1.48-1.3L3 8z"/></svg>
+            </span>
+            <span class="panel-brand-text">پیرنگ خان</span>
+        </a>
+
+        <div class="panel-user">
+            <span class="panel-avatar" aria-hidden="true">@initial</span>
+            <div class="panel-user-meta">
+                <strong>@(displayName ?? username)</strong>
+                <small dir="ltr">@@@username</small>
+            </div>
+            <form method="post" asp-page="/Account/Index" asp-page-handler="Logout" class="panel-logout">
+                <button type="submit" title="@T("خروج", "Sign out", "تسجيل الخروج")" aria-label="@T("خروج از حساب", "Sign out", "تسجيل الخروج")">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+                </button>
+            </form>
+        </div>
+
+        <nav class="panel-nav" aria-label="@T("منوی پنل", "Panel menu", "قائمة اللوحة")">
+            <a href="/account" class="@Active("dashboard")">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                <span>@T("داشبورد", "Dashboard", "لوحة التحكم")</span>
+            </a>
+            <a href="/account/orders" class="@Active("orders")">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                <span>@T("سفارش‌های من", "My orders", "طلباتي")</span>
+            </a>
+            <a href="/account/favorites" class="@Active("favorites")">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7z"/></svg>
+                <span>@T("طرح‌های مورد علاقه", "Favorites", "المفضلة")</span>
+            </a>
+            <a href="/account/custom-designs" class="@Active("customs")">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8-5-3.6-5 3.6 1.9-5.8L4 8.8h6.1z"/></svg>
+                <span>@T("طرح‌های سفارشی من", "My custom designs", "تصاميمي المخصصة")</span>
+            </a>
+            <a href="/account/addresses" class="@Active("addresses")">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>@T("آدرس‌ها", "Addresses", "العناوين")</span>
+            </a>
+            <a href="/account/wallet" class="@Active("wallet")">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+                <span>@T("کیف پول و تراکنش‌ها", "Wallet & transactions", "المحفظة والمعاملات")</span>
+            </a>
+            <a href="/account/profile" class="@Active("profile")">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+                <span>@T("اطلاعات حساب", "Account info", "بيانات الحساب")</span>
+            </a>
+            <a href="/account/feedback" class="@Active("feedback")">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
+                <span>@T("دیدگاه‌ها و پیشنهادها", "Feedback", "الملاحظات والاقتراحات")</span>
+            </a>
+            <a href="/account/settings" class="@Active("settings")">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>@T("تنظیمات", "Settings", "الإعدادات")</span>
+            </a>
+        </nav>
+
+        <div class="panel-invite">
+            <strong>@T("دعوت از دوستان", "Invite friends", "ادعُ أصدقاءك")</strong>
+            <p>@T("کد دعوتی‌ات را بفرست و اعتبار هدیه بگیر.", "Share your invite code and earn gift credit.", "شارك رمز الدعوة واحصل على رصيد هدية.")</p>
+            <button type="button" class="btn-invite" data-copy="@($"?ref={username}")">
+                <span dir="ltr">@($"?ref={username}")</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+            <small class="invite-hint" data-copied="@T("کپی شد!", "Copied!", "تم النسخ!")" data-default="@T("با اولین سفارش دوستت، اعتبار می‌گیری.", "Earn credit when a friend places their first order.", "اكسب رصيداً عندما يقدم صديقك أول طلب.")">@T("با اولین سفارش دوستت، اعتبار می‌گیری.", "Earn credit when a friend places their first order.", "اكسب رصيداً عندما يقدم صديقك أول طلب.")</small>
+        </div>
+
+        <a class="panel-back" href="/">← @T("بازگشت به فروشگاه", "Back to store", "العودة إلى المتجر")</a>
+    </aside>
+
+    <div class="panel-main">
+        <div class="panel-topbar">
+            <label for="panelNavToggle" class="panel-burger" aria-label="@T("منو", "Menu", "القائمة")">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
+            </label>
+            <a class="panel-topbar-brand" href="/">پیرنگ خان</a>
+        </div>
+        <input type="checkbox" id="panelNavToggle" class="panel-nav-toggle" aria-hidden="true" />
+        @RenderBody()
+    </div>
+</div>
+<script>
+    document.querySelectorAll('[data-copy]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var text = btn.getAttribute('data-copy');
+            var hint = btn.parentElement.querySelector('.invite-hint');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(window.location.origin + '/' + text.replace(/^\?/, '?'));
+            }
+            if (hint) {
+                hint.textContent = hint.getAttribute('data-copied');
+                setTimeout(function () { hint.textContent = hint.getAttribute('data-default'); }, 2200);
+            }
+        });
+    });
+    document.querySelectorAll('#panelNavToggle').forEach(function (box) {
+        box.addEventListener('change', function () {
+            document.body.classList.toggle('nav-open', box.checked);
+        });
+    });
+</script>
+</body>
+</html>

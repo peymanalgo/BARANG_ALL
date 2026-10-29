@@ -1,0 +1,58 @@
+@page
+@model FavoritesModel
+@using System.Globalization
+@{
+    Layout = "_AccountLayout";
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    ViewData["PanelActive"] = "favorites";
+    ViewData["PanelTitle"] = T("طرح‌های مورد علاقه", "Favorites", "المفضلة");
+}
+
+<div class="panel-content">
+    <header class="panel-page-head">
+        <h1>@T("طرح‌های مورد علاقه", "Favorite designs", "التصاميم المفضلة")</h1>
+        <p class="muted">@T("طرح‌هایی که قلبشان کرده‌ای؛ با یک کلیک به سبد سفارش برو.", "The designs you loved; one click to start an order.", "التصاميم التي أحببتها؛ بنقرة واحدة ابدأ الطلب.")</p>
+    </header>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="dash-card empty-state">
+            <span class="empty-emoji" aria-hidden="true">💛</span>
+            <h2>@T("هنوز علاقه‌مندی نداری", "No favorites yet", "لا مفضلات بعد")</h2>
+            <p class="muted">@T("در کاتالوگ طرح‌ها، روی قلب بزن تا این‌جا ذخیره شود.", "Tap the heart in the catalog to save designs here.", "اضغط على القلب في الكتالوغ لحفظ التصاميم هنا.")</p>
+            <a class="btn btn-primary" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم")</a>
+        </div>
+    }
+    else
+    {
+        <div class="fav-page-grid">
+            @foreach (var f in Model.Items)
+            {
+                <div class="fav-card">
+                    <a href="/order/select?design=@f.ArtworkId" class="fav-card-media">
+                        @if (!string.IsNullOrWhiteSpace(f.ThumbnailUrl))
+                        {
+                            <img src="@f.ThumbnailUrl" alt="@f.Title" loading="lazy" />
+                        }
+                        else
+                        {
+                            <span class="fav-placeholder" aria-hidden="true"></span>
+                        }
+                    </a>
+                    <form method="post" asp-page-handler="Toggle" class="fav-heart-form">
+                        <input type="hidden" name="artworkId" value="@f.ArtworkId" />
+                        <input type="hidden" name="returnUrl" value="/account/favorites" />
+                        <button type="submit" class="fav-heart on" title="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة")" aria-label="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة")">♥</button>
+                    </form>
+                    <div class="fav-card-body">
+                        <strong class="fav-card-title">@f.Title</strong>
+                        <small class="muted">@Date(f.CreatedAtUtc)</small>
+                        <a class="btn btn-primary btn-sm" href="/order/select?design=@f.ArtworkId">@T("سفارش این طرح", "Order this design", "اطلب هذا التصميم")</a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

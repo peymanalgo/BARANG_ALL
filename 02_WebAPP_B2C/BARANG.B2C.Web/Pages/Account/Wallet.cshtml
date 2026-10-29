@@ -1,0 +1,63 @@
+@page
+@model WalletModel
+@using System.Globalization
+@{
+    Layout = "_AccountLayout";
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string ReasonLabel(string? code) => code switch
+    {
+        "manual_adjustment" => T("تنظیم دستی", "Manual adjustment", "تعديل يدوي"),
+        "purchase" => T("خرید", "Purchase", "شراء"),
+        "order_refund" => T("بازگشت وجه سفارش", "Order refund", "استرداد الطلب"),
+        "gift" => T("هدیه", "Gift", "هدية"),
+        _ => code ?? "—"
+    };
+    ViewData["PanelActive"] = "wallet";
+    ViewData["PanelTitle"] = T("کیف پول و تراکنش‌ها", "Wallet & transactions", "المحفظة والمعاملات");
+}
+
+<div class="panel-content">
+    <header class="panel-page-head">
+        <h1>@T("کیف پول و تراکنش‌ها", "Wallet & transactions", "المحفظة والمعاملات")</h1>
+        <p class="muted">@T("اعتبار کیف پولت برای پرداخت سریع‌تر سفارش‌ها.", "Your wallet credit for faster order payments.", "رصيد محفظتك للدفع أسرع.")</p>
+    </header>
+
+    <div class="wallet-hero">
+        <span class="wallet-hero-label">@T("اعتبار فعلی", "Current balance", "الرصيد الحالي")</span>
+        <strong>@Money(Model.Balance) <small>@T("تومان", "Toman", "تومان")</small></strong>
+        <p class="muted wallet-note">@T("برای افزایش اعتبار با پشتیبانی در تماس باش؛ به‌زودی شارژ آنلاین فعال می‌شود.", "Contact support to top up; online recharge is coming soon.", "تواصل مع الدعم للشحن؛ الشحن الإلكتروني قريباً.")</p>
+    </div>
+
+    <div class="dash-card">
+        <div class="dash-card-head">
+            <h2>@T("تراکنش‌های اخیر", "Recent transactions", "أحدث المعاملات")</h2>
+        </div>
+        @if (Model.Items.Count == 0)
+        {
+            <p class="empty">@T("هنوز تراکنشی ثبت نشده است.", "No transactions yet.", "لا معاملات بعد.")</p>
+        }
+        else
+        {
+            <div class="wallet-list">
+                @foreach (var w in Model.Items)
+                {
+                    <div class="wallet-row @(w.Direction == "credit" ? "in" : "out")">
+                        <span class="wallet-dir" aria-hidden="true">@(w.Direction == "credit" ? "＋" : "－")</span>
+                        <div class="wallet-meta">
+                            <strong>@ReasonLabel(w.ReasonCode)</strong>
+                            @if (!string.IsNullOrWhiteSpace(w.ReferenceNote))
+                            {
+                                <small class="muted">@w.ReferenceNote</small>
+                            }
+                            <small class="muted">@Date(w.CreatedAtUtc)</small>
+                        </div>
+                        <span class="wallet-amount @(w.Direction == "credit" ? "in" : "out")">@(w.Direction == "credit" ? "+" : "−")@Money(w.Amount)</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

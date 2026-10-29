@@ -117,15 +117,24 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
         }
     }
 
-    public async Task<(bool Ok, JsonElement? Value, string? ProblemCode)> PostMultipartAsync(string path, string fileName, string contentType, Stream content, long length)
+    public async Task<(bool Ok, JsonElement? Value, string? ProblemCode)> PostMultipartAsync(string path, string fileName, string contentType, Stream content, long length, string? idempotencyKey = null, IDictionary<string, string>? fields = null)
     {
         using MultipartFormDataContent form = new();
         StreamContent file = new(content);
         file.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
         file.Headers.ContentLength = length;
         form.Add(file, "file", fileName);
+        if (fields is not null)
+        {
+            foreach ((string name, string value) in fields)
+            {
+                StringContent field = new(value);
+                form.Add(field, name);
+            }
+        }
         using HttpRequestMessage request = new(HttpMethod.Post, path) { Content = form };
         AttachToken(request);
+        if (!string.IsNullOrWhiteSpace(idempotencyKey)) request.Headers.Add("Idempotency-Key", idempotencyKey);
         using HttpResponseMessage response = await Create().SendAsync(request);
         MarkStatus((int)response.StatusCode);
         if (response.IsSuccessStatusCode) return (true, await ReadJsonAsync(response), null);
@@ -137,6 +146,24 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
         catch (JsonException)
         {
             return (false, null, null);
+        }
+    }
+
+    public async Task<(bool Ok, string? ProblemCode)> DeleteAsync(string path)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Delete, path);
+        AttachToken(request);
+        using HttpResponseMessage response = await Create().SendAsync(request);
+        MarkStatus((int)response.StatusCode);
+        if (response.IsSuccessStatusCode) return (true, null);
+        try
+        {
+            JsonElement? problem = await ReadJsonAsync(response);
+            return (false, problem is JsonElement p && p.TryGetProperty("code", out JsonElement code) ? code.GetString() : null);
+        }
+        catch (JsonException)
+        {
+            return (false, null);
         }
     }
 

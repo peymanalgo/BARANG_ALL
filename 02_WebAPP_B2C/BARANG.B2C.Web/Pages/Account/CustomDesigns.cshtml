@@ -1,0 +1,96 @@
+@page "/account/custom-designs"
+@model CustomDesignsModel
+@using System.Globalization
+@{
+    Layout = "_AccountLayout";
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    ViewData["PanelActive"] = "customs";
+    ViewData["PanelTitle"] = T("طرح‌های سفارشی من", "My custom designs", "تصاميمي المخصصة");
+}
+
+<div class="panel-content">
+    <header class="panel-page-head">
+        <h1>@T("طرح‌های سفارشی من", "My custom designs", "تصاميمي المخصصة")</h1>
+        <p class="muted">@T("طرح‌های اختصاصی‌ات را آپلود کن و هر وقت خواستی روی تیشرت چاپشان کن.", "Upload your own designs and print them on a t-shirt whenever you like.", "ارفع تصاميمك الخاصة واطبعها على التيشرت متى شئت.")</p>
+    </header>
+
+    @if (Model.Error == "upload")
+    {
+        <div class="alert alert-error" role="alert">@T("بارگذاری فایل ناموفق بود؛ دوباره تلاش کن.", "The upload failed; please try again.", "فشل الرفع؛ حاول مرة أخرى.")</div>
+    }
+    @if (Model.Error == "file")
+    {
+        <div class="alert alert-error" role="alert">@T("فایلی انتخاب نشده بود یا نامعتبر است.", "No valid file was selected.", "لم يتم اختيار ملف صالح.")</div>
+    }
+    @if (Model.Error == "title")
+    {
+        <div class="alert alert-error" role="alert">@T("عنوان طرح الزامی است.", "The design title is required.", "عنوان التصميم مطلوب.")</div>
+    }
+
+    <div class="dash-card upload-card">
+        <form method="post" asp-page-handler="Upload" enctype="multipart/form-data" class="upload-form">
+            <label class="upload-field">
+                <span class="upload-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
+                </span>
+                <span class="upload-label">@T("انتخاب فایل طرح (PNG/JPG)", "Choose design file (PNG/JPG)", "اختر ملف التصميم (PNG/JPG)")</span>
+                <input type="file" asp-for="UploadFile" accept="image/png,image/jpeg,image/webp" required />
+            </label>
+            <label class="upload-title">
+                <span>@T("عنوان طرح", "Design title", "عنوان التصميم")</span>
+                <input type="text" asp-for="UploadTitle" maxlength="120" required />
+            </label>
+            <button type="submit" class="btn btn-primary">@T("بارگذاری طرح", "Upload design", "ارفع التصميم")</button>
+        </form>
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="dash-card empty-state">
+            <span class="empty-emoji" aria-hidden="true">🎨</span>
+            <h2>@T("هنوز طرح سفارشی نداری", "No custom designs yet", "لا تصاميم مخصصة بعد")</h2>
+            <p class="muted">@T("اولین طرحت را با فرم بالا آپلود کن.", "Upload your first design with the form above.", "ارفع تصميمك الأول من النموذج أعلاه.")</p>
+        </div>
+    }
+    else
+    {
+        <div class="fav-page-grid">
+            @foreach (var d in Model.Items)
+            {
+                <div class="fav-card">
+                    <div class="fav-card-media">
+                        @if (!string.IsNullOrWhiteSpace(d.PreviewUrl))
+                        {
+                            <img src="@d.PreviewUrl" alt="@d.Title" loading="lazy" />
+                        }
+                        else if (!string.IsNullOrWhiteSpace(d.ThumbnailUrl))
+                        {
+                            <img src="@d.ThumbnailUrl" alt="@d.Title" loading="lazy" />
+                        }
+                        else
+                        {
+                            <span class="fav-placeholder" aria-hidden="true"></span>
+                        }
+                    </div>
+                    <div class="fav-card-body">
+                        <strong class="fav-card-title">@d.Title</strong>
+                        <small class="muted">@Date(d.CreatedAtUtc)</small>
+                        <form method="post" asp-page-handler="Delete" data-confirm="@T("این طرح حذف شود؟", "Delete this design?", "أتحذف هذا التصميم؟")">
+                            <input type="hidden" name="designId" value="@d.Id" />
+                            <button type="submit" class="btn btn-ghost btn-sm danger">@T("حذف", "Delete", "حذف")</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+<script>
+    document.querySelectorAll('form[data-confirm]').forEach(function (f) {
+        f.addEventListener('submit', function (e) {
+            if (!window.confirm(f.getAttribute('data-confirm'))) e.preventDefault();
+        });
+    });
+</script>

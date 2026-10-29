@@ -1,6 +1,8 @@
 @page
 @model AddressesModel
 @{
+    Layout = "_AccountLayout";
+    ViewData["PanelActive"] = "addresses";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     string TypeLabel(string code) => code switch

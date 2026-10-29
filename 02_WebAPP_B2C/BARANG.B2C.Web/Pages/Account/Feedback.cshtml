@@ -1,0 +1,90 @@
+@page
+@model FeedbackModel
+@using System.Globalization
+@{
+    Layout = "_AccountLayout";
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string TypeLabel(string? code) => code switch
+    {
+        "suggestion" => T("پیشنهاد", "Suggestion", "اقتراح"),
+        "complaint" => T("انتقاد", "Complaint", "شكوى"),
+        "review" => T("دیدگاه", "Review", "مراجعة"),
+        "other" => T("سایر", "Other", "أخرى"),
+        _ => code ?? "—"
+    };
+    string StatusLabel(string? code) => code switch
+    {
+        "new" => T("جدید", "New", "جديد"),
+        "in_review" => T("در حال بررسی", "In review", "قيد المراجعة"),
+        "resolved" => T("حل شده", "Resolved", "تم الحل"),
+        _ => code ?? "—"
+    };
+    ViewData["PanelActive"] = "feedback";
+    ViewData["PanelTitle"] = T("دیدگاه‌ها و پیشنهادها", "Feedback", "الملاحظات والاقتراحات");
+}
+
+<div class="panel-content">
+    <header class="panel-page-head">
+        <h1>@T("دیدگاه‌ها و پیشنهادها", "Feedback & suggestions", "الملاحظات والاقتراحات")</h1>
+        <p class="muted">@T("نظرت برای ما مهم است؛ تجربه‌ات را بنویس تا بهتر شویم.", "Your opinion matters; tell us about your experience.", "رأيك يهمنا؛ أخبرنا عن تجربتك.")</p>
+    </header>
+
+    <div class="dash-card feedback-form-card">
+        <h2>@T("ثبت دیدگاه جدید", "New feedback", "ملاحظة جديدة")</h2>
+        @if (Model.Error == "validation")
+        {
+            <div class="alert alert-error" role="alert">@T("موضوع (حداقل ۳ نویسه) و متن (حداقل ۱۰ نویسه) الزامی است.", "Subject (min 3 chars) and body (min 10 chars) are required.", "الموضوع (٣ أحرف على الأقل) والنص (١٠ أحرف على الأقل) مطلوبان.")</div>
+        }
+        else if (Model.Error == "fail")
+        {
+            <div class="alert alert-error" role="alert">@T("ثبت دیدگاه ناموفق بود؛ دوباره تلاش کن.", "Submitting failed; please try again.", "فشل الإرسال؛ حاول مرة أخرى.")</div>
+        }
+        else if (Model.Sent)
+        {
+            <div class="alert alert-success" role="alert">@T("دیدگاهت ثبت شد؛ ممنون از همراهیت!", "Your feedback was received; thank you!", "تم استلام ملاحظتك؛ شكراً لك!")</div>
+        }
+        <form method="post" asp-page-handler="Submit" class="auth-form">
+            <label>
+                <span>@T("نوع", "Type", "النوع")</span>
+                <select asp-for="FeedbackType">
+                    <option value="suggestion">@T("پیشنهاد", "Suggestion", "اقتراح")</option>
+                    <option value="complaint">@T("انتقاد", "Complaint", "شكوى")</option>
+                    <option value="review">@T("دیدگاه", "Review", "مراجعة")</option>
+                    <option value="other">@T("سایر", "Other", "أخرى")</option>
+                </select>
+            </label>
+            <label>
+                <span>@T("موضوع", "Subject", "الموضوع")</span>
+                <input type="text" asp-for="Subject" minlength="3" maxlength="120" required />
+            </label>
+            <label>
+                <span>@T("متن پیام", "Message", "النص")</span>
+                <textarea asp-for="Body" rows="5" minlength="10" maxlength="2000" required></textarea>
+            </label>
+            <button type="submit" class="btn btn-primary">@T("ارسال", "Send", "إرسال")</button>
+        </form>
+    </div>
+
+    @if (Model.Items.Count > 0)
+    {
+        <div class="dash-card">
+            <div class="dash-card-head"><h2>@T("دیدگاه‌های من", "My feedback", "ملاحظاتي")</h2></div>
+            <div class="feedback-list">
+                @foreach (var f in Model.Items)
+                {
+                    <div class="feedback-item">
+                        <div class="feedback-item-head">
+                            <strong>@f.Subject</strong>
+                            <span class="feedback-chip">@TypeLabel(f.FeedbackTypeCode)</span>
+                            <span class="feedback-chip status-@f.StatusCode">@StatusLabel(f.StatusCode)</span>
+                        </div>
+                        <p>@f.Body</p>
+                        <small class="muted">@Date(f.CreatedAtUtc)</small>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
