@@ -4,45 +4,128 @@
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     ViewData["Title"] = T("خانه", "Home", "الرئيسية");
+
+    var hero = Model.Featured.FirstOrDefault();
+    var rest = Model.Featured.Skip(1).Take(10).ToList();
+    string[] MarqueeWords = { T("چاپ روی پوشاک", "Apparel printing", "طباعة الملابس"), T("طرح‌های آماده", "Ready designs", "تصاميم جاهزة"), T("رنگ‌های زنده", "Vivid colors", "ألوان حيوية"), T("سفارش آنلاین", "Order online", "اطلب عبر الإنترنت"), T("رهگیری تا تحویل", "Track to door", "تتبع حتى التسليم"), T("فایل باکیفیت", "Print-quality files", "ملفات عالية الجودة") };
 }
-<section class="hero">
-    <div class="container hero-inner">
-        <h1>@T("طرح موردنظرت را انتخاب کن، ما چاپش می‌کنیم", "Pick a design, we print it", "اختر تصميمك وسنطبعه لك")</h1>
-        <p>@T("هزاران طرح آماده چاپ روی پوشاک و هدایای تبلیغاتی — سفارش آنلاین در چند دقیقه.", "Thousands of print-ready designs for apparel and promotional gifts — order online in minutes.", "آلاف التصاميم الجاهزة للطباعة على الملابس والهدايا — اطلب عبر الإنترنت خلال دقائق.")</p>
-        <div class="hero-actions">
-            <a class="btn btn-primary btn-lg" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم")</a>
-            @if (User.Identity?.IsAuthenticated != true)
-            {
-                <a class="btn btn-ghost btn-lg" href="/account/login">@T("ورود مشتریان", "Customer sign in", "دخول العملاء")</a>
-            }
-        </div>
-        <ul class="hero-points" aria-hidden="true">
-            <li>@T("چاپ حرفه‌ای", "Pro printing", "طباعة احترافية")</li>
-            <li>@T("پیگیری آنلاین سفارش", "Online tracking", "تتبع عبر الإنترنت")</li>
-            <li>@T("فایل و طرح امن", "Safe artwork", "ملفات آمنة")</li>
-        </ul>
+@* ---------- HERO ---------- *@
+<section class="hero-new">
+    <div class="hero-blobs" aria-hidden="true">
+        <span class="blob blob-r"></span><span class="blob blob-y"></span><span class="blob blob-b"></span><span class="blob blob-g"></span>
     </div>
+    <div class="container hero-new-inner">
+        <div class="hero-copy reveal">
+            <span class="hero-kicker"><span class="kicker-dot"></span>@T("فروشگاه طرح‌های چاپی برنگ", "BARANG print design store", "متجر تصاميم الطباعة برنگ")</span>
+            <h1 class="hero-title">
+                @T("ایده‌ات را", "Bring your idea", "فكرتك")
+                <span class="hero-splash">@T("رنگی", "in color", "ملوّنة")</span>
+                @T("کن؛ ما چاپش می‌کنیم", "— we print it.", "— ونحن نطبعها.")
+            </h1>
+            <p class="hero-sub">@T("هزاران طرح آماده چاپ روی پوشاک و هدایای تبلیغاتی؛ سفارش آنلاین در چند دقیقه و رهگیری تا دم در.", "Thousands of print-ready designs for apparel and promotional gifts — order online in minutes and track to your door.", "آلاف التصاميم الجاهزة للطباعة على الملابس والهدايا — اطلب خلال دقائق وتتبع حتى باب منزلك.")</p>
+            <div class="hero-actions">
+                <a class="btn btn-primary btn-lg btn-shine" href="/catalog">@T("کاوش در طرح‌ها", "Explore designs", "استكشف التصاميم")</a>
+                @if (User.Identity?.IsAuthenticated != true)
+                {
+                    <a class="btn btn-ghost btn-lg" href="/account/login">@T("ورود مشتریان", "Customer sign in", "دخول العملاء")</a>
+                }
+            </div>
+            <ul class="hero-chips" aria-hidden="true">
+                <li>@Model.Total+ @T("طرح", "designs", "تصميم")</li>
+                <li>@Model.Categories.Count @T("دسته", "categories", "فئة")</li>
+                <li>@T("چاپ حرفه‌ای", "Pro printing", "طباعة احترافية")</li>
+            </ul>
+        </div>
+        @if (hero is not null)
+        {
+            <div class="hero-collage reveal" aria-hidden="true">
+                @foreach (var d in Model.Featured.Take(5))
+                {
+                    <a class="float-card fc@(Model.Featured.Take(5).ToList().IndexOf(d) + 1)" href="/design/@d.Id" tabindex="-1">
+                        @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
+                        {
+                            <img src="@d.Thumbnail" alt="" loading="eager" />
+                        }
+                    </a>
+                }
+                <span class="float-badge">@T("جدید", "New", "جديد")</span>
+            </div>
+        }
+    </div>
+    <a class="hero-scroll" href="#featured" aria-label="scroll">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+    </a>
 </section>
 
-<section class="container section">
+<div class="spectrum" aria-hidden="true"></div>
+
+@* ---------- MARQUEE ---------- *@
+<div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+        @for (int i = 0; i < 2; i++)
+        {
+            @foreach (var w in MarqueeWords)
+            {
+                <span class="mq-item">@w <i class="mq-dot"></i></span>
+            }
+        }
+    </div>
+</div>
+
+@* ---------- CATEGORIES ---------- *@
+@if (Model.Categories.Count > 0)
+{
+    <section class="container section reveal" id="cats">
+        <div class="section-head">
+            <h2>@T("دنیایی از دسته‌ها", "A world of categories", "عالم من الفئات")</h2>
+            <a class="link-more" href="/catalog">@T("همه طرح‌ها ←", "All designs →", "كل التصاميم ←")</a>
+        </div>
+        <div class="cat-grid">
+            @foreach (var (cat, idx) in Model.Categories.Select((c, i) => (c, i)))
+            {
+                <a class="cat-card hue-@(idx % 6)" href="/catalog?category=@Uri.EscapeDataString(cat.Code)">
+                    <span class="cat-count">@cat.Count</span>
+                    <span class="cat-code" dir="ltr">@cat.Code</span>
+                    <span class="cat-more">@T("مشاهده ←", "Browse →", "استعرض ←")</span>
+                </a>
+            }
+        </div>
+    </section>
+}
+
+@* ---------- FEATURED (editorial) ---------- *@
+<section class="container section reveal" id="featured">
     <div class="section-head">
         <h2>@T("طرح‌های منتخب", "Featured designs", "تصاميم مختارة")</h2>
         <a class="link-more" href="/catalog">@T("همه طرح‌ها ←", "All designs →", "كل التصاميم ←")</a>
     </div>
-    @if (Model.Featured.Count == 0)
+    @if (rest.Count == 0 && hero is null)
     {
         <p class="empty">@T("فعلاً طرحی منتشر نشده است.", "No designs published yet.", "لا توجد تصاميم منشورة بعد.")</p>
     }
     else
     {
-        <div class="design-grid">
-            @foreach (var d in Model.Featured)
+        <div class="featured-grid">
+            @if (hero is not null)
+            {
+                <a class="feat-hero" href="/design/@hero.Id">
+                    @if (!string.IsNullOrWhiteSpace(hero.Thumbnail))
+                    {
+                        <img src="@hero.Thumbnail" alt="@hero.Title" />
+                    }
+                    <span class="feat-overlay">
+                        <strong>@hero.Title</strong>
+                        <span class="chip">@T("منتخب هفته", "Pick of the week", "أسبوعي مختار")</span>
+                    </span>
+                </a>
+            }
+            @foreach (var d in rest)
             {
                 <a class="design-card" href="/design/@d.Id">
                     <span class="design-thumb">
                         @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
                         {
-                            <img src="@d.Thumbnail" alt="@d.Title" loading="lazy" />
+                            <img src="@d.Thumbnail" alt="@d.Title" width="600" height="600" loading="lazy" decoding="async" />
                         }
                     </span>
                     <span class="design-meta">
@@ -56,4 +139,35 @@
             }
         </div>
     }
+</section>
+
+@* ---------- WHY ---------- *@
+<section class="why-band reveal">
+    <div class="container why-grid">
+        <div class="why-card">
+            <span class="why-icon wi-r"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg></span>
+            <h3>@T("کیفیت چاپ حرفه‌ای", "Professional print quality", "جودة طباعة احترافية")</h3>
+            <p>@T("فایل‌ها با بالاترین کیفیت برای چاپ روی پارچه آماده می‌شوند.", "Files are prepared at the highest quality for fabric printing.", "تُجهَّز الملفات بأعلى جودة للطباعة على القماش.")</p>
+        </div>
+        <div class="why-card">
+            <span class="why-icon wi-y"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="19" cy="17" r="2.5"/></svg></span>
+            <h3>@T("سفارش در چند دقیقه", "Order in minutes", "اطلب خلال دقائق")</h3>
+            <p>@T("انتخاب طرح، محصول و نشانی؛ همه‌چیز آنلاین و بدون کاغذبازی.", "Pick design, product and address — all online, zero paperwork.", "اختر التصميم والمنتج والعنوان — كل شيء عبر الإنترنت.")</p>
+        </div>
+        <div class="why-card">
+            <span class="why-icon wi-b"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 12h4l2.5 6 4-13L16 12h5"/><circle cx="12" cy="21" r="1"/><circle cx="12" cy="3" r="1"/></svg></span>
+            <h3>@T("رهگیری زنده تا تحویل", "Live tracking to delivery", "تتبع مباشر حتى التسليم")</h3>
+            <p>@T("هر مرحله از سفارش را همین‌جا ببینید؛ از کارگاه تا دم در.", "Follow every stage here — from workshop to your door.", "تابع كل مرحلة من الورشة حتى باب منزلك.")</p>
+        </div>
+    </div>
+</section>
+
+@* ---------- CTA ---------- *@
+<section class="container section">
+    <div class="cta-band reveal">
+        <div class="cta-blobs" aria-hidden="true"><span></span><span></span><span></span></div>
+        <h2>@T("امروز اولین سفارشت را بزن", "Start your first order today", "ابدأ طلبك الأول اليوم")</h2>
+        <p>@T("از ۵۹۵ طرح آماده شروع کن؛ ثبت سفارش کمتر از ۵ دقیقه است.", "Start from hundreds of ready designs; ordering takes under 5 minutes.", "ابدأ من مئات التصاميم الجاهزة؛ الطلب أقل من ٥ دقائق.")</p>
+        <a class="btn btn-lg cta-btn" href="/catalog">@T("شروع کن", "Get started", "ابدأ الآن")</a>
+    </div>
 </section>

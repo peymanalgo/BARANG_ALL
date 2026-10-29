@@ -8,11 +8,21 @@ public sealed class IndexModel(CoreApiClient core) : PageModel
 {
     public IReadOnlyList<DesignCard> Featured { get; private set; } = [];
     public long Total { get; private set; }
+    public IReadOnlyList<(string Code, int Count)> Categories { get; private set; } = [];
 
     public async Task OnGet()
     {
-        JsonElement? page = await core.GetAsync("api/v1/public/catalog?page=1&pageSize=12");
+        JsonElement? page = await core.GetAsync("api/v1/public/catalog?page=1&pageSize=13");
         (Featured, Total) = DesignCard.FromPage(page);
+
+        JsonElement? cats = await core.GetAsync("api/v1/public/catalog/categories");
+        if (cats is JsonElement c && c.ValueKind == JsonValueKind.Array)
+        {
+            Categories = c.EnumerateArray().Select(x => (
+                x.TryGetProperty("code", out JsonElement code) ? code.GetString() ?? "" : "",
+                x.TryGetProperty("count", out JsonElement cnt) && cnt.TryGetInt32(out int n) ? n : 0))
+                .Where(x => x.Item1.Length > 0).ToList();
+        }
     }
 }
 
