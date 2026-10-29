@@ -36,7 +36,8 @@ public sealed class CatalogModel(CoreApiClient core) : PageModel
         Page = Math.Max(1, page ?? 1);
         string culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
         string search = (Search ?? "").Trim();
-        string path = $"api/v1/public/catalog?page={Page}&pageSize={PageSize}" + (search.Length > 0 ? $"&search={Uri.EscapeDataString(search)}" : "") + (string.IsNullOrWhiteSpace(Category) ? "" : $"&categoryCode={Uri.EscapeDataString(Category.Trim())}");
+        string catCulture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+        string path = $"api/v1/public/catalog?page={Page}&pageSize={PageSize}&culture={catCulture}" + (search.Length > 0 ? $"&search={Uri.EscapeDataString(search)}" : "") + (string.IsNullOrWhiteSpace(Category) ? "" : $"&categoryCode={Uri.EscapeDataString(Category.Trim())}");
         Task<JsonElement?> catalogTask = core.GetAsync(path);
         Task<JsonElement?> conceptTask = ConceptMode && search.Length >= 2
             ? core.GetAsync($"api/v1/public/catalog/concept-search?limit=60&culture={culture}&q={Uri.EscapeDataString(search)}")

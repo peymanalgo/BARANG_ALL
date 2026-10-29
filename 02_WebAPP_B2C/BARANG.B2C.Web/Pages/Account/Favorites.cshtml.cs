@@ -22,7 +22,7 @@ public sealed class FavoritesModel(CoreApiClient core, CustomerContext customers
     public async Task<IActionResult> OnGet()
     {
         if (await customers.CurrentAsync() is not JsonElement c || !c.TryGetProperty("id", out JsonElement cid)) return Page();
-        JsonElement? favs = await core.GetAsync($"api/v1/client/customers/{cid.GetString()}/favorites");
+        JsonElement? favs = await core.GetAsync($"api/v1/client/customers/{cid.GetString()}/favorites?culture={System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant()}");
         if (ReauthGuard() is { } r) return r;
         if (favs is JsonElement f && f.ValueKind == JsonValueKind.Array)
         {
@@ -40,7 +40,7 @@ public sealed class FavoritesModel(CoreApiClient core, CustomerContext customers
         if (artworkId == Guid.Empty || await customers.CurrentAsync() is not JsonElement c || !c.TryGetProperty("id", out JsonElement cid))
             return LocalRedirect(string.IsNullOrWhiteSpace(returnUrl) ? "/account/favorites" : returnUrl);
         string customerId = cid.GetString() ?? "";
-        JsonElement? favs = await core.GetAsync($"api/v1/client/customers/{customerId}/favorites");
+        JsonElement? favs = await core.GetAsync($"api/v1/client/customers/{customerId}/favorites?culture={System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant()}");
         bool isFavorite = favs is JsonElement f && f.ValueKind == JsonValueKind.Array
             && f.EnumerateArray().Any(x => x.TryGetProperty("artworkId", out JsonElement fid) && fid.GetString() == artworkId.ToString());
         if (isFavorite)

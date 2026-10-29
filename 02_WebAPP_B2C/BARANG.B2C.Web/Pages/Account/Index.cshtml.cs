@@ -78,9 +78,11 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
             Task<JsonElement?> favoritesTask = core.GetAsync($"api/v1/client/customers/{customerId}/favorites");
             Task<JsonElement?> walletTask = core.GetAsync($"api/v1/client/customers/{customerId}/wallet");
             Task<JsonElement?> notifsTask = core.GetAsync("api/v1/notifications/mine?page=1&pageSize=5");
-            Task<JsonElement?> offersTask = core.GetAsync("api/v1/public/catalog?page=1&pageSize=8");
+            string dashCulture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+            Task<JsonElement?> offersTask = core.GetAsync($"api/v1/public/catalog?page=1&pageSize=8&culture={dashCulture}");
+            Task<JsonElement?> favoritesCultureTask = core.GetAsync($"api/v1/client/customers/{customerId}/favorites?culture={dashCulture}");
             Task<JsonElement?> referralTask = core.GetAsync($"api/v1/client/customers/{customerId}/referral");
-            await Task.WhenAll(addressesTask, ordersTask, favoritesTask, walletTask, notifsTask, offersTask, referralTask);
+            await Task.WhenAll(addressesTask, ordersTask, favoritesTask, walletTask, notifsTask, offersTask, referralTask, favoritesCultureTask);
             if (ReauthGuard() is { } r2) return r2;
 
             if (addressesTask.Result is JsonElement a && a.ValueKind == JsonValueKind.Array)
@@ -118,7 +120,7 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
                 }
             }
 
-            if (favoritesTask.Result is JsonElement f && f.ValueKind == JsonValueKind.Array)
+            if (favoritesCultureTask.Result is JsonElement f && f.ValueKind == JsonValueKind.Array)
             {
                 FavoriteCount = f.GetArrayLength();
                 Favorites = f.EnumerateArray().Take(4).Select(x => new FavoriteDesign(
@@ -167,7 +169,7 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
 
     private async Task LoadOffersAsync()
     {
-        JsonElement? offers = await core.GetAsync("api/v1/public/catalog?page=1&pageSize=8");
+        JsonElement? offers = await core.GetAsync($"api/v1/public/catalog?page=1&pageSize=8&culture={System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant()}");
         if (offers is JsonElement of && of.TryGetProperty("items", out JsonElement oi) && oi.ValueKind == JsonValueKind.Array)
         {
             List<OfferDesign> pool = oi.EnumerateArray().Select(x => new OfferDesign(

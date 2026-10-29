@@ -23,7 +23,7 @@ public static class PublicCatalogEndpoints
             .RequireRateLimiting("client-read")
             .CacheOutput("public-catalog");
 
-        catalog.MapGet("/",async(int? page,int? pageSize,string? search,string? categoryCode,IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,IObjectStorage storage,CancellationToken ct)=>
+        catalog.MapGet("/",async(int? page,int? pageSize,string? search,string? categoryCode,string? culture,IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,IObjectStorage storage,CancellationToken ct)=>
         {
             Guid? publicCompany=ResolvePublicCompany(configuration);
             if(publicCompany is null)return Results.StatusCode(503);
@@ -38,16 +38,17 @@ public static class PublicCatalogEndpoints
                 int pageNumber=Math.Max(1,page??1);
                 long total=await query.LongCountAsync(t);
                 List<Artwork> items=await query.OrderBy(x=>x.Code).Skip((pageNumber-1)*size).Take(size).ToListAsync(t);
+                List<ArtworkTranslation> itemTranslations=await db.ArtworkTranslations.AsNoTracking().Where(x=>items.Select(i=>i.Id).Contains(x.ArtworkId)).ToListAsync(t);
                 Guid[] artworkVersionIds=items.Select(x=>x.CurrentVersionId!.Value).ToArray();
                 Dictionary<Guid,Guid> fileVersionByArtworkVersion=await db.ArtworkVersions.AsNoTracking().Where(x=>artworkVersionIds.Contains(x.Id)).Select(x=>new KeyValuePair<Guid,Guid>(x.Id,x.FileVersionId)).ToDictionaryAsync(p=>p.Key,p=>p.Value,t);
                 Guid[] fileVersionIds=fileVersionByArtworkVersion.Values.ToArray();
                 List<(Guid FileVersion,FileDerivativeType Type,string Key)> derivatives=await db.FileDerivatives.AsNoTracking().Where(d=>fileVersionIds.Contains(d.SourceFileVersionId)).Select(d=>new ValueTuple<Guid,FileDerivativeType,string>(d.SourceFileVersionId,d.DerivativeType,d.StorageKey)).ToListAsync(t);
                 PublicCatalogItemView[] rows=items.Select(item=>{
                     Guid artworkVersion=item.CurrentVersionId!.Value;
-                    if(!fileVersionByArtworkVersion.TryGetValue(artworkVersion,out Guid fileVersion))return new PublicCatalogItemView(item.Id,item.Code,item.Title,item.CategoryCode,artworkVersion,null,null);
+                    if(!fileVersionByArtworkVersion.TryGetValue(artworkVersion,out Guid fileVersion))return new PublicCatalogItemView(item.Id,item.Code,LocalizedArtworkText(itemTranslations,item.Id,item.Title,culture),item.CategoryCode,artworkVersion,null,null);
                     string? thumbnail=derivatives.Where(d=>d.FileVersion==fileVersion&&d.Type==FileDerivativeType.Thumbnail).Select(d=>(string?)d.Key).FirstOrDefault();
                     string? preview=derivatives.Where(d=>d.FileVersion==fileVersion&&(d.Type==FileDerivativeType.PublicWeb||d.Type==FileDerivativeType.Web)).Select(d=>(string?)d.Key).FirstOrDefault();
-                    return new PublicCatalogItemView(item.Id,item.Code,item.Title,item.CategoryCode,artworkVersion,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview));
+                    return new PublicCatalogItemView(item.Id,item.Code,LocalizedArtworkText(itemTranslations,item.Id,item.Title,culture),item.CategoryCode,artworkVersion,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview));
                 }).ToArray();
                 return Result.Success(new PublicCatalogPage(total,pageNumber,size,rows));
             },ct);
@@ -81,6 +82,7 @@ public static class PublicCatalogEndpoints
             IReadOnlyList<PublicConceptMatch> rows=(await tx.ExecuteAsync<IReadOnlyList<PublicConceptMatch>>(async t=>{
                 Guid[] ids=active.Select(x=>x.Id).ToArray();
                 Dictionary<Guid,(Guid? FileVersion,string Title)> byId=await db.Artworks.AsNoTracking().Where(x=>ids.Contains(x.Id)).Select(x=>new KeyValuePair<Guid,ValueTuple<Guid?,string>>(x.Id,new ValueTuple<Guid?,string>(x.CurrentVersionId,x.Title))).ToDictionaryAsync(p=>p.Key,p=>p.Value,t);
+                List<ArtworkTranslation> conceptTrs=await db.ArtworkTranslations.AsNoTracking().Where(x=>ids.Contains(x.ArtworkId)).ToListAsync(t);
                 Guid[] artworkVersionIds=byId.Values.Where(x=>x.FileVersion is not null).Select(x=>x.FileVersion!.Value).ToArray();
                 Dictionary<Guid,Guid> fileVersionByArtworkVersion=await db.ArtworkVersions.AsNoTracking().Where(x=>artworkVersionIds.Contains(x.Id)).Select(x=>new KeyValuePair<Guid,Guid>(x.Id,x.FileVersionId)).ToDictionaryAsync(p=>p.Key,p=>p.Value,t);
                 Guid[] fileVersionIds=fileVersionByArtworkVersion.Values.ToArray();
@@ -92,14 +94,15 @@ public static class PublicCatalogEndpoints
                         thumbnail=derivatives.Where(d=>d.FileVersion==fv&&d.Type==FileDerivativeType.Thumbnail).Select(d=>(string?)d.Key).FirstOrDefault();
                         preview=derivatives.Where(d=>d.FileVersion==fv&&(d.Type==FileDerivativeType.PublicWeb||d.Type==FileDerivativeType.Web)).Select(d=>(string?)d.Key).FirstOrDefault();
                     }
-                    return new PublicConceptMatch(m.Id,m.Code,m.Title,m.CategoryName,meta.FileVersion is Guid avv?(Guid?)avv:null,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview),m.Score);
+                    string localizedTitle=byId.TryGetValue(m.Id,out var meta2)?LocalizedArtworkText(conceptTrs,m.Id,meta2.Title,culture):m.Title;
+                    return new PublicConceptMatch(m.Id,m.Code,localizedTitle,m.CategoryName,meta.FileVersion is Guid avv?(Guid?)avv:null,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview),m.Score);
                 }).ToArray();
                 return Result.Success(rows);
             },ct)).Value;
             return Results.Ok(rows);
         });
 
-        catalog.MapGet("/{id:guid}",async(Guid id,IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,IObjectStorage storage,CancellationToken ct)=>
+        catalog.MapGet("/{id:guid}",async(Guid id,string? culture,IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,IObjectStorage storage,CancellationToken ct)=>
         {
             Guid? publicCompany=ResolvePublicCompany(configuration);
             if(publicCompany is null)return Results.StatusCode(503);
@@ -112,7 +115,8 @@ public static class PublicCatalogEndpoints
                 List<(FileDerivativeType Type,string Key)> derivatives=await db.FileDerivatives.AsNoTracking().Where(d=>d.SourceFileVersionId==fileVersionId).Select(d=>new ValueTuple<FileDerivativeType,string>(d.DerivativeType,d.StorageKey)).ToListAsync(t);
                 string? thumbnail=derivatives.Where(d=>d.Type==FileDerivativeType.Thumbnail).Select(d=>(string?)d.Key).FirstOrDefault();
                 string? preview=derivatives.Where(d=>d.Type is FileDerivativeType.PublicWeb or FileDerivativeType.Web).Select(d=>(string?)d.Key).FirstOrDefault();
-                return Result.Success(new PublicCatalogItemDetail(artwork.Id,artwork.Code,artwork.Title,artwork.CategoryCode,artwork.Description,artworkVersion,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview)));
+                List<ArtworkTranslation> trs=await db.ArtworkTranslations.AsNoTracking().Where(x=>x.ArtworkId==artwork.Id).ToListAsync(t);
+                return Result.Success(new PublicCatalogItemDetail(artwork.Id,artwork.Code,LocalizedArtworkText(trs,artwork.Id,artwork.Title,culture),artwork.CategoryCode,LocalizedArtworkDescription(trs,artwork.Id,artwork.Description,culture),artworkVersion,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview)));
             },ct);
             return Map(result);
         });
@@ -128,6 +132,24 @@ public static class PublicCatalogEndpoints
     // default (fa), then en and ar. Never mixes translations into one string.
     internal static string PickTranslation(IEnumerable<(string Culture,string Name)> rows,string? culture)
         => BARANG.Core.Domain.Lookups.LookupText.PickTranslation(rows,culture);
+
+    // Localized artwork title: translation for the requested culture, then fa, then the base title.
+    internal static string LocalizedArtworkText(IReadOnlyList<ArtworkTranslation> translations,Guid artworkId,string baseTitle,string? culture)
+    {
+        string wanted=BARANG.Core.Domain.Lookups.LookupText.NormalizeCulture(culture)??BARANG.Core.Domain.Lookups.LookupText.DefaultCulture;
+        var tWanted=translations.FirstOrDefault(x=>x.ArtworkId==artworkId&&x.Culture==wanted);
+        var tFa=translations.FirstOrDefault(x=>x.ArtworkId==artworkId&&x.Culture=="fa");
+        return tWanted?.Title??tFa?.Title??baseTitle;
+    }
+
+    // Localized artwork description with base-description fallback.
+    internal static string? LocalizedArtworkDescription(IReadOnlyList<ArtworkTranslation> translations,Guid artworkId,string? baseDescription,string? culture)
+    {
+        string wanted=BARANG.Core.Domain.Lookups.LookupText.NormalizeCulture(culture)??BARANG.Core.Domain.Lookups.LookupText.DefaultCulture;
+        var tWanted=translations.FirstOrDefault(x=>x.ArtworkId==artworkId&&x.Culture==wanted);
+        var tFa=translations.FirstOrDefault(x=>x.ArtworkId==artworkId&&x.Culture=="fa");
+        return tWanted?.Description??tFa?.Description??baseDescription;
+    }
 
     private static IResult Map<T>(Result<T> result)=>result.IsSuccess?Results.Json(result.Value):Problem(result.Error);
 

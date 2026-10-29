@@ -51,7 +51,8 @@ public sealed class SelectModel(CoreApiClient core) : PageModel
         }
         else
         {
-            string path = $"api/v1/public/catalog?page={Page}&pageSize={PageSize}" + (search.Length > 0 ? $"&search={Uri.EscapeDataString(search)}" : "") + (string.IsNullOrWhiteSpace(Category) ? "" : $"&categoryCode={Uri.EscapeDataString(Category.Trim())}");
+            string selCulture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+            string path = $"api/v1/public/catalog?page={Page}&pageSize={PageSize}&culture={selCulture}" + (search.Length > 0 ? $"&search={Uri.EscapeDataString(search)}" : "") + (string.IsNullOrWhiteSpace(Category) ? "" : $"&categoryCode={Uri.EscapeDataString(Category.Trim())}");
             JsonElement? result = await core.GetAsync(path);
             (Designs, Total) = DesignCard.FromPage(result);
         }
@@ -69,7 +70,7 @@ public sealed class SelectModel(CoreApiClient core) : PageModel
         if (designId is Guid selected)
         {
             SelectedId = selected;
-            JsonElement? detail = await core.GetAsync($"api/v1/public/catalog/{selected}");
+            JsonElement? detail = await core.GetAsync($"api/v1/public/catalog/{selected}?culture={System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant()}");
             if (detail is JsonElement dd && dd.ValueKind == JsonValueKind.Object)
             {
                 HasSelection = true;

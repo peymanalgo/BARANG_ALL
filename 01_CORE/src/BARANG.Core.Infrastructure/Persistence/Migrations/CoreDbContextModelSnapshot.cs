@@ -4039,6 +4039,63 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("artwork_tag_assignments", "barang");
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Files.ArtworkTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ArtworkId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("artwork_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Culture")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("culture");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_artwork_translations");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_artwork_translations_company_id");
+
+                    b.HasIndex("ArtworkId", "Culture")
+                        .IsUnique()
+                        .HasDatabaseName("uq_artwork_translations_artwork_culture");
+
+                    b.ToTable("artwork_translations", "barang");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Files.ArtworkVersion", b =>
                 {
                     b.Property<Guid>("Id")

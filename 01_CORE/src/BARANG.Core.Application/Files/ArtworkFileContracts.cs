@@ -3,7 +3,7 @@ using BARANG.Core.Domain.Files;
 
 namespace BARANG.Core.Application.Files;
 
-public sealed record ArtworkView(Guid Id,string Code,string Title,string?Description,string?CategoryCode,Guid?DesignerUserId,string LifecycleStatus,Guid?CurrentVersionId,bool IsActive,bool IsArchived,long Version);
+public sealed record ArtworkView(Guid Id,string Code,string Title,string?Description,string?CategoryCode,Guid?DesignerUserId,string LifecycleStatus,Guid?CurrentVersionId,bool IsActive,bool IsArchived,long Version,IReadOnlyList<ArtworkTranslationView>?Translations=null);
 public sealed record ArtworkPageView(long Total,int PageNumber,int PageSize,IReadOnlyList<ArtworkView> Items);
 public sealed record ArtworkConceptMatch(Guid Id,string Code,string Title,string CategoryName,string LifecycleStatus,bool IsArchived,IReadOnlyList<string> Formats,int Score);
 public sealed record ArtworkOption(Guid Id,string Code,string Title,string?CategoryCode,Guid?CurrentVersionId);
@@ -17,7 +17,9 @@ public sealed record FileLinkView(Guid Id,Guid FileId,Guid?FileVersionId,string 
 public sealed record ArtworkTagAssignmentView(Guid Id,Guid ArtworkId,Guid TagId,bool IsActive);
 public sealed record DownloadFile(string FileName,string MediaType,long Length,Stream Content,string? ETag=null);
 public sealed record DerivativeUrlView(string Url,string MediaType,int ExpiresInSeconds,string ETag);
-public sealed record ArtworkCommand(string Code,string Title,string?Description,string?CategoryCode,Guid?DesignerUserId,string LifecycleStatus="Draft",long Version=0);
+public sealed record ArtworkTranslationInput(string Culture,string Title,string?Description=null);
+public sealed record ArtworkTranslationView(string Culture,string Title,string?Description);
+public sealed record ArtworkCommand(string Code,string Title,string?Description,string?CategoryCode,Guid?DesignerUserId,string LifecycleStatus="Draft",long Version=0,IReadOnlyList<ArtworkTranslationInput>?Translations=null);
 public sealed record UploadCommand(Guid?FileId,string FileName,string DeclaredMediaType,long DeclaredLength,Stream Content,string?ClientHash=null);
 
 public interface IArtworkFileAdministration

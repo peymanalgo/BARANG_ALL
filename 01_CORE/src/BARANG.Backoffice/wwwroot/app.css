@@ -52,3 +52,11 @@
 [dir="ltr"] .wallet-adjust { transform: translateX(-50%); }
 .wallet-adjust label { display: flex; flex-direction: column; gap: 4px; font-size: .84rem; }
 .wallet-adjust input, .wallet-adjust select { border: 1px solid var(--border, #e5e8f0); border-radius: 8px; padding: 8px 10px; font: inherit; }
+
+/* ---------- trilingual translation rows (design bank etc.) ---------- */
+.translation-block { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.translation-block h4 { margin: 8px 0 2px; font-size: .86rem; color: var(--text, #131a2a); }
+.translation-block .tr-row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; }
+.translation-block .tr-lang { font-size: .8rem; color: var(--muted, #8a92a6); font-weight: 600; }
+.translation-block input, .translation-block textarea { width: 100%; border: 1px solid var(--border, #e5e8f0); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: .86rem; box-sizing: border-box; }
+.translation-block textarea { min-height: 64px; resize: vertical; }

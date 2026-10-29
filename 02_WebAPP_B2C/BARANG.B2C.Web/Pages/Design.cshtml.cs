@@ -20,7 +20,7 @@ public sealed class DesignModel(CoreApiClient core) : PageModel
     public async Task<IActionResult> OnGet(Guid id)
     {
         Id = id;
-        JsonElement? result = await core.GetAsync($"api/v1/public/catalog/{id}");
+        JsonElement? result = await core.GetAsync($"api/v1/public/catalog/{id}?culture={System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant()}");
         if (result is not JsonElement x || x.ValueKind != JsonValueKind.Object) return NotFound();
         Found = true;
         Code = x.TryGetProperty("code", out JsonElement c) ? c.GetString() ?? "" : "";

@@ -19,7 +19,8 @@ public sealed class IndexModel(CoreApiClient core) : PageModel
         {
             Response.Cookies.Append("barang.ref", refCode.Trim().ToUpperInvariant(), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(30), IsEssential = true });
         }
-        JsonElement? page = await core.GetAsync("api/v1/public/catalog?page=1&pageSize=13");
+        string homeCulture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+        JsonElement? page = await core.GetAsync($"api/v1/public/catalog?page=1&pageSize=13&culture={homeCulture}");
         (Featured, Total) = DesignCard.FromPage(page);
 
         string culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
