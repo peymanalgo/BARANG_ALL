@@ -49,15 +49,6 @@
             </form>
         </div>
 
-        <div class="dash-card settings-lang">
-            <h2>@T("زبان", "Language", "اللغة")</h2>
-            <div class="lang-choices">
-                <a class="lang-choice @(culture == "fa" ? "on" : null)" href="?culture=fa">فارسی</a>
-                <a class="lang-choice @(culture == "en" ? "on" : null)" href="?culture=en">English</a>
-                <a class="lang-choice @(culture == "ar" ? "on" : null)" href="?culture=ar">العربية</a>
-            </div>
-        </div>
-
         <form method="post" asp-page="/Account/Index" asp-page-handler="Logout" class="dash-card settings-logout">
             <h2>@T("خروج از حساب", "Sign out", "تسجيل الخروج")</h2>
             <button type="submit" class="btn btn-ghost danger">@T("خروج", "Sign out", "خروج")</button>

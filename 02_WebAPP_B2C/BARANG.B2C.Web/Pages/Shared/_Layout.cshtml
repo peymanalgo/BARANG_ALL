@@ -6,8 +6,8 @@
     var route = (Context.Request.Path.Value ?? "/").Trim('/');
     string CultureLink(string c)
     {
-        var path = "/" + route;
-        return path + (path.Contains('?') ? "&" : "?") + "culture=" + c;
+        var target = "/" + route + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : string.Empty);
+        return "/language/set?culture=" + c + "&returnUrl=" + Uri.EscapeDataString(target);
     }
     var q = Context.Request.Query["search"].ToString();
 }
