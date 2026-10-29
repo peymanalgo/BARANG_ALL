@@ -71,6 +71,20 @@
             </div>
         </div>
 
+        @if (Model.RecentOrders.Count > 0)
+        {
+            <div class="section-head" style="margin-bottom:.7rem"><h2>@T("آخرین سفارش‌ها", "Latest orders", "أحدث الطلبات")</h2><a class="link-more" href="/account/orders">@T("همه ←", "All →", "الكل ←")</a></div>
+            <div class="order-list" style="margin-bottom:1.6rem">
+                @foreach (var ro in Model.RecentOrders)
+                {
+                    <a class="card order-card" href="/account/orders/@ro.Id">
+                        <div class="order-main"><strong class="order-number" dir="ltr">@(ro.OrderNumber ?? "—")</strong></div>
+                        <span class="status-chip st-@ro.Status.ToLowerInvariant()">@ro.Status</span>
+                    </a>
+                }
+            </div>
+        }
+
         <div class="hub-links">
             <a class="hub-link" href="/account/addresses">
                 <h2>@T("نشانی‌های من", "My addresses", "عناويني")</h2>

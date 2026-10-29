@@ -1,5 +1,7 @@
 @page "/account/orders/{id:guid}"
 @model OrderModel
+@using System.Globalization
+@using System.Text.Json
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
@@ -28,6 +30,39 @@
         "StatusChanged" => T("به‌روزرسانی وضعیت", "Status updated", "تحديث الحالة"),
         _ => t
     };
+    string PositionLabel(string p) => p switch
+    {
+        "FRONT" => T("جلو", "Front", "الأمام"),
+        "BACK" => T("پشت", "Back", "الخلف"),
+        "SLEEVE" => T("آستین", "Sleeve", "الكم"),
+        "OTHER" => T("سایر", "Other", "أخرى"),
+        _ => p
+    };
+    string Num(decimal d) => d.ToString("0.##", CultureInfo.InvariantCulture);
+    (string Label, string Value)? TotalRow = null;
+    List<(string Label, string Value)> QuoteRows = new();
+    if (Model.Quote is JsonElement q && q.ValueKind == JsonValueKind.Object)
+    {
+        foreach (var prop in q.EnumerateObject())
+        {
+            string text = prop.Value.ValueKind switch
+            {
+                JsonValueKind.Number => prop.Value.GetRawText(),
+                JsonValueKind.String => prop.Value.GetString() ?? "",
+                _ => ""
+            };
+            if (text.Length == 0) continue;
+            if (prop.Name.Equals("total", StringComparison.OrdinalIgnoreCase) || prop.Name.Equals("totalAmount", StringComparison.OrdinalIgnoreCase) || prop.Name.Equals("grandTotal", StringComparison.OrdinalIgnoreCase))
+            {
+                TotalRow = (T("مبلغ کل", "Total", "الإجمالي"), text);
+            }
+            else if (prop.Value.ValueKind == JsonValueKind.Number)
+            {
+                QuoteRows.Add((prop.Name, text));
+            }
+        }
+    }
+    bool Cancellable = Model.OrderStatus is "Draft" or "Submitted";
 }
 @if (!Model.Found)
 {
@@ -43,54 +78,149 @@ else
         </nav>
         <header class="section-head tracking-head">
             <div>
-                <h1>@T("رهگیری سفارش", "Order tracking", "تتبع الطلب")</h1>
-                <p class="muted" dir="ltr">@(Model.OrderNumber ?? "—")</p>
+                <h1>@T("سفارش", "Order", "الطلب") <span dir="ltr">@(Model.OrderNumber ?? "—")</span></h1>
+                <p class="muted">@T("تاریخ سفارش", "Order date", "تاريخ الطلب"): @Model.DateText(Model.OrderDate) @if (Model.SubmittedAt is not null) { <span> · @T("ثبت: ", "Submitted: ", "أُرسل: ")@Model.DateText(Model.SubmittedAt)</span> }</p>
             </div>
             <span class="status-chip st-@Model.OrderStatus.ToLowerInvariant() status-lg">@OrderLabel(Model.OrderStatus)</span>
         </header>
 
-        @if (Model.Shipments.Count == 0)
+        @if (Model.Error is not null)
         {
-            <p class="empty">@T("هنوز مرسوله‌ای برای این سفارش ایجاد نشده است؛ پس از آماده‌سازی، کد رهگیری همین‌جا نمایش داده می‌شود.", "No shipment yet for this order; the tracking code appears here once prepared.", "لا شحنة بعد؛ سيظهر رمز التتبع هنا عند الجهوزية.")</p>
-        }
-        else
-        {
-            <div class="shipment-grid">
-                @foreach (var s in Model.Shipments)
+            <div class="alert alert-error" role="alert">
+                @(Model.Error switch
                 {
-                    <div class="card shipment-card">
-                        <div class="address-head">
-                            <h2 dir="ltr">@s.Number</h2>
-                            <span class="status-chip st-@s.Status.ToLowerInvariant()">@ShipmentLabel(s.Status)</span>
-                        </div>
-                        <dl class="shipment-meta">
-                            <div><dt>@T("حمل‌کننده", "Carrier", "الناقل")</dt><dd dir="ltr">@(string.IsNullOrWhiteSpace(s.Carrier) ? "—" : s.Carrier)</dd></div>
-                            <div><dt>@T("کد رهگیری", "Tracking code", "رمز التتبع")</dt><dd dir="ltr" class="tracking-code">@(string.IsNullOrWhiteSpace(s.TrackingCode) ? "—" : s.TrackingCode)</dd></div>
-                            <div><dt>@T("تاریخ ارسال", "Shipped at", "تاريخ الشحن")</dt><dd>@Model.DateText(s.ShippedAt)</dd></div>
-                            <div><dt>@T("تحویل در", "Delivered at", "التسليم في")</dt><dd>@Model.DateText(s.DeliveredAt)</dd></div>
-                        </dl>
-                    </div>
-                }
+                    "order.concurrency_conflict" or "core.database.concurrency_conflict" => T("سفارش هم‌زمان تغییر کرده؛ دوباره تلاش کنید.", "Order changed concurrently; try again.", "تم تغيير الطلب بالتزامن؛ حاول مجدداً."),
+                    "order.invalid_transition" or "order.not_draft" => T("این سفارش در وضعیت فعلی قابل لغو نیست.", "This order can no longer be cancelled.", "لا يمكن إلغاء هذا الطلب الآن."),
+                    "order.cancellation_reason_required" => T("دلیل لغو الزامی است.", "Cancellation reason is required.", "سبب الإلغاء مطلوب."),
+                    _ => T("عملیات انجام نشد؛ دوباره تلاش کنید.", "Operation failed; try again.", "فشلت العملية؛ حاول مجدداً.")
+                })
+                <span class="muted small" dir="ltr"> @Model.Error</span>
             </div>
         }
 
-        @if (Model.Timeline.Count > 0)
-        {
-            <h2 class="timeline-title">@T("خط زمانی سفارش", "Order timeline", "الخط الزمني للطلب")</h2>
-            <ol class="timeline">
-                @foreach (var e in Model.Timeline)
-                {
-                    <li>
-                        <span class="timeline-dot" aria-hidden="true"></span>
-                        <div>
-                            <strong>@EventLabel(e.Type)</strong>
-                            <small class="muted">@Model.DateText(e.At)</small>
+        <div class="wizard-cols">
+            <div style="display:flex;flex-direction:column;gap:1.1rem;min-width:0">
+                <div class="card">
+                    <h2>@T("اقلام سفارش", "Order items", "بنود الطلب")</h2>
+                    @if (Model.Items.Count == 0)
+                    {
+                        <p class="muted">@T("آیتمی ثبت نشده.", "No items.", "لا بنود.")</p>
+                    }
+                    @foreach (var item in Model.Items)
+                    {
+                        <div class="order-item">
+                            <div class="order-item-head">
+                                <strong>@item.Product</strong>
+                                <span class="chip">@Num(item.Quantity) @item.Uom</span>
+                            </div>
+                            <p class="muted small">
+                                @(string.Join(" · ", new[] { item.Variant, item.Size, item.Color }.Where(s => !string.IsNullOrWhiteSpace(s))))
+                            </p>
+                            @if (!string.IsNullOrWhiteSpace(item.Notes))
+                            {
+                                <p class="small item-notes">@item.Notes</p>
+                            }
+                            @if (item.PrintOperations.Count > 0)
+                            {
+                                <div class="print-ops">
+                                    @foreach (var op in item.PrintOperations)
+                                    {
+                                        <span class="print-op">
+                                            <strong>@PositionLabel(op.Position)</strong>
+                                            @(op.Width is decimal w && op.Height is decimal h ? $" · {Num(w)}×{Num(h)} cm" : "")
+                                            @(string.IsNullOrWhiteSpace(op.Method) ? "" : $" · {op.Method}")
+                                        </span>
+                                    }
+                                </div>
+                            }
                         </div>
-                    </li>
-                }
-            </ol>
-        }
+                    }
+                </div>
 
-        <a class="btn btn-ghost btn-sm" href="/account/orders">→ @T("بازگشت به سفارش‌ها", "Back to orders", "العودة إلى الطلبات")</a>
+                @if (Model.ShippingAddress is not null)
+                {
+                    <div class="card">
+                        <h2>@T("نشانی ارسال", "Shipping address", "عنوان الشحن")</h2>
+                        <p><strong>@(string.IsNullOrWhiteSpace(Model.ShippingAddress.RecipientName) ? "—" : Model.ShippingAddress.RecipientName)</strong> <span class="muted" dir="ltr">@Model.ShippingAddress.RecipientMobile</span></p>
+                        <p class="muted small">@Model.ShippingAddress.Line @if (!string.IsNullOrWhiteSpace(Model.ShippingAddress.PostalCode)) { <span dir="ltr"> · @Model.ShippingAddress.PostalCode</span> }</p>
+                    </div>
+                }
+
+                @if (Model.Shipments.Count > 0)
+                {
+                    <div class="card">
+                        <h2>@T("مرسولات", "Shipments", "الشحنات")</h2>
+                        @foreach (var s in Model.Shipments)
+                        {
+                            <div class="shipment-mini">
+                                <div class="address-head">
+                                    <strong dir="ltr">@s.Number</strong>
+                                    <span class="status-chip st-@s.Status.ToLowerInvariant()">@ShipmentLabel(s.Status)</span>
+                                </div>
+                                <p class="muted small">@T("حمل‌کننده", "Carrier", "الناقل"): <span dir="ltr">@s.Carrier</span> · @T("کد رهگیری", "Tracking", "رمز التتبع"): <strong dir="ltr">@(string.IsNullOrWhiteSpace(s.TrackingCode) ? "—" : s.TrackingCode)</strong></p>
+                                <p class="muted small">@T("ارسال", "Shipped", "الشحن"): @Model.DateText(s.ShippedAt) · @T("تحویل", "Delivered", "التسليم"): @Model.DateText(s.DeliveredAt)</p>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:1.1rem;min-width:0">
+                <div class="card price-panel">
+                    <h2>@T("خلاصه قیمت", "Price summary", "ملخص السعر")</h2>
+                    @if (QuoteRows.Count == 0 && TotalRow is null)
+                    {
+                        <p class="muted small">@T("قیمت پس از تعریف تعرفه‌ها محاسبه می‌شود.", "Price appears once tariffs are set.", "يظهر السعر بعد تعيين التعريفات.")</p>
+                    }
+                    else
+                    {
+                        <ul class="quote-list">
+                            @foreach (var (label, value) in QuoteRows)
+                            {
+                                <li><span>@label</span><strong dir="ltr">@value</strong></li>
+                            }
+                        </ul>
+                        @if (TotalRow is var (tLabel, tValue))
+                        {
+                            <div class="quote-total"><span>@tLabel</span><strong dir="ltr">@tValue</strong></div>
+                        }
+                    }
+                </div>
+
+                @if (Cancellable)
+                {
+                    <div class="card cancel-card">
+                        <h2>@T("لغو سفارش", "Cancel order", "إلغاء الطلب")</h2>
+                        <form method="post" asp-page-handler="Cancel" class="auth-form">
+                            <label><span>@T("دلیل لغو (اختیاری)", "Cancellation reason (optional)", "سبب الإلغاء")</span>
+                                <input type="text" asp-for="CancelText" />
+                            </label>
+                            <button type="submit" class="btn btn-danger">@T("لغو این سفارش", "Cancel this order", "إلغاء هذا الطلب")</button>
+                        </form>
+                    </div>
+                }
+
+                @if (Model.Timeline.Count > 0)
+                {
+                    <div class="card">
+                        <h2>@T("خط زمانی", "Timeline", "الخط الزمني")</h2>
+                        <ol class="timeline">
+                            @foreach (var e in Model.Timeline)
+                            {
+                                <li>
+                                    <span class="timeline-dot" aria-hidden="true"></span>
+                                    <div>
+                                        <strong>@EventLabel(e.Type)</strong>
+                                        <small class="muted">@Model.DateText(e.At)</small>
+                                    </div>
+                                </li>
+                            }
+                        </ol>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <a class="btn btn-ghost btn-sm" href="/account/orders" style="margin-top:1.4rem">→ @T("بازگشت به سفارش‌ها", "Back to orders", "العودة إلى الطلبات")</a>
     </section>
 }

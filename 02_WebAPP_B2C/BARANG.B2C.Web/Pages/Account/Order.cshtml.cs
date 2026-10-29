@@ -13,52 +13,135 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
     public Guid Id { get; private set; }
     public string? OrderNumber { get; private set; }
     public string OrderStatus { get; private set; } = "";
+    public DateTimeOffset? SubmittedAt { get; private set; }
+    public DateOnly? OrderDate { get; private set; }
+    public DateOnly? RequestedDelivery { get; private set; }
+    public long Version { get; private set; }
+    public OrderAddressRow? ShippingAddress { get; private set; }
+    public IReadOnlyList<ItemRow> Items { get; private set; } = [];
     public IReadOnlyList<ShipmentRow> Shipments { get; private set; } = [];
     public IReadOnlyList<TimelineRow> Timeline { get; private set; } = [];
+    public JsonElement? Quote { get; private set; }
     public bool Found { get; private set; }
+    public string? Error { get; private set; }
+    [BindProperty] public string? CancelText { get; set; }
+
     private IActionResult? ReauthGuard()
     {
         if (!core.SawUnauthorized) return null;
-        return RedirectToPage("/Account/Login", new { returnUrl = "/account" });
+        return RedirectToPage("/Account/Login", new { returnUrl = $"/account/orders/{Id}" });
     }
 
-
-    public async Task<IActionResult> OnGet(Guid id)
+    public async Task<IActionResult> OnGetAsync(Guid id, string? error)
     {
         Id = id;
-        JsonElement? result = await core.GetAsync($"api/v1/client/orders/{id}/tracking");
-        if (result is not JsonElement x || x.ValueKind != JsonValueKind.Object) return NotFound();
+        Error = error;
+        JsonElement? order = await core.GetAsync($"api/v1/client/orders/{id}");
+        if (ReauthGuard() is { } r0) return r0;
+        if (order is not JsonElement o || o.ValueKind != JsonValueKind.Object) return NotFound();
         Found = true;
-        OrderNumber = x.TryGetProperty("orderNumber", out JsonElement num) ? num.GetString() : null;
-        OrderStatus = x.TryGetProperty("orderStatus", out JsonElement st) ? st.GetString() ?? "" : "";
-        if (x.TryGetProperty("shipments", out JsonElement sh) && sh.ValueKind == JsonValueKind.Array)
-        {
-            Shipments = sh.EnumerateArray().Select(s => new ShipmentRow(
-                s.TryGetProperty("shipmentNumber", out JsonElement sn) ? sn.GetString() ?? "" : "",
-                s.TryGetProperty("carrierCode", out JsonElement cc) ? cc.GetString() ?? "" : "",
-                s.TryGetProperty("shippingMethodCode", out JsonElement mc) ? mc.GetString() ?? "" : "",
-                s.TryGetProperty("trackingCode", out JsonElement tc) ? tc.GetString() : null,
-                s.TryGetProperty("status", out JsonElement ss) ? ss.GetString() ?? "" : "",
-                ParseDate(s.TryGetProperty("shippedAtUtc", out JsonElement sd) ? sd.GetString() : null),
-                ParseDate(s.TryGetProperty("deliveredAtUtc", out JsonElement dd) ? dd.GetString() : null))).ToList();
-        }
-        if (x.TryGetProperty("events", out JsonElement ev) && ev.ValueKind == JsonValueKind.Array)
-        {
-            Timeline = ev.EnumerateArray().Select(e => new TimelineRow(
-                e.TryGetProperty("type", out JsonElement ty) ? ty.GetString() ?? "" : "",
-                ParseDate(e.TryGetProperty("occurredAtUtc", out JsonElement oa) ? oa.GetString() : null)))
-                .OrderByDescending(e => e.At).ToList();
-        }
-        ViewData["Title"] = $"{TOrderNumber()} · برنگ";
+        ParseOrder(o);
+        await LoadTrackingAsync();
+        ViewData["Title"] = $"{OrderNumber ?? "—"} · برنگ";
         return Page();
     }
 
-    private string? TOrderNumber() => OrderNumber;
+    public async Task<IActionResult> OnPostCancelAsync(Guid id)
+    {
+        long version = await CurrentVersionAsync(id);
+        (bool ok, _, string? problem) = await core.PostRawWithBodyAsync($"api/v1/client/orders/{id}/cancel",
+            new { reasonCode = "CUSTOMER_REQUEST", reasonText = string.IsNullOrWhiteSpace(CancelText) ? null : CancelText.Trim(), version });
+        return RedirectToPage(new { error = ok ? null : problem ?? "cancel-failed" });
+    }
 
-    private static DateTimeOffset? ParseDate(string? iso) => DateTimeOffset.TryParse(iso, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset d) ? d : null;
+    private void ParseOrder(JsonElement o)
+    {
+        OrderNumber = o.TryGetProperty("orderNumber", out JsonElement num) ? num.GetString() : null;
+        OrderStatus = o.TryGetProperty("status", out JsonElement st) ? st.GetString() ?? "" : "";
+        Version = o.TryGetProperty("version", out JsonElement v) && v.TryGetInt64(out long n) ? n : 0;
+        OrderDate = ParseDateOnly(o.TryGetProperty("orderDate", out JsonElement od) ? od.GetString() : null);
+        RequestedDelivery = ParseDateOnly(o.TryGetProperty("requestedDeliveryDate", out JsonElement rd) ? rd.GetString() : null);
+        SubmittedAt = ParseDateTime(o.TryGetProperty("submittedAtUtc", out JsonElement sa) ? sa.GetString() : null);
+        if (o.TryGetProperty("shippingAddress", out JsonElement ad) && ad.ValueKind == JsonValueKind.Object)
+        {
+            ShippingAddress = new OrderAddressRow(
+                Prop(ad, "recipientName"),
+                Prop(ad, "recipientMobile").Length > 0 ? Prop(ad, "recipientMobile") : Prop(ad, "recipientPhone"),
+                string.Join("، ", new[] { Prop(ad, "province"), Prop(ad, "city"), Prop(ad, "district"), Prop(ad, "addressLine1"), Prop(ad, "addressLine2") }.Where(s => s.Length > 0)),
+                Prop(ad, "postalCode"));
+        }
+        if (o.TryGetProperty("items", out JsonElement items) && items.ValueKind == JsonValueKind.Array)
+        {
+            Items = items.EnumerateArray().Where(x => !x.TryGetProperty("isActive", out JsonElement act) || act.ValueKind != JsonValueKind.False)
+                .Select(x =>
+                {
+                    JsonElement snap = x.TryGetProperty("snapshot", out JsonElement sn) && sn.ValueKind == JsonValueKind.Object ? sn : default;
+                    List<PrintOpRow> ops = [];
+                    if (x.TryGetProperty("printOperations", out JsonElement pos) && pos.ValueKind == JsonValueKind.Array)
+                    {
+                        ops = pos.EnumerateArray()
+                            .Where(p => !p.TryGetProperty("isActive", out JsonElement pact) || pact.ValueKind != JsonValueKind.False)
+                            .Select(p => new PrintOpRow(
+                                p.TryGetProperty("printPositionCode", out JsonElement pc) ? pc.GetString() ?? "" : "",
+                                p.TryGetProperty("printMethodCode", out JsonElement pm) ? pm.GetString() : null,
+                                p.TryGetProperty("width", out JsonElement w) && w.ValueKind == JsonValueKind.Number ? w.GetDecimal() : null,
+                                p.TryGetProperty("height", out JsonElement h) && h.ValueKind == JsonValueKind.Number ? h.GetDecimal() : null,
+                                p.TryGetProperty("notes", out JsonElement pn) ? pn.GetString() : null)).ToList();
+                    }
+                    return new ItemRow(
+                        x.TryGetProperty("lineNumber", out JsonElement ln) && ln.TryGetInt32(out int line) ? line : 0,
+                        Prop(snap, "productName").Length > 0 ? Prop(snap, "productName") : Prop(snap, "productCode"),
+                        Prop(snap, "variantDisplayName").Length > 0 ? Prop(snap, "variantDisplayName") : Prop(snap, "variantSku"),
+                        Prop(snap, "sizeCode"), Prop(snap, "colorCode"), Prop(snap, "uomCode"),
+                        x.TryGetProperty("quantity", out JsonElement q) && q.ValueKind == JsonValueKind.Number ? q.GetDecimal() : 0,
+                        x.TryGetProperty("notes", out JsonElement no) ? no.GetString() : null,
+                        ops);
+                }).ToList();
+        }
+    }
 
-    public sealed record ShipmentRow(string Number, string Carrier, string Method, string? TrackingCode, string Status, DateTimeOffset? ShippedAt, DateTimeOffset? DeliveredAt);
-    public sealed record TimelineRow(string Type, DateTimeOffset? At);
+    private async Task LoadTrackingAsync()
+    {
+        JsonElement? result = await core.GetAsync($"api/v1/client/orders/{Id}/tracking");
+        if (result is JsonElement x && x.ValueKind == JsonValueKind.Object)
+        {
+            if (x.TryGetProperty("shipments", out JsonElement sh) && sh.ValueKind == JsonValueKind.Array)
+            {
+                Shipments = sh.EnumerateArray().Select(s => new ShipmentRow(
+                    s.TryGetProperty("shipmentNumber", out JsonElement sn) ? sn.GetString() ?? "" : "",
+                    s.TryGetProperty("carrierCode", out JsonElement cc) ? cc.GetString() ?? "" : "",
+                    s.TryGetProperty("trackingCode", out JsonElement tc) ? tc.GetString() : null,
+                    s.TryGetProperty("status", out JsonElement ss) ? ss.GetString() ?? "" : "",
+                    ParseDateTime(s.TryGetProperty("shippedAtUtc", out JsonElement sd) ? sd.GetString() : null),
+                    ParseDateTime(s.TryGetProperty("deliveredAtUtc", out JsonElement dd) ? dd.GetString() : null))).ToList();
+            }
+            if (x.TryGetProperty("events", out JsonElement ev) && ev.ValueKind == JsonValueKind.Array)
+            {
+                Timeline = ev.EnumerateArray().Select(e => new TimelineRow(
+                    e.TryGetProperty("type", out JsonElement ty) ? ty.GetString() ?? "" : "",
+                    ParseDateTime(e.TryGetProperty("occurredAtUtc", out JsonElement oa) ? oa.GetString() : null)))
+                    .OrderByDescending(e => e.At).ToList();
+            }
+        }
+        Quote = (await core.PostRawWithBodyAsync($"api/v1/client/orders/{Id}/pricing/preview", new { version = Version })).Value;
+    }
+
+    private async Task<long> CurrentVersionAsync(Guid orderId)
+    {
+        JsonElement? order = await core.GetAsync($"api/v1/client/orders/{orderId}");
+        return order is JsonElement o && o.TryGetProperty("version", out JsonElement v) && v.TryGetInt64(out long n) ? n : 0;
+    }
+
+    private static string Prop(JsonElement x, string name) => x.ValueKind == JsonValueKind.Object && x.TryGetProperty(name, out JsonElement p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? "" : "";
+    private static DateOnly? ParseDateOnly(string? iso) => DateOnly.TryParse(iso, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly d) ? d : null;
+    private static DateTimeOffset? ParseDateTime(string? iso) => DateTimeOffset.TryParse(iso, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset d) ? d : null;
 
     public string DateText(DateTimeOffset? at) => at is DateTimeOffset d ? d.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.GetCultureInfo(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en" ? "en" : "fa")) : "—";
+    public string DateText(DateOnly? d) => d is DateOnly v ? v.ToString("yyyy/MM/dd") : "—";
+
+    public sealed record OrderAddressRow(string RecipientName, string RecipientMobile, string Line, string PostalCode);
+    public sealed record PrintOpRow(string Position, string? Method, decimal? Width, decimal? Height, string? Notes);
+    public sealed record ItemRow(int Line, string Product, string Variant, string Size, string Color, string Uom, decimal Quantity, string? Notes, IReadOnlyList<PrintOpRow> PrintOperations);
+    public sealed record ShipmentRow(string Number, string Carrier, string? TrackingCode, string Status, DateTimeOffset? ShippedAt, DateTimeOffset? DeliveredAt);
+    public sealed record TimelineRow(string Type, DateTimeOffset? At);
 }

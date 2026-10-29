@@ -1,0 +1,64 @@
+@page
+@model NotificationsModel
+@using System.Globalization
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string Date(DateTimeOffset d) => d.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    ViewData["Title"] = T("اعلان‌های من", "My notifications", "إشعاراتي");
+}
+<section class="container section">
+    <nav class="breadcrumbs" aria-label="breadcrumb">
+        <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a> ›
+        <span>@T("اعلان‌ها", "Notifications", "الإشعارات")</span>
+    </nav>
+    <header class="section-head">
+        <h1>@T("اعلان‌های من", "My notifications", "إشعاراتي")</h1>
+        <div class="row-actions">
+            <a class="btn btn-ghost btn-sm @(Model.Unread == "1" ? null : "chip-active-link")" href="/account/notifications?unread=1">@T("فقط خوانده‌نشده‌ها", "Unread only", "غير المقروء فقط")</a>
+            <a class="btn btn-ghost btn-sm" href="/account/notifications">@T("همه", "All", "الكل")</a>
+            <form method="post" asp-page-handler="MarkAllRead">
+                <button type="submit" class="btn btn-ghost btn-sm">✓ @T("خواندن همه", "Mark all read", "تعليم الكل")</button>
+            </form>
+        </div>
+    </header>
+
+    @if (Model.Notifications.Count == 0)
+    {
+        <p class="empty">@T("اعلانی یافت نشد.", "No notifications found.", "لا توجد إشعارات.")</p>
+    }
+    else
+    {
+        <ul class="notif-list">
+            @foreach (var n in Model.Notifications)
+            {
+                <li class="@(n.Unread ? "unread" : null)">
+                    <span class="notif-dot" aria-hidden="true"></span>
+                    <div class="notif-body">
+                        <p>@n.Summary</p>
+                        <small class="muted">@Date(n.CreatedAtUtc) · @n.Category</small>
+                    </div>
+                    @if (n.Unread)
+                    {
+                        <form method="post" asp-page-handler="MarkRead">
+                            <input type="hidden" name="id" value="@n.Id" />
+                            <input type="hidden" name="version" value="@n.Version" />
+                            <button type="submit" class="btn btn-ghost btn-sm">✓ @T("خواندم", "Read", "مقروء")</button>
+                        </form>
+                    }
+                </li>
+            }
+        </ul>
+        <nav class="pagination" aria-label="pagination">
+            @if (Model.HasPrev)
+            {
+                <a class="btn btn-ghost btn-sm" href="/account/notifications?page=@(Model.Page - 1)@(Model.Unread == "1" ? "&unread=1" : "")">← @T("قبلی", "Previous", "السابق")</a>
+            }
+            <span class="page-info">@Model.Page / @Math.Max(1, (int)Math.Ceiling(Model.Total / 12.0))</span>
+            @if (Model.HasNext)
+            {
+                <a class="btn btn-ghost btn-sm" href="/account/notifications?page=@(Model.Page + 1)@(Model.Unread == "1" ? "&unread=1" : "")">@T("بعدی", "Next", "التالي") →</a>
+            }
+        </nav>
+    }
+</section>

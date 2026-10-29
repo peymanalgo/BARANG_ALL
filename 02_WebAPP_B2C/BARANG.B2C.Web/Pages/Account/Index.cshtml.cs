@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace BARANG.B2C.Web.Pages.Account;
 
+public sealed record RecentOrder(Guid Id, string? OrderNumber, string Status);
+
 [Authorize(Policy = "LoggedIn")]
 public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : PageModel
 {
@@ -19,6 +21,7 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
     public long AddressCount { get; private set; }
     public long OrderCount { get; private set; }
     public IReadOnlyList<NotificationRow> Notifications { get; private set; } = [];
+    public IReadOnlyList<RecentOrder> RecentOrders { get; private set; } = [];
     public long UnreadCount { get; private set; }
 
     [BindProperty] public string? ProfileFirstName { get; set; }
@@ -54,8 +57,15 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
             JsonElement? addresses = await core.GetAsync($"api/v1/client/customers/{customerId}/addresses");
             AddressCount = addresses is JsonElement a && a.ValueKind == JsonValueKind.Array ? a.GetArrayLength() : 0;
 
-            JsonElement? orders = await core.GetAsync($"api/v1/client/orders?customerId={customerId}&page=1&pageSize=1");
+            JsonElement? orders = await core.GetAsync($"api/v1/client/orders?customerId={customerId}&page=1&pageSize=3");
             OrderCount = orders is JsonElement o && o.TryGetProperty("total", out JsonElement t) && t.TryGetInt64(out long orderTotal) ? orderTotal : 0;
+            if (orders is JsonElement oo && oo.TryGetProperty("items", out JsonElement oi) && oi.ValueKind == JsonValueKind.Array)
+            {
+                RecentOrders = oi.EnumerateArray().Select(x => new RecentOrder(
+                    x.TryGetProperty("id", out JsonElement rid) && Guid.TryParse(rid.GetString(), out Guid rg) ? rg : Guid.Empty,
+                    x.TryGetProperty("orderNumber", out JsonElement rnum) ? rnum.GetString() : null,
+                    x.TryGetProperty("status", out JsonElement rst) ? rst.GetString() ?? "" : "")).ToList();
+            }
         }
 
         JsonElement? notifs = await core.GetAsync("api/v1/notifications/mine?page=1&pageSize=5");

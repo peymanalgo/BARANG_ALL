@@ -1,0 +1,74 @@
+@page
+@model ProfileModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = T("پروفایل من", "My profile", "ملفي");
+}
+<section class="container section">
+    <nav class="breadcrumbs" aria-label="breadcrumb">
+        <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a> ›
+        <span>@T("پروفایل", "Profile", "الملف")</span>
+    </nav>
+    <header class="section-head">
+        <h1>@T("پروفایل من", "My profile", "ملفي")</h1>
+        @if (Model.CustomerCode is not null)
+        {
+            <span class="chip" dir="ltr">@Model.CustomerCode</span>
+        }
+    </header>
+
+    @if (Model.Saved == "1")
+    {
+        <div class="alert alert-ok" role="status">@T("پروفایل با موفقیت ذخیره شد.", "Profile saved.", "تم حفظ الملف بنجاح.")</div>
+    }
+    @if (Model.Error is not null)
+    {
+        <div class="alert alert-error" role="alert">
+            @(Model.Error switch
+            {
+                "fields" => T("نام، نام خانوادگی و موبایل الزامی است.", "First name, last name and mobile are required.", "الاسم واسم العائلة والهاتف مطلوبة."),
+                "customer.version_conflict" or "core.database.concurrency_conflict" => T("پروفایل هم‌زمان تغییر کرده؛ صفحه را تازه کنید و دوباره ذخیره کنید.", "Profile changed concurrently; refresh and retry.", "تم تغيير الملف بالتزامن؛ حدّث الصفحة وأعد المحاولة."),
+                "customer.invalid_mobile" or "customer.invalid_phone" => T("شماره موبایل معتبر نیست.", "Mobile number is invalid.", "رقم الهاتف غير صالح."),
+                "customer.invalid_email" => T("ایمیل معتبر نیست.", "Email is invalid.", "البريد الإلكتروني غير صالح."),
+                "customer.duplicate_identifier" => T("این کد ملی قبلاً ثبت شده است.", "This national ID is already registered.", "رمز الوطن مسجل مسبقاً."),
+                "noprofile" => T("پروفایل مشتری یافت نشد.", "Customer profile not found.", "لم يتم العثور على ملف العميل."),
+                _ => T("ذخیره انجام نشد؛ دوباره تلاش کنید.", "Save failed; try again.", "فشل الحفظ؛ حاول مجدداً.")
+            })
+        </div>
+    }
+
+    @if (!Model.HasProfile)
+    {
+        <p class="empty">@T("پروفایل مشتری یافت نشد.", "Customer profile not found.", "لم يتم العثور على ملف العميل.")</p>
+    }
+    else
+    {
+        <form method="post" class="card profile-edit">
+            <div class="form-cols">
+                <label><span>@T("نام", "First name", "الاسم")</span>
+                    <input type="text" asp-for="FirstName" required />
+                </label>
+                <label><span>@T("نام خانوادگی", "Last name", "اسم العائلة")</span>
+                    <input type="text" asp-for="LastName" required />
+                </label>
+                <label><span>@T("نام نمایشی (اختیاری)", "Display name (optional)", "الاسم المعروض")</span>
+                    <input type="text" asp-for="DisplayNameInput" placeholder="@Model.DisplayName" />
+                </label>
+                <label><span>@T("موبایل", "Mobile", "الهاتف")</span>
+                    <input type="text" asp-for="Mobile" dir="ltr" required />
+                </label>
+                <label><span>@T("ایمیل", "Email", "البريد")</span>
+                    <input type="email" asp-for="Email" dir="ltr" />
+                </label>
+                <label><span>@T("کد ملی", "National ID", "الرمز الوطني")</span>
+                    <input type="text" asp-for="NationalId" dir="ltr" />
+                </label>
+            </div>
+            <div class="form-actions-row">
+                <button type="submit" class="btn btn-primary">@T("ذخیره تغییرات", "Save changes", "حفظ التغييرات")</button>
+                <span class="muted small">@T("برای تغییر کلمه عبور، از کارت «تغییر کلمه عبور» در صفحه حساب استفاده کنید.", "Use the password card on the account page to change your password.", "لتغيير كلمة المرور استخدم بطاقة الحساب.")</span>
+            </div>
+        </form>
+    }
+</section>
