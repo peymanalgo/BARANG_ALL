@@ -23,6 +23,7 @@ public sealed class NotificationsModel(CoreApiClient core) : PageModel
     {
         Page = Math.Max(1, page ?? 1);
         bool unreadOnly = Unread == "1";
+        string culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
         string path = $"api/v1/notifications/mine?page={Page}&pageSize={PageSize}" + (unreadOnly ? "&unread=true" : "");
         JsonElement? result = await core.GetAsync(path);
         if (result is JsonElement el && el.ValueKind == JsonValueKind.Object)
@@ -32,7 +33,9 @@ public sealed class NotificationsModel(CoreApiClient core) : PageModel
             {
                 Notifications = items.EnumerateArray().Select(x => new NotifRow(
                     x.TryGetProperty("id", out JsonElement id) && Guid.TryParse(id.GetString(), out Guid g) ? g : Guid.Empty,
-                    x.TryGetProperty("summary", out JsonElement s) ? s.GetString() ?? "" : "",
+                    NotificationText.Localize(culture,
+                        x.TryGetProperty("templateCode", out JsonElement tc) ? tc.GetString() : null,
+                        x.TryGetProperty("payload", out JsonElement pl) ? pl.GetString() : null),
                     x.TryGetProperty("category", out JsonElement c) ? c.GetString() ?? "" : "",
                     x.TryGetProperty("status", out JsonElement st) ? st.GetString() ?? "" : "",
                     x.TryGetProperty("version", out JsonElement v) && v.TryGetInt64(out long ver) ? ver : 0,

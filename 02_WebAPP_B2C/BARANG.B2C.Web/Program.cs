@@ -20,7 +20,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         o.Cookie.SameSite = SameSiteMode.Lax;
     });
 builder.Services.AddAuthorization(o => o.AddPolicy("LoggedIn", p => p.RequireAuthenticatedUser()));
-builder.Services.AddOutputCache(o => o.AddPolicy("catalog60", b => b.Expire(TimeSpan.FromSeconds(60)).SetVaryByQuery("page", "pageSize", "search", "culture")));
+builder.Services.AddOutputCache(o => o.AddPolicy("catalog60", b => b.Expire(TimeSpan.FromSeconds(60)).SetVaryByQuery("page", "pageSize", "search", "culture", "mode", "category")));
 builder.Services.AddHttpClient("core", c => c.BaseAddress = new Uri(builder.Configuration["CoreApi:BaseUrl"] ?? "http://localhost:8080/").PlusTrailingSlash());
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CoreApiClient>();
@@ -45,7 +45,8 @@ app.UseRequestLocalization(new RequestLocalizationOptions
     DefaultRequestCulture = new("fa"),
     SupportedCultures = cultures,
     SupportedUICultures = cultures,
-    RequestCultureProviders = [new CookieRequestCultureProvider { CookieName = "barang.store.culture" }]
+    // ?culture=xx on any URL switches instantly; the cookie keeps the choice afterwards
+    RequestCultureProviders = [new QueryStringRequestCultureProvider(), new CookieRequestCultureProvider { CookieName = "barang.store.culture" }]
 });
 app.UseRouting();
 app.UseAuthentication();

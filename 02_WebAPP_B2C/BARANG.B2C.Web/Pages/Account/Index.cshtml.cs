@@ -193,9 +193,12 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
         public static IReadOnlyList<NotificationRow> FromPage(JsonElement page)
         {
             if (!page.TryGetProperty("items", out JsonElement items) || items.ValueKind != JsonValueKind.Array) return [];
+            string culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
             return items.EnumerateArray().Select(x => new NotificationRow(
                 x.TryGetProperty("id", out JsonElement id) && Guid.TryParse(id.GetString(), out Guid g) ? g : Guid.Empty,
-                x.TryGetProperty("summary", out JsonElement s) ? s.GetString() ?? "" : "",
+                BARANG.B2C.Web.Services.NotificationText.Localize(culture,
+                    x.TryGetProperty("templateCode", out JsonElement tc) ? tc.GetString() : null,
+                    x.TryGetProperty("payload", out JsonElement pl) ? pl.GetString() : null),
                 x.TryGetProperty("category", out JsonElement c) ? c.GetString() ?? "" : "",
                 x.TryGetProperty("status", out JsonElement st) ? st.GetString() ?? "" : "",
                 x.TryGetProperty("createdAtUtc", out JsonElement ca) && ca.ValueKind == JsonValueKind.String && DateTimeOffset.TryParse(ca.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset d) ? d : default)).ToList();

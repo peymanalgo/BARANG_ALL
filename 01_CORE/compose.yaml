@@ -97,7 +97,7 @@ services:
       FileStorage__Bucket: ${MINIO_BUCKET:-barang-files}
       FileStorage__Secure: "false"
       FileStorage__MaximumUploadBytes: ${MAXIMUM_UPLOAD_BYTES:-9223372036854775807}
-      FileStorage__PublicEndpoint: ${MINIO_PUBLIC_ENDPOINT:-localhost:9000}
+      FileStorage__PublicEndpoint: ${MINIO_PUBLIC_ENDPOINT:-127.0.0.1:9000}
       FileStorage__PublicBucket: ${MINIO_PUBLIC_BUCKET:-barang-public}
       Catalog__PublicCompanyId: ${PUBLIC_COMPANY_ID:-42f0e459-6095-45bb-aa13-f38126d91d9c}
       DataProtection__KeysPath: /app/.keys

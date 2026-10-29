@@ -54,7 +54,7 @@ public static class PublicCatalogEndpoints
             return Map(result);
         });
 
-        catalog.MapGet("/categories",async(IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,CancellationToken ct)=>
+        catalog.MapGet("/categories",async(string? culture,IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,CancellationToken ct)=>
         {
             Guid? publicCompany=ResolvePublicCompany(configuration);
             if(publicCompany is null)return Results.StatusCode(503);
@@ -62,19 +62,19 @@ public static class PublicCatalogEndpoints
             Result<IReadOnlyList<PublicCatalogCategoryView>> result=await tx.ExecuteAsync(async t=>{
                 List<Artwork> arts=await db.Artworks.AsNoTracking().Where(x=>!x.IsArchived&&x.LifecycleStatus==ArtworkLifecycle.Active&&x.CurrentVersionId!=null).ToListAsync(t);
                 string[] codes=arts.Where(x=>!string.IsNullOrWhiteSpace(x.CategoryCode)).Select(x=>x.CategoryCode!).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-                Dictionary<string,string> names=codes.Length==0?[]:(await (from v in db.LookupValues.AsNoTracking().Where(v=>codes.Contains(v.Code)) join ty in db.LookupTypes.AsNoTracking() on v.LookupTypeId equals ty.Id where ty.Code=="artwork.category" join tr in db.LookupValueTranslations.AsNoTracking() on v.Id equals tr.LookupValueId select new {v.Code,tr.DisplayName}).ToListAsync(t)).GroupBy(x=>x.Code,StringComparer.OrdinalIgnoreCase).ToDictionary(g=>g.Key,g=>string.Join(' ',g.Select(x=>x.DisplayName)),StringComparer.OrdinalIgnoreCase);
+                Dictionary<string,string> names=codes.Length==0?[]:(await (from v in db.LookupValues.AsNoTracking().Where(v=>codes.Contains(v.Code)) join ty in db.LookupTypes.AsNoTracking() on v.LookupTypeId equals ty.Id where ty.Code=="artwork.category" join tr in db.LookupValueTranslations.AsNoTracking() on v.Id equals tr.LookupValueId select new {v.Code,tr.Culture,tr.DisplayName}).ToListAsync(t)).GroupBy(x=>x.Code,StringComparer.OrdinalIgnoreCase).ToDictionary(g=>g.Key,g=>PickTranslation(g.Select(x=>(x.Culture,x.DisplayName)),culture),StringComparer.OrdinalIgnoreCase);
                 List<PublicCatalogCategoryView> rows=arts.Where(x=>!string.IsNullOrWhiteSpace(x.CategoryCode)).GroupBy(x=>x.CategoryCode!).OrderByDescending(g=>g.Count()).Select(g=>new PublicCatalogCategoryView(g.Key,names.TryGetValue(g.Key,out var n)?n:g.Key,g.Count())).ToList();
                 return Result.Success<IReadOnlyList<PublicCatalogCategoryView>>(rows);
             },ct);
             return result.IsSuccess?Results.Ok(result.Value):Results.StatusCode(503);
         });
 
-        catalog.MapGet("/concept-search",async(string? q,int? limit,IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,IObjectStorage storage,IArtworkFileAdministration artworks,CancellationToken ct)=>
+        catalog.MapGet("/concept-search",async(string? q,int? limit,string? culture,IConfiguration configuration,CompanyContext companies,ITransactionExecutor tx,CoreDbContext db,IObjectStorage storage,IArtworkFileAdministration artworks,CancellationToken ct)=>
         {
             Guid? publicCompany=ResolvePublicCompany(configuration);
             if(publicCompany is null)return Results.StatusCode(503);
             using IDisposable scope=companies.BeginScope(publicCompany.Value);
-            Result<IReadOnlyList<ArtworkConceptMatch>> matches=await artworks.ConceptSearchArtworksAsync(q,Math.Clamp(limit??24,1,60),ct);
+            Result<IReadOnlyList<ArtworkConceptMatch>> matches=await artworks.ConceptSearchArtworksAsync(q,Math.Clamp(limit??24,1,60),culture,ct);
             if(matches.IsFailure)return Results.StatusCode(503);
             // B2C storefront serves published (active) designs only
             ArtworkConceptMatch[] active=matches.Value.Where(x=>!x.IsArchived&&string.Equals(x.LifecycleStatus,"Active",StringComparison.OrdinalIgnoreCase)).ToArray();
@@ -123,6 +123,11 @@ public static class PublicCatalogEndpoints
         string? configured=configuration.GetValue<string?>("Catalog:PublicCompanyId");
         return string.IsNullOrWhiteSpace(configured)||!Guid.TryParse(configured,out Guid publicCompany)||publicCompany==Guid.Empty?null:publicCompany;
     }
+
+    // Picks the single translation to display: requested culture first, then the
+    // default (fa), then en and ar. Never mixes translations into one string.
+    internal static string PickTranslation(IEnumerable<(string Culture,string Name)> rows,string? culture)
+        => BARANG.Core.Domain.Lookups.LookupText.PickTranslation(rows,culture);
 
     private static IResult Map<T>(Result<T> result)=>result.IsSuccess?Results.Json(result.Value):Problem(result.Error);
 

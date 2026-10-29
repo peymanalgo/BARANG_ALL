@@ -51,6 +51,10 @@
         </nav>
         <form class="header-search" action="/catalog" method="get" role="search">
             <input type="search" name="search" value="@q" placeholder="@T("جستجوی طرح میان هزاران طرح متنوع برای شما...", "Search among thousands of designs...", "ابحث بين آلاف التصاميم...")" aria-label="@T("جستجو", "Search", "بحث")" />
+            <label class="mode-toggle compact" title="@T("جستجوی مفهومی: پیدا کردن طرح‌ها بر اساس معنا و مفهوم", "Concept search: find designs by meaning", "بحث مفاهيمي: إيجاد التصاميم حسب المعنى")">
+                <input type="checkbox" name="mode" value="concept" @(string.Equals(Context.Request.Query["mode"].ToString(), "concept", StringComparison.OrdinalIgnoreCase) ? "checked" : null) aria-label="@T("جستجوی مفهومی", "Concept search", "بحث مفاهيمي")" />
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8-5-3.6-5 3.6 1.9-5.8L4 8.8h6.1z"/></svg>
+            </label>
             <button type="submit" aria-label="@T("جستجو", "Search", "بحث")">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
             </button>

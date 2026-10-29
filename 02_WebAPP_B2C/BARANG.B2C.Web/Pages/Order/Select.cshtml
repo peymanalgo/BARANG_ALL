@@ -32,7 +32,11 @@
 
             <form class="catalog-filter" method="get">
                 <input type="hidden" name="designId" value="@Model.SelectedId" />
-                <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@T("جستجوی طرح یا کلمه کلیدی...", "Search a design or keyword...", "ابحث عن تصميم أو كلمة...")" />
+                <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@(Model.ConceptMode ? T("جستجوی مفهومی (مطابقت معنا)…", "Concept search (semantic match)…", "بحث مفاهيمي (مطابقة معنوية)…") : T("جستجوی طرح یا کلمه کلیدی...", "Search a design or keyword...", "ابحث عن تصميم أو كلمة..."))" />
+                <label class="mode-toggle" title="@T("جستجوی مفهومی: پیدا کردن طرح‌ها بر اساس معنا و مفهوم", "Concept search: find designs by meaning", "بحث مفاهيمي: إيجاد التصاميم حسب المعنى")">
+                    <input type="checkbox" name="mode" value="concept" @(Model.ConceptMode ? "checked" : null) aria-label="@T("جستجوی مفهومی", "Concept search", "بحث مفاهيمي")" />
+                    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8-5-3.6-5 3.6 1.9-5.8L4 8.8h6.1z"/></svg>
+                </label>
                 <button class="btn btn-primary" type="submit">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
                     @T("جستجو", "Search", "بحث")
@@ -40,10 +44,10 @@
             </form>
 
             <div class="chip-row">
-                <a class="fchip @(string.IsNullOrWhiteSpace(Model.Category) ? "active" : null)" href="/order/select?designId=@Model.SelectedId@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "&search=" + Uri.EscapeDataString(Model.Search.Trim()))">@T("همه طرح‌ها", "All designs", "كل التصاميم")</a>
+                <a class="fchip @(string.IsNullOrWhiteSpace(Model.Category) ? "active" : null)" href="/order/select?designId=@Model.SelectedId@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "&search=" + Uri.EscapeDataString(Model.Search.Trim()))@(Model.ConceptMode ? "&mode=concept" : "")">@T("همه طرح‌ها", "All designs", "كل التصاميم")</a>
                 @foreach (var cat in Model.Categories)
                 {
-                    <a class="fchip @(Model.Category == cat.Code ? "active" : null)" href="/order/select?category=@Uri.EscapeDataString(cat.Code)@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "&search=" + Uri.EscapeDataString(Model.Search.Trim()))&designId=@Model.SelectedId">@cat.DisplayName</a>
+                    <a class="fchip @(Model.Category == cat.Code ? "active" : null)" href="/order/select?category=@Uri.EscapeDataString(cat.Code)@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "&search=" + Uri.EscapeDataString(Model.Search.Trim()))@(Model.ConceptMode ? "&mode=concept" : "")&designId=@Model.SelectedId" title="@cat.DisplayName">@cat.DisplayName</a>
                 }
             </div>
 

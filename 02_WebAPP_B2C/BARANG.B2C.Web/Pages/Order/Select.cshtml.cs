@@ -20,21 +20,43 @@ public sealed class SelectModel(CoreApiClient core) : PageModel
     public long Total { get; private set; }
     public int Page { get; private set; } = 1;
     public int PageSize { get; } = 12;
-    public bool HasNext => Page * PageSize < Total;
-    public bool HasPrev => Page > 1;
+    public bool HasNext => !ConceptMode && Page * PageSize < Total;
+    public bool HasPrev => !ConceptMode && Page > 1;
 
     [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty(SupportsGet = true)] public string? Category { get; set; }
+    [BindProperty(SupportsGet = true)] public string? Mode { get; set; }
+
+    public bool ConceptMode => string.Equals(Mode, "concept", StringComparison.OrdinalIgnoreCase);
 
     public async Task<IActionResult> OnGetAsync([FromQuery] int? page, [FromQuery] Guid? designId)
     {
         Page = Math.Max(1, page ?? 1);
+        string culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
         string search = (Search ?? "").Trim();
-        string path = $"api/v1/public/catalog?page={Page}&pageSize={PageSize}" + (search.Length > 0 ? $"&search={Uri.EscapeDataString(search)}" : "") + (string.IsNullOrWhiteSpace(Category) ? "" : $"&categoryCode={Uri.EscapeDataString(Category.Trim())}");
-        JsonElement? result = await core.GetAsync(path);
-        (Designs, Total) = DesignCard.FromPage(result);
+        if (ConceptMode && search.Length >= 2)
+        {
+            JsonElement? concept = await core.GetAsync($"api/v1/public/catalog/concept-search?limit=48&culture={culture}&q={Uri.EscapeDataString(search)}");
+            if (concept is JsonElement ce && ce.ValueKind == JsonValueKind.Array)
+            {
+                Designs = ce.EnumerateArray().Select(x => new DesignCard(
+                    x.TryGetProperty("id", out JsonElement cid) && Guid.TryParse(cid.GetString(), out Guid cg) ? cg : Guid.Empty,
+                    x.TryGetProperty("code", out JsonElement cc) ? cc.GetString() ?? "" : "",
+                    x.TryGetProperty("title", out JsonElement ct) ? ct.GetString() ?? "" : "",
+                    x.TryGetProperty("categoryName", out JsonElement cn) ? cn.GetString() : null,
+                    x.TryGetProperty("thumbnailUrl", out JsonElement th) ? th.GetString() : null,
+                    x.TryGetProperty("previewUrl", out JsonElement pv) ? pv.GetString() : null)).ToList();
+                Total = Designs.Count;
+            }
+        }
+        else
+        {
+            string path = $"api/v1/public/catalog?page={Page}&pageSize={PageSize}" + (search.Length > 0 ? $"&search={Uri.EscapeDataString(search)}" : "") + (string.IsNullOrWhiteSpace(Category) ? "" : $"&categoryCode={Uri.EscapeDataString(Category.Trim())}");
+            JsonElement? result = await core.GetAsync(path);
+            (Designs, Total) = DesignCard.FromPage(result);
+        }
 
-        JsonElement? cats = await core.GetAsync("api/v1/public/catalog/categories");
+        JsonElement? cats = await core.GetAsync($"api/v1/public/catalog/categories?culture={culture}");
         if (cats is JsonElement c && c.ValueKind == JsonValueKind.Array)
         {
             Categories = c.EnumerateArray().Select(x => new CategoryRow(
@@ -57,12 +79,12 @@ public sealed class SelectModel(CoreApiClient core) : PageModel
             }
             else
             {
-                return RedirectToPage(new { search = Search, category = Category });
+                return RedirectToPage(new { search = Search, category = Category, mode = ConceptMode ? "concept" : null });
             }
         }
         else if (Designs.Count > 0)
         {
-            return RedirectToPage(new { designId = Designs[0].Id, search = Search, category = Category });
+            return RedirectToPage(new { designId = Designs[0].Id, search = Search, category = Category, mode = ConceptMode ? "concept" : null });
         }
         ViewData["Title"] = "انتخاب طرح · پیرنگ خان";
         return Page();
@@ -73,13 +95,15 @@ public sealed class SelectModel(CoreApiClient core) : PageModel
         ["page"] = pageNumber.ToString(),
         ["search"] = string.IsNullOrWhiteSpace(Search) ? null : Search.Trim(),
         ["category"] = string.IsNullOrWhiteSpace(Category) ? null : Category.Trim(),
-        ["designId"] = SelectedId == Guid.Empty ? null : SelectedId.ToString()
+        ["designId"] = SelectedId == Guid.Empty ? null : SelectedId.ToString(),
+        ["mode"] = ConceptMode ? "concept" : null
     });
 
     public string SelectLink(Guid designId) => "/order/select" + QueryString.Create(new Dictionary<string, string?>
     {
         ["designId"] = designId.ToString(),
         ["search"] = string.IsNullOrWhiteSpace(Search) ? null : Search.Trim(),
+        ["mode"] = ConceptMode ? "concept" : null,
         ["category"] = string.IsNullOrWhiteSpace(Category) ? null : Category.Trim(),
         ["page"] = Page.ToString()
     });

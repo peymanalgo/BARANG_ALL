@@ -20,6 +20,20 @@ public static class LookupErrors
 public static class LookupText
 {
     public const string DefaultCulture = "fa";
+
+    // Single-translation picker for display: requested culture first, then the
+    // default (fa), then en and ar. Never mixes translations into one string.
+    public static string PickTranslation(System.Collections.Generic.IEnumerable<(string Culture, string Name)> rows, string? culture)
+    {
+        List<(string Culture, string Name)> list = rows.ToList();
+        string wanted = NormalizeCulture(culture) ?? DefaultCulture;
+        return list.FirstOrDefault(x => x.Culture == wanted).Name
+            ?? list.FirstOrDefault(x => x.Culture == DefaultCulture).Name
+            ?? list.FirstOrDefault(x => x.Culture == "en").Name
+            ?? list.FirstOrDefault(x => x.Culture == "ar").Name
+            ?? list.FirstOrDefault().Name
+            ?? "";
+    }
     public static IReadOnlySet<string> SupportedCultures { get; } = new HashSet<string>(["fa", "en", "ar"], StringComparer.Ordinal);
     public static string? NormalizeCode(string? value)
     {

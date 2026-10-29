@@ -8,16 +8,27 @@
 <section class="container section">
     <header class="catalog-head">
         <h1>@T("کاتالوگ طرح‌ها", "Design catalog", "كتالوج التصاميم")</h1>
-        <p class="muted">@T($"{Model.Total} طرح آماده چاپ", $"{Model.Total} print-ready designs", $"{Model.Total} تصميم جاهز للطباعة")</p>
+        @if (Model.ConceptActive)
+        {
+            <p class="muted">@T($"{Model.ConceptResults.Count} نتیجه مفهومی", $"{Model.ConceptResults.Count} concept matches", $"{Model.ConceptResults.Count} نتيجة مفاهيمية")</p>
+        }
+        else
+        {
+            <p class="muted">@T($"{Model.Total} طرح آماده چاپ", $"{Model.Total} print-ready designs", $"{Model.Total} تصميم جاهز للطباعة")</p>
+        }
     </header>
 
     <form class="catalog-filter" action="/catalog" method="get">
         <input type="hidden" name="category" value="@(Model.Category ?? "")" />
-        <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@T("جستجو در کد یا نام طرح…", "Search code or title…", "ابحث في الرمز أو العنوان…")" />
+        <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@(Model.ConceptMode ? T("جستجوی مفهومی (مطابقت معنا)…", "Concept search (semantic match)…", "بحث مفاهيمي (مطابقة معنوية)…") : T("جستجو در کد یا نام طرح…", "Search code or title…", "ابحث في الرمز أو العنوان…"))" />
         @if (Model.Page > 1)
         {
             <input type="hidden" name="page" value="1" />
         }
+        <label class="mode-toggle" title="@T("جستجوی مفهومی: پیدا کردن طرح‌ها بر اساس معنا و مفهوم، نه فقط کلمات", "Concept search: find designs by meaning, not just keywords", "بحث مفاهيمي: إيجاد التصاميم حسب المعنى وليس الكلمات فقط")">
+            <input type="checkbox" name="mode" value="concept" @(Model.ConceptMode ? "checked" : null) aria-label="@T("جستجوی مفهومی", "Concept search", "بحث مفاهيمي")" />
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8-5-3.6-5 3.6 1.9-5.8L4 8.8h6.1z"/></svg>
+        </label>
         <button class="btn btn-primary" type="submit">@T("جستجو", "Search", "بحث")</button>
     </form>
 
@@ -27,9 +38,14 @@
             <a class="fchip @(string.IsNullOrWhiteSpace(Model.Category) ? "active" : null)" href="/catalog@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "?search=" + Uri.EscapeDataString(Model.Search.Trim()))">@T("همه", "All", "الكل")</a>
             @foreach (var cat in Model.Categories)
             {
-                <a class="fchip @(Model.Category == cat.Code ? "active" : null)" href="/catalog?category=@Uri.EscapeDataString(cat.Code)@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "&search=" + Uri.EscapeDataString(Model.Search.Trim()))"><span dir="ltr">@cat.Code</span> <small>@cat.Count</small></a>
+                <a class="fchip @(Model.Category == cat.Code ? "active" : null)" href="/catalog?category=@Uri.EscapeDataString(cat.Code)@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "&search=" + Uri.EscapeDataString(Model.Search.Trim()))@(Model.ConceptMode ? "&mode=concept" : "")" title="@cat.DisplayName">@(string.IsNullOrWhiteSpace(cat.DisplayName) ? cat.Code : cat.DisplayName) <small>@cat.Count</small></a>
             }
         </div>
+    }
+
+    @if (Model.ConceptMode && !Model.ConceptActive)
+    {
+        <p class="empty">@T("برای جستجوی مفهومی، حداقل ۲ نویسه بنویسید.", "Type at least 2 characters for concept search.", "اكتب حرفين على الأقل للبحث المفاهيمي.")</p>
     }
 
     @if (Model.ConceptActive)
@@ -64,12 +80,14 @@
         }
     }
 
-    @if (Model.Designs.Count == 0)
+    @if (!Model.ConceptMode)
     {
-        <p class="empty">@T("طرحی با این جستجو پیدا نشد.", "No designs match your search.", "لا توجد تصاميم مطابقة.")</p>
-    }
-    else
-    {
+        @if (Model.Designs.Count == 0)
+        {
+            <p class="empty">@T("طرحی با این جستجو پیدا نشد.", "No designs match your search.", "لا توجد تصاميم مطابقة.")</p>
+        }
+        else
+        {
         <div class="design-grid">
             @foreach (var d in Model.Designs)
             {
@@ -112,5 +130,6 @@
                 <a class="btn btn-ghost btn-sm" href="@Model.PageLink(Model.Page + 1)">@T("بعدی", "Next", "التالي") →</a>
             }
         </nav>
+    }
     }
 </section>
