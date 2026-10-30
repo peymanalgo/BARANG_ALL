@@ -829,7 +829,8 @@ html[dir="ltr"] .hero2-inner::before { background: linear-gradient(90deg, rgba(1
 
 /* ---------- «تیشرتت رو ببین» text button under design cards ---------- */
 .design-card-wrap { position: relative; }
-.preview-shirt-btn {
+.preview-shirt-btn { cursor: pointer; }
+.design-card-wrap .preview-shirt-btn {
     display: flex; align-items: center; justify-content: center; gap: .4rem;
     width: 100%; margin-top: .45rem; padding: .5rem .8rem;
     border-radius: 10px; cursor: pointer; font: inherit; font-size: .88rem; font-weight: 750;

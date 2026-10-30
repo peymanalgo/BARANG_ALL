@@ -15,6 +15,7 @@ public sealed class SelectModel(CoreApiClient core) : PageModel
     public string? SelectedTitle { get; private set; }
     public string? SelectedCode { get; private set; }
     public string? SelectedPreview { get; private set; }
+    public string? SelectedThumb { get; private set; }
 
     public IReadOnlyList<DesignCard> Designs { get; private set; } = [];
     public IReadOnlyList<CategoryRow> Categories { get; private set; } = [];
@@ -78,6 +79,7 @@ public sealed class SelectModel(CoreApiClient core) : PageModel
                 SelectedTitle = dd.TryGetProperty("title", out JsonElement ti) ? ti.GetString() : null;
                 SelectedCode = dd.TryGetProperty("code", out JsonElement cd) ? cd.GetString() : null;
                 SelectedPreview = dd.TryGetProperty("previewUrl", out JsonElement pv) ? pv.GetString() : null;
+                SelectedThumb = dd.TryGetProperty("thumbnailUrl", out JsonElement th) ? th.GetString() : null;
             }
             else
             {

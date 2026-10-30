@@ -22,7 +22,8 @@
                     <span class="muted small" dir="ltr">@(Model.SelectedCode ?? "")</span>
                 </div>
             }
-            <a class="btn btn-primary btn-block btn-lg" href="/order/shirt/@(Model.SelectedId == Guid.Empty ? "" : Model.SelectedId.ToString())?addToOrderId=@Model.AddToOrderId">@T("مرحله بعد», «انتخاب تیشرت", "Next — choose shirt", "التالي — اختر التيشرت")</a>
+            <button type="button" class="btn btn-primary btn-block btn-lg preview-shirt-btn preview-next-btn"
+                    data-design='@System.Text.Json.JsonSerializer.Serialize(new { id = Model.SelectedId.ToString(), title = Model.SelectedTitle ?? "", thumb = Model.SelectedThumb })'>@T("مرحله بعد», «انتخاب تیشرت", "Next — choose shirt", "التالي — اختر التيشرت")</button>
         </aside>
 
         @* ---- catalog panel ---- *@
@@ -62,7 +63,8 @@
                     @foreach (var d in Model.Designs)
                     {
                         <div class="design-card-wrap">
-                            <a class="select-card @(Model.SelectedId == d.Id ? "picked" : null)" href="@Model.SelectLink(d.Id)">
+                            <a class="select-card @(Model.SelectedId == d.Id ? "picked" : null)" href="@Model.SelectLink(d.Id)"
+                               data-preview-card='@System.Text.Json.JsonSerializer.Serialize(new { id = d.Id.ToString(), title = d.Title, thumb = d.Thumbnail })'>
                                 <span class="design-thumb">
                                     @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
                                     {

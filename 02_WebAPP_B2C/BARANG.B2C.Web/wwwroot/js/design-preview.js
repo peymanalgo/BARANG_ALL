@@ -226,6 +226,18 @@
         open(data);
     });
 
+    // هر جا کاربر قصد شروع سفارش از روی یک طرح را دارد (کارت‌های data-preview-card)
+    // اول این پاپ‌آپ باز می‌شود؛ ورود مستقیم به ویزارد ممکن نیست.
+    document.addEventListener("click", (e) => {
+        const card = e.target.closest("[data-preview-card]");
+        if (!card) return;
+        e.preventDefault();
+        e.stopPropagation();
+        let data = {};
+        try { data = JSON.parse(card.dataset.previewCard || "{}"); } catch { data = {}; }
+        open(data);
+    });
+
     document.addEventListener("click", (e) => {
         const start = e.target.closest(".dpv-start");
         if (start) startOrder();
