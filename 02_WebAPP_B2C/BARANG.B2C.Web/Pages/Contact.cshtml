@@ -1,0 +1,28 @@
+@page
+@model EmptyModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = T("تماس با ما", "Contact us", "اتصل بنا");
+}
+<section class="container section contact-page">
+    <h1>@T("تماس با ما", "Contact us", "اتصل بنا")</h1>
+    <p class="muted">@T("این اطلاعات آزمایشی است و بعداً با اطلاعات واقعی جایگزین می‌شود.", "This information is a placeholder and will be replaced with real details.", "هذه معلومات مؤقتة وسيتم استبدالها بالمعلومات الحقيقية.")</p>
+    <div class="contact-grid">
+        <div class="card contact-card">
+            <h2>@T("پشتیبانی فروشگاه", "Store support", "دعم المتجر")</h2>
+            <p><strong>@T("تلفن:", "Phone:", "الهاتف:")</strong> <a href="tel:02100000000" dir="ltr">021-00000000</a></p>
+            <p><strong>@T("ایمیل:", "Email:", "البريد:")</strong> <a href="mailto:salam@pirang.ir" dir="ltr">salam@pirang.ir</a></p>
+            <p><strong>@T("ساعات پاسخگویی:", "Hours:", "ساعات الاستجابة:")</strong> @T("شنبه تا پنجشنبه، ۹ تا ۱۸", "Sat–Thu, 9:00–18:00", "السبت-الخميس، 9-18")</p>
+        </div>
+        <div class="card contact-card">
+            <h2>@T("کارگاه چاپ", "Print workshop", "ورشة الطباعة")</h2>
+            <p>@T("تهران، خیابان آزمایشی، پلاک ۱۲ (آدرس تستی)", "Tehran, Test Street, No. 12 (placeholder address)", "طهران، شارع اختبار، 12 (عنوان مؤقت)")</p>
+            <p class="muted small">@T("برای بازدید حضوری لطفاً از قبل هماهنگ کنید.", "Please coordinate before an in-person visit.", "يرجى التنسيق قبل الزيارة.")</p>
+        </div>
+        <div class="card contact-card">
+            <h2>@T("شبکه‌های اجتماعی", "Social media", "وسائل التواصل")</h2>
+            <p>@T("اینستاگرام و تلگرام پیرنگ خان به‌زودی اضافه می‌شود.", "Pirang Khan Instagram and Telegram coming soon.", "إنستغرام وتلغرام پیرنگ خان قريباً.")</p>
+        </div>
+    </div>
+</section>

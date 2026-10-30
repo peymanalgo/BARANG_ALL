@@ -53,11 +53,10 @@
         <nav class="main-nav" aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية")">
             <a href="/" class="@(route.Length == 0 ? "active" : null)">@T("صفحه اصلی", "Home", "الرئيسية")</a>
             <a href="/catalog" class="@(route.StartsWith("catalog") ? "active" : null)">@T("طرح‌ها", "Designs", "التصاميم")</a>
-            <a href="/catalog">@T("تیشرت‌ها", "T-shirts", "التيشرتات")</a>
             <a href="/account/orders">@T("سفارش‌های من", "My orders", "طلباتي")</a>
             <a href="/#features">@T("چاپ و بسته‌بندی", "Printing", "الطباعة")</a>
-            <a href="/#about">@T("درباره ما", "About", "من نحن")</a>
-            <a href="/#contact">@T("تماس با ما", "Contact", "اتصل بنا")</a>
+            <a href="/about" class="@(route.StartsWith("about") ? "active" : null)">@T("درباره ما", "About", "من نحن")</a>
+            <a href="/contact" class="@(route.StartsWith("contact") ? "active" : null)">@T("تماس با ما", "Contact", "اتصل بنا")</a>
         </nav>
         <nav class="header-actions" aria-label="@T("حساب کاربری", "Account", "الحساب")">
             <details class="lang-menu">
@@ -118,7 +117,7 @@
         <div>
             <h3>@T("تماس با ما", "Contact", "اتصل بنا")</h3>
             <a href="mailto:salam@pirang.ir">salam@pirang.ir</a>
-            <a href="/#about">@T("درباره پیرنگ خان", "About Pirang Khan", "عن پیرنگ خان")</a>
+            <a href="/about">@T("درباره پیرنگ خان", "About Pirang Khan", "عن پیرنگ خان")</a>
         </div>
     </div>
     <div class="footer-base">
