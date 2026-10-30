@@ -10,6 +10,7 @@ namespace BARANG.B2C.Web.Pages.Order;
 public sealed class SelectModel(CoreApiClient core) : PageModel
 {
     public Guid SelectedId { get; private set; }
+    [BindProperty(SupportsGet = true)] public Guid AddToOrderId { get; set; }
     public bool HasSelection { get; private set; }
     public string? SelectedTitle { get; private set; }
     public string? SelectedCode { get; private set; }
@@ -29,7 +30,7 @@ public sealed class SelectModel(CoreApiClient core) : PageModel
 
     public bool ConceptMode => string.Equals(Mode, "concept", StringComparison.OrdinalIgnoreCase);
 
-    public async Task<IActionResult> OnGetAsync([FromQuery] int? page, [FromQuery] Guid? designId)
+    public async Task<IActionResult> OnGetAsync([FromQuery] int? page, [FromQuery] Guid? designId, [FromQuery] Guid? addToOrderId)
     {
         Page = Math.Max(1, page ?? 1);
         string culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();

@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace BARANG.B2C.Web.Pages;
 
-public sealed record DesignCard(Guid Id, string Code, string Title, string? CategoryCode, string? Thumbnail, string? Preview)
+public sealed record DesignCard(Guid Id, string Code, string Title, string? CategoryCode, string? Thumbnail, string? Preview, decimal? FromPrice = null)
 {
     public static (IReadOnlyList<DesignCard>, long) FromPage(JsonElement? page)
     {
@@ -18,7 +18,8 @@ public sealed record DesignCard(Guid Id, string Code, string Title, string? Cate
             x.TryGetProperty("title", out JsonElement ti) ? ti.GetString() ?? "" : "",
             x.TryGetProperty("categoryCode", out JsonElement cc) ? cc.GetString() : null,
             x.TryGetProperty("thumbnailUrl", out JsonElement th) ? th.GetString() : null,
-            x.TryGetProperty("previewUrl", out JsonElement pv) ? pv.GetString() : null)).ToList();
+            x.TryGetProperty("previewUrl", out JsonElement pv) ? pv.GetString() : null,
+            x.TryGetProperty("fromPrice", out JsonElement fp) && fp.TryGetDecimal(out decimal fpd) ? fpd : (decimal?)null)).ToList();
         return (cards, total);
     }
 }

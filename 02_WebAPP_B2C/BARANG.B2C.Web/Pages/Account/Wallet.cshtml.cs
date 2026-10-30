@@ -58,7 +58,7 @@ public sealed class WalletModel(CoreApiClient core, CustomerContext customers) :
         return Page();
     }
 
-    public async Task<IActionResult> OnPostChargeAsync(decimal amount)
+    public async Task<IActionResult> OnPostChargeAsync(decimal amount, string? returnToken)
     {
         if (amount <= 0) return RedirectToPage(new { error = "amount" });
         if (await customers.CurrentAsync() is not JsonElement c || !c.TryGetProperty("id", out JsonElement cid)) return RedirectToPage(new { error = "noprofile" });

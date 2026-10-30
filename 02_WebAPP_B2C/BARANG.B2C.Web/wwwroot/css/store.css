@@ -763,3 +763,6 @@ html[dir="ltr"] .hero2-media::after { background: linear-gradient(270deg, rgba(1
 .mode-toggle.compact { width: 30px; height: 30px; border-radius: 8px; }
 .catalog-filter { display: flex; gap: 8px; align-items: center; }
 .header-search { display: flex; align-items: center; gap: 6px; }
+
+/* price on design cards */
+.price-from { display: inline-block; font-size: .78rem; font-weight: 700; color: #128a43; background: #e7f8ec; border-radius: 8px; padding: 2px 8px; margin-top: 3px; }

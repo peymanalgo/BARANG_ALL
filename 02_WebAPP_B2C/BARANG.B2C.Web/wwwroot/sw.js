@@ -44,7 +44,12 @@ self.addEventListener("fetch", (event) => {
     }
 
     // API عمومی کاتالوگ: network-first + کش
-    if (url.pathname.startsWith("/api/v1/public") || url.pathname.startsWith("/api/v1/lookups")) {
+        // wallet and order data must always be fresh (balance, payment state)
+    if (url.pathname.includes('/wallet') || url.pathname.includes('/client/orders')) {
+        event.respondWith(fetch(request));
+        return;
+    }
+if (url.pathname.startsWith("/api/v1/public") || url.pathname.startsWith("/api/v1/lookups")) {
         event.respondWith(
             fetch(request).then((response) => {
                 if (response.ok) {

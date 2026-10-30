@@ -31,6 +31,8 @@ builder.Services.AddRequestLocalization(o =>
     o.RequestCultureProviders = [new CookieRequestCultureProvider { CookieName = "barang.store.culture" }];
 });
 
+builder.Services.AddResponseCompression(o => o.EnableForHttps = true);
+
 var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
@@ -39,6 +41,7 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
+app.UseResponseCompression();
 app.UseStaticFiles();
 app.UseRequestLocalization(new RequestLocalizationOptions
 {

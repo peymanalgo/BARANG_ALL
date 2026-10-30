@@ -17,6 +17,7 @@ public sealed class CatalogModel(CoreApiClient core) : PageModel
     [BindProperty(SupportsGet = true)] public string? Category { get; set; }
     [BindProperty(SupportsGet = true)] public string? Mode { get; set; }
     public IReadOnlyList<CategoryChip> Categories { get; private set; } = [];
+    public Dictionary<string, string> CategoryNames => Categories.ToDictionary(c => c.Code, c => c.DisplayName);
 
     public bool HasNext => Page * PageSize < Total;
     public bool HasPrev => Page > 1;

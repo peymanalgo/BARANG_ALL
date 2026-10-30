@@ -11,6 +11,7 @@ namespace BARANG.B2C.Web.Pages.Order;
 // branch and shipping address, then create the order draft with the item.
 public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : PageModel
 {
+    [BindProperty(SupportsGet = true)] public Guid AddToOrderId { get; set; }
     public Guid DesignId { get; private set; }
     public string DesignTitle { get; private set; } = "";
     public string DesignCode { get; private set; } = "";
@@ -111,7 +112,7 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
         return Page();
     }
 
-    public async Task<IActionResult> OnPostCreateAsync(Guid designId)
+    public async Task<IActionResult> OnPostCreateAsync(Guid designId, Guid addToOrderId)
     {
         JsonElement? customer = await customers.CurrentAsync();
         if (customer is not JsonElement c || c.ValueKind != JsonValueKind.Object || !c.TryGetProperty("id", out JsonElement cid))
@@ -160,20 +161,49 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
 
         string designNote = $"طرح: {DesignCode}";
         object notes = string.IsNullOrWhiteSpace(Notes) ? designNote : $"{Notes} | {designNote}";
-        (bool ok, JsonElement? draft, string? problem) = await core.PostRawWithBodyAsync("api/v1/client/orders/drafts", new
+        // add to an existing draft order (multi-design orders) or create a new one
+        Guid orderId;
+        if (AddToOrderId is Guid draftId && draftId != Guid.Empty)
         {
-            branchId = BranchId,
-            customerId = cid.GetString(),
-            source = "Web",
-            orderDate = today,
-            shippingAddress
-        }, idempotencyKey);
-        if (!ok || draft is not JsonElement d || !d.TryGetProperty("id", out JsonElement did))
-        {
-            return RedirectToPage(new { designId, search = Search, productId = ProductId, error = problem ?? "draft-failed" });
+            var existing = await core.GetAsync($"api/v1/client/orders/{draftId}");
+            if (existing is JsonElement ex && ex.TryGetProperty("id", out JsonElement exId)
+                && ex.TryGetProperty("status", out JsonElement exSt) && string.Equals(exSt.GetString(), "Draft"))
+            {
+                orderId = exId.GetGuid();
+                // refresh shipping address on the draft so the new item ships to the same place
+                if (shippingAddress is not null)
+                {
+                    long exVersion = ex.TryGetProperty("version", out JsonElement ev) && ev.TryGetInt64(out long evn) ? evn : 0;
+                    await core.PutRawAsync($"api/v1/client/orders/{draftId}", new
+                    {
+                        branchId = BranchId,
+                        shippingAddress,
+                        version = exVersion
+                    });
+                }
+            }
+            else
+            {
+                return RedirectToPage(new { designId, search = Search, productId = ProductId, error = "draft-failed" });
+            }
         }
-        Guid orderId = did.GetGuid();
-        long version = d.TryGetProperty("version", out JsonElement ver) && ver.TryGetInt64(out long vv) ? vv : 0;
+        else
+        {
+            (bool ok, JsonElement? draft, string? problem) = await core.PostRawWithBodyAsync("api/v1/client/orders/drafts", new
+            {
+                branchId = BranchId,
+                customerId = cid.GetString(),
+                source = "Web",
+                orderDate = today,
+                shippingAddress
+            }, idempotencyKey);
+            if (!ok || draft is not JsonElement d || !d.TryGetProperty("id", out JsonElement did))
+            {
+                return RedirectToPage(new { designId, search = Search, productId = ProductId, error = problem ?? "draft-failed" });
+            }
+            orderId = did.GetGuid();
+        }
+        long version = await CurrentVersionAsync(orderId);
 
         (bool itemOk, JsonElement? item, string? itemProblem) = await core.PostRawWithBodyAsync($"api/v1/client/orders/{orderId}/items", new
         {

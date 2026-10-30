@@ -1,0 +1,80 @@
+@page "/account/orders/{id:guid}/invoice"
+@model InvoicePrintModel
+@using System.Globalization
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.FormatDateTime(d, culture);
+    ViewData["Title"] = T("فاکتور سفارش", "Order invoice", "فاتورة الطلب");
+}
+<!DOCTYPE html>
+<html lang="@culture" dir="@(culture == "en" ? "ltr" : "rtl")">
+<head>
+    <meta charset="utf-8" />
+    <title>@T("فاکتور", "Invoice", "فاتورة") @Model.OrderNumber · پیرنگ خان</title>
+    <style>
+        body { font-family: "BarangStore", "Vazirmatn", Tahoma, sans-serif; color: #1a1a1a; margin: 0; padding: 32px; background: #f5f5f5; }
+        .inv { max-width: 720px; margin: 0 auto; background: #fff; padding: 32px; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+        .inv-head { display: flex; justify-content: space-between; border-bottom: 3px solid #ff7a1a; padding-bottom: 14px; margin-bottom: 20px; }
+        .inv-head h1 { margin: 0; font-size: 1.4rem; }
+        .inv-head .brand { font-weight: 800; color: #ff7a1a; font-size: 1.2rem; }
+        .inv-meta { display: flex; justify-content: space-between; font-size: .9rem; margin-bottom: 18px; }
+        table.inv-items { width: 100%; border-collapse: collapse; font-size: .88rem; }
+        table.inv-items th { background: #fff3e8; padding: 9px 12px; text-align: start; }
+        table.inv-items td { padding: 9px 12px; border-bottom: 1px solid #eee; }
+        .inv-total { display: flex; justify-content: flex-end; gap: 24px; margin-top: 16px; font-size: 1rem; }
+        .inv-total strong { font-size: 1.15rem; color: #128a43; }
+        .inv-actions { text-align: center; margin-top: 26px; }
+        .inv-actions button { font: inherit; padding: 10px 30px; border: 0; border-radius: 10px; background: #ff7a1a; color: #fff; cursor: pointer; font-weight: 700; }
+        @@media print { body { background: #fff; padding: 0; } .inv { box-shadow: none; border-radius: 0; } .inv-actions { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="inv">
+        <div class="inv-head">
+            <div>
+                <span class="brand">پیرنگ خان</span>
+                <div>@T("فاکتور سفارش", "Order invoice", "فاتورة الطلب")</div>
+            </div>
+            <div style="text-align:end">
+                <strong dir="ltr">@Model.OrderNumber</strong>
+                @if (Model.CreatedAtUtc is DateTimeOffset d)
+                {
+                    <div style="font-size:.8rem;color:#666">@Date(d)</div>
+                }
+            </div>
+        </div>
+        <div class="inv-meta">
+            <span>@T("مشتری", "Customer", "العميل"): <strong>@Model.CustomerName</strong></span>
+            <span>@T("وضعیت پرداخت", "Payment", "الدفع"): <strong>@(Model.FullyPaid ? T("پرداخت‌شده", "Paid", "مدفوع") : T("پرداخت‌نشده", "Unpaid", "غير مدفوع"))</strong></span>
+        </div>
+        <table class="inv-items">
+            <thead>
+                <tr>
+                    <th>@T("کالا", "Item", "الصنف")</th>
+                    <th>@T("واریانت", "Variant", "المتغير")</th>
+                    <th>@T("تعداد", "Qty", "الكمية")</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var it in Model.Items)
+                {
+                    <tr>
+                        <td>@it.ProductName</td>
+                        <td dir="ltr">@it.VariantSku</td>
+                        <td>@it.Quantity.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="inv-total">
+            <span>@T("مبلغ کل", "Total", "الإجمالي"):</span>
+            <strong>@Money(Model.Total) @T("تومان", "Toman", "تومان")</strong>
+        </div>
+        <div class="inv-actions">
+            <button type="button" onclick="window.print()">@T("چاپ / ذخیره PDF", "Print / Save PDF", "طباعة / حفظ PDF")</button>
+        </div>
+    </div>
+</body>
+</html>

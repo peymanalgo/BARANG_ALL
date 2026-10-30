@@ -125,14 +125,22 @@ else
                     </div>
                     @if (!wp.FullyPaid && Model.OrderStatus == "Submitted")
                     {
-                        <form method="post" asp-page-handler="PayWallet" class="inline-form">
+                                                            <a class="btn btn-ghost" href="/account/orders/@Model.Id/invoice" target="_blank">@T("فاکتور", "Invoice", "فاتورة")</a>
+<form method="post" asp-page-handler="PayWallet" class="inline-form">
                             <input type="hidden" name="id" value="@Model.Id" />
                             <button type="submit" class="btn btn-primary" disabled="@(wp.WalletBalance < wp.Remaining)">
                                 @T($"پرداخت {wp.Remaining:N0} تومانی از کیف پول", $"Pay {wp.Remaining:N0} Toman from wallet", $"دفع {wp.Remaining:N0} تومان من المحفظة")
                             </button>
                             @if (wp.WalletBalance < wp.Remaining)
                             {
-                                <small class="muted">@T("موجودی کافی نیست.", "Insufficient balance.", "الرصيد غير كافٍ.")</small>
+                                <div class="charge-inline">
+                                    <small class="muted">@T("موجودی کافی نیست؛ مبلغ کسری را شارژ کنید:", "Insufficient balance; top up the deficit:", "الرصيد غير كافٍ؛ اشحن العجز:")</small>
+                                    <form method="post" asp-page="/Account/Wallet" asp-page-handler="Charge" class="inline-form" style="display:flex;gap:6px;margin-top:4px">
+                                        <input type="hidden" name="amount" value="@(wp.Remaining - wp.WalletBalance)" />
+                                        <input type="hidden" name="returnToken" value="1" />
+                                        <button type="submit" class="btn btn-primary btn-sm">@T($"شارژ {(wp.Remaining - wp.WalletBalance).ToString("N0")} تومان", $"Top up {(wp.Remaining - wp.WalletBalance).ToString("N0")} Toman", $"شحن {(wp.Remaining - wp.WalletBalance).ToString("N0")} تومان")</button>
+                                    </form>
+                                </div>
                             }
                         </form>
                     }
@@ -140,6 +148,13 @@ else
             </div>
         }
 
+        @if (Model.OrderStatus == "Draft")
+        {
+            <div class="alert alert-ok" role="status" style="display:flex;justify-content:space-between;align-items:center">
+                <span>@T("این سفارش پیش‌نویس است؛ هنوز ثبت نهایی نشده.", "This order is a draft; it is not submitted yet.", "هذا الطلب مسودة؛ لم يُرسل بعد.")</span>
+                <a class="btn btn-primary btn-sm" href="/order/select?addToOrderId=@Model.Id">@T("افزودن طرح دیگر به این سفارش", "Add another design to this order", "أضف تصميماً آخر لهذا الطلب")</a>
+            </div>
+        }
         @if (Model.OrderStatus == "Cancelled")
         {
             <div class="alert alert-error cancelled-banner" role="alert">✕ @T("این سفارش لغو شده است.", "This order was cancelled.", "تم إلغاء هذا الطلب.")</div>

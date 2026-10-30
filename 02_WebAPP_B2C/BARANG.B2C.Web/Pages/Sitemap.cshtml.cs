@@ -11,7 +11,8 @@ public sealed class SitemapModel(CoreApiClient core, IConfiguration configuratio
     [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Any)]
     public async Task<IActionResult> OnGetAsync()
     {
-        string baseUrl = configuration["Store:BaseUrl"]?.TrimEnd('/') ?? $"{Request.Scheme}://{Request.Host}";
+        string baseUrl = configuration["Store:BaseUrl"]?.TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = $"{Request.Scheme}://{Request.Host}";
         List<string> urls =
         [
             $"{baseUrl}/",

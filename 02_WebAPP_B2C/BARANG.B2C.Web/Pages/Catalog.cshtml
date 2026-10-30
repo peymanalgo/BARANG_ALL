@@ -101,9 +101,13 @@
                         </span>
                         <span class="design-meta">
                             <strong>@d.Title</strong>
-                            @if (!string.IsNullOrWhiteSpace(d.CategoryCode))
+                            @if (!string.IsNullOrWhiteSpace(Model.CategoryNames.GetValueOrDefault(d.CategoryCode ?? "")))
                             {
-                                <span class="chip">@d.CategoryCode</span>
+                                <span class="chip">@Model.CategoryNames.GetValueOrDefault(d.CategoryCode ?? "")</span>
+                            }
+                            @if (d.FromPrice is decimal fp && fp > 0)
+                            {
+                                <span class="price-from">@T("از", "from", "من") @fp.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa")) @T("تومان", "Toman", "تومان")</span>
                             }
                         </span>
                     </a>

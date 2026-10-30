@@ -22,13 +22,16 @@ public sealed class OrdersModel(CoreApiClient core, CustomerContext customers) :
         if (!core.SawUnauthorized) return null;
         return RedirectToPage("/Account/Login", new { returnUrl = "/account" });
     }
+    [BindProperty(SupportsGet = true)] public string? Search { get; set; }
+
     public async Task<IActionResult> OnGet([FromQuery] int? page)
     {
         Page = Math.Max(1, page ?? 1);
         JsonElement? customer = await customers.CurrentAsync();
         if (customer is not JsonElement c || c.ValueKind != JsonValueKind.Object || !c.TryGetProperty("id", out JsonElement cid)) return Page();
         HasProfile = true;
-        JsonElement? result = await core.GetAsync($"api/v1/client/orders?customerId={cid.GetString()}&page={Page}&pageSize={PageSize}");
+        string searchQs = string.IsNullOrWhiteSpace(Search) ? "" : $"&search={Uri.EscapeDataString(Search.Trim())}";
+        JsonElement? result = await core.GetAsync($"api/v1/client/orders?customerId={cid.GetString()}&page={Page}&pageSize={PageSize}{searchQs}");
         if (result is JsonElement el && el.ValueKind == JsonValueKind.Object)
         {
             Total = el.TryGetProperty("totalCount", out JsonElement t) && t.TryGetInt64(out long n) ? n : 0;

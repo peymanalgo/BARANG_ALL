@@ -32,6 +32,13 @@
     {
         <meta property="og:image" content="@ogImage" />
     }
+    <link rel="canonical" href="@Context.Request.Path.Value?.ToLowerInvariant()@(Context.Request.QueryString.HasValue ? "?" + Context.Request.QueryString.Value.ToLowerInvariant() : "")" />
+    <link rel="alternate" hreflang="fa" href="@Context.Request.Path.Value?culture=fa" />
+    <link rel="alternate" hreflang="en" href="@Context.Request.Path.Value?culture=en" />
+    <link rel="alternate" hreflang="ar" href="@Context.Request.Path.Value?culture=ar" />
+    <meta property="og:image" content="@($"{Context.Request.Scheme}://{Context.Request.Host}/images/pirang-khan.png")" />
+    <meta property="og:url" content="@($"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path.Value}")" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="stylesheet" href="~/css/store.css" asp-append-version="true" />
 </head>
 <body>
@@ -101,6 +108,8 @@
             <h3>@T("فروشگاه", "Store", "المتجر")</h3>
             <a href="/catalog">@T("همه طرح‌ها", "All designs", "كل التصاميم")</a>
             <a href="/account/orders">@T("پیگیری سفارش", "Track order", "تتبع الطلب")</a>
+                <a href="/faq">@T("سوالات متداول", "FAQ", "الأسئلة الشائعة")</a>
+                <a href="tel:02100000000" dir="ltr">021-00000000</a>
             <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a>
         </div>
         <div>

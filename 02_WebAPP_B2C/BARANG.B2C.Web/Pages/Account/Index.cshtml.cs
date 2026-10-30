@@ -9,7 +9,7 @@ namespace BARANG.B2C.Web.Pages.Account;
 
 public sealed record RecentOrder(Guid Id, string? OrderNumber, string Status, string? OrderDate, DateTimeOffset CreatedAtUtc);
 public sealed record FavoriteDesign(Guid ArtworkId, string Title, string? ThumbnailUrl);
-public sealed record OfferDesign(Guid Id, string Title, string? ThumbnailUrl);
+public sealed record OfferDesign(Guid Id, string Title, string? CategoryName, decimal? FromPrice, string? ThumbnailUrl);
 public sealed record AddressCard(Guid Id, string? Title, string? TypeCode, string? City, string? AddressLine, bool IsDefault);
 public sealed record WalletSummary(decimal Balance, string CurrencyCode);
 
@@ -156,6 +156,8 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
                 List<OfferDesign> pool = oi2.EnumerateArray().Select(x => new OfferDesign(
                     x.TryGetProperty("id", out JsonElement oid) && Guid.TryParse(oid.GetString(), out Guid og) ? og : Guid.Empty,
                     x.TryGetProperty("title", out JsonElement ot) ? ot.GetString() ?? "" : "",
+                    x.TryGetProperty("categoryName", out JsonElement ocn) ? ocn.GetString() : null,
+                    x.TryGetProperty("fromPrice", out JsonElement ofp) && ofp.TryGetDecimal(out decimal ofpd) ? ofpd : (decimal?)null,
                     x.TryGetProperty("thumbnailUrl", out JsonElement oth) ? oth.GetString() : null)).ToList();
                 Offers = pool.OrderBy(_ => rnd.Next()).Take(4).ToList();
             }
@@ -175,6 +177,8 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
             List<OfferDesign> pool = oi.EnumerateArray().Select(x => new OfferDesign(
                 x.TryGetProperty("id", out JsonElement oid) && Guid.TryParse(oid.GetString(), out Guid og) ? og : Guid.Empty,
                 x.TryGetProperty("title", out JsonElement ot) ? ot.GetString() ?? "" : "",
+                x.TryGetProperty("categoryName", out JsonElement ocn) ? ocn.GetString() : null,
+                x.TryGetProperty("fromPrice", out JsonElement ofp) && ofp.TryGetDecimal(out decimal ofpd) ? ofpd : (decimal?)null,
                 x.TryGetProperty("thumbnailUrl", out JsonElement oth) ? oth.GetString() : null)).ToList();
             Offers = pool.OrderBy(_ => Random.Shared.Next()).Take(4).ToList();
         }

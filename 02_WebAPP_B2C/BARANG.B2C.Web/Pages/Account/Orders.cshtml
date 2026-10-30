@@ -37,6 +37,10 @@
     }
     else
     {
+        <form method="get" class="orders-search" style="margin-bottom:12px;display:flex;gap:8px;">
+            <input type="search" name="search" value="@Model.Search" placeholder="@T("جستجوی شماره سفارش…", "Search order number…", "جستجوی شماره سفارش…")" style="flex:1;max-width:340px;border:1px solid var(--panel-border);border-radius:10px;padding:9px 12px;font:inherit;background:#fff;color:var(--panel-ink)" />
+            <button type="submit" class="btn btn-primary btn-sm">@T("جستجو", "Search", "بحث")</button>
+        </form>
         <div class="order-list">
             @foreach (var o in Model.Orders)
             {

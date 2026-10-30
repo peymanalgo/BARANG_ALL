@@ -22,7 +22,7 @@
                     <span class="muted small" dir="ltr">@(Model.SelectedCode ?? "")</span>
                 </div>
             }
-            <a class="btn btn-primary btn-block btn-lg" href="/order/shirt/@(Model.SelectedId == Guid.Empty ? "" : Model.SelectedId.ToString())">@T("مرحله بعد», «انتخاب تیشرت", "Next — choose shirt", "التالي — اختر التيشرت")</a>
+            <a class="btn btn-primary btn-block btn-lg" href="/order/shirt/@(Model.SelectedId == Guid.Empty ? "" : Model.SelectedId.ToString())?addToOrderId=@Model.AddToOrderId">@T("مرحله بعد», «انتخاب تیشرت", "Next — choose shirt", "التالي — اختر التيشرت")</a>
         </aside>
 
         @* ---- catalog panel ---- *@
@@ -32,6 +32,7 @@
 
             <form class="catalog-filter" method="get">
                 <input type="hidden" name="designId" value="@Model.SelectedId" />
+                <input type="hidden" name="addToOrderId" value="@Model.AddToOrderId" />
                 <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@(Model.ConceptMode ? T("جستجوی مفهومی (مطابقت معنا)…", "Concept search (semantic match)…", "بحث مفاهيمي (مطابقة معنوية)…") : T("جستجوی طرح یا کلمه کلیدی...", "Search a design or keyword...", "ابحث عن تصميم أو كلمة..."))" />
                 <label class="mode-toggle" title="@T("جستجوی مفهومی: پیدا کردن طرح‌ها بر اساس معنا و مفهوم", "Concept search: find designs by meaning", "بحث مفاهيمي: إيجاد التصاميم حسب المعنى")">
                     <input type="checkbox" name="mode" value="concept" @(Model.ConceptMode ? "checked" : null) aria-label="@T("جستجوی مفهومی", "Concept search", "بحث مفاهيمي")" />

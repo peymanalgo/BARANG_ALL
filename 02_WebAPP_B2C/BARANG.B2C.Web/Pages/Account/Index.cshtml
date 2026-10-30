@@ -252,6 +252,10 @@
                                 <img src="@o.ThumbnailUrl" alt="@o.Title" loading="lazy" />
                             }
                             <span class="offer-title">@o.Title</span>
+                            @if (o.FromPrice is decimal fp && fp > 0)
+                            {
+                                <span class="price-from">@T("از", "from", "من") @fp.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa")) @T("تومان", "Toman", "تومان")</span>
+                            }
                         </a>
                     }
                     @if (Model.Offers.Count == 0)

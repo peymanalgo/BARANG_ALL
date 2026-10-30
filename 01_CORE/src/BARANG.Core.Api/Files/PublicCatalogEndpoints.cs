@@ -39,16 +39,19 @@ public static class PublicCatalogEndpoints
                 long total=await query.LongCountAsync(t);
                 List<Artwork> items=await query.OrderBy(x=>x.Code).Skip((pageNumber-1)*size).Take(size).ToListAsync(t);
                 List<ArtworkTranslation> itemTranslations=await db.ArtworkTranslations.AsNoTracking().Where(x=>items.Select(i=>i.Id).Contains(x.ArtworkId)).ToListAsync(t);
+                decimal? fromPrice=await db.ProductSalesPrices.AsNoTracking().Where(x=>x.IsActive).MinAsync(x=>(decimal?)x.Amount,t);
+                string[] itemCats=items.Where(x=>!string.IsNullOrWhiteSpace(x.CategoryCode)).Select(x=>x.CategoryCode!).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                Dictionary<string,string> catNames=itemCats.Length==0?new Dictionary<string,string>():(await (from v in db.LookupValues.AsNoTracking().Where(v=>itemCats.Contains(v.Code)) join ty in db.LookupTypes.AsNoTracking() on v.LookupTypeId equals ty.Id where ty.Code=="artwork.category" join tr in db.LookupValueTranslations.AsNoTracking() on v.Id equals tr.LookupValueId select new {v.Code,tr.Culture,tr.DisplayName}).ToListAsync(t)).GroupBy(x=>x.Code,StringComparer.OrdinalIgnoreCase).ToDictionary(g=>g.Key,g=>PickTranslation(g.Select(x=>(x.Culture,x.DisplayName)),culture),StringComparer.OrdinalIgnoreCase);
                 Guid[] artworkVersionIds=items.Select(x=>x.CurrentVersionId!.Value).ToArray();
                 Dictionary<Guid,Guid> fileVersionByArtworkVersion=await db.ArtworkVersions.AsNoTracking().Where(x=>artworkVersionIds.Contains(x.Id)).Select(x=>new KeyValuePair<Guid,Guid>(x.Id,x.FileVersionId)).ToDictionaryAsync(p=>p.Key,p=>p.Value,t);
                 Guid[] fileVersionIds=fileVersionByArtworkVersion.Values.ToArray();
                 List<(Guid FileVersion,FileDerivativeType Type,string Key)> derivatives=await db.FileDerivatives.AsNoTracking().Where(d=>fileVersionIds.Contains(d.SourceFileVersionId)).Select(d=>new ValueTuple<Guid,FileDerivativeType,string>(d.SourceFileVersionId,d.DerivativeType,d.StorageKey)).ToListAsync(t);
                 PublicCatalogItemView[] rows=items.Select(item=>{
                     Guid artworkVersion=item.CurrentVersionId!.Value;
-                    if(!fileVersionByArtworkVersion.TryGetValue(artworkVersion,out Guid fileVersion))return new PublicCatalogItemView(item.Id,item.Code,LocalizedArtworkText(itemTranslations,item.Id,item.Title,culture),item.CategoryCode,artworkVersion,null,null);
+                    if(!fileVersionByArtworkVersion.TryGetValue(artworkVersion,out Guid fileVersion))return new PublicCatalogItemView(item.Id,item.Code,LocalizedArtworkText(itemTranslations,item.Id,item.Title,culture),item.CategoryCode,catNames.GetValueOrDefault(item.CategoryCode??""),fromPrice,fromPrice is null?null:"IRT",artworkVersion,null,null);
                     string? thumbnail=derivatives.Where(d=>d.FileVersion==fileVersion&&d.Type==FileDerivativeType.Thumbnail).Select(d=>(string?)d.Key).FirstOrDefault();
                     string? preview=derivatives.Where(d=>d.FileVersion==fileVersion&&(d.Type==FileDerivativeType.PublicWeb||d.Type==FileDerivativeType.Web)).Select(d=>(string?)d.Key).FirstOrDefault();
-                    return new PublicCatalogItemView(item.Id,item.Code,LocalizedArtworkText(itemTranslations,item.Id,item.Title,culture),item.CategoryCode,artworkVersion,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview));
+                    return new PublicCatalogItemView(item.Id,item.Code,LocalizedArtworkText(itemTranslations,item.Id,item.Title,culture),item.CategoryCode,catNames.GetValueOrDefault(item.CategoryCode??""),fromPrice,fromPrice is null?null:"IRT",artworkVersion,string.IsNullOrWhiteSpace(thumbnail)?null:storage.GetPublicObjectUrl(thumbnail),string.IsNullOrWhiteSpace(preview)?null:storage.GetPublicObjectUrl(preview));
                 }).ToArray();
                 return Result.Success(new PublicCatalogPage(total,pageNumber,size,rows));
             },ct);
@@ -160,7 +163,7 @@ public static class PublicCatalogEndpoints
     }
 }
 
-public sealed record PublicCatalogItemView(Guid Id,string Code,string Title,string?CategoryCode,Guid? ArtworkVersionId,string?ThumbnailUrl,string?PreviewUrl);
+public sealed record PublicCatalogItemView(Guid Id,string Code,string Title,string?CategoryCode,string?CategoryName,decimal?FromPrice,string?CurrencyCode,Guid? ArtworkVersionId,string?ThumbnailUrl,string?PreviewUrl);
 public sealed record PublicCatalogItemDetail(Guid Id,string Code,string Title,string?CategoryCode,string?Description,Guid? ArtworkVersionId,string?ThumbnailUrl,string?PreviewUrl);
 public sealed record PublicCatalogPage(long Total,int Page,int PageSize,IReadOnlyList<PublicCatalogItemView> Items);
 public sealed record PublicCatalogCategoryView(string Code,string DisplayName,int Count);
