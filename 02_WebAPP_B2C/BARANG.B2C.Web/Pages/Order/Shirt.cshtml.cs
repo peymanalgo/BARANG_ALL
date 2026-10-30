@@ -24,6 +24,10 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
     public IReadOnlyList<BranchRow> Branches { get; private set; } = [];
     public bool HasProfile { get; private set; }
     public string? Error { get; private set; }
+    // انتخاب‌های پاپ‌آپ «تیشرتت رو ببین» (از کوکی barang.preview)
+    public string? PreviewShirtColor { get; private set; }
+    public string? PreviewDesignColor { get; private set; }
+    public bool HasPreview { get; private set; }
     public string ErrorText => Error switch
     {
         "variant" => "واریانت و تعداد را انتخاب کنید.",
@@ -47,6 +51,7 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
         DesignId = designId;
         await LoadDesignAsync();
         if (!DesignFound) return NotFound();
+        (HasPreview, PreviewShirtColor, PreviewDesignColor) = ReadPreviewCookie(designId);
 
         JsonElement? customer = await customers.CurrentAsync();
         if (customer is not JsonElement c || c.ValueKind != JsonValueKind.Object || !c.TryGetProperty("id", out JsonElement cid))
@@ -85,6 +90,15 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
                     x.TryGetProperty("displayName", out JsonElement dn) ? dn.GetString() : null,
                     x.TryGetProperty("sizeCode", out JsonElement sz) ? sz.GetString() : null,
                     x.TryGetProperty("colorCode", out JsonElement cl) ? cl.GetString() : null)).ToList();
+                // اگر از پاپ‌آپ پیش‌نمایش رنگی انتخاب شده، هم‌رنگ‌ترین واریانت خودکار انتخاب شود
+                if (HasPreview && !string.IsNullOrWhiteSpace(PreviewShirtColor) && VariantId is null && Variants.Count > 0)
+                {
+                    string color = PreviewShirtColor.Trim();
+                    VariantRow? match = Variants.FirstOrDefault(x =>
+                            (x.DisplayName ?? "").Contains(color, StringComparison.OrdinalIgnoreCase))
+                        ?? Variants.FirstOrDefault(x => (x.ColorCode ?? "").Contains(color, StringComparison.OrdinalIgnoreCase));
+                    if (match is not null) VariantId = match.Id;
+                }
             }
         }
 
@@ -240,8 +254,7 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
         }
     }
 
-    private static string ComposeLine(JsonElement x)
-    {
+    private static string ComposeLine(JsonElement x)    {
         string[] parts =
         {
             Prop(x, "district"), Prop(x, "addressLine1"), Prop(x, "addressLine2"),
@@ -250,6 +263,24 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
         return string.Join("، ", parts.Where(s => !string.IsNullOrWhiteSpace(s)));
     }
     private static string Prop(JsonElement x, string name) => x.TryGetProperty(name, out JsonElement p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? "" : "";
+
+    // خواندن کوکی پیش‌نمایش «تیشرتت رو ببین»؛ فقط وقتی با طرح جاری یکسان است معتبر است.
+    private (bool Valid, string? ShirtColor, string? DesignColor) ReadPreviewCookie(Guid designId)
+    {
+        string? raw = Request.Cookies["barang.preview"];
+        if (string.IsNullOrWhiteSpace(raw)) return (false, null, null);
+        try
+        {
+            JsonElement x = JsonDocument.Parse(raw).RootElement;
+            string? id = x.TryGetProperty("designId", out JsonElement di) ? di.GetString() : null;
+            if (!Guid.TryParse(id, out Guid pid) || pid != designId) return (false, null, null);
+            string? shirt = x.TryGetProperty("shirtColor", out JsonElement sc) ? sc.GetString() : null;
+            string? design = x.TryGetProperty("designColor", out JsonElement dc) ? dc.GetString() : null;
+            bool hasDesign = !string.IsNullOrWhiteSpace(design) && design != "رنگ واقعی طرح";
+            return (true, shirt, hasDesign ? design : null);
+        }
+        catch (JsonException) { return (false, null, null); }
+    }
 
     private string T(string fa, string en) => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en" ? en : fa;
 

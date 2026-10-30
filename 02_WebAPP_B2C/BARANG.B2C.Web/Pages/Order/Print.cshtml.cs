@@ -55,6 +55,24 @@ public sealed class PrintModel(CoreApiClient core) : PageModel
         return await LoadAsync();
     }
 
+    // کوکی پیش‌نمایش «تیشرتت رو ببین»: رنگ تیشرت و رنگ طرح به یادداشت چاپ اضافه می‌شود
+    private string? ReadPreviewColorNote()
+    {
+        string? raw = Request.Cookies["barang.preview"];
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        try
+        {
+            JsonElement x = JsonDocument.Parse(raw).RootElement;
+            string? shirt = x.TryGetProperty("shirtColor", out JsonElement sc) ? sc.GetString() : null;
+            string? design = x.TryGetProperty("designColor", out JsonElement dc) ? dc.GetString() : null;
+            List<string> parts = [];
+            if (!string.IsNullOrWhiteSpace(shirt)) parts.Add($"رنگ تیشرت: {shirt}");
+            if (!string.IsNullOrWhiteSpace(design) && design != "رنگ واقعی طرح") parts.Add($"رنگ طرح: {design}");
+            return parts.Count == 0 ? null : string.Join(" · ", parts);
+        }
+        catch (JsonException) { return null; }
+    }
+
     public async Task<IActionResult> OnPostSavePrintAsync(Guid orderId, Guid designId)
     {
         OrderId = orderId;
@@ -76,7 +94,9 @@ public sealed class PrintModel(CoreApiClient core) : PageModel
 
         (string? code, _, Guid? artworkVersion) = await LoadDesignAsync(designId);
         string designNote = string.IsNullOrWhiteSpace(code) ? "" : $"طرح: {code}";
-        string notes = string.Join(" | ", new[] { PrintNotes, designNote }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        // رنگ‌های انتخابی پاپ‌آپ «تیشرتت رو ببین» به عنوان یادداشت چاپ ثبت می‌شوند
+        string colorNote = ReadPreviewColorNote();
+        string notes = string.Join(" | ", new[] { PrintNotes, designNote, colorNote }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
         (bool opOk, string? opProblem) = await AddPrintOperationAsync(orderId, version, artworkVersion, fileVersionId, notes);
         return RedirectToPage("Package", new { orderId, designId, message = opOk ? "saved" : null });

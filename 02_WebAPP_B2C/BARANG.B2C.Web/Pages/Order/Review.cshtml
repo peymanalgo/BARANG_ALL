@@ -46,6 +46,16 @@
                 <div class="card">
                     <h2>@T("خلاصه سفارش", "Order summary", "ملخص الطلب")</h2>
                     <p class="muted small">@T("آیتم‌ها", "Items", "البنود"): @Model.ItemsCount · @T("تعداد کل", "Total qty", "إجمالي الكمية"): @Model.ItemsQty.ToString("0.##", CultureInfo.InvariantCulture)</p>
+                    @if (Model.PreviewShirtColor is not null)
+                    {
+                        <p class="muted small">
+                            <strong>@T("از پیش‌نمایش:", "From your preview:", "من المعاينة:")</strong>
+                            @T($"رنگ تیشرت: {Model.PreviewShirtColor}", $"Shirt color: {Model.PreviewShirtColor}", $"لون التيشرت: {Model.PreviewShirtColor}")@if (Model.PreviewDesignColor is not null)
+                            {
+                                @T($" · رنگ طرح: {Model.PreviewDesignColor}", $" · Design color: {Model.PreviewDesignColor}", $" · لون التصميم: {Model.PreviewDesignColor}")
+                            }
+                        </p>
+                    }
                     @if (!string.IsNullOrWhiteSpace(Model.ShippingMethod))
                     {
                         <p class="muted small">@T("روش ارسال", "Shipping", "الشحن"): <span dir="ltr">@Model.ShippingMethod</span></p>
@@ -91,20 +101,13 @@
                     <label class="pay-option @(Model.WalletPayable ? null : "disabled")">
                         <input type="radio" name="PayWithWallet" value="true" checked="@(Model.WalletPayable)" disabled="@(!Model.WalletPayable)" />
                         <span>
-                            <strong>@T("پرداخت آنی از کیف پول", "Pay now from wallet", "الدفع فوراً من المحفظة")</strong>
+                            <strong>@T("پرداخت از کیف پول", "Pay from wallet", "الدفع من المحفظة")</strong>
                             <small>@T($"موجودی: {Model.WalletBalance:N0} تومان", $"Balance: {Model.WalletBalance:N0} Toman", $"الرصيد: {Model.WalletBalance:N0} تومان")</small>
-                        </span>
-                    </label>
-                    <label class="pay-option">
-                        <input type="radio" name="PayWithWallet" value="false" checked="@(!Model.WalletPayable)" />
-                        <span>
-                            <strong>@T("پرداخت بعدی (بدون پرداخت آنلاین)", "Pay later (no online payment)", "الدفع لاحقاً")</strong>
-                            <small>@T("سفارش ثبت می‌شود و پرداخت آن جداگانه انجام می‌شود.", "The order is submitted; payment is handled separately.", "يُرسل الطلب ويُدفع لاحقاً.")</small>
                         </span>
                     </label>
                     @if (!Model.WalletPayable && Model.TotalAmount > 0)
                     {
-                        <p class="muted small">@T("موجودی کیف پول برای پرداخت آنی کافی نیست — ", "Wallet balance is not enough for instant payment — ", "رصيد المحفظة غير كافٍ — ")<a href="/account/wallet">@T("شارژ کیف پول", "top up wallet", "شحن المحفظة")</a></p>
+                        <p class="muted small">@T("فعلاً پرداخت فقط از کیف پول ممکن است و موجودی کافی نیست — ", "Payment is wallet-only for now and the balance is not enough — ", "الدفع حاليًا من المحفظة فقط والرصيد غير كافٍ — ")<a href="/account/wallet">@T("شارژ کیف پول", "top up wallet", "شحن المحفظة")</a></p>
                     }
                 </div>
             </div>
@@ -115,8 +118,8 @@
             <form method="post" asp-page-handler="Submit">
                 <input type="hidden" name="orderId" value="@Model.OrderId" />
                 <input type="hidden" name="designId" value="@Model.DesignId" />
-                <button type="submit" class="btn btn-primary btn-lg" disabled="@(Model.Issues.Count > 0)">
-                    ✓ @T("ثبت نهایی سفارش", "Submit order", "إرسال الطلب")
+                <button type="submit" class="btn btn-primary btn-lg" disabled="@(Model.Issues.Count > 0 || !Model.WalletPayable)" title="@(Model.WalletPayable ? null : T("موجودی کیف پول کافی نیست", "Wallet balance is not enough", "رصيد المحفظة غير كافٍ"))">
+                    ✓ @T("ثبت نهایی و پرداخت از کیف پول", "Submit and pay from wallet", "إرسال والدفع من المحفظة")
                 </button>
             </form>
         </div>

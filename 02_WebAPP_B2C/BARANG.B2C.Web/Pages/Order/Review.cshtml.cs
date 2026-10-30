@@ -30,6 +30,9 @@ public sealed class ReviewModel(CoreApiClient core, CustomerContext customers) :
     public decimal WalletBalance { get; private set; }
     public decimal TotalAmount { get; private set; }
     public bool WalletPayable => WalletBalance >= TotalAmount && TotalAmount > 0;
+    // رنگ‌های انتخابی پاپ‌آپ «تیشرتت رو ببین» برای نمایش در بازبینی
+    public string? PreviewShirtColor { get; private set; }
+    public string? PreviewDesignColor { get; private set; }
     [BindProperty] public string? PayWithWallet { get; set; }
 
     private IActionResult? ReauthGuard()
@@ -43,6 +46,7 @@ public sealed class ReviewModel(CoreApiClient core, CustomerContext customers) :
         OrderId = orderId;
         if (designId is Guid d) DesignId = d;
         Error = error;
+        (bool hasPreview, PreviewShirtColor, PreviewDesignColor) = ReadPreviewCookie(designId);
         if (ReauthGuard() is { } r0) return r0;
 
         JsonElement? order = await core.GetAsync($"api/v1/client/orders/{orderId}");
@@ -135,19 +139,31 @@ public sealed class ReviewModel(CoreApiClient core, CustomerContext customers) :
         {
             return RedirectToPage(new { orderId, designId, error = problem ?? "submit-failed" });
         }
-        if (string.Equals(PayWithWallet, "true", StringComparison.OrdinalIgnoreCase))
-        {
-            long payVersion = await CurrentVersionAsync(orderId);
-            (bool paid, string? payProblem) = await core.PostRawAsync($"api/v1/client/orders/{orderId}/pay-with-wallet", new { version = payVersion });
-            return RedirectToPage("/Account/Order", new { id = orderId, paid = paid ? "1" : null, payerror = paid ? null : (payProblem ?? "wallet-failed") });
-        }
-        return RedirectToPage("/Account/Order", new { id = orderId });
+        // پرداخت فعلاً فقط از کیف پول است (درگاه بانکی بعداً اضافه می‌شود)
+        long payVersion = await CurrentVersionAsync(orderId);
+        (bool paid, string? payProblem) = await core.PostRawAsync($"api/v1/client/orders/{orderId}/pay-with-wallet", new { version = payVersion });
+        return RedirectToPage("/Account/Order", new { id = orderId, paid = paid ? "1" : null, payerror = paid ? null : (payProblem ?? "wallet-failed") });
     }
 
     private async Task<long> CurrentVersionAsync(Guid orderId)
     {
         JsonElement? order = await core.GetAsync($"api/v1/client/orders/{orderId}");
         return order is JsonElement o && o.TryGetProperty("version", out JsonElement v) && v.TryGetInt64(out long n) ? n : 0;
+    }
+
+    private (bool Valid, string? ShirtColor, string? DesignColor) ReadPreviewCookie(Guid? designId)
+    {
+        string? raw = Request.Cookies["barang.preview"];
+        if (string.IsNullOrWhiteSpace(raw)) return (false, null, null);
+        try
+        {
+            JsonElement x = JsonDocument.Parse(raw).RootElement;
+            string? shirt = x.TryGetProperty("shirtColor", out JsonElement sc) ? sc.GetString() : null;
+            string? design = x.TryGetProperty("designColor", out JsonElement dc) ? dc.GetString() : null;
+            bool hasDesign = !string.IsNullOrWhiteSpace(design) && design != "رنگ واقعی طرح";
+            return (true, shirt, hasDesign ? design : null);
+        }
+        catch (JsonException) { return (false, null, null); }
     }
 
     private string T(string fa) => fa;

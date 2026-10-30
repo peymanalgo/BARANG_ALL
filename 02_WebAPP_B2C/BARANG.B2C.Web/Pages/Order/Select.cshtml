@@ -61,14 +61,24 @@
                 <div class="select-grid">
                     @foreach (var d in Model.Designs)
                     {
-                        <a class="select-card @(Model.SelectedId == d.Id ? "picked" : null)" href="@Model.SelectLink(d.Id)">
-                            <span class="design-thumb">
-                                @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
-                                {
-                                    <img src="@d.Thumbnail" alt="@d.Title" width="600" height="600" loading="lazy" decoding="async" />
-                                }
-                            </span>
-                        </a>
+                        <div class="design-card-wrap">
+                            <a class="select-card @(Model.SelectedId == d.Id ? "picked" : null)" href="@Model.SelectLink(d.Id)">
+                                <span class="design-thumb">
+                                    @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
+                                    {
+                                        <img src="@d.Thumbnail" alt="@d.Title" width="600" height="600" loading="lazy" decoding="async" />
+                                    }
+                                </span>
+                            </a>
+                            <button type="button" class="preview-shirt-btn"
+                                    title="@T("تیشرتت رو ببین", "See it on a t-shirt", "شاهدها على التيشرت")"
+                                    aria-label="@T("تیشرتت رو ببین", "See it on a t-shirt", "شاهدها على التيشرت")"
+                                    data-design='@System.Text.Json.JsonSerializer.Serialize(new { id = d.Id.ToString(), title = d.Title, thumb = d.Thumbnail })'>
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M8.5 3 6 4.5 3.5 8l2.5 2v10h12V10l2.5-2L18 4.5 15.5 3a3.5 3.5 0 0 1-7 0z"/>
+                                </svg>
+                            </button>
+                        </div>
                     }
                 </div>
                 <nav class="pagination" aria-label="pagination">

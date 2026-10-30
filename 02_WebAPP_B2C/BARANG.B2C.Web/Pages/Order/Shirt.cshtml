@@ -28,6 +28,17 @@
                 }
                 <p><strong>@Model.DesignTitle</strong></p>
                 <span class="muted small" dir="ltr">@Model.DesignCode</span>
+                @if (Model.HasPreview)
+                {
+                    <div class="preview-pick-note">
+                        <strong>@T("از پیش‌نمایش «تیشرتت رو ببین»:", "From your t-shirt preview:", "من معاينة التيشرت:")</strong>
+                        <span>@T($"رنگ تیشرت: {Model.PreviewShirtColor}", $"Shirt color: {Model.PreviewShirtColor}", $"لون التيشرت: {Model.PreviewShirtColor}")</span>
+                        @if (!string.IsNullOrWhiteSpace(Model.PreviewDesignColor))
+                        {
+                            <span>@T($"رنگ طرح: {Model.PreviewDesignColor}", $"Design color: {Model.PreviewDesignColor}", $"لون التصميم: {Model.PreviewDesignColor}")</span>
+                        }
+                    </div>
+                }
                 <a class="btn btn-ghost btn-sm mt" href="/order/select">@T("تغییر طرح", "Change design", "تغيير التصميم")</a>
                 <div class="shirt-love">
                     <span class="love-icon">♡</span>
