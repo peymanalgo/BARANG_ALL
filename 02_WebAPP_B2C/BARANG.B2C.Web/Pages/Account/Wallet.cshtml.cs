@@ -64,7 +64,7 @@ public sealed class WalletModel(CoreApiClient core, CustomerContext customers) :
         if (await customers.CurrentAsync() is not JsonElement c || !c.TryGetProperty("id", out JsonElement cid)) return RedirectToPage(new { error = "noprofile" });
         (bool ok, JsonElement? value, string? problem) = await core.PostRawWithBodyAsync(
             $"api/v1/client/customers/{cid.GetString()}/wallet/topups",
-            new { amount, currencyCode = "IRR" },
+            new { amount },
             Guid.NewGuid().ToString("N"));
         if (!ok)
         {

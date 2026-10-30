@@ -89,7 +89,7 @@ public static class ClientApiEndpoints
             Guid token = DeterministicGuid("topup:" + key);
             Result<WalletTopUpView> existing = await wallet.GetByTokenAsync(token, ct);
             if (existing.IsSuccess) return Results.Json(existing.Value);
-            Result<WalletTopUpView> result = await wallet.CreateTopUpAsync(customerId, new CreateTopUpCommand(request.Amount, request.CurrencyCode ?? "IRR"), ct);
+            Result<WalletTopUpView> result = await wallet.CreateTopUpAsync(customerId, new CreateTopUpCommand(request.Amount, request.CurrencyCode ?? "IRT"), ct);
             return Map(result, true);
         }).RequireAuthorization(SecurityPermissions.ClientCustomerWrite).RequireRateLimiting("client-mutation");
         root.MapGet("/customers/{customerId:guid}/wallet/topups", async (Guid customerId, string? status, int? page, int? pageSize, IWalletAdministration wallet, CancellationToken ct) => Map(await wallet.ListTopUpsAsync(customerId, status, page ?? 1, pageSize ?? 20, ct))).RequireAuthorization(SecurityPermissions.ClientCustomerRead);
@@ -109,7 +109,7 @@ public static class ClientApiEndpoints
                 decimal credit = await db.CustomerWalletTransactions.AsNoTracking().Where(x => x.CustomerId == order.CustomerId && x.Direction == BARANG.Core.Domain.Customers.CustomerWalletDirection.Credit).SumAsync(x => (decimal?)x.Amount, t) ?? 0m;
                 decimal debit = await db.CustomerWalletTransactions.AsNoTracking().Where(x => x.CustomerId == order.CustomerId && x.Direction == BARANG.Core.Domain.Customers.CustomerWalletDirection.Debit).SumAsync(x => (decimal?)x.Amount, t) ?? 0m;
                 decimal remaining = price is null ? 0m : price.FinalTotal - (paid - reversed);
-                return Result.Success(new WalletPaymentStatusView(order.OrderNumber, order.Status.ToString(), price?.CurrencyCode ?? "IRR", price?.FinalTotal ?? 0m, paid - reversed, remaining > 0 ? remaining : 0m, credit - debit, price is not null && remaining <= 0));
+                return Result.Success(new WalletPaymentStatusView(order.OrderNumber, order.Status.ToString(), price?.CurrencyCode ?? "IRT", price?.FinalTotal ?? 0m, paid - reversed, remaining > 0 ? remaining : 0m, credit - debit, price is not null && remaining <= 0));
             }, ct);
             return Map(result);
         }).RequireAuthorization(SecurityPermissions.ClientOrderRead);
@@ -140,7 +140,7 @@ public static class ClientApiEndpoints
                     .Where(x => x.CustomerId == customerId).OrderByDescending(x => x.CreatedAtUtc).Take(50)
                     .Select(x => new ClientWalletEntryView(x.Id, x.Direction == BARANG.Core.Domain.Customers.CustomerWalletDirection.Credit ? "credit" : "debit", x.Amount, x.CurrencyCode, x.ReasonCode, x.ReferenceNote, x.OrderId, x.CreatedAtUtc))
                     .ToListAsync(t);
-                string currency = rows.Count > 0 ? rows[0].CurrencyCode : "IRR";
+                string currency = rows.Count > 0 ? rows[0].CurrencyCode : "IRT";
                 return Result.Success(new ClientWalletView(credit - debit, currency, rows));
             }, ct);
             return Map(result);

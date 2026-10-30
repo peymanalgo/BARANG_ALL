@@ -44,7 +44,7 @@ public sealed record SupplierFinancialData(
     Guid? PaymentTermId = null,
     Guid? PaymentConditionId = null,
     Guid? PaymentMethodId = null,
-    string DefaultCurrencyCode = "IRR",
+    string DefaultCurrencyCode = "IRT",
     decimal? MinimumOrderAmount = null,
     int? DefaultLeadTimeDays = null,
     decimal BaseDiscountPercent = 0,
@@ -93,7 +93,7 @@ public sealed record SupplierBankData(
     string? CardNumber = null,
     string? BranchCode = null,
     string? BranchName = null,
-    string CurrencyCode = "IRR",
+    string CurrencyCode = "IRT",
     bool IsDefault = false,
     bool IsActive = true,
     string? Notes = null);
@@ -324,7 +324,7 @@ public sealed class SupplierBankAccount : SupplierOwnedEntity
     public string? CardNumber { get; private set; }
     public string? BranchCode { get; private set; }
     public string? BranchName { get; private set; }
-    public string CurrencyCode { get; private set; } = "IRR";
+    public string CurrencyCode { get; private set; } = "IRT";
     public string? Notes { get; private set; }
     public static Result<SupplierBankAccount> Create(Guid owner,Guid company,SupplierBankData data,DateTimeOffset now)
     {
@@ -362,7 +362,7 @@ public sealed class SupplierFinancialProfile : CatalogEntity
     public Guid? PaymentTermId { get; private set; }
     public Guid? PaymentConditionId { get; private set; }
     public Guid? PaymentMethodId { get; private set; }
-    public string DefaultCurrencyCode { get; private set; } = "IRR";
+    public string DefaultCurrencyCode { get; private set; } = "IRT";
     public decimal? MinimumOrderAmount { get; private set; }
     public int? DefaultLeadTimeDays { get; private set; }
     public decimal BaseDiscountPercent { get; private set; } = 0;

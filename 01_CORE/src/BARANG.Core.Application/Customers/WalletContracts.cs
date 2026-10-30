@@ -29,7 +29,7 @@ public interface IWalletAdministration
 
 public static class WalletPolicy
 {
-    public const string CurrencyCode = "IRR";
+    public const string CurrencyCode = "IRT";
     public const decimal MinimumTopUpAmount = 10_000m;
     public const string ReasonTopUp = "topup";
     public const string ReasonPurchase = "purchase";
