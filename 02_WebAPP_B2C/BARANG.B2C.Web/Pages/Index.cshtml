@@ -9,18 +9,7 @@
 }
 @* ---------- HERO (dark) ---------- *@
 <section class="hero2">
-        <div class="hero2-media" aria-hidden="true">
-        <div class="hero-shirt" role="img" aria-label="@T("پیش‌نمایش طرح روی تیشرت", "Design preview on a t-shirt", "معاينة التصميم على التيشرت")">
-            <svg class="shirt-svg" viewBox="0 0 300 340" fill="none">
-                <path d="M95 18 L118 8 C126 20 174 20 182 8 L205 18 L262 52 L242 96 L216 82 L216 322 C216 330 210 336 202 336 L98 336 C90 336 84 330 84 322 L84 82 L58 96 L38 52 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="3"/>
-                <path d="M118 8 C126 20 174 20 182 8 L188 11 C179 26 121 26 112 11 Z" fill="#eef2f7"/>
-                <image href="@(Model.Featured.Count > 0 ? Model.Featured[0].Thumbnail : null)" x="105" y="120" width="90" height="90" preserveAspectRatio="xMidYMid meet"/>
-                <text x="150" y="235" text-anchor="middle" font-size="11" fill="#94a3b8">@T("پیش‌نمایش چاپ", "Print preview", "معاينة الطباعة")</text>
-            </svg>
-            <div class="hero-shirt-glow"></div>
-        </div>
-    </div>
-<div class="container hero2-inner">
+    <div class="container hero2-inner">
         <div class="hero2-copy reveal">
             <h1 class="hero2-title">@T("تیشرتی فراتر از یک لباس", "A shirt beyond clothing", "قميص أبعد من مجرد ملابس")</h1>
             <p class="hero2-accent">@T("با امضای خودت", "with your own signature", "بتوقيعك الخاص")</p>
@@ -33,6 +22,17 @@
                 <span role="listitem"><strong>@(Model.Total.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa")))</strong> @T("طرح آماده", "designs ready", "تصميم جاهز")</span>
                 <span role="listitem"><strong>@T("۳ روزه", "3-day", "٣ أيام")</strong> @T("تحویل سریع", "fast delivery", "تسليم سريع")</span>
                 <span role="listitem"><strong>@T("۳ روش", "3 methods", "٣ طرق")</strong> @T("چاپ حرفه‌ای", "pro printing", "طباعة احترافية")</span>
+            </div>
+        </div>
+        <div class="hero2-media" aria-hidden="true">
+            <div class="hero-shirt" role="img" aria-label="@T("پیش‌نمایش طرح روی تیشرت", "Design preview on a t-shirt", "معاينة التصميم على التيشرت")">
+                <svg class="shirt-svg" viewBox="0 0 300 340" fill="none">
+                    <path d="M95 18 L118 8 C126 20 174 20 182 8 L205 18 L262 52 L242 96 L216 82 L216 322 C216 330 210 336 202 336 L98 336 C90 336 84 330 84 322 L84 82 L58 96 L38 52 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="3"/>
+                    <path d="M118 8 C126 20 174 20 182 8 L188 11 C179 26 121 26 112 11 Z" fill="#eef2f7"/>
+                    <image href="@(Model.Featured.Count > 0 ? Model.Featured[0].Thumbnail : null)" x="105" y="120" width="90" height="90" preserveAspectRatio="xMidYMid meet"/>
+                    <text x="150" y="235" text-anchor="middle" font-size="11" fill="#94a3b8">@T("پیش‌نمایش چاپ", "Print preview", "معاينة الطباعة")</text>
+                </svg>
+                <div class="hero-shirt-glow"></div>
             </div>
         </div>
     </div>

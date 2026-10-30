@@ -795,7 +795,9 @@ html[dir="ltr"] .hero2-media::after { background: linear-gradient(270deg, rgba(1
 
 /* ---------- hero: shirt mockup + secondary CTA + trust strip ---------- */
 .hero2 { min-height: 82vh; display: flex; align-items: center; }
-.hero2-media { position: absolute; inset-inline-end: 5%; top: 12%; width: 320px; z-index: 1; }
+.hero2-inner { align-items: center; justify-content: space-between; gap: 3rem; }
+.hero2-media { position: relative; inset: auto; width: min(360px, 30vw); opacity: 1; flex: 0 0 auto; }
+.hero2-media::after { display: none; }
 .hero-shirt { position: relative; filter: drop-shadow(0 24px 48px rgba(15,23,42,.45)); animation: shirt-float 7s ease-in-out infinite; }
 @keyframes shirt-float { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-16px) rotate(2deg); } }
 .hero-shirt-glow { position: absolute; inset: auto 20% 6% 20%; height: 26px; border-radius: 50%; background: radial-gradient(ellipse, rgba(255,122,26,.35), transparent 70%); filter: blur(6px); }
@@ -804,7 +806,7 @@ html[dir="ltr"] .hero2-media::after { background: linear-gradient(270deg, rgba(1
 .hero-trust { display: flex; gap: 22px; margin-top: 26px; flex-wrap: wrap; }
 .hero-trust span { display: inline-flex; align-items: center; gap: 7px; font-size: .9rem; color: #dbe4ef; }
 .hero-trust strong { color: #fff; font-size: 1.06rem; }
-@media (max-width: 1200px) { .hero2-media { width: 250px; inset-inline-start: 2%; } }
+@media (max-width: 1200px) { .hero2-media { width: 250px; } }
 @media (max-width: 900px) { .hero2-media { display: none; } }
 @media (max-width: 760px) {
     .header-inner { flex-wrap: wrap; row-gap: 0; }
