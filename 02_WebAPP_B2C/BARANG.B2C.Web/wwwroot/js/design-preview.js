@@ -2,6 +2,7 @@
 // موتور ترکیب: طرح (با حذف پس‌زمینه) روی عکس واقعی تیشرت در canvas کشیده می‌شود.
 // - انتخاب رنگ تیشرت: عکس تیشرت همان رنگ (سفید/مشکی/قرمز/آبی)
 // - انتخاب رنگ طرح: «رنگ واقعی طرح» یا هر رنگ دیگر (سیلوئت تک‌رنگ)
+// - محل قرار گرفتن تصویر: جلو/پشت/آستین/سایر (کدهای PrintPosition هسته Core)
 // - شروع سفارش: انتخاب‌ها در کوکی barang.preview و ورود به ویزارد سفارش
 (() => {
     const ShirtColors = [
@@ -20,16 +21,29 @@
         { name: "نارنجی", en: "orange", hex: "#f97316" },
         { name: "مشکی", en: "black", hex: "#141418" }
     ];
+    // کدهای PrintPosition سمت Core (فرم سفارش کلاینت: FRONT/BACK/SLEEVE/OTHER)
+    const Placements = [
+        { code: "FRONT", name: "جلو — وسط سینه" },
+        { code: "BACK", name: "پشت" },
+        { code: "SLEEVE", name: "آستین" },
+        { code: "OTHER", name: "پایین سرمه" }
+    ];
+    // ناحیه هر محل روی عکس تیشرت (نسبت به قاب عکس) — عکس‌ها از رو است، پشت به‌صورت پایین‌تر نشان داده می‌شود
+    const Zones = {
+        FRONT: { x: 0.26, y: 0.25, w: 0.48, h: 0.42 },
+        BACK: { x: 0.26, y: 0.44, w: 0.48, h: 0.36 },
+        SLEEVE: { x: 0.63, y: 0.28, w: 0.26, h: 0.22 },
+        OTHER: { x: 0.32, y: 0.62, w: 0.36, h: 0.24 }
+    };
     const T = {
         title: "تیشرتت رو ببین",
         shirtColor: "انتخاب رنگ تیشرت",
         designColor: "انتخاب رنگ طرح",
+        placement: "محل قرار گرفتن تصویر",
         start: "شروع سفارش",
         close: "بستن",
         previewAlt: "طرح روی تیشرت"
     };
-    // ناحیه چاپ روی عکس‌های تیشرت (نسبت به قاب عکس)
-    const PrintZone = { x: 0.335, y: 0.30, w: 0.33, h: 0.30 };
     const CanvasSize = 640;
 
     let root = null, current = null, renderToken = 0;
@@ -46,6 +60,7 @@
             <div class="dpv-stage">
                 <canvas class="dpv-canvas" width="${CanvasSize}" height="${CanvasSize}" aria-label="${T.previewAlt}" role="img"></canvas>
             </div>
+            <div class="dpv-row"><span class="dpv-label">${T.placement}:</span><div class="dpv-chips dpv-placements"></div></div>
             <div class="dpv-row"><span class="dpv-label">${T.shirtColor}:</span><div class="dpv-swatches dpv-shirt-colors"></div></div>
             <div class="dpv-row"><span class="dpv-label">${T.designColor}:</span><div class="dpv-swatches dpv-design-colors"></div></div>
             <button type="button" class="btn btn-primary btn-lg btn-block dpv-start">${T.start}</button>
@@ -128,6 +143,11 @@
         return c;
     }
 
+    function pickedPlacement() {
+        const b = root.querySelector(".dpv-placements .picked");
+        return b ? b.dataset.code : "FRONT";
+    }
+
     async function render() {
         const token = ++renderToken;
         const canvas = root.querySelector(".dpv-canvas");
@@ -142,8 +162,9 @@
         const designSwatch = root.querySelector(".dpv-design-colors .picked");
         const useTint = designSwatch && designSwatch.dataset.hex;
         const layer = useTint ? tintCanvas(cut, designSwatch.dataset.hex) : cut;
-        const zx = PrintZone.x * CanvasSize, zy = PrintZone.y * CanvasSize;
-        const zw = PrintZone.w * CanvasSize, zh = PrintZone.h * CanvasSize;
+        const zone = Zones[pickedPlacement()] || Zones.FRONT;
+        const zx = zone.x * CanvasSize, zy = zone.y * CanvasSize;
+        const zw = zone.w * CanvasSize, zh = zone.h * CanvasSize;
         const scale = Math.min(zw / cut.width, zh / cut.height);
         const dw = cut.width * scale, dh = cut.height * scale;
         ctx.save();
@@ -172,16 +193,33 @@
         return b;
     }
 
+    function placementChip(p, group) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "dpv-chip";
+        b.dataset.code = p.code;
+        b.dataset.name = p.name;
+        b.textContent = p.name;
+        b.addEventListener("click", () => {
+            group.querySelectorAll(".dpv-chip").forEach(x => x.classList.remove("picked"));
+            b.classList.add("picked");
+            render();
+        });
+        return b;
+    }
+
     async function open(data) {
-        current = { ...data, shirtImg: ShirtColors[0].img };
+        current = { ...data, shirtImg: ShirtColors[0].img, placement: "FRONT" };
         const r = ensureRoot();
         r.classList.add("open");
         document.body.style.overflow = "hidden";
         r.querySelector(".dpv-design-name").textContent = data.title ? `— ${data.title}` : "";
         const shirtBox = r.querySelector(".dpv-shirt-colors");
         const designBox = r.querySelector(".dpv-design-colors");
+        const placementBox = r.querySelector(".dpv-placements");
         shirtBox.innerHTML = "";
         designBox.innerHTML = "";
+        placementBox.innerHTML = "";
         ShirtColors.forEach((c, i) => {
             const b = swatch({ ...c, hex: c.en === "black" ? "#1a1a1e" : c.en === "red" ? "#e23b34" : c.en === "blue" ? "#1263dd" : "#f2f2f2" }, shirtBox);
             if (i === 0) b.classList.add("picked");
@@ -189,6 +227,11 @@
         });
         designBox.appendChild(swatch({ name: RealColor, hex: "" }, designBox));
         TintColors.forEach(c => designBox.appendChild(swatch(c, designBox)));
+        Placements.forEach((p, i) => {
+            const b = placementChip(p, placementBox);
+            if (i === 0) b.classList.add("picked");
+            placementBox.appendChild(b);
+        });
         render();
     }
 
@@ -202,10 +245,13 @@
         if (!current) return;
         const shirt = document.querySelector(".dpv-shirt-colors .picked");
         const design = document.querySelector(".dpv-design-colors .picked");
+        const placement = document.querySelector(".dpv-placements .picked");
         const payload = {
             designId: current.id,
             shirtColor: shirt ? shirt.dataset.name : "سفید",
-            designColor: design ? design.dataset.name : ""
+            designColor: design ? design.dataset.name : "",
+            placement: placement ? placement.dataset.code : "FRONT",
+            placementName: placement ? placement.dataset.name : "جلو"
         };
         document.cookie = "barang.preview=" + encodeURIComponent(JSON.stringify(payload)) + "; path=/; max-age=86400; samesite=lax";
         // داخل ویزارد (مرحله انتخاب طرح): مستقیم برو مرحله تیشرت؛ بیرون ویزارد: از مرحله طرح شروع کن

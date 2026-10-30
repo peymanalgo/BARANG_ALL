@@ -51,8 +51,23 @@ public sealed class PrintModel(CoreApiClient core) : PageModel
             DesignId = d;
             (DesignCode, DesignPreview, ArtworkVersionId) = await LoadDesignAsync(d);
         }
+        // محل قرار گرفتن تصویر انتخاب‌شده در پاپ‌آپ پیش‌نمایش، پیش‌فرض این مرحله می‌شود
+        string? placement = ReadPreviewPlacement();
+        if (!string.IsNullOrWhiteSpace(placement) && PrintPositions.Contains(placement)) PrintPosition = placement;
         if (ReauthGuard() is { } r0) return r0;
         return await LoadAsync();
+    }
+
+    private string? ReadPreviewPlacement()
+    {
+        string? raw = Request.Cookies["barang.preview"];
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        try
+        {
+            JsonElement x = JsonDocument.Parse(raw).RootElement;
+            return x.TryGetProperty("placement", out JsonElement p) && p.ValueKind == JsonValueKind.String ? p.GetString() : null;
+        }
+        catch (JsonException) { return null; }
     }
 
     // کوکی پیش‌نمایش «تیشرتت رو ببین»: رنگ تیشرت و رنگ طرح به یادداشت چاپ اضافه می‌شود
