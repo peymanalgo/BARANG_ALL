@@ -25,12 +25,64 @@
             </div>
         </div>
         <div class="hero2-media" aria-hidden="true">
-            <div class="hero-shirt" role="img" aria-label="@T("پیش‌نمایش طرح روی تیشرت", "Design preview on a t-shirt", "معاينة التصميم على التيشرت")">
-                <svg class="shirt-svg" viewBox="0 0 300 340" fill="none">
-                    <path d="M95 18 L118 8 C126 20 174 20 182 8 L205 18 L262 52 L242 96 L216 82 L216 322 C216 330 210 336 202 336 L98 336 C90 336 84 330 84 322 L84 82 L58 96 L38 52 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="3"/>
-                    <path d="M118 8 C126 20 174 20 182 8 L188 11 C179 26 121 26 112 11 Z" fill="#eef2f7"/>
-                    <image href="@(Model.Featured.Count > 0 ? Model.Featured[0].Thumbnail : null)" x="105" y="120" width="90" height="90" preserveAspectRatio="xMidYMid meet"/>
-                    <text x="150" y="235" text-anchor="middle" font-size="11" fill="#94a3b8">@T("پیش‌نمایش چاپ", "Print preview", "معاينة الطباعة")</text>
+            <div class="hero-shirt" role="img" aria-label="@T("پیش‌نمایش طرح روی تیشرت‌های رنگی، بسته‌بندی و تیشرت‌های افتاده روی زمین", "Design preview on colorful t-shirts, packaging box and shirts lying on the floor", "معاينة التصميم على التيشرتات الملونة والعبوة والتيشرتات على الأرض")">
+                <svg class="shirt-svg" viewBox="0 0 440 500" fill="none">
+                    <defs>
+                        <linearGradient id="heroFloor" x1="0" y1="398" x2="0" y2="520" gradientUnits="userSpaceOnUse">
+                            <stop offset="0" stop-color="#ffffff" stop-opacity=".05"/>
+                            <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="0" y="398" width="440" height="122" fill="url(#heroFloor)"/>
+                    <ellipse cx="185" cy="354" rx="112" ry="12" fill="#000000" opacity=".35"/>
+                    <ellipse cx="362" cy="436" rx="66" ry="10" fill="#000000" opacity=".32"/>
+                    <ellipse cx="112" cy="462" rx="86" ry="9" fill="#000000" opacity=".3"/>
+                    <ellipse cx="224" cy="472" rx="88" ry="9" fill="#000000" opacity=".3"/>
+
+                    @* --- fan of five shirts, like playing cards (back to front) --- *@
+                    <g transform="rotate(-27 185 350)"><g transform="translate(92 142) scale(0.62)">
+                        <path d="M95 18 L118 8 C126 20 174 20 182 8 L205 18 L262 52 L242 96 L216 82 L216 322 C216 330 210 336 202 336 L98 336 C90 336 84 330 84 322 L84 82 L58 96 L38 52 Z" fill="#8b5cf6" stroke="#6d28d9" stroke-width="4"/>
+                        <path d="M118 8 C126 20 174 20 182 8 L188 11 C179 26 121 26 112 11 Z" fill="#6d28d9"/>
+                    </g></g>
+                    <g transform="rotate(27 185 350)"><g transform="translate(92 142) scale(0.62)">
+                        <path d="M95 18 L118 8 C126 20 174 20 182 8 L205 18 L262 52 L242 96 L216 82 L216 322 C216 330 210 336 202 336 L98 336 C90 336 84 330 84 322 L84 82 L58 96 L38 52 Z" fill="#fbbf24" stroke="#d97706" stroke-width="4"/>
+                        <path d="M118 8 C126 20 174 20 182 8 L188 11 C179 26 121 26 112 11 Z" fill="#d97706"/>
+                    </g></g>
+                    <g transform="rotate(-13.5 185 350)"><g transform="translate(92 142) scale(0.62)">
+                        <path d="M95 18 L118 8 C126 20 174 20 182 8 L205 18 L262 52 L242 96 L216 82 L216 322 C216 330 210 336 202 336 L98 336 C90 336 84 330 84 322 L84 82 L58 96 L38 52 Z" fill="#ef4444" stroke="#b91c1c" stroke-width="4"/>
+                        <path d="M118 8 C126 20 174 20 182 8 L188 11 C179 26 121 26 112 11 Z" fill="#b91c1c"/>
+                    </g></g>
+                    <g transform="rotate(13.5 185 350)"><g transform="translate(92 142) scale(0.62)">
+                        <path d="M95 18 L118 8 C126 20 174 20 182 8 L205 18 L262 52 L242 96 L216 82 L216 322 C216 330 210 336 202 336 L98 336 C90 336 84 330 84 322 L84 82 L58 96 L38 52 Z" fill="#34d399" stroke="#059669" stroke-width="4"/>
+                        <path d="M118 8 C126 20 174 20 182 8 L188 11 C179 26 121 26 112 11 Z" fill="#059669"/>
+                    </g></g>
+                    <g><g transform="translate(92 142) scale(0.62)">
+                        <path d="M95 18 L118 8 C126 20 174 20 182 8 L205 18 L262 52 L242 96 L216 82 L216 322 C216 330 210 336 202 336 L98 336 C90 336 84 330 84 322 L84 82 L58 96 L38 52 Z" fill="#f97316" stroke="#c2410c" stroke-width="4"/>
+                        <path d="M118 8 C126 20 174 20 182 8 L188 11 C179 26 121 26 112 11 Z" fill="#c2410c"/>
+                        <rect x="101" y="116" width="98" height="98" rx="10" fill="#ffffff" opacity=".92"/>
+                        <image href="@(Model.Featured.Count > 0 ? Model.Featured[0].Thumbnail : null)" x="105" y="120" width="90" height="90" preserveAspectRatio="xMidYMid meet"/>
+                    </g></g>
+
+                    @* --- clean packaging box with a folded shirt peeking out --- *@
+                    <g>
+                        <path d="M300 330 L314 312 L424 312 L410 330 Z" fill="#171a20"/>
+                        <path d="M316 330 L316 314 Q316 308 322 308 L398 308 Q404 308 404 314 L404 330 Z" fill="#f1f5f9"/>
+                        <path d="M348 308 Q355 317 362 308" stroke="#cbd5e1" stroke-width="3" fill="none"/>
+                        <path d="M300 330 L410 330 L410 424 Q410 430 404 430 L306 430 Q300 430 300 424 Z" fill="#23262e"/>
+                        <rect x="300" y="342" width="110" height="10" fill="#f97316"/>
+                        <text x="355" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">پیرنگ خان</text>
+                        <text x="355" y="410" text-anchor="middle" font-size="8.5" letter-spacing="2.5" fill="#9aa1ad">PIRANG KHAN</text>
+                    </g>
+
+                    @* --- two shirts lying on the floor --- *@
+                    <g transform="translate(38 318) scale(0.5) rotate(-97 150 172)">
+                        <path d="M95 18 L118 8 C126 20 174 20 182 8 L205 18 L262 52 L242 96 L216 82 L216 322 C216 330 210 336 202 336 L98 336 C90 336 84 330 84 322 L84 82 L58 96 L38 52 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="6"/>
+                        <path d="M118 8 C126 20 174 20 182 8 L188 11 C179 26 121 26 112 11 Z" fill="#cbd5e1"/>
+                    </g>
+                    <g transform="translate(150 330) scale(0.46) rotate(-75 150 172)">
+                        <path d="M95 18 L118 8 C126 20 174 20 182 8 L205 18 L262 52 L242 96 L216 82 L216 322 C216 330 210 336 202 336 L98 336 C90 336 84 330 84 322 L84 82 L58 96 L38 52 Z" fill="#dbe4ef" stroke="#b6c2d2" stroke-width="6.5"/>
+                        <path d="M118 8 C126 20 174 20 182 8 L188 11 C179 26 121 26 112 11 Z" fill="#b6c2d2"/>
+                    </g>
                 </svg>
                 <div class="hero-shirt-glow"></div>
             </div>
