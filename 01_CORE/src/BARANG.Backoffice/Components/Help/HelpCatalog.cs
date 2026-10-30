@@ -631,5 +631,45 @@ public static class HelpCatalog
             "• کارت‌های KPI با تعداد و نسبت هر وضعیت\n• نمودارهای تفکیکی سفارش، تولید و ارسال\n• عملکرد اپراتورها و تیم‌ها به‌صورت مقایسه‌ای\n• خواندن زنده داده از همه ماژول‌ها (بدون ورود دستی)\n• مناسب برای جلسات مدیریت و گزارش سریع",
             "• KPI cards with counts and ratios per status\n• Breakdown charts for orders, production and shipping\n• Comparative operator and team performance\n• Live data from all modules (no manual entry)\n• Suited to management meetings and quick reporting",
             "• بطاقات مؤشرات مع الأعداد والنسب\n• مخططات تفصيلية للطلبات والإنتاج والشحن\n• أداء المشغلين والفرق\n• قراءة حية لبيانات كل الوحدات\n• مناسب لاجتماعات الإدارة والتقارير السريعة")
+,
+        N("wallets", "کیف پول مشتریان", "Customer Wallets", "محافظ العملاء", "/workspace/wallet",
+            "موجودی مالی مشتریان فروشگاه پیرنگ خان: شارژ آنلاین از درگاه، پرداخت سفارش‌ها از کیف پول، بازگشت خودکار وجه در لغو سفارش و اصلاح دستی توسط پشتیبانی. هر مشتری یک کیف پول با دفتر تراکنش کامل دارد.",
+            "The store customers' balances: online top-ups through the gateway, order payments from the wallet, automatic refunds on cancellation and manual support adjustments. Every customer has a wallet with a full transaction ledger.",
+            "أرصدة عملاء المتجر: شحن عبر البوابة، دفع الطلبات من المحفظة، إرجاع تلقائي عند الإلغاء وتسويات يدوية من الدعم. لكل عميل محفظة بدفتر معاملات كامل.",
+            "• دو تب: دفتر تراکنش‌ها و درخواست‌های شارژ\n• فیلتر بر اساس مشتری، دلیل تراکنش و وضعیت شارژ\n• دکمه «اصلاح دستی موجودی» با ثبت جهت، مبلغ و یادداشت\n• تاریخ‌های شمسی با موتور تاریخ سامانه\n• تراکنش‌های شارژ/پرداخت/بازگشت خودکار از ماژول‌ها ثبت می‌شوند",
+            "• Two tabs: transaction ledger and top-up requests\n• Filter by customer, transaction reason and top-up status\n• Manual adjustment button with direction, amount and note\n• Jalali dates via the system date engine\n• Top-up, payment and refund entries are written automatically by the modules",
+            "• تبويبان: دفتر المعاملات وطلبات الشحن\n• تصفية حسب العميل والسبب وحالة الشحن\n• زر تسوية يدوية مع الاتجاه والمبلغ والملاحظة\n• تواريخ هجرية بمحرك التاريخ• قيود الشحن والدفع والإرجاع تُسجل تلقائياً"),
+
+        N("referrals", "معرفی‌ها (دعوت از دوستان)", "Referrals", "الإحالات", "/workspace/feedbacks",
+            "نظام دعوت دوستان: هر مشتری یک کد دعوت یکتا دارد؛ با ثبت‌نام معرفی‌شده و پرداخت اولین سفارشش، به معرف اعتبار هدیه در کیف پولش داده می‌شود. وضعیت‌ها و تاریخچه از همین بخش مدیریت می‌شود.",
+            "The invite-a-friend system: every customer gets a unique invite code; when a referred customer signs up and pays their first order, the referrer earns gift credit in their wallet. Statuses and history are managed here.",
+            "نظام دعوة الأصدقاء: لكل عميل رمز فريد؛ عند تسجيل المُحال ودفع أول طلب، يحصل المُحيل على رصيد هدية في محفظته. إدارة الحالات والسجل من هنا.",
+            "• کد دعوت یکتا برای هر مشتری (تولید خودکار)\n• پاداش خودکار روی اولین پرداخت معرفی‌شده\n• وضعیت‌ها: در انتظار / پاداش داده شده\n• نمایش معرف، معرفی‌شده، مبلغ و تاریخ هر معرفی\n• پاداش مستقیم در کیف پول معرف ثبت می‌شود",
+            "• Unique invite code per customer (auto-generated)\n• Automatic reward on the referred customer's first payment\n• Statuses: awaiting / rewarded\n• Shows referrer, referred, amount and date per referral\n• Reward credited directly to the referrer's wallet",
+            "• رمز دعوة فريد لكل عميل (يُنشأ تلقائياً)\n• مكافأة تلقائية على أول دفعة للمُحال\n• الحالات: بانتظار / تمت المكافأة\n• عرض المُحيل والمُحال والمبلغ والتاريخ\n• تُقيد المكافأة مباشرة في محفظة المُحيل"),
+
+        N("feedbacks", "دیدگاه‌های مشتریان", "Customer Feedbacks", "ملاحظات العملاء", "/workspace/feedbacks",
+            "صندوق دیدگاه‌ها، انتقادها و پیشنهادهایی که مشتریان از سایت پیرنگ خان ارسال می‌کنند. هر دیدگاه با نوع (پیشنهاد/انتقاد/دیدگاه) و موضوع ثبت می‌شود و تیم پشتیبانی وضعیت آن را تا حل‌شدن پیگیری می‌کند.",
+            "The inbox of suggestions, complaints and reviews customers submit from the Pirang Khan storefront. Each entry carries a type, subject and message; support tracks its status until resolved.",
+            "صندوق الاقتراحات والشكاوى والمراجعات التي يرسلها عملاء المتجر. كل ملاحظة بنوعها وموضوعها ونصها ويتابع الدعم حالتها حتى الحل.",
+            "• فیلتر وضعیت: جدید / در حال بررسی / حل‌شده\n• فیلتر نوع: پیشنهاد، انتقاد، دیدگاه، سایر\n• نمایش نام مشتری و تاریخ ثبت\n• تغییر وضعیت با یک کلیک و ثبت در دفتر Core\n• ورود خودکار از فرم «دیدگاه‌ها و پیشنهادها» پنل مشتری",
+            "• Status filter: new / in review / resolved\n• Type filter: suggestion, complaint, review, other\n• Shows the customer name and submission date\n• One-click status change, persisted in Core\n• Auto-inbound from the customer panel's feedback form",
+            "• مرشح الحالة: جديد / قيد المراجعة / تم الحل\n• مرشح النوع: اقتراح، شكوى، مراجعة، أخرى\n• عرض اسم العميل وتاريخ الإرسال\n• تغيير الحالة بنقرة ويُسجل في Core• وارد تلقائياً من نموذج لوحة العميل"),
+
+        N("design-i18n", "بانک طرح سه‌زبانه", "Trilingual Design Bank", "بنك التصاميم الثلاثي", "/manage/artwork",
+            "عنوان و شرح هر طرح به سه زبان فارسی، انگلیسی و عربی ثبت می‌شود و سایت فروشگاه به‌طور خودکار متن زبان جاری بازدیدکننده را نمایش می‌دهد. جستجوی مفهومی نیز در هر سه زبان کار می‌کند.",
+            "Each design's title and description are recorded in Persian, English and Arabic; the storefront automatically shows the visitor's language version. Concept search works across all three languages.",
+            "عنوان ووصف كل تصميم بثلاث لغات؛ يعرض المتجر النص بلغة الزائر تلقائياً والبحث المفاهيمي يعمل باللغات الثلاث.",
+            "• فرم ثبت: کد تمام‌عرض + سه ردیف عنوان و سه ردیف شرح (فارسی/English/العربية)\n• نمایش خودکار متن زبان جاری در سایت با fallback به فارسی\n• جستجوی مفهومی در هر سه زبان\n• ردیف فارسی همزمان ستون پایه Title را sync می‌کند",
+            "• Entry form: full-width code + three title rows and three description rows (fa/en/ar)\n• Storefront auto-displays the current language with fa fallback\n• Concept search across all three languages\n• The fa row also syncs the base Title column",
+            "• نموذج الإدخال: الرمز بعرض كامل + ثلاثة صفوف للعنوان وثلاثة للوصف\n• عرض تلقائي لنص اللغة الحالية مع البديل الفارسي• بحث مفاهيمي باللغات الثلاث• صف الفارسي يزامن العنوان الأساسي"),
+
+        N("currency-irt", "واحد پول تومان (IRT)", "Toman currency (IRT)", "العملة التومانية", null,
+            "تمام مبالغ مشتری‌محور (کیف پول، قیمت‌ها، پرداخت‌ها، معرفی‌ها) به واحد تومان با کد IRT یکدست شده‌اند تا برچسب نمایشی و مقدار ذخیره‌شده همیشه هم‌خوان باشند. هنگام اتصال درگاه واقعی، تبدیل ریال/تومان فقط در لایه درگاه انجام می‌شود.",
+            "All customer-facing amounts (wallet, prices, payments, referrals) are unified on the toman unit with code IRT, so the display label and stored value always agree. When a real gateway is connected, rial/toman conversion happens only in the gateway layer.",
+            "كل المبالغ المواجهة للعميل موحدة على وحدة التومان بالرمز IRT فتتطابق القيمة مع التسمية. عند ربط بوابة حقيقية يتم التحويل في طبقة البوابة فقط.",
+            "• کد یکتا IRT در تمام جداول پولی\n• مهاجرت داده: همه مقادیر IRR قبلی به IRT تبدیل شد\n• نمایش «تومان» در سایت با همان عدد ذخیره‌شده\n• درگاه واقعی: فقط لایه درگاه باید ریال/تومان را تبدیل کند",
+            "• Single IRT code across all monetary tables\n• Data migration: all former IRR values converted to IRT\n• Storefront Toman label matches the stored number\n• Real gateway: only the gateway layer converts rial/toman",
+            "• رمز موحد IRT في كل الجداول المالية• ترحيل البيانات: تحويل كل قيم IRR السابقة إلى IRT• تسمية تومان في المتجر تطابق القيمة المخزنة• البوابة الحقيقية تُجري التحويل في طبقتها فقط")
     ];
 }
