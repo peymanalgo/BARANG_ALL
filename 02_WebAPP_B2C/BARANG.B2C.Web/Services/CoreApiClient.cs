@@ -173,13 +173,41 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
     {
         JsonElement? result = await PostAsync("api/v1/auth/login", new { username, password });
         if (result is not JsonElement login) return new(false, "invalid_credentials");
+        return await SignInFromLoginAsync(login, username);
+    }
+
+    // OTP (mocked delivery): request has no meaningful response beyond "sent";
+    // register/login return the same LoginResult shape as password login.
+    public async Task<LoginOutcome> OtpRequestAsync(string target)
+    {
+        JsonElement? result = await PostAsync("api/v1/auth/otp/request", new { target });
+        return new(result is not null, result is null ? "otp_request_failed" : null);
+    }
+
+    public async Task<LoginOutcome> OtpRegisterAsync(string target, string code, string firstName, string lastName)
+    {
+        (bool ok, JsonElement? value, string? problem) = await PostRawWithBodyAsync("api/v1/auth/otp/register", new { target, code, firstName, lastName });
+        if (!ok) return new(false, problem ?? "otp_invalid");
+        return await SignInFromLoginAsync(value, target);
+    }
+
+    public async Task<LoginOutcome> OtpLoginAsync(string target, string code)
+    {
+        (bool ok, JsonElement? value, string? problem) = await PostRawWithBodyAsync("api/v1/auth/otp/login", new { target, code });
+        if (!ok) return new(false, problem ?? "otp_invalid");
+        return await SignInFromLoginAsync(value, target);
+    }
+
+    private async Task<LoginOutcome> SignInFromLoginAsync(JsonElement? payload, string fallbackUsername)
+    {
+        if (payload is not JsonElement login) return new(false, "invalid_credentials");
         string token = login.TryGetProperty("accessToken", out JsonElement at) ? at.GetString() ?? ""
             : login.TryGetProperty("token", out JsonElement tk) ? tk.GetString() ?? "" : "";
         if (token.Length == 0) return new(false, "invalid_credentials");
         JsonElement user = login.TryGetProperty("user", out JsonElement u) ? u : default;
         string userId = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("id", out JsonElement id) ? id.GetString() ?? "" : "";
-        string displayName = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("displayName", out JsonElement dn) ? dn.GetString() ?? username : username;
-        string usernameValue = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("username", out JsonElement un) ? un.GetString() ?? username : username;
+        string displayName = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("displayName", out JsonElement dn) ? dn.GetString() ?? fallbackUsername : fallbackUsername;
+        string usernameValue = user.ValueKind == JsonValueKind.Object && user.TryGetProperty("username", out JsonElement un) ? un.GetString() ?? fallbackUsername : fallbackUsername;
 
         ClaimsPrincipal principal = new(new ClaimsIdentity(
         [

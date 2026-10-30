@@ -60,3 +60,9 @@
 .translation-block .tr-lang { font-size: .8rem; color: var(--muted, #8a92a6); font-weight: 600; }
 .translation-block input, .translation-block textarea { width: 100%; border: 1px solid var(--border, #e5e8f0); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: .86rem; box-sizing: border-box; }
 .translation-block textarea { min-height: 64px; resize: vertical; }
+
+/* cartable branch selector */
+.cartable-branch-selector { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .84rem; }
+.cartable-branch-selector label { color: var(--muted, #5b6478); font-weight: 600; }
+.cartable-branch-selector select { border: 1px solid var(--border, #e5e8f0); border-radius: 8px; padding: 6px 10px; font: inherit; background: #fff; }
+.cartable-branch-msg { font-size: .8rem; color: var(--text-2, #5b6478); }

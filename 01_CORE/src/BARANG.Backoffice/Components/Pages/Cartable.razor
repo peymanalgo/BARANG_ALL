@@ -112,7 +112,19 @@
             }
             else if (SelectedDetail is not null)
             {
-                <header class="cartable-workbench-detail-header"><div><span class="eyebrow">@Ui("SelectedOrder")</span><h2 dir="ltr">@(SelectedDetail.Summary.OrderNumber ?? SelectedRow.OrderNumber ?? "—")</h2><p>@(SelectedDetail.Summary.CustomerName ?? SelectedRow.Customer)</p></div><div class="cartable-detail-header-meta"><span class="status-pill cartable-status-chip">@WorkbenchStatus(SelectedDetail.Summary.EffectiveStatusCode, SelectedDetail.Summary.CurrentStages)</span><PriorityIndicator Priority="@SelectedDetail.Summary.Priority.ToString()" /><BarangIconButton Icon="eye" Semantic="info" Label='@C["View"]' Clicked='@(() => Open(SelectedRow))' /></div></header>
+                <header class="cartable-workbench-detail-header"><div><span class="eyebrow">@Ui("SelectedOrder")</span><h2 dir="ltr">@(SelectedDetail.Summary.OrderNumber ?? SelectedRow.OrderNumber ?? "—")</h2><p>@(SelectedDetail.Summary.CustomerName ?? SelectedRow.Customer)</p></div><div class="cartable-branch-selector">
+                            <label>@C["BranchSelector"]</label>
+                            <select @bind="SelectedBranchIdStr" disabled="@BranchSaving">
+                                <option value="">@C["BranchSelectorPlaceholder"]</option>
+                                @foreach (var b in BranchOptions)
+                                {
+                                    <option value="@b.Id">@b.Name</option>
+                                }
+                            </select>
+                            <button type="button" class="btn btn-secondary btn-small" disabled="@(BranchSaving || string.IsNullOrWhiteSpace(SelectedBranchIdStr))" @onclick="AssignBranch">@C["Apply"]</button>
+                            @if (!string.IsNullOrWhiteSpace(BranchMessage)) { <span class="cartable-branch-msg">@BranchMessage</span> }
+                        </div>
+                        <div class="cartable-detail-header-meta"><span class="status-pill cartable-status-chip">@WorkbenchStatus(SelectedDetail.Summary.EffectiveStatusCode, SelectedDetail.Summary.CurrentStages)</span><PriorityIndicator Priority="@SelectedDetail.Summary.Priority.ToString()" /><BarangIconButton Icon="eye" Semantic="info" Label='@C["View"]' Clicked='@(() => Open(SelectedRow))' /></div></header>
                 @if (Tab == "received")
                 {
                     <section class="cartable-v5-operations" aria-label='@Ui("OperationalWorkspace")'>
@@ -218,7 +230,14 @@
     private CartableTextProxy C => new(CartableText, A);
     private sealed class CartableTextProxy(IStringLocalizer<CartableStrings> cartable, IStringLocalizer<AppStrings> app)
     {
-        public Microsoft.Extensions.Localization.LocalizedString this[string key] => key == "View" ? app[key] : cartable[key];
+        public Microsoft.Extensions.Localization.LocalizedString this[string key]
+        {
+            get
+            {
+                Microsoft.Extensions.Localization.LocalizedString value = cartable[key];
+                return key == "View" || value.ResourceNotFound ? app[key] : value;
+            }
+        }
     }
     private bool PreviewOpen, PreviewLoading, KeyboardHelpOpen, MoreFiltersOpen, OperationalPopupOpen, SearchPanelOpen;
     private Row? SelectedRow;
@@ -252,13 +271,14 @@
     private CancellationTokenSource? PreviewCancel;
     private int PreviewGeneration;
     private bool _disposed;
-    private string Tab = "received"; private const int PageSize = 20; private int ReceivedTotal, ReferralTotal, Generation; private bool Loading; private string? Message; private string? SavedViewsMessage; private List<Row> Rows = []; private List<StageOption> Stages = []; private List<SearchableSelectOption> CustomerOptions = []; private readonly string[] Outcomes = ["Approve", "Reject", "AuditReject"]; private CancellationTokenSource? SearchCancel; private CancellationTokenSource? AgingRefreshCancel; private List<SavedView> SavedViews = []; private string? SelectedViewId; private bool SaveViewOpen; private string SaveViewName = "";
+    private string Tab = "received";
+    private List<BranchOption> BranchOptions = []; private string? SelectedBranchIdStr; private bool BranchSaving; private string? BranchMessage; private bool BranchesLoaded; private const int PageSize = 20; private int ReceivedTotal, ReferralTotal, Generation; private bool Loading; private string? Message; private string? SavedViewsMessage; private List<Row> Rows = []; private List<StageOption> Stages = []; private List<SearchableSelectOption> CustomerOptions = []; private readonly string[] Outcomes = ["Approve", "Reject", "AuditReject"]; private CancellationTokenSource? SearchCancel; private CancellationTokenSource? AgingRefreshCancel; private List<SavedView> SavedViews = []; private string? SelectedViewId; private bool SaveViewOpen; private string SaveViewName = "";
     private GridState ReceivedState = new(), ReferralState = new(); private GridState State => Tab == "received" ? ReceivedState : ReferralState; private int CurrentTotal => Tab == "received" ? ReceivedTotal : ReferralTotal; private int MoreFilterCount => (string.IsNullOrWhiteSpace(State.Priority) ? 0 : 1) + (Tab == "received" && !string.IsNullOrWhiteSpace(State.FollowUp) ? 1 : 0) + (Tab == "referrals" && !string.IsNullOrWhiteSpace(State.Status) ? 1 : 0) + (State.Sort != "created" || !State.Descending ? 1 : 0); private bool HasFilters => !string.IsNullOrWhiteSpace(State.Search) || !string.IsNullOrWhiteSpace(State.StageKey) || !string.IsNullOrWhiteSpace(State.CustomerId) || State.FromDate is not null || State.ToDate is not null || !string.IsNullOrWhiteSpace(State.Outcome) || !string.IsNullOrWhiteSpace(State.Status) || State.StarredOnly || !string.IsNullOrWhiteSpace(State.Aging) || !string.IsNullOrWhiteSpace(State.Priority) || !string.IsNullOrWhiteSpace(State.FollowUp) || State.Sort != "created" || !State.Descending; private int ActiveFilterCount => (SelectedViewId is null ? 0 : 1) + (string.IsNullOrWhiteSpace(State.Search) ? 0 : 1) + (string.IsNullOrWhiteSpace(State.StageKey) ? 0 : 1) + (string.IsNullOrWhiteSpace(State.CustomerId) ? 0 : 1) + (State.FromDate is null ? 0 : 1) + (State.ToDate is null ? 0 : 1) + (string.IsNullOrWhiteSpace(State.Outcome) ? 0 : 1) + (string.IsNullOrWhiteSpace(State.Status) ? 0 : 1) + (State.StarredOnly ? 1 : 0) + (string.IsNullOrWhiteSpace(State.Aging) ? 0 : 1) + (string.IsNullOrWhiteSpace(State.Priority) ? 0 : 1) + (string.IsNullOrWhiteSpace(State.FollowUp) ? 0 : 1) + (State.Sort != "created" || !State.Descending ? 1 : 0);
     private string SortValue { get => $"{State.Sort}:{(State.Descending ? "desc" : "asc")}"; set { string[] parts = value.Split(':'); State.Sort = parts[0]; State.Descending = parts.Length < 2 || parts[1] == "desc"; } }
     private IReadOnlyList<SearchableSelectOption> CustomerOptionsView => CustomerOptions;
-    protected override async Task OnInitializedAsync() { var user = (await AuthState.GetAuthenticationStateAsync()).User; if (Guid.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id)) CurrentUserId = id; RestoreQueryState(); await LoadStages(); await LoadSavedViews(); await Load(); AgingRefreshCancel = new(); _ = RefreshAgingAsync(AgingRefreshCancel.Token); }
+    protected override async Task OnInitializedAsync() { var user = (await AuthState.GetAuthenticationStateAsync()).User; if (Guid.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id)) CurrentUserId = id; RestoreQueryState(); await LoadStages(); await LoadSavedViews(); _ = LoadBranchesAsync(); await Load(); AgingRefreshCancel = new(); _ = RefreshAgingAsync(AgingRefreshCancel.Token); }
     private void ToggleSearchPanel() => SearchPanelOpen = !SearchPanelOpen;
-    private async Task SwitchTab(string tab) { if (Tab == tab) return; await DiscardCurrentAttachments(); Tab = tab; SearchPanelOpen = false; SelectedViewId = null; SelectedDetailCancel?.Cancel(); DetailTabCancel?.Cancel(); SelectedRow = null; SelectedDetail = null; SelectedDetailError = null; SelectedAttachments = null; SelectedWorkflowHistory = []; Rows = []; DecisionNote = ""; await LoadSavedViews(); await Load(); }
+    private async Task SwitchTab(string tab) { if (Tab == tab) return; await DiscardCurrentAttachments(); Tab = tab; SearchPanelOpen = false; SelectedViewId = null; SelectedDetailCancel?.Cancel(); DetailTabCancel?.Cancel(); SelectedRow = null; SelectedDetail = null; _ = LoadBranchesAsync(); SelectedDetailError = null; SelectedAttachments = null; SelectedWorkflowHistory = []; Rows = []; DecisionNote = ""; await LoadSavedViews(); await Load(); }
     private async Task Load() { int generation = ++Generation; Loading = true; Message = null; var s = await Session(); if (s is null) { Loading = false; Message = C["LoadFailed"]; return; } string receivedPath = BuildPath("eligible", new GridState(), false, 1); string referralPath = BuildPath("referrals", new GridState(), true, 1); var receivedTask = Core.GetAsync(receivedPath, s.Value.Token, s.Value.Company, default); var referralTask = Core.GetAsync(referralPath, s.Value.Token, s.Value.Company, default); var currentPath = BuildPath(Tab == "received" ? "eligible" : "referrals", State, Tab == "referrals", State.Page); var currentTask = Core.GetAsync(currentPath, s.Value.Token, s.Value.Company, default); var workloadTask = Core.GetAsync("api/v1/workflows/definition/runtime/workload-summary", s.Value.Token, s.Value.Company, default); await Task.WhenAll(receivedTask, referralTask, currentTask, workloadTask); if (generation != Generation) return; if (!receivedTask.Result.IsSuccess || !referralTask.Result.IsSuccess || !currentTask.Result.IsSuccess) { Rows = []; Workload = null; Message = C["LoadFailed"]; Loading = false; return; } ReceivedTotal = Total(receivedTask.Result.Value); ReferralTotal = Total(referralTask.Result.Value); Rows = Items(currentTask.Result.Value).Select(Parse).ToList(); Workload = workloadTask.Result.IsSuccess ? ParseWorkload(workloadTask.Result.Value) : null; Loading = false; if (SelectedRow is not null && Rows.All(x => x.Id != SelectedRow.Id)) { DetailTabCancel?.Cancel(); SelectedRow = null; SelectedDetail = null; SelectedDetailError = null; SelectedAttachments = null; SelectedWorkflowHistory = []; } }
     private string BuildPath(string endpoint, GridState state, bool referrals, int page) { List<string> q = [$"search={Uri.EscapeDataString(state.Search.Trim())}", $"page={page}", $"pageSize={PageSize}", $"descending={state.Descending.ToString().ToLowerInvariant()}", $"starredOnly={state.StarredOnly.ToString().ToLowerInvariant()}"]; if (!string.IsNullOrWhiteSpace(state.FollowUp)) q.Add($"followUp={Uri.EscapeDataString(state.FollowUp)}"); if (!string.IsNullOrWhiteSpace(state.Priority)) q.Add($"priority={Uri.EscapeDataString(state.Priority)}"); if (!string.IsNullOrWhiteSpace(state.StageKey)) q.Add($"stageKey={Uri.EscapeDataString(state.StageKey)}"); if (Guid.TryParse(state.CustomerId, out Guid customer)) q.Add($"customerId={customer}"); if (state.FromDate is DateOnly from) q.Add($"fromDate={from:yyyy-MM-dd}"); if (state.ToDate is DateOnly to) q.Add($"toDate={to:yyyy-MM-dd}"); if (referrals && !string.IsNullOrWhiteSpace(state.Outcome)) q.Add($"outcome={Uri.EscapeDataString(state.Outcome)}"); if (referrals && !string.IsNullOrWhiteSpace(state.Status)) q.Add($"status={Uri.EscapeDataString(state.Status)}"); if (!referrals && !string.IsNullOrWhiteSpace(state.Aging)) q.Add($"aging={Uri.EscapeDataString(state.Aging)}"); if (!string.IsNullOrWhiteSpace(state.Sort)) q.Add($"sort={Uri.EscapeDataString(state.Sort)}"); return $"api/v1/workflows/definition/runtime/tasks/{endpoint}?{string.Join("&", q)}"; }
     private async Task SearchInput(ChangeEventArgs e) { State.Search = e.Value?.ToString() ?? ""; State.Page = 1; await DebouncedLoad(); } private async Task DebouncedLoad() { SearchCancel?.Cancel(); SearchCancel?.Dispose(); SearchCancel = new(); try { await Task.Delay(280, SearchCancel.Token); await Load(); } catch (OperationCanceledException) { } }
@@ -286,6 +306,7 @@
         SelectedWorkflowHistory = [];
         DetailTabError = null;
         SelectedDetailLoading = true;
+        _ = LoadBranchesAsync();
         await InvokeAsync(StateHasChanged);
         var session = await Session();
         if (session is null) { SelectedDetailLoading = false; SelectedDetailError = C["LoadFailed"].Value; return; }
@@ -599,9 +620,47 @@
         if (ShortcutsInitialized) { try { await JS.InvokeVoidAsync("barangCartableShortcuts.dispose"); } catch (JSDisconnectedException) { } catch (InvalidOperationException) { } }
         ShortcutReference?.Dispose();
     }
+   private async Task LoadBranchesAsync()
+   {
+       if (BranchesLoaded || BranchOptions.Count > 0) return;
+       var session = await Session();
+       if (session is null) return;
+       var r = await Core.GetAsync("api/v1/organization/branches?activeOnly=true", session.Value.Token, session.Value.Company, default);
+       if (!r.IsSuccess) return;
+       BranchOptions = r.Value.ValueKind == JsonValueKind.Array
+           ? r.Value.EnumerateArray().Select(b => new BranchOption(
+               b.TryGetProperty("id", out var id) && Guid.TryParse(id.GetString(), out var g) ? g : Guid.Empty,
+               Text(b, "displayName") ?? Text(b, "code") ?? "",
+               (Text(b, "displayName") ?? "").Contains("تهران"))).Where(b => b.Id != Guid.Empty).ToList()
+           : [];
+       BranchesLoaded = true;
+       if (SelectedBranchIdStr is null)
+       {
+           var tehran = BranchOptions.FirstOrDefault(b => b.IsTehran) ?? BranchOptions.FirstOrDefault();
+           SelectedBranchIdStr = tehran?.Id.ToString();
+       }
+       await InvokeAsync(StateHasChanged);
+   }
+
+   private async Task AssignBranch()
+   {
+       if (SelectedDetail is null) return;
+       BranchSaving = true; BranchMessage = null;
+       try
+       {
+           var session = await Session();
+           if (session is null || SelectedRow is null) return;
+           if (!Guid.TryParse(SelectedBranchIdStr, out var branchId)) { BranchMessage = C["BranchSelectorPlaceholder"].Value; return; }
+           var res = await Core.SendAsync(HttpMethod.Post, $"api/v1/orders/{SelectedRow.OrderId}/assign-branch", new { branchId }, session.Value.Token, session.Value.Company, default);
+           BranchMessage = res.IsSuccess ? C["BranchAssigned"].Value : (res.ProblemDescription ?? C["GenericError"].Value);
+       }
+       catch (Exception ex) { BranchMessage = ex.Message; }
+       finally { BranchSaving = false; await InvokeAsync(StateHasChanged); }
+   }
+
    private async Task<(string Token, Guid Company)?> Session() { var u = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null; }
     private string FollowUp(Row row) => row.FollowUpAtUtc is not DateTimeOffset at ? "—" : $"{F[at <= DateTimeOffset.UtcNow ? "FollowUpReached" : "FutureFollowUp"]}: {Dates.Format(at, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)}";
     private sealed class GridState { public string Search = "", StageKey = "", CustomerId = "", Outcome = "", Status = "", Aging = "", Priority = "", FollowUp = "", Sort = "created"; public bool Descending = true, StarredOnly; public int Page = 1; public DateOnly? FromDate, ToDate; }
     private sealed record SavedView(Guid Id, string Name, long Version, CartableSavedFilterDefinition Definition);
-    private sealed record StageOption(string Key, LocalizedText Title); private sealed record LocalizedText(string Fa, string En, string Ar); private sealed record PendingAttachment(Guid FileId, Guid FileVersionId, string FileName); private sealed record PreviewData(Guid RuntimeTaskId, string? OrderNumber, LocalizedText Stage, string? PositionTitle, string CustomerName, string BranchName, DateOnly OrderDate, int ItemCount, decimal TotalQuantity, string? CurrencyCode, decimal? GrandTotal, string EffectiveStatusCode, LocalizedText CurrentStage, IReadOnlyList<LocalizedText> CurrentStages, LocalizedText? PreviousStage, string? PreviousPositionTitle, string? PreviousOutcome, DateTimeOffset? PreviousActionAtUtc, LocalizedText? DestinationStage, string? DestinationPositionTitle, string Outcome, DateTimeOffset OccurredAtUtc, DateTimeOffset? CompletedAtUtc, string Priority, DateTimeOffset? FollowUpAtUtc = null); private sealed record Row(Guid Id, Guid OrderId, string? OrderNumber, string Customer, LocalizedText Stage, string? Position, DateOnly? OrderDate, string CurrentStatusCode, LocalizedText CurrentStage, IReadOnlyList<LocalizedText> CurrentStages, string Outcome, DateTimeOffset ActionDate, LocalizedText? PreviousStage, string? PreviousPosition, string? PreviousOutcome, DateTimeOffset? PreviousActionAtUtc, LocalizedText? DestinationStage, string? DestinationPositionTitle, bool IsStarred, bool IsSeen, string Priority, DateTimeOffset? FollowUpAtUtc, long Version, Guid? ClaimedByUserId, string? ClaimantName, IReadOnlyList<string> Outcomes, string? OnBehalfOfName);
+    private sealed record StageOption(string Key, LocalizedText Title); private sealed record LocalizedText(string Fa, string En, string Ar); private sealed record PendingAttachment(Guid FileId, Guid FileVersionId, string FileName); private sealed record PreviewData(Guid RuntimeTaskId, string? OrderNumber, LocalizedText Stage, string? PositionTitle, string CustomerName, string BranchName, DateOnly OrderDate, int ItemCount, decimal TotalQuantity, string? CurrencyCode, decimal? GrandTotal, string EffectiveStatusCode, LocalizedText CurrentStage, IReadOnlyList<LocalizedText> CurrentStages, LocalizedText? PreviousStage, string? PreviousPositionTitle, string? PreviousOutcome, DateTimeOffset? PreviousActionAtUtc, LocalizedText? DestinationStage, string? DestinationPositionTitle, string Outcome, DateTimeOffset OccurredAtUtc, DateTimeOffset? CompletedAtUtc, string Priority, DateTimeOffset? FollowUpAtUtc = null); private sealed record BranchOption(Guid Id, string Name, bool IsTehran); private sealed record Row(Guid Id, Guid OrderId, string? OrderNumber, string Customer, LocalizedText Stage, string? Position, DateOnly? OrderDate, string CurrentStatusCode, LocalizedText CurrentStage, IReadOnlyList<LocalizedText> CurrentStages, string Outcome, DateTimeOffset ActionDate, LocalizedText? PreviousStage, string? PreviousPosition, string? PreviousOutcome, DateTimeOffset? PreviousActionAtUtc, LocalizedText? DestinationStage, string? DestinationPositionTitle, bool IsStarred, bool IsSeen, string Priority, DateTimeOffset? FollowUpAtUtc, long Version, Guid? ClaimedByUserId, string? ClaimantName, IReadOnlyList<string> Outcomes, string? OnBehalfOfName);
 }

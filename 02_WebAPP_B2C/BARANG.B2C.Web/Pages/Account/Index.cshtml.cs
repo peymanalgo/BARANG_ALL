@@ -38,10 +38,6 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
     public IReadOnlyList<AddressCard> Addresses { get; private set; } = [];
     public long UnreadCount { get; private set; }
 
-    [BindProperty] public string? ProfileFirstName { get; set; }
-    [BindProperty] public string? ProfileLastName { get; set; }
-    [BindProperty] public string? ProfileMobile { get; set; }
-
     private IActionResult? ReauthGuard()
     {
         if (!core.SawUnauthorized) return null;
@@ -66,6 +62,12 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
         }
 
         JsonElement? customer = await customers.CurrentAsync();
+        if (customer is null)
+        {
+            // Signed in but no B2C customer profile yet: completing the
+            // mandatory profile information is forced before anything else.
+            return RedirectToPage("/Account/CompleteProfile");
+        }
         if (customer is JsonElement c && c.ValueKind == JsonValueKind.Object && c.TryGetProperty("id", out JsonElement cid))
         {
             HasProfile = true;
@@ -162,10 +164,6 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
                 Offers = pool.OrderBy(_ => rnd.Next()).Take(4).ToList();
             }
         }
-        else
-        {
-            await LoadOffersAsync();
-        }
         return Page();
     }
 
@@ -182,23 +180,6 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
                 x.TryGetProperty("thumbnailUrl", out JsonElement oth) ? oth.GetString() : null)).ToList();
             Offers = pool.OrderBy(_ => Random.Shared.Next()).Take(4).ToList();
         }
-    }
-
-    public async Task<IActionResult> OnPostCreateProfileAsync()
-    {
-        if (string.IsNullOrWhiteSpace(ProfileFirstName) || string.IsNullOrWhiteSpace(ProfileLastName) || string.IsNullOrWhiteSpace(ProfileMobile))
-        {
-            return RedirectToPage(new { error = "profile-fields" });
-        }
-        JsonElement? created = await customers.RegisterSelfAsync(ProfileFirstName, ProfileLastName, ProfileMobile);
-        if (created is null) return RedirectToPage(new { error = "register" });
-        string? refCode = Request.Cookies["barang.ref"];
-        if (!string.IsNullOrWhiteSpace(refCode))
-        {
-            await core.PostRawAsync($"api/v1/client/customers/{created.Value.GetProperty("id").GetString()}/referrals/attach", new { code = refCode.Trim() });
-            Response.Cookies.Delete("barang.ref");
-        }
-        return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostMarkAllReadAsync()

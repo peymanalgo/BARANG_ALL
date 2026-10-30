@@ -17,21 +17,4 @@ public sealed class CustomerContext(CoreApiClient core, IHttpContextAccessor acc
         if (string.IsNullOrWhiteSpace(username)) return null;
         return await core.GetAsync($"api/v1/client/customers/by-code/{Uri.EscapeDataString(username)}");
     }
-
-    public async Task<JsonElement?> RegisterSelfAsync(string firstName, string lastName, string mobile)
-    {
-        string? username = Username;
-        if (string.IsNullOrWhiteSpace(username)) return null;
-        string first = firstName.Trim();
-        string last = lastName.Trim();
-        return await core.PostAsync("api/v1/client/customers/register", new
-        {
-            customerCode = username,
-            customerType = "Individual",
-            firstName = first,
-            lastName = last,
-            displayName = $"{first} {last}".Trim(),
-            primaryMobile = mobile.Trim()
-        });
-    }
 }

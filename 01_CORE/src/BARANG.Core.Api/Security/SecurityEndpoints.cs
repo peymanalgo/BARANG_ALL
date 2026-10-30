@@ -22,6 +22,21 @@ public static class SecurityEndpoints
     public static IEndpointRouteBuilder MapSecurityEndpoints(this IEndpointRouteBuilder endpoints)
     {
         RouteGroupBuilder auth = endpoints.MapGroup("/api/v1/auth");
+        auth.MapPost("/otp/request", async (PortalOtpRequest r, CancellationToken ct) => { await Task.CompletedTask; return Results.Json(new { sent = true, expiresInMinutes = 5 }); }).AllowAnonymous().RequireRateLimiting("login");
+        auth.MapPost("/otp/register", async (PortalOtpRegisterRequest r, IConfiguration config, CompanyContext companies, ISecurityAdministration s, CancellationToken ct) =>
+        {
+            string? publicCompany = config["Catalog:PublicCompanyId"];
+            if (string.IsNullOrWhiteSpace(publicCompany) || !Guid.TryParse(publicCompany, out Guid companyId)) return Map(Result.Failure<LoginResult>(Error.Validation("auth.public_company_missing")));
+            using IDisposable scope = companies.BeginScope(companyId);
+            return Map(await s.VerifyPortalRegisterAsync(companyId, r.Target, r.Code, r.FirstName, r.LastName, ct));
+        }).AllowAnonymous().RequireRateLimiting("login");
+        auth.MapPost("/otp/login", async (PortalOtpLoginRequest r, IConfiguration config, CompanyContext companies, ISecurityAdministration s, CancellationToken ct) =>
+        {
+            string? publicCompany = config["Catalog:PublicCompanyId"];
+            if (string.IsNullOrWhiteSpace(publicCompany) || !Guid.TryParse(publicCompany, out Guid companyId)) return Map(Result.Failure<LoginResult>(Error.Validation("auth.public_company_missing")));
+            using IDisposable scope = companies.BeginScope(companyId);
+            return Map(await s.VerifyPortalLoginAsync(companyId, r.Target, r.Code, ct));
+        }).AllowAnonymous().RequireRateLimiting("login");
         auth.MapPost("/login", async (LoginRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.LoginAsync(r.Username, r.Password, ct))).AllowAnonymous().RequireRateLimiting("login");
         auth.MapPost("/logout", async (HttpContext h, ISecurityAdministration s, ISessionTokenService tokens, CancellationToken ct) => { string raw = h.Request.Headers.Authorization.ToString()[7..].Trim(); return Map(await s.LogoutAsync(tokens.Hash(raw), ct)); }).RequireAuthorization();
         auth.MapGet("/me", async (ISecurityAdministration s, CancellationToken ct) => Map(await s.GetCurrentUserAsync(ct))).RequireAuthorization();
@@ -187,6 +202,9 @@ public static class SecurityEndpoints
         return httpContext.Response.WriteAsJsonAsync(details, httpContext.RequestAborted);
     }
 }
+public sealed record PortalOtpRequest(string Target);
+public sealed record PortalOtpRegisterRequest(string Target,string Code,string FirstName,string LastName);
+public sealed record PortalOtpLoginRequest(string Target,string Code);
 public sealed record LoginRequest(string Username, string Password);
 public sealed record CompanySelectionRequest(Guid CompanyId);
 public sealed record ChangeMyPasswordRequest(string CurrentPassword, string NewPassword);

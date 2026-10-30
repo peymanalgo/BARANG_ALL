@@ -8,23 +8,36 @@
 <section class="container section auth-section">
     <div class="auth-card">
         <h1>@T("ورود مشتریان", "Customer sign in", "دخول العملاء")</h1>
-        <p class="muted">@T("برای سفارش طرح و پیگیری سفارش‌ها وارد شوید.", "Sign in to order designs and track your orders.", "سجّل الدخول لطلب التصاميم وتتبع طلباتك.")</p>
+        <p class="muted">@T("با ایمیل یا شماره موبایل وارد شوید؛ کد تأیید برایتان فرستاده می‌شود.", "Sign in with your email or mobile; we'll send you a verification code.", "سجّل الدخول بالبريد أو الهاتف؛ سنرسل لك رمز التحقق.")</p>
         @if (Model.Error is not null)
         {
             <div class="alert alert-error" role="alert">@Model.Error</div>
         }
-        <form method="post" class="auth-form">
-            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
-            <label>
-                <span>@T("نام کاربری", "Username", "اسم المستخدم")</span>
-                <input type="text" asp-for="Username" autocomplete="username" required />
-            </label>
-            <label>
-                <span>@T("کلمه عبور", "Password", "كلمة المرور")</span>
-                <input type="password" asp-for="Password" autocomplete="current-password" required />
-            </label>
-            <button type="submit" class="btn btn-primary btn-lg btn-block">@T("ورود", "Sign in", "دخول")</button>
-        </form>
-        <p class="muted small">@T("حساب کاربری ندارید؟ با پشتیبانی فروشگاه تماس بگیرید تا برایتان بسازیم.", "No account yet? Contact store support to create one.", "ليس لديك حساب؟ تواصل مع الدعم لإنشائه.")</p>
+        @if (!Model.CodeSent)
+        {
+            <form method="post" asp-page-handler="RequestCode" class="auth-form">
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                <label>
+                    <span>@T("ایمیل یا شماره تلفن", "Email or mobile number", "البريد الإلكتروني أو الهاتف")</span>
+                    <input type="text" asp-for="Target" dir="ltr" autocomplete="username" placeholder="09121234567" required />
+                </label>
+                <button type="submit" class="btn btn-primary btn-lg btn-block">@T("دریافت کد ورود", "Send sign-in code", "إرسال رمز الدخول")</button>
+            </form>
+            <p class="muted small">@T("حساب ندارید؟", "No account yet?", "لا تملك حساباً؟") <a href="/account/register">@T("ثبت‌نام کنید", "Create one", "أنشئ حساباً")</a></p>
+        }
+        else
+        {
+            <div class="alert alert-ok" role="status">@T($"کد ورود به {Model.MaskedTarget} ارسال شد.", $"A sign-in code was sent to {Model.MaskedTarget}.", $"تم إرسال رمز الدخول إلى {Model.MaskedTarget}.")</div>
+            <form method="post" asp-page-handler="Verify" class="auth-form">
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                <input type="hidden" asp-for="Target" />
+                <label>
+                    <span>@T("کد تأیید", "Verification code", "رمز التحقق")</span>
+                    <input type="text" asp-for="Code" dir="ltr" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="1111" required />
+                </label>
+                <p class="muted small">@T("محیط آزمایشی: کد ثابت ۱۱۱۱ را وارد کنید.", "Development environment: enter the fixed code 1111.", "بيئة التطوير: أدخل الرمز الثابت 1111.")</p>
+                <button type="submit" class="btn btn-primary btn-lg btn-block">@T("ورود", "Sign in", "دخول")</button>
+            </form>
+        }
     </div>
 </section>

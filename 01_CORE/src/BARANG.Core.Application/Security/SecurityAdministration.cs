@@ -519,4 +519,101 @@ public sealed class SecurityAdministration(
     private static UserCompanyView View(UserCompany x) => new(x.Id, x.UserId, x.CompanyId, x.ValidFromUtc, x.ValidToUtc);
     private static UserRoleView View(UserRole x) => new(x.Id, x.UserId, x.RoleId, x.CompanyId, x.ValidFromUtc, x.ValidToUtc);
     private sealed record LoginAttempt(LoginResult? Login);
+    // ------------------------------------------------------------------
+    // Portal (پیرنگ خان) OTP registration & login. MOCKED delivery:
+    // the verification code is fixed at "1111" until an SMS/e-mail
+    // provider is connected. Users are provisioned without a password
+    // (random credential) and receive the portal-customer role.
+    // ------------------------------------------------------------------
+    public const string PortalOtpMockCode = "1111";
+    public const string PortalCustomerRoleCode = "portal.customer";
+    private static readonly string[] PortalRolePermissions =
+    [
+        SecurityPermissions.ClientCustomerRead, SecurityPermissions.ClientCustomerWrite,
+        SecurityPermissions.ClientOrderRead, SecurityPermissions.ClientOrderWrite,
+        SecurityPermissions.ClientTrackingRead, SecurityPermissions.ClientCatalogRead,
+        SecurityPermissions.ClientPricingPreview, SecurityPermissions.ClientFileUpload,
+        SecurityPermissions.NotificationRead
+    ];
+
+    public static string NormalizePortalUsername(string target)
+    {
+        string t = target.Trim();
+        if (t.All(char.IsDigit) && t.Length is >= 4 and <= 20) return t.ToUpperInvariant();
+        var sb = new System.Text.StringBuilder(t.Length);
+        foreach (char c in t.ToLowerInvariant())
+            sb.Append(char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-' ? c : '_');
+        string s = sb.ToString();
+        if (s.StartsWith('_')) s = "u" + s;
+        return s.Length < 3 ? "user_" + s : s;
+    }
+
+    public Task<Result> RequestPortalOtpAsync(string target, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(target)) return Task.FromResult(Result.Failure(Error.Validation("auth.otp_target_required")));
+        return Task.FromResult(Result.Success());
+    }
+
+    public Task<Result<LoginResult>> VerifyPortalRegisterAsync(Guid companyId, string target, string code, string firstName, string lastName, CancellationToken ct) => transactions.ExecuteAsync(async token =>
+    {
+        if (code != PortalOtpMockCode) return Result.Failure<LoginResult>(Error.Validation("auth.otp_invalid"));
+        string username = NormalizePortalUsername(target);
+        if (await store.FindUserByUsernameAsync(username, token) is not null)
+            return Result.Failure<LoginResult>(Error.Conflict("auth.already_registered"));
+        string[] names = lastName.Length > 0 ? new[] { firstName, lastName } : new[] { firstName, "—" };
+        string personnelCode = await chart.AllocateNextPersonnelCodeAsync(companyId, token);
+        string? email = target.Contains('@') ? target.Trim() : null;
+        string? mobile = target.Contains('@') ? null : target.Trim();
+        Result<Person> person = Person.Create(Guid.NewGuid(), companyId, personnelCode, firstName, lastName, null, null, email, mobile, null, "Self registration (Pirang Khan)", time.GetUtcNow());
+        if (person.IsFailure) return Result.Failure<LoginResult>(person.Error);
+        chart.Add(person.Value);
+        Result<ApplicationUser> made = ApplicationUser.CreateIdentity(Guid.NewGuid(), person.Value.Id, username, firstName + " " + lastName, email, time.GetUtcNow());
+        if (made.IsFailure) return Result.Failure<LoginResult>(made.Error);
+        Result identityCreated = await identity.CreateAsync(made.Value, Guid.NewGuid().ToString("N") + "!Aa", token);
+        if (identityCreated.IsFailure) return Result.Failure<LoginResult>(identityCreated.Error);
+        bool roleExists = await store.RoleCodeExistsAsync(PortalCustomerRoleCode, token);
+        Role role;
+        if (roleExists)
+        {
+            role = (await store.ListRolesAsync(token)).FirstOrDefault(r => r.Code == PortalCustomerRoleCode)!;
+            // Self-heal: attach portal permissions the provisioned role is
+            // missing (e.g. seeded before the permission codes were fixed).
+            IReadOnlyList<Permission> granted = await store.ListRolePermissionsAsync(role.Id, token);
+            HashSet<string> grantedCodes = [.. granted.Select(p => p.Code)];
+            IReadOnlyList<Permission> all = await store.ListPermissionsAsync(token);
+            foreach (Permission permission in all.Where(p => PortalRolePermissions.Contains(p.Code) && !grantedCodes.Contains(p.Code)))
+                store.Add(RolePermission.Create(role.Id, permission.Id, made.Value.Id, time.GetUtcNow()));
+        }
+        else
+        {
+            role = Role.Create(Guid.NewGuid(), PortalCustomerRoleCode, "Portal customer", "Pirang Khan storefront customer", RoleScope.Company, false, time.GetUtcNow()).Value;
+            store.Add(role);
+            foreach (Permission permission in await store.ListPermissionsAsync(token))
+                if (PortalRolePermissions.Contains(permission.Code))
+                    store.Add(RolePermission.Create(role.Id, permission.Id, made.Value.Id, time.GetUtcNow()));
+        }
+        store.Add(UserCompany.Create(made.Value.Id, companyId, time.GetUtcNow(), null, made.Value.Id, time.GetUtcNow()).Value);
+        store.Add(UserRole.Create(made.Value.Id, role.Id, companyId, time.GetUtcNow(), null, made.Value.Id, time.GetUtcNow()).Value);
+        made.Value.RecordLogin(time.GetUtcNow());
+        (string raw, string hash) = tokens.Create();
+        DateTimeOffset expires = time.GetUtcNow().AddMinutes(30);
+        store.Add(AuthenticationSession.Create(made.Value.Id, hash, time.GetUtcNow(), expires));
+        Audit(AuditActions.LoginSucceeded, "user", made.Value.Id, companyId, AuditChangeKind.Added, actorUsername: made.Value.Username, actorUserId: made.Value.Id);
+        return Result.Success(new LoginResult(raw, expires, View(made.Value)));
+    }, ct);
+
+    public Task<Result<LoginResult>> VerifyPortalLoginAsync(Guid companyId, string target, string code, CancellationToken ct) => transactions.ExecuteAsync(async token =>
+    {
+        if (code != PortalOtpMockCode) return Result.Failure<LoginResult>(Error.Validation("auth.otp_invalid"));
+        string username = NormalizePortalUsername(target);
+        ApplicationUser? user = await store.FindUserByUsernameAsync(username, token);
+        if (user is null || !user.IsActive) return Result.Failure<LoginResult>(Error.NotFound("auth.user_not_found"));
+        user.RecordLogin(time.GetUtcNow());
+        (string raw, string hash) = tokens.Create();
+        DateTimeOffset expires = time.GetUtcNow().AddMinutes(30);
+        store.Add(AuthenticationSession.Create(user.Id, hash, time.GetUtcNow(), expires));
+        Audit(AuditActions.LoginSucceeded, "user", user.Id, actorUsername: user.Username, actorUserId: user.Id);
+        return Result.Success(new LoginResult(raw, expires, View(user)));
+    }, ct);
+
 }

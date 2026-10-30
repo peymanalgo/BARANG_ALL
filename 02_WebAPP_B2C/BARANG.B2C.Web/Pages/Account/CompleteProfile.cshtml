@@ -1,0 +1,74 @@
+@page "/account/complete-profile"
+@model CompleteProfileModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = T("تکمیل اطلاعات حساب", "Complete your profile", "استكمال الملف");
+}
+<section class="container section auth-section">
+    <div class="auth-card" style="max-width: 640px;">
+        <h1>@T("تکمیل اطلاعات حساب", "Complete your profile", "استكمال الملف")</h1>
+        <p class="muted">@T("برای استفاده از فروشگاه باید این اطلاعات را کامل کنید؛ همه فیلدها الزامی هستند.", "To use the store you must complete this information; all fields are required.", "لاستخدام المتجر يجب إكمال هذه المعلومات؛ جميع الحقول مطلوبة.")</p>
+        @if (Model.Error is not null)
+        {
+            <div class="alert alert-error" role="alert">@Model.Error</div>
+        }
+        <form method="post" class="auth-form">
+            <div class="form-grid-2col">
+                <label>
+                    <span>@T("نام", "First name", "الاسم") *</span>
+                    <input type="text" asp-for="FirstName" required />
+                </label>
+                <label>
+                    <span>@T("نام خانوادگی", "Last name", "اسم العائلة") *</span>
+                    <input type="text" asp-for="LastName" required />
+                </label>
+                <label>
+                    <span>@T("شماره موبایل", "Mobile number", "رقم الهاتف المحمول") *</span>
+                    <input type="text" asp-for="Mobile" dir="ltr" inputmode="numeric" placeholder="09121234567" required />
+                </label>
+                <label>
+                    <span>@T("کد ملی", "National id", "الرقم الوطني") *</span>
+                    <input type="text" asp-for="NationalId" dir="ltr" inputmode="numeric" maxlength="10" required />
+                </label>
+                <label>
+                    <span>@T("نام پدر", "Father's name", "اسم الأب") *</span>
+                    <input type="text" asp-for="FatherName" required />
+                </label>
+                <label>
+                    <span>@T("تاریخ تولد", "Birth date", "تاريخ الميلاد") @(Model.IsJalali ? T("(شمسی)", "(Jalali)", "(ميلادي)") : "") *</span>
+                    <input type="text" asp-for="BirthDate" dir="ltr" placeholder="@Model.BirthPlaceholder" required />
+                </label>
+                <label>
+                    <span>@T("جنسیت", "Gender", "الجنس") *</span>
+                    <select asp-for="Gender" required>
+                        <option value="">@T("انتخاب کنید", "Select…", "اختر…")</option>
+                        <option value="male">@T("مرد", "Male", "ذكر")</option>
+                        <option value="female">@T("زن", "Female", "أنثى")</option>
+                    </select>
+                </label>
+                <label>
+                    <span>@T("شماره شناسنامه", "Birth certificate no.", "رقم شهادة الميلاد") *</span>
+                    <input type="text" asp-for="BirthCertificateNumber" dir="ltr" inputmode="numeric" required />
+                </label>
+                <label>
+                    <span>@T("محل صدور", "Place of issue", "مكان الإصدار") *</span>
+                    <input type="text" asp-for="PlaceOfIssue" required />
+                </label>
+                <label>
+                    <span>@T("شغل", "Occupation", "المهنة") *</span>
+                    <input type="text" asp-for="Occupation" required />
+                </label>
+                <label>
+                    <span>@T("تلفن ثابت", "Landline phone", "الهاتف الثابت") *</span>
+                    <input type="text" asp-for="Phone" dir="ltr" inputmode="tel" placeholder="02112345678" required />
+                </label>
+                <label>
+                    <span>@T("ایمیل", "Email", "البريد الإلكتروني") *</span>
+                    <input type="email" asp-for="Email" dir="ltr" autocomplete="email" required />
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">@T("ذخیره و ادامه", "Save and continue", "حفظ ومتابعة")</button>
+        </form>
+    </div>
+</section>

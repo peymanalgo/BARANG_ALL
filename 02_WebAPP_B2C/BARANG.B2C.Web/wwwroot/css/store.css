@@ -825,3 +825,9 @@ html[dir="ltr"] .hero2-media::after { background: linear-gradient(270deg, rgba(1
 /* full-width override for the new header search row */
 .store-header .header-search { max-width: none; width: 100%; flex: 1; }
 .store-header .header-searchbar { max-width: none; }
+
+/* two-column required-info form (complete-profile) */
+.form-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem 1rem; }
+@media (max-width: 640px) { .form-grid-2col { grid-template-columns: 1fr; } }
+.form-grid-2col label { display: flex; flex-direction: column; gap: .3rem; }
+.form-grid-2col label span { font-size: .85rem; font-weight: 650; color: var(--text-2); }

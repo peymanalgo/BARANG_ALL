@@ -38,24 +38,9 @@
     @if (!Model.HasProfile)
     {
         <div class="card profile-create">
-            <h2>@T("پروفایل مشتری بسازید", "Create your customer profile", "أنشئ ملفك كعميل")</h2>
-            <p class="muted">@T("برای سفارش دادن و ثبت نشانی، پروفایل مشتری شما باید ساخته شود؛ کد مشتری همان نام کاربری شما خواهد بود.", "To order and add addresses, your customer profile is required; your username becomes your customer code.", "للطلب وإضافة العناوين يلزم ملفك كعميل؛ رمز العميل سيكون اسم المستخدم الخاص بك.")</p>
-            @if (Model.Error == "profile-fields")
-            {
-                <div class="alert alert-error" role="alert">@T("نام، نام خانوادگی و موبایل الزامی است.", "First name, last name and mobile are required.", "الاسم واسم العائلة والهاتف مطلوبة.")</div>
-            }
-            @if (Model.Error == "customer.duplicate_code")
-            {
-                <div class="alert alert-error" role="alert">@T("این کد مشتری قبلاً ثبت شده است.", "This customer code is already registered.", "رمز العميل مسجل مسبقاً.")</div>
-            }
-            <form method="post" asp-page-handler="CreateProfile" class="auth-form profile-form">
-                <div class="form-cols">
-                    <label><span>@T("نام", "First name", "الاسم")</span><input type="text" asp-for="ProfileFirstName" required /></label>
-                    <label><span>@T("نام خانوادگی", "Last name", "اسم العائلة")</span><input type="text" asp-for="ProfileLastName" required /></label>
-                    <label><span>@T("موبایل", "Mobile", "الهاتف")</span><input type="text" asp-for="ProfileMobile" dir="ltr" placeholder="09…" required /></label>
-                </div>
-                <button type="submit" class="btn btn-primary">@T("ساخت پروفایل", "Create profile", "إنشاء الملف")</button>
-            </form>
+            <h2>@T("تکمیل اطلاعات حساب", "Complete your profile", "أنشئ ملفك كعميل")</h2>
+            <p class="muted">@T("برای سفارش دادن و ثبت نشانی باید اطلاعات حساب کامل شود.", "To order and add addresses, your profile information must be completed.", "للطلب وإضافة العناوين يجب إكمال معلومات ملفك.")</p>
+            <a class="btn btn-primary" href="/account/complete-profile">@T("تکمیل اطلاعات", "Complete profile", "استكمال الملف")</a>
         </div>
     }
     else
