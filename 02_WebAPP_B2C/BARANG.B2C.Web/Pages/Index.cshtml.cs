@@ -36,4 +36,7 @@ public sealed class IndexModel(CoreApiClient core) : PageModel
     }
 
     public sealed record CategoryRow(string Code, string DisplayName, int Count);
+
+    public string CatName(string? code)
+        => string.IsNullOrWhiteSpace(code) ? "" : Categories.FirstOrDefault(c => c.Code == code).DisplayName ?? code;
 }

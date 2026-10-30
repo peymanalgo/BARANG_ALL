@@ -766,3 +766,62 @@ html[dir="ltr"] .hero2-media::after { background: linear-gradient(270deg, rgba(1
 
 /* price on design cards */
 .price-from { display: inline-block; font-size: .78rem; font-weight: 700; color: #128a43; background: #e7f8ec; border-radius: 8px; padding: 2px 8px; margin-top: 3px; }
+
+/* ---------- two-row header + full-width beautiful search ---------- */
+.store-header { padding-bottom: 0; }
+.header-searchbar { padding: 10px 0 16px; }
+.header-search { width: 100%; }
+.hs-field {
+    position: relative; display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 2px solid var(--border); border-radius: 18px;
+    padding: 6px 8px 6px 18px; max-width: 860px; margin: 0 auto;
+    transition: border-color .18s, box-shadow .18s; box-shadow: 0 3px 14px rgba(19,26,42,.05);
+}
+.hs-field:focus-within { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(43,92,255,.12), 0 6px 20px rgba(19,26,42,.08); }
+.hs-icon-mag { color: var(--muted); flex: 0 0 auto; }
+.hs-field input { flex: 1; border: 0; outline: none; background: transparent; font: inherit; font-size: 1.02rem; padding: 10px 0; color: var(--text); min-width: 0; }
+.hs-field input::placeholder { color: var(--muted); }
+.mode-toggle.compact { width: 36px; height: 36px; border-radius: 10px; }
+.hs-spark { color: var(--muted); transition: color .15s, transform .15s; }
+.mode-toggle input:checked + .hs-spark, .mode-toggle input:checked ~ .hs-spark { color: var(--primary); transform: scale(1.12); filter: drop-shadow(0 0 5px rgba(43,92,255,.4)); }
+.hs-go {
+    flex: 0 0 auto; border: 0; cursor: pointer; border-radius: 13px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-600)); color: #fff;
+    font: inherit; font-weight: 700; font-size: .95rem; padding: 11px 28px;
+    transition: filter .15s, transform .1s;
+}
+.hs-go:hover { filter: brightness(1.08); transform: translateY(-1px); }
+[dir="rtl"] .hs-field { padding: 6px 18px 6px 8px; }
+
+/* ---------- hero: shirt mockup + secondary CTA + trust strip ---------- */
+.hero2 { min-height: 82vh; display: flex; align-items: center; }
+.hero2-media { position: absolute; inset-inline-end: 5%; top: 12%; width: 320px; z-index: 1; }
+.hero-shirt { position: relative; filter: drop-shadow(0 24px 48px rgba(15,23,42,.45)); animation: shirt-float 7s ease-in-out infinite; }
+@keyframes shirt-float { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-16px) rotate(2deg); } }
+.hero-shirt-glow { position: absolute; inset: auto 20% 6% 20%; height: 26px; border-radius: 50%; background: radial-gradient(ellipse, rgba(255,122,26,.35), transparent 70%); filter: blur(6px); }
+.hero-cta2 { color: var(--text); border: 1.5px solid var(--border); background: rgba(255,255,255,.75); backdrop-filter: blur(6px); }
+.hero-cta2:hover { border-color: var(--primary); color: var(--primary); }
+.hero-trust { display: flex; gap: 22px; margin-top: 26px; flex-wrap: wrap; }
+.hero-trust span { display: inline-flex; align-items: center; gap: 7px; font-size: .9rem; color: #dbe4ef; }
+.hero-trust strong { color: #fff; font-size: 1.06rem; }
+@media (max-width: 1200px) { .hero2-media { width: 250px; inset-inline-start: 2%; } }
+@media (max-width: 900px) { .hero2-media { display: none; } }
+@media (max-width: 760px) {
+    .header-inner { flex-wrap: wrap; row-gap: 0; }
+    .main-nav { order: 3; width: 100%; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }
+    .header-searchbar { padding: 6px 0 12px; }
+    .hs-field { border-radius: 14px; }
+    .hs-go { padding: 10px 18px; }
+}
+
+/* featured card price chip (home) */
+.design-card .price-from { display: inline-block; font-size: .84rem; font-weight: 800; color: #128a43; background: #e7f8ec; border-radius: 8px; padding: 3px 10px; margin-top: 4px; }
+.design-card .design-thumb img { transition: transform .35s ease; }
+.design-card:hover .design-thumb img { transform: scale(1.06); }
+
+/* search bar fills the container width */
+.header-searchbar .hs-field { max-width: none; width: 100%; }
+
+/* full-width override for the new header search row */
+.store-header .header-search { max-width: none; width: 100%; flex: 1; }
+.store-header .header-searchbar { max-width: none; }
