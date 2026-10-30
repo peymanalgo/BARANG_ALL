@@ -1,30 +1,39 @@
 // پیش‌نمایش «تیشرتت رو ببین» — مودال مشترک روی کارت‌های طرح.
-// هر کارتی که دکمه .preview-shirt-btn داشته باشد، کلیک روی آن این مودال را باز می‌کند:
-// طرح روی تیشرت سفید + انتخاب رنگ تیشرت + انتخاب رنگ طرح + دکمه شروع سفارش.
-// «شروع سفارش» انتخاب‌ها را در کوکی barang.preview می‌گذارد و وارد ویزارد سفارش می‌شود.
+// موتور ترکیب: طرح (با حذف پس‌زمینه) روی عکس واقعی تیشرت در canvas کشیده می‌شود.
+// - انتخاب رنگ تیشرت: عکس تیشرت همان رنگ (سفید/مشکی/قرمز/آبی)
+// - انتخاب رنگ طرح: «رنگ واقعی طرح» یا هر رنگ دیگر (سیلوئت تک‌رنگ)
+// - شروع سفارش: انتخاب‌ها در کوکی barang.preview و ورود به ویزارد سفارش
 (() => {
     const ShirtColors = [
-        { name: "سفید", en: "white", hex: "#ffffff" },
-        { name: "مشکی", en: "black", hex: "#1a1a1e" },
+        { name: "سفید", en: "white", img: "/images/shirts/white.jpg" },
+        { name: "مشکی", en: "black", img: "/images/shirts/black.jpg" },
+        { name: "قرمز", en: "red", img: "/images/shirts/red.jpg" },
+        { name: "آبی", en: "blue", img: "/images/shirts/blue.jpg" }
+    ];
+    const RealColor = "رنگ واقعی طرح";
+    const TintColors = [
+        { name: "قرمز", en: "red", hex: "#e23b34" },
+        { name: "آبی", en: "blue", hex: "#1263dd" },
+        { name: "سبز", en: "green", hex: "#1fab5c" },
+        { name: "زرد", en: "yellow", hex: "#f7c62c" },
+        { name: "بنفش", en: "purple", hex: "#7c5cd6" },
         { name: "نارنجی", en: "orange", hex: "#f97316" },
-        { name: "قرمز", en: "red", hex: "#ef4444" },
-        { name: "سبز", en: "green", hex: "#22c55e" },
-        { name: "بنفش", en: "purple", hex: "#8b5cf6" },
-        { name: "زرد", en: "yellow", hex: "#fbbf24" },
-        { name: "آبی", en: "blue", hex: "#3b82f6" }
+        { name: "مشکی", en: "black", hex: "#141418" }
     ];
     const T = {
         title: "تیشرتت رو ببین",
         shirtColor: "انتخاب رنگ تیشرت",
         designColor: "انتخاب رنگ طرح",
-        realColor: "رنگ واقعی طرح",
         start: "شروع سفارش",
         close: "بستن",
-        previewAlt: "طرح روی تیشرت",
-        designLabel: "طرح:"
+        previewAlt: "طرح روی تیشرت"
     };
+    // ناحیه چاپ روی عکس‌های تیشرت (نسبت به قاب عکس)
+    const PrintZone = { x: 0.335, y: 0.30, w: 0.33, h: 0.30 };
+    const CanvasSize = 640;
 
-    let root = null, current = null;
+    let root = null, current = null, renderToken = 0;
+    const designCache = new Map();
 
     function ensureRoot() {
         if (root) return root;
@@ -35,13 +44,7 @@
             <button type="button" class="dpv-close" aria-label="${T.close}">×</button>
             <h3 class="dpv-title">${T.title} <span class="dpv-design-name"></span></h3>
             <div class="dpv-stage">
-                <div class="dpv-shirt-wrap">
-                    <svg class="dpv-shirt" viewBox="0 0 300 340" fill="none" aria-hidden="true">
-                        <path class="dpv-shirt-body" d="M95 18 L118 8 C126 20 174 20 182 8 L205 18 L262 52 L242 96 L216 82 L216 322 C216 330 210 336 202 336 L98 336 C90 336 84 330 84 322 L84 82 L58 96 L38 52 Z" fill="#ffffff" stroke="#d4d9e2" stroke-width="3"/>
-                        <path class="dpv-shirt-collar" d="M118 8 C126 20 174 20 182 8 L188 11 C179 26 121 26 112 11 Z" fill="#eef2f7"/>
-                    </svg>
-                    <div class="dpv-design"><img alt="${T.previewAlt}" draggable="false" /></div>
-                </div>
+                <canvas class="dpv-canvas" width="${CanvasSize}" height="${CanvasSize}" aria-label="${T.previewAlt}" role="img"></canvas>
             </div>
             <div class="dpv-row"><span class="dpv-label">${T.shirtColor}:</span><div class="dpv-swatches dpv-shirt-colors"></div></div>
             <div class="dpv-row"><span class="dpv-label">${T.designColor}:</span><div class="dpv-swatches dpv-design-colors"></div></div>
@@ -54,6 +57,101 @@
         return root;
     }
 
+    function loadImage(src) {
+        return new Promise((resolve, reject) => {
+            const im = new Image();
+            im.onload = () => resolve(im);
+            im.onerror = reject;
+            im.src = src;
+        });
+    }
+
+    // حذف پس‌زمینه با پرکردن سیلابی از لبه‌ها: سفیدیِ داخل خود طرح حفظ می‌ماند.
+    function cutBackground(im) {
+        const c = document.createElement("canvas");
+        c.width = im.naturalWidth; c.height = im.naturalHeight;
+        const ctx = c.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(im, 0, 0);
+        let d;
+        try { d = ctx.getImageData(0, 0, c.width, c.height); } catch { return c; }
+        const px = d.data, w = c.width, h = c.height;
+        const isBg = (i) => px[i + 3] > 200 && px[i] > 222 && px[i + 1] > 222 && px[i + 2] > 222;
+        const visited = new Uint8Array(w * h);
+        const stack = [];
+        for (let x = 0; x < w; x++) { stack.push(x, x + (h - 1) * w); }
+        for (let y = 0; y < h; y++) { stack.push(y * w, y * w + w - 1); }
+        while (stack.length) {
+            const p = stack.pop();
+            if (visited[p]) continue;
+            visited[p] = 1;
+            const i = p * 4;
+            if (!isBg(i)) continue;
+            px[i + 3] = 0;
+            const x = p % w, y = (p / w) | 0;
+            if (x > 0) stack.push(p - 1);
+            if (x < w - 1) stack.push(p + 1);
+            if (y > 0) stack.push(p - w);
+            if (y < h - 1) stack.push(p + w);
+        }
+        // نرم‌کردن لبه‌های برش
+        for (let p = 0; p < w * h; p++) {
+            if (visited[p]) continue;
+            const i = p * 4;
+            if (px[i + 3] === 0) continue;
+            const x = p % w, y = (p / w) | 0;
+            let edge = false;
+            if ((x > 0 && px[(p - 1) * 4 + 3] === 0) || (x < w - 1 && px[(p + 1) * 4 + 3] === 0) ||
+                (y > 0 && px[(p - w) * 4 + 3] === 0) || (y < h - 1 && px[(p + w) * 4 + 3] === 0)) edge = true;
+            if (edge && px[i] > 205 && px[i + 1] > 205 && px[i + 2] > 205) px[i + 3] = 110;
+        }
+        ctx.putImageData(d, 0, 0);
+        return c;
+    }
+
+    async function getDesignCut(url) {
+        if (designCache.has(url)) return designCache.get(url);
+        // از پروکسی هم‌مبدأ می‌رویم تا canvas آلوده (tainted) نشود
+        const proxied = "/design-image?u=" + encodeURIComponent(url);
+        const cut = await loadImage(proxied).then(cutBackground).catch(() => null);
+        designCache.set(url, cut);
+        return cut;
+    }
+
+    function tintCanvas(src, color) {
+        const c = document.createElement("canvas");
+        c.width = src.width; c.height = src.height;
+        const ctx = c.getContext("2d");
+        ctx.drawImage(src, 0, 0);
+        ctx.globalCompositeOperation = "source-in";
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, c.width, c.height);
+        return c;
+    }
+
+    async function render() {
+        const token = ++renderToken;
+        const canvas = root.querySelector(".dpv-canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, CanvasSize, CanvasSize);
+        if (!current) return;
+        const shirtImg = await loadImage(current.shirtImg).catch(() => null);
+        if (token !== renderToken) return;
+        if (shirtImg) ctx.drawImage(shirtImg, 0, 0, CanvasSize, CanvasSize);
+        const cut = await getDesignCut(current.thumb || "");
+        if (!cut || token !== renderToken) return;
+        const designSwatch = root.querySelector(".dpv-design-colors .picked");
+        const useTint = designSwatch && designSwatch.dataset.hex;
+        const layer = useTint ? tintCanvas(cut, designSwatch.dataset.hex) : cut;
+        const zx = PrintZone.x * CanvasSize, zy = PrintZone.y * CanvasSize;
+        const zw = PrintZone.w * CanvasSize, zh = PrintZone.h * CanvasSize;
+        const scale = Math.min(zw / cut.width, zh / cut.height);
+        const dw = cut.width * scale, dh = cut.height * scale;
+        ctx.save();
+        ctx.globalAlpha = 0.96;
+        ctx.drawImage(layer, zx + (zw - dw) / 2, zy + (zh - dh) / 2, dw, dh);
+        ctx.restore();
+    }
+
     function swatch(color, group) {
         const b = document.createElement("button");
         b.type = "button";
@@ -62,94 +160,36 @@
         b.dataset.name = color.name;
         b.dataset.en = color.en || "";
         b.dataset.hex = color.hex || "";
+        b.dataset.img = color.img || "";
         b.title = color.name;
         b.setAttribute("aria-label", color.name);
         b.addEventListener("click", () => {
             group.querySelectorAll(".dpv-swatch").forEach(x => x.classList.remove("picked"));
             b.classList.add("picked");
-            apply();
+            if (b.dataset.img && current) current.shirtImg = b.dataset.img;
+            render();
         });
         return b;
     }
 
-    function apply() {
-        const shirt = root.querySelector(".dpv-shirt-colors .picked");
-        const design = root.querySelector(".dpv-design-colors .picked");
-        const shirtHex = shirt ? shirt.dataset.hex : "#ffffff";
-        const body = root.querySelector(".dpv-shirt-body");
-        const collar = root.querySelector(".dpv-shirt-collar");
-        body.setAttribute("fill", shirtHex);
-        // یقه و دوربازن بر اساس تیرگی رنگ تیشرت
-        const dark = isDark(shirtHex);
-        body.setAttribute("stroke", dark ? "#3a3a42" : "#d4d9e2");
-        collar.setAttribute("fill", dark ? shade(shirtHex, -0.18) : shade(shirtHex, -0.08));
-        root.querySelector(".dpv-design").dataset.mode = design && design.dataset.hex ? "tint" : "real";
-        root.querySelector(".dpv-design").style.setProperty("--tint", design && design.dataset.hex ? design.dataset.hex : "transparent");
-    }
-
-    function isDark(hex) {
-        const m = hex.replace("#", "");
-        const r = parseInt(m.substr(0, 2), 16), g = parseInt(m.substr(2, 2), 16), b = parseInt(m.substr(4, 2), 16);
-        return (0.299 * r + 0.587 * g + 0.114 * b) < 140;
-    }
-    function shade(hex, k) {
-        const m = hex.replace("#", "");
-        const f = (v) => Math.max(0, Math.min(255, Math.round(v * (1 + k))));
-        const r = f(parseInt(m.substr(0, 2), 16)), g = f(parseInt(m.substr(2, 2), 16)), b = f(parseInt(m.substr(4, 2), 16));
-        return "#" + [r, g, b].map(v => v.toString(16).padStart(2, "0")).join("");
-    }
-
-    // حذف پس‌زمینه سفید بندانگشتی با canvas تا طرح واقعاً روی رنگ تیشرت بنشیند؛
-    // خروجی هم به‌عنوان تصویر برش‌خورده و هم به‌عنوان ماسک آلفا برای رنگی‌کردن استفاده می‌شود.
-    function cutout(url) {
-        return new Promise((resolve) => {
-            const im = new Image();
-            im.crossOrigin = "anonymous";
-            im.onload = () => {
-                try {
-                    const c = document.createElement("canvas");
-                    c.width = im.naturalWidth; c.height = im.naturalHeight;
-                    const ctx = c.getContext("2d");
-                    ctx.drawImage(im, 0, 0);
-                    const d = ctx.getImageData(0, 0, c.width, c.height);
-                    const px = d.data;
-                    for (let i = 0; i < px.length; i += 4) {
-                        if (px[i + 3] === 0) continue;
-                        const lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-                        if (lum > 228 && px[i + 3] > 200) px[i + 3] = 0;
-                    }
-                    ctx.putImageData(d, 0, 0);
-                    resolve(c.toDataURL("image/png"));
-                } catch { resolve(url); }
-            };
-            im.onerror = () => resolve(url);
-            im.src = url;
-        });
-    }
-
     async function open(data) {
-        current = data;
+        current = { ...data, shirtImg: ShirtColors[0].img };
         const r = ensureRoot();
         r.classList.add("open");
         document.body.style.overflow = "hidden";
         r.querySelector(".dpv-design-name").textContent = data.title ? `— ${data.title}` : "";
-        const cut = await cutout(data.thumb || "");
-        const img = r.querySelector(".dpv-design img");
-        img.src = cut;
-        r.querySelector(".dpv-design").style.setProperty("--dpv-img", `url("${cut}")`);
         const shirtBox = r.querySelector(".dpv-shirt-colors");
         const designBox = r.querySelector(".dpv-design-colors");
         shirtBox.innerHTML = "";
         designBox.innerHTML = "";
-        ShirtColors.forEach((c, i) => shirtBox.appendChild(swatch(c, shirtBox)));
-        const real = { name: T.realColor, hex: "" };
-        designBox.appendChild(swatch(real, designBox));
-        ShirtColors.filter(c => c.en !== "white").forEach(c => designBox.appendChild(swatch(c, designBox)));
-        shirtBox.children[0].classList.add("picked");
-        designBox.children[0].classList.add("picked");
-        apply();
-        r.classList.add("open");
-        document.body.style.overflow = "hidden";
+        ShirtColors.forEach((c, i) => {
+            const b = swatch({ ...c, hex: c.en === "black" ? "#1a1a1e" : c.en === "red" ? "#e23b34" : c.en === "blue" ? "#1263dd" : "#f2f2f2" }, shirtBox);
+            if (i === 0) b.classList.add("picked");
+            shirtBox.appendChild(b);
+        });
+        designBox.appendChild(swatch({ name: RealColor, hex: "" }, designBox));
+        TintColors.forEach(c => designBox.appendChild(swatch(c, designBox)));
+        render();
     }
 
     function close() {
@@ -165,9 +205,7 @@
         const payload = {
             designId: current.id,
             shirtColor: shirt ? shirt.dataset.name : "سفید",
-            shirtHex: shirt ? shirt.dataset.hex : "#ffffff",
-            designColor: design ? design.dataset.name : "",
-            designHex: design && design.dataset.hex ? design.dataset.hex : ""
+            designColor: design ? design.dataset.name : ""
         };
         document.cookie = "barang.preview=" + encodeURIComponent(JSON.stringify(payload)) + "; path=/; max-age=86400; samesite=lax";
         // داخل ویزارد (مرحله انتخاب طرح): مستقیم برو مرحله تیشرت؛ بیرون ویزارد: از مرحله طرح شروع کن

@@ -57,6 +57,27 @@ app.UseAuthorization();
 app.UseOutputCache();
 app.MapRazorPages();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+// Same-origin proxy for artwork thumbnails: lets the "see your t-shirt" canvas
+// engine read pixels without MinIO CORS/cache pitfalls. Only the configured
+// public file endpoint host may pass through.
+app.MapGet("/design-image", async (string u, HttpContext http, IConfiguration cfg, IHttpClientFactory factory, CancellationToken ct) =>
+{
+    var allowedHosts = (cfg["FileStorage:PublicEndpoint"] ?? "127.0.0.1:9000")
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    if (!Uri.TryCreate(u, UriKind.Absolute, out var uri)
+        || uri.Scheme is not ("http" or "https")
+        || !allowedHosts.Any(a => uri.Authority.Equals(a, StringComparison.OrdinalIgnoreCase)))
+    {
+        return Results.BadRequest();
+    }
+    var client = factory.CreateClient("core");
+    using var response = await client.GetAsync(uri.ToString(), HttpCompletionOption.ResponseHeadersRead, ct);
+    if (!response.IsSuccessStatusCode) return Results.NotFound();
+    var bytes = await response.Content.ReadAsByteArrayAsync(ct);
+    var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/png";
+    http.Response.Headers.CacheControl = "public, max-age=86400";
+    return Results.File(bytes, contentType);
+});
 app.Run();
 
 file static class UriExtensions
