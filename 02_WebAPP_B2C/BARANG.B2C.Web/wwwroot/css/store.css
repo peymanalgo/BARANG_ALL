@@ -696,7 +696,6 @@ a.brand .brand-name { color: #fff; }
 .features2 { background: #17181d; border-bottom: 1px solid #26262c; padding: 1.1rem 0 1.6rem; position: relative; z-index: 2; }
 .features2-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .6rem 1.6rem; }
 .feat2 { text-align: center; color: #d7d9e2; font-size: .9rem; font-weight: 700; padding: .55rem .4rem; border: 1.5px solid #3a3b42; border-radius: 12px; }
-@media (max-width: 980px) { .hero2-media img { width: 46%; } }
 
 /* category strip */
 .catstrip-wrap { padding: 1.6rem 0; background: var(--bg); }
@@ -758,7 +757,6 @@ a.brand .brand-name { color: #fff; }
 .header-search { display: flex; align-items: center; gap: 6px; }
 
 /* price on design cards */
-.price-from { display: inline-block; font-size: .78rem; font-weight: 700; color: #128a43; background: #e7f8ec; border-radius: 8px; padding: 2px 8px; margin-top: 3px; }
 
 /* ---------- two-row header + full-width beautiful search ---------- */
 .store-header { padding-bottom: 0; }
@@ -793,9 +791,6 @@ a.brand .brand-name { color: #fff; }
 .hero2-inner::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(270deg, rgba(17,17,20,.72), rgba(17,17,20,.30) 52%, rgba(17,17,20,0) 100%); }
 html[dir="ltr"] .hero2-inner::before { background: linear-gradient(90deg, rgba(17,17,20,.72), rgba(17,17,20,.30) 52%, rgba(17,17,20,0) 100%); }
 .hero2-copy { position: absolute; z-index: 2; top: 0; bottom: 0; inset-inline-start: 0; max-width: 560px; height: fit-content; margin-block: auto; }
-.hero-trust { display: flex; gap: 22px; margin-top: 26px; flex-wrap: wrap; }
-.hero-trust span { display: inline-flex; align-items: center; gap: 7px; font-size: .9rem; color: #dbe4ef; }
-.hero-trust strong { color: #fff; font-size: 1.06rem; }
 @media (max-width: 900px) {
     .hero2-photo { display: none; }
     .hero2-inner::before { display: none; }
@@ -810,7 +805,6 @@ html[dir="ltr"] .hero2-inner::before { background: linear-gradient(90deg, rgba(1
 }
 
 /* featured card price chip (home) */
-.design-card .price-from { display: inline-block; font-size: .84rem; font-weight: 800; color: #128a43; background: #e7f8ec; border-radius: 8px; padding: 3px 10px; margin-top: 4px; }
 .design-card .design-thumb img { transition: transform .35s ease; }
 .design-card:hover .design-thumb img { transform: scale(1.06); }
 

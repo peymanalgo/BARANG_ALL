@@ -98,13 +98,10 @@
 
                 <div class="pay-choice">
                     <h3>@T("روش پرداخت", "Payment method", "طريقة الدفع")</h3>
-                    <label class="pay-option @(Model.WalletPayable ? null : "disabled")">
-                        <input type="radio" name="PayWithWallet" value="true" checked="@(Model.WalletPayable)" disabled="@(!Model.WalletPayable)" />
-                        <span>
-                            <strong>@T("پرداخت از کیف پول", "Pay from wallet", "الدفع من المحفظة")</strong>
-                            <small>@T($"موجودی: {Model.WalletBalance:N0} تومان", $"Balance: {Model.WalletBalance:N0} Toman", $"الرصيد: {Model.WalletBalance:N0} تومان")</small>
-                        </span>
-                    </label>
+                    <p>
+                        <strong>@T("پرداخت از کیف پول", "Pay from wallet", "الدفع من المحفظة")</strong>
+                        <span class="muted small"> — @T($"موجودی: {Model.WalletBalance:N0} تومان", $"Balance: {Model.WalletBalance:N0} Toman", $"الرصيد: {Model.WalletBalance:N0} تومان")</span>
+                    </p>
                     @if (!Model.WalletPayable && Model.TotalAmount > 0)
                     {
                         <p class="muted small">@T("فعلاً پرداخت فقط از کیف پول ممکن است و موجودی کافی نیست — ", "Payment is wallet-only for now and the balance is not enough — ", "الدفع حاليًا من المحفظة فقط والرصيد غير كافٍ — ")<a href="/account/wallet">@T("شارژ کیف پول", "top up wallet", "شحن المحفظة")</a></p>

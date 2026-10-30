@@ -43,7 +43,6 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
     [BindProperty] public decimal Quantity { get; set; } = 1;
     [BindProperty] public Guid? BranchId { get; set; }
     [BindProperty] public Guid? AddressId { get; set; }
-    [BindProperty] public string? Notes { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid designId, [FromQuery] Guid? product, string? error)
     {
@@ -174,7 +173,7 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
         }
 
         string designNote = $"طرح: {DesignCode}";
-        object notes = string.IsNullOrWhiteSpace(Notes) ? designNote : $"{Notes} | {designNote}";
+        object notes = designNote;
         // add to an existing draft order (multi-design orders) or create a new one
         Guid orderId;
         if (AddToOrderId is Guid draftId && draftId != Guid.Empty)

@@ -8,7 +8,6 @@ namespace BARANG.B2C.Web.Pages;
 public sealed class IndexModel(CoreApiClient core) : PageModel
 {
     public IReadOnlyList<DesignCard> Featured { get; private set; } = [];
-    public long Total { get; private set; }
     public IReadOnlyList<CategoryRow> Categories { get; private set; } = [];
 
 
@@ -21,7 +20,7 @@ public sealed class IndexModel(CoreApiClient core) : PageModel
         }
         string homeCulture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
         JsonElement? page = await core.GetAsync($"api/v1/public/catalog?page=1&pageSize=13&culture={homeCulture}");
-        (Featured, Total) = DesignCard.FromPage(page);
+        (Featured, _) = DesignCard.FromPage(page);
 
         string culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
         JsonElement? cats = await core.GetAsync($"api/v1/public/catalog/categories?culture={culture}");

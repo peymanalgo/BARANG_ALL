@@ -4,8 +4,6 @@
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     ViewData["Title"] = T("خانه", "Home", "الرئيسية");
-    var hero = Model.Featured.FirstOrDefault();
-    string[] MarqueeWords = { T("چاپ روی پوشاک", "Apparel printing", "طباعة الملابس"), T("طرح‌های آماده", "Ready designs", "تصاميم جاهزة"), T("رنگ‌های زنده", "Vivid colors", "ألوان حيوية"), T("سفارش آنلاین", "Order online", "اطلب عبر الإنترنت"), T("رهگیری تا تحویل", "Track to door", "تتبع حتى التسليم"), T("فایل باکیفیت", "Print-quality files", "ملفات عالية الجودة") };
 }
 @* ---------- HERO (dark) ---------- *@
 <section class="hero2">

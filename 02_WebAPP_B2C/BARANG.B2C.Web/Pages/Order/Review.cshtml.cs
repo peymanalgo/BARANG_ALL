@@ -33,7 +33,6 @@ public sealed class ReviewModel(CoreApiClient core, CustomerContext customers) :
     // رنگ‌های انتخابی پاپ‌آپ «تیشرتت رو ببین» برای نمایش در بازبینی
     public string? PreviewShirtColor { get; private set; }
     public string? PreviewDesignColor { get; private set; }
-    [BindProperty] public string? PayWithWallet { get; set; }
 
     private IActionResult? ReauthGuard()
     {
@@ -140,6 +139,7 @@ public sealed class ReviewModel(CoreApiClient core, CustomerContext customers) :
             return RedirectToPage(new { orderId, designId, error = problem ?? "submit-failed" });
         }
         // پرداخت فعلاً فقط از کیف پول است (درگاه بانکی بعداً اضافه می‌شود)
+        Response.Cookies.Delete("barang.preview");
         long payVersion = await CurrentVersionAsync(orderId);
         (bool paid, string? payProblem) = await core.PostRawAsync($"api/v1/client/orders/{orderId}/pay-with-wallet", new { version = payVersion });
         return RedirectToPage("/Account/Order", new { id = orderId, paid = paid ? "1" : null, payerror = paid ? null : (payProblem ?? "wallet-failed") });
