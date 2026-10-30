@@ -52,20 +52,20 @@ public sealed class PrintModel(CoreApiClient core) : PageModel
             (DesignCode, DesignPreview, ArtworkVersionId) = await LoadDesignAsync(d);
         }
         // محل قرار گرفتن تصویر انتخاب‌شده در پاپ‌آپ پیش‌نمایش، پیش‌فرض این مرحله می‌شود
-        string? placement = ReadPreviewPlacement();
-        if (!string.IsNullOrWhiteSpace(placement) && PrintPositions.Contains(placement)) PrintPosition = placement;
+        string? corePosition = ReadPreviewField("corePosition");
+        if (!string.IsNullOrWhiteSpace(corePosition) && PrintPositions.Contains(corePosition)) PrintPosition = corePosition;
         if (ReauthGuard() is { } r0) return r0;
         return await LoadAsync();
     }
 
-    private string? ReadPreviewPlacement()
+    private string? ReadPreviewField(string field)
     {
         string? raw = Request.Cookies["barang.preview"];
         if (string.IsNullOrWhiteSpace(raw)) return null;
         try
         {
             JsonElement x = JsonDocument.Parse(raw).RootElement;
-            return x.TryGetProperty("placement", out JsonElement p) && p.ValueKind == JsonValueKind.String ? p.GetString() : null;
+            return x.TryGetProperty(field, out JsonElement p) && p.ValueKind == JsonValueKind.String ? p.GetString() : null;
         }
         catch (JsonException) { return null; }
     }
@@ -80,9 +80,11 @@ public sealed class PrintModel(CoreApiClient core) : PageModel
             JsonElement x = JsonDocument.Parse(raw).RootElement;
             string? shirt = x.TryGetProperty("shirtColor", out JsonElement sc) ? sc.GetString() : null;
             string? design = x.TryGetProperty("designColor", out JsonElement dc) ? dc.GetString() : null;
+            string? place = ReadPreviewField("placementName");
             List<string> parts = [];
             if (!string.IsNullOrWhiteSpace(shirt)) parts.Add($"رنگ تیشرت: {shirt}");
             if (!string.IsNullOrWhiteSpace(design) && design != "رنگ واقعی طرح") parts.Add($"رنگ طرح: {design}");
+            if (!string.IsNullOrWhiteSpace(place)) parts.Add($"محل چاپ: {place}");
             return parts.Count == 0 ? null : string.Join(" · ", parts);
         }
         catch (JsonException) { return null; }

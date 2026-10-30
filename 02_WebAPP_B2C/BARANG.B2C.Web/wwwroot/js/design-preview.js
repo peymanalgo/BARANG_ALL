@@ -22,19 +22,17 @@
         { name: "مشکی", en: "black", hex: "#141418" }
     ];
     // کدهای PrintPosition سمت Core (فرم سفارش کلاینت: FRONT/BACK/SLEEVE/OTHER)
+    // محل‌های چاپ — کد دقیق + کد فرم سفارش Core (FRONT/BACK/SLEEVE) و نمای تیشرت
     const Placements = [
-        { code: "FRONT", name: "جلو — وسط سینه" },
-        { code: "BACK", name: "پشت" },
-        { code: "SLEEVE", name: "آستین" },
-        { code: "OTHER", name: "پایین سرمه" }
+        { code: 'FRONT_CENTER', name: 'جلو وسط', view: 'front', core: 'FRONT', zone: { x: 0.26, y: 0.25, w: 0.48, h: 0.42 } },
+        { code: 'FRONT_UPPER', name: 'جلو بالا', view: 'front', core: 'FRONT', zone: { x: 0.30, y: 0.13, w: 0.40, h: 0.17 } },
+        { code: 'FRONT_LOWER', name: 'جلو پایین', view: 'front', zone: { x: 0.30, y: 0.55, w: 0.40, h: 0.28 }, core: 'FRONT' },
+        { code: 'BACK_CENTER', name: 'پشت وسط', view: 'back', core: 'BACK', zone: { x: 0.28, y: 0.27, w: 0.44, h: 0.40 } },
+        { code: 'BACK_UPPER', name: 'پشت بالا', view: 'back', core: 'BACK', zone: { x: 0.30, y: 0.16, w: 0.40, h: 0.20 } },
+        { code: 'BACK_LOWER', name: 'پشت پایین', view: 'back', core: 'BACK', zone: { x: 0.32, y: 0.56, w: 0.36, h: 0.26 } },
+        { code: 'SLEEVE_LEFT', name: 'آستین چپ', view: 'front', core: 'SLEEVE', zone: { x: 0.045, y: 0.27, w: 0.17, h: 0.21 } },
+        { code: 'SLEEVE_RIGHT', name: 'آستین راست', view: 'front', core: 'SLEEVE', zone: { x: 0.785, y: 0.27, w: 0.17, h: 0.21 } }
     ];
-    // ناحیه هر محل روی عکس تیشرت (نسبت به قاب عکس) — عکس‌ها از رو است، پشت به‌صورت پایین‌تر نشان داده می‌شود
-    const Zones = {
-        FRONT: { x: 0.26, y: 0.25, w: 0.48, h: 0.42 },
-        BACK: { x: 0.26, y: 0.44, w: 0.48, h: 0.36 },
-        SLEEVE: { x: 0.63, y: 0.28, w: 0.26, h: 0.22 },
-        OTHER: { x: 0.32, y: 0.62, w: 0.36, h: 0.24 }
-    };
     const T = {
         title: "تیشرتت رو ببین",
         shirtColor: "انتخاب رنگ تیشرت",
@@ -143,6 +141,14 @@
         return c;
     }
 
+    // بر اساس نمای محل انتخابی (جلو/پشت)، عکس تیشرت مربوطه را برمی‌گرداند
+    function updateShirtImage() {
+        if (!current) return;
+        const picked = Placements.find(p => p.code === current.placement) || Placements[0];
+        const base = current.colorImg || ShirtColors[0].img;
+        current.shirtImg = picked.view === "back" ? base.replace("/shirts/", "/shirts/back-") : base;
+    }
+
     function pickedPlacement() {
         const b = root.querySelector(".dpv-placements .picked");
         return b ? b.dataset.code : "FRONT";
@@ -162,7 +168,8 @@
         const designSwatch = root.querySelector(".dpv-design-colors .picked");
         const useTint = designSwatch && designSwatch.dataset.hex;
         const layer = useTint ? tintCanvas(cut, designSwatch.dataset.hex) : cut;
-        const zone = Zones[pickedPlacement()] || Zones.FRONT;
+        const picked = Placements.find(p => p.code === pickedPlacement()) || Placements[0];
+        const zone = picked.zone;
         const zx = zone.x * CanvasSize, zy = zone.y * CanvasSize;
         const zw = zone.w * CanvasSize, zh = zone.h * CanvasSize;
         const scale = Math.min(zw / cut.width, zh / cut.height);
@@ -187,7 +194,7 @@
         b.addEventListener("click", () => {
             group.querySelectorAll(".dpv-swatch").forEach(x => x.classList.remove("picked"));
             b.classList.add("picked");
-            if (b.dataset.img && current) current.shirtImg = b.dataset.img;
+            if (current) { current.placement = b.dataset.code; updateShirtImage(); }
             render();
         });
         return b;
@@ -209,7 +216,8 @@
     }
 
     async function open(data) {
-        current = { ...data, shirtImg: ShirtColors[0].img, placement: "FRONT" };
+        current = { ...data, colorImg: ShirtColors[0].img, placement: "FRONT_CENTER" };
+        updateShirtImage();
         const r = ensureRoot();
         r.classList.add("open");
         document.body.style.overflow = "hidden";
@@ -250,8 +258,9 @@
             designId: current.id,
             shirtColor: shirt ? shirt.dataset.name : "سفید",
             designColor: design ? design.dataset.name : "",
-            placement: placement ? placement.dataset.code : "FRONT",
-            placementName: placement ? placement.dataset.name : "جلو"
+            placement: placement ? placement.dataset.code : "FRONT_CENTER",
+            placementName: placement ? placement.dataset.name : "جلو وسط",
+            corePosition: placement ? (Placements.find(p => p.code === placement.dataset.code)?.core || "FRONT") : "FRONT"
         };
         document.cookie = "barang.preview=" + encodeURIComponent(JSON.stringify(payload)) + "; path=/; max-age=86400; samesite=lax";
         // داخل ویزارد (مرحله انتخاب طرح): مستقیم برو مرحله تیشرت؛ بیرون ویزارد: از مرحله طرح شروع کن
