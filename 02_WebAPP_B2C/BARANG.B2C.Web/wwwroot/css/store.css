@@ -786,18 +786,19 @@ a.brand .brand-name { color: #fff; }
 .hs-go:hover { filter: brightness(1.08); transform: translateY(-1px); }
 [dir="rtl"] .hs-field { padding: 6px 18px 6px 8px; }
 
-/* ---------- hero: static photo of printed shirts + CTA + trust strip ---------- */
+/* ---------- hero: full-bleed static photo under the copy ---------- */
 .hero2 { min-height: 0; display: flex; align-items: center; }
-.hero2-inner { align-items: center; justify-content: space-between; gap: 3rem; padding: 2.5rem 0 2.75rem; }
-.hero2-media { position: relative; inset: auto; width: min(430px, 32vw); opacity: 1; flex: 0 0 auto; }
-.hero2-media img { width: 100%; height: auto; display: block; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.55); border: 1px solid #2c2c33; }
+.hero2-inner { align-items: center; justify-content: flex-start; gap: 3rem; padding: 3.25rem 0 3.5rem; }
+.hero2-media { position: absolute; inset: 0; opacity: 1; }
+.hero2-media img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+.hero2-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(270deg, rgba(17,17,20,.95) 14%, rgba(17,17,20,.74) 44%, rgba(17,17,20,.16) 100%); }
+html[dir="ltr"] .hero2-media::after { background: linear-gradient(90deg, rgba(17,17,20,.95) 14%, rgba(17,17,20,.74) 44%, rgba(17,17,20,.16) 100%); }
 .hero-cta2 { color: var(--text); border: 1.5px solid var(--border); background: rgba(255,255,255,.75); backdrop-filter: blur(6px); }
 .hero-cta2:hover { border-color: var(--primary); color: var(--primary); }
 .hero-trust { display: flex; gap: 22px; margin-top: 26px; flex-wrap: wrap; }
 .hero-trust span { display: inline-flex; align-items: center; gap: 7px; font-size: .9rem; color: #dbe4ef; }
 .hero-trust strong { color: #fff; font-size: 1.06rem; }
-@media (max-width: 1200px) { .hero2-media { width: 320px; } }
-@media (max-width: 900px) { .hero2-media { display: none; } }
+@media (max-width: 640px) { .hero2-media::after { background: rgba(17,17,20,.6); } }
 @media (max-width: 760px) {
     .header-inner { flex-wrap: wrap; row-gap: 0; }
     .main-nav { order: 3; width: 100%; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }
