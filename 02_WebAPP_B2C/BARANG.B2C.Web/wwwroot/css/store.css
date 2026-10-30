@@ -794,9 +794,9 @@ html[dir="ltr"] .hero2-media::after { background: linear-gradient(270deg, rgba(1
 [dir="rtl"] .hs-field { padding: 6px 18px 6px 8px; }
 
 /* ---------- hero: shirt mockup + secondary CTA + trust strip ---------- */
-.hero2 { min-height: 82vh; display: flex; align-items: center; }
-.hero2-inner { align-items: center; justify-content: space-between; gap: 3rem; }
-.hero2-media { position: relative; inset: auto; width: min(360px, 30vw); opacity: 1; flex: 0 0 auto; }
+.hero2 { min-height: 0; display: flex; align-items: center; }
+.hero2-inner { align-items: center; justify-content: space-between; gap: 3rem; padding: 2.5rem 0 2.75rem; }
+.hero2-media { position: relative; inset: auto; width: min(320px, 26vw); opacity: 1; flex: 0 0 auto; }
 .hero2-media::after { display: none; }
 .hero-shirt { position: relative; filter: drop-shadow(0 24px 48px rgba(15,23,42,.45)); animation: shirt-float 7s ease-in-out infinite; }
 @keyframes shirt-float { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-16px) rotate(2deg); } }
