@@ -683,16 +683,8 @@ a.brand .brand-name { color: #fff; }
 .icon-btn:hover { color: var(--primary); border-color: var(--primary); }
 .header-actions .btn-primary { border-radius: 999px; }
 
-/* hero v2 — dark with photo collage */
+/* hero v2 — dark */
 .hero2 { position: relative; overflow: hidden; background: linear-gradient(160deg, #17181d 0%, #232019 55%, #191a20 100%); }
-.hero2-media { position: absolute; inset: 0; opacity: .5; }
-.hero2-media img { position: absolute; width: 34%; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.55); border: 1px solid #2c2c33; }
-.hero2-media img:nth-child(1) { top: 8%; inset-inline-start: 4%; transform: rotate(-4deg); }
-.hero2-media img:nth-child(2) { top: 22%; inset-inline-start: 30%; transform: rotate(2deg); }
-.hero2-media img:nth-child(3) { bottom: 6%; inset-inline-start: 14%; transform: rotate(3deg); }
-.hero2-media img:nth-child(4) { bottom: 12%; inset-inline-start: 44%; transform: rotate(-3deg); }
-.hero2-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(17,17,20,1) 8%, rgba(17,17,20,.72) 45%, rgba(17,17,20,.25) 100%); }
-html[dir="ltr"] .hero2-media::after { background: linear-gradient(270deg, rgba(17,17,20,1) 8%, rgba(17,17,20,.72) 45%, rgba(17,17,20,.25) 100%); }
 .hero2-inner { position: relative; z-index: 2; padding: 4.5rem 0 4rem; display: flex; justify-content: flex-start; }
 .hero2-copy { max-width: 560px; }
 .hero2-title { color: #fff; font-size: clamp(2rem, 5vw, 3.3rem); font-weight: 950; line-height: 1.2; margin: 0 0 .3rem; }
@@ -794,20 +786,17 @@ html[dir="ltr"] .hero2-media::after { background: linear-gradient(270deg, rgba(1
 .hs-go:hover { filter: brightness(1.08); transform: translateY(-1px); }
 [dir="rtl"] .hs-field { padding: 6px 18px 6px 8px; }
 
-/* ---------- hero: shirt mockup + secondary CTA + trust strip ---------- */
+/* ---------- hero: static photo of printed shirts + CTA + trust strip ---------- */
 .hero2 { min-height: 0; display: flex; align-items: center; }
 .hero2-inner { align-items: center; justify-content: space-between; gap: 3rem; padding: 2.5rem 0 2.75rem; }
-.hero2-media { position: relative; inset: auto; width: min(380px, 30vw); opacity: 1; flex: 0 0 auto; }
-.hero2-media::after { display: none; }
-.hero-shirt { position: relative; filter: drop-shadow(0 24px 48px rgba(15,23,42,.45)); animation: shirt-float 7s ease-in-out infinite; }
-@keyframes shirt-float { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-16px) rotate(2deg); } }
-.hero-shirt-glow { position: absolute; inset: auto 20% 6% 20%; height: 26px; border-radius: 50%; background: radial-gradient(ellipse, rgba(255,122,26,.35), transparent 70%); filter: blur(6px); }
+.hero2-media { position: relative; inset: auto; width: min(430px, 32vw); opacity: 1; flex: 0 0 auto; }
+.hero2-media img { width: 100%; height: auto; display: block; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.55); border: 1px solid #2c2c33; }
 .hero-cta2 { color: var(--text); border: 1.5px solid var(--border); background: rgba(255,255,255,.75); backdrop-filter: blur(6px); }
 .hero-cta2:hover { border-color: var(--primary); color: var(--primary); }
 .hero-trust { display: flex; gap: 22px; margin-top: 26px; flex-wrap: wrap; }
 .hero-trust span { display: inline-flex; align-items: center; gap: 7px; font-size: .9rem; color: #dbe4ef; }
 .hero-trust strong { color: #fff; font-size: 1.06rem; }
-@media (max-width: 1200px) { .hero2-media { width: 280px; } }
+@media (max-width: 1200px) { .hero2-media { width: 320px; } }
 @media (max-width: 900px) { .hero2-media { display: none; } }
 @media (max-width: 760px) {
     .header-inner { flex-wrap: wrap; row-gap: 0; }
