@@ -131,18 +131,16 @@ public sealed class ReviewModel(CoreApiClient core, CustomerContext customers) :
 
     public async Task<IActionResult> OnPostSubmitAsync(Guid orderId, Guid designId)
     {
+        // ثبت و پرداخت در یک عملیات اتمیک سمت Core: قیمت‌گذاری نهایی ← بدهی کیف پول ← ثبت سفارش
+        Response.Cookies.Delete("barang.preview");
         long version = await CurrentVersionAsync(orderId);
-        string idemKey = $"submit-{orderId:N}";
-        (bool ok, JsonElement? _, string? problem) = await core.PostRawWithBodyAsync($"api/v1/client/orders/{orderId}/submit", new { version }, idemKey);
+        string idemKey = $"checkout-{orderId:N}";
+        (bool ok, JsonElement? _, string? problem) = await core.PostRawWithBodyAsync($"api/v1/client/orders/{orderId}/checkout-wallet", new { version }, idemKey);
         if (!ok)
         {
-            return RedirectToPage(new { orderId, designId, error = problem ?? "submit-failed" });
+            return RedirectToPage(new { orderId, designId, error = problem ?? "checkout-failed" });
         }
-        // پرداخت فعلاً فقط از کیف پول است (درگاه بانکی بعداً اضافه می‌شود)
-        Response.Cookies.Delete("barang.preview");
-        long payVersion = await CurrentVersionAsync(orderId);
-        (bool paid, string? payProblem) = await core.PostRawAsync($"api/v1/client/orders/{orderId}/pay-with-wallet", new { version = payVersion });
-        return RedirectToPage("/Account/Order", new { id = orderId, paid = paid ? "1" : null, payerror = paid ? null : (payProblem ?? "wallet-failed") });
+        return RedirectToPage("/Account/Order", new { id = orderId, paid = "1" });
     }
 
     private async Task<long> CurrentVersionAsync(Guid orderId)

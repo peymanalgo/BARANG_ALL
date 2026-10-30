@@ -152,7 +152,7 @@ else
         {
             <div class="alert alert-ok" role="status" style="display:flex;justify-content:space-between;align-items:center">
                 <span>@T("این سفارش پیش‌نویس است؛ هنوز ثبت نهایی نشده.", "This order is a draft; it is not submitted yet.", "هذا الطلب مسودة؛ لم يُرسل بعد.")</span>
-                <a class="btn btn-primary btn-sm" href="/order/select?addToOrderId=@Model.Id">@T("افزودن طرح دیگر به این سفارش", "Add another design to this order", "أضف تصميماً آخر لهذا الطلب")</a>
+                <button type="button" class="btn btn-primary btn-sm preview-shirt-btn" style="width:auto;display:inline-flex" data-design='@System.Text.Json.JsonSerializer.Serialize(new { addto = Model.Id.ToString() })'>@T("افزودن طرح دیگر به این سفارش", "Add another design to this order", "أضف تصميماً آخر لهذا الطلب")</button>
             </div>
         }
         @if (Model.OrderStatus == "Cancelled")

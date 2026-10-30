@@ -6,7 +6,7 @@
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     ViewData["Title"] = T("انتخاب تیشرت", "Choose shirt", "اختر التيشرت");
 }
-<partial name="_WizardSteps" model="2" />
+<partial name="_WizardSteps" model="1" />
 <section class="container section wizard">
     @if (!Model.DesignFound)
     {
@@ -39,7 +39,7 @@
                         }
                     </div>
                 }
-                <a class="btn btn-ghost btn-sm mt" href="/order/select">@T("تغییر طرح", "Change design", "تغيير التصميم")</a>
+                
                 <div class="shirt-love">
                     <span class="love-icon">♡</span>
                     @T("آیا این طرح را می‌پسندید؟", "Do you like this design?", "هل يعجبك هذا التصميم؟")
@@ -155,7 +155,7 @@
                         </div>
 
                         <div class="wizard-footer">
-                            <a class="btn btn-ghost" href="/order/select?designId=@Model.DesignId">→ @T("بازگشت", "Back", "رجوع")</a>
+                            <a class="btn btn-ghost" href="/catalog">→ @T("بازگشت به طرح‌ها", "Back to designs", "العودة إلى التصاميم")</a>
                             <button type="submit" class="btn btn-primary btn-lg">@T("ادامه: تنظیمات چاپ", "Continue: print settings", "متابعة: إعدادات الطباعة")</button>
                         </div>
                     </form>

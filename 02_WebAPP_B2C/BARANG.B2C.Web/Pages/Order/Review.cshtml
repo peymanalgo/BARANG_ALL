@@ -14,7 +14,7 @@
     };
     ViewData["Title"] = T("قیمت و تأیید", "Pricing & review", "السعر والمراجعة");
 }
-<partial name="_WizardSteps" model="5" />
+<partial name="_WizardSteps" model="4" />
 <section class="container section wizard">
     <nav class="breadcrumbs no-print" aria-label="breadcrumb">
         <a href="/account/orders">@T("سفارش‌های من", "My orders", "طلباتي")</a> ›
@@ -32,8 +32,9 @@
             <div class="alert alert-error" role="alert">
                 @(Model.Error switch
                 {
+                    "wallet.insufficient_balance" => T("موجودی کیف پول برای این سفارش کافی نیست؛ لطفاً کیف پول را شارژ کنید.", "Wallet balance is not enough for this order; please top up your wallet.", "رصيد المحفظة غير كافٍ؛ يرجى شحن المحفظة."),
                     "pricing.tariff.missing" => T("برای این ترکیب هنوز تعرفه ثبت نشده است؛ با پشتیبانی هماهنگ کنید.", "No tariff exists for this combination yet; contact support.", "لا توجد تعريفة لهذا المزيج بعد."),
-                    "order.concurrency_conflict" or "core.database.concurrency_conflict" => T("سفارش هم‌زمان تغییر کرده؛ صفحه را تازه کنید.", "Order changed concurrently; refresh.", "تم تغيير الطلب بالتزامن؛ حدّث الصفحة."),
+                    "order.concurrency_conflict" or "core.database.concurrency_conflict" or "wallet.concurrency" => T("سفارش هم‌زمان تغییر کرده؛ صفحه را تازه کنید.", "Order changed concurrently; refresh.", "تم تغيير الطلب بالتزامن؛ حدّث الصفحة."),
                     "order.incomplete" or "order.item_required" => T("سفارش ناقص است؛ موارد اعتبارسنجی را برطرف کنید.", "Order incomplete; resolve validation issues.", "الطلب غير مكتمل؛ عالج ملاحظات التحقق."),
                     _ => T("ثبت نهایی انجام نشد؛ دوباره تلاش کنید.", "Submit failed; try again.", "فشل الإرسال؛ حاول مجدداً.")
                 })

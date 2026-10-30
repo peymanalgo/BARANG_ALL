@@ -6,7 +6,7 @@
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     ViewData["Title"] = T("بسته‌بندی", "Packaging", "التغليف");
 }
-<partial name="_WizardSteps" model="4" />
+<partial name="_WizardSteps" model="3" />
 <section class="container section wizard">
     <nav class="breadcrumbs no-print" aria-label="breadcrumb">
         <a href="/account/orders">@T("سفارش‌های من", "My orders", "طلباتي")</a> ›

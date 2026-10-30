@@ -50,7 +50,7 @@
                 <h1>@T("سلام", "Hi", "مرحباً") @(Model.CustomerName ?? Model.DisplayName) <span class="wave">👋</span></h1>
                 <p>@T("خوش آمدی به دنیای طرح‌ها و تیشرت‌های خاص!", "Welcome to the world of special designs and t-shirts!", "مرحباً بك في عالم التصاميم والتيشرتات الخاصة!")</p>
                 <div class="dash-hero-actions">
-                    <a class="btn btn-primary" href="/order/select">@T("سفارش جدید", "New order", "طلب جديد")</a>
+                    <a class="btn btn-primary" href="/catalog">@T("سفارش جدید", "New order", "طلب جديد")</a>
                     <a class="btn btn-light" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم")</a>
                 </div>
             </div>
@@ -111,7 +111,7 @@
                         <div class="fav-grid">
                             @foreach (var f in Model.Favorites)
                             {
-                                <a class="fav-item" href="/order/select?design=@f.ArtworkId" title="@f.Title">
+                                <a class="fav-item" href="/design/@f.ArtworkId" title="@f.Title" data-preview-card='@System.Text.Json.JsonSerializer.Serialize(new { id = f.ArtworkId.ToString(), title = f.Title, thumb = f.ThumbnailUrl })'>
                                     @if (!string.IsNullOrWhiteSpace(f.ThumbnailUrl))
                                     {
                                         <img src="@f.ThumbnailUrl" alt="@f.Title" loading="lazy" />
@@ -186,7 +186,7 @@
                     <p class="wallet-balance">@Money(Model.Wallet.Balance) <small>@T("تومان", "Toman", "تومان")</small></p>
                     <a class="btn btn-light btn-sm" href="/account/wallet">@T("تراکنش‌ها", "Transactions", "المعاملات")</a>
                 </div>
-                <a class="dash-quick" href="/order/select">
+                <a class="dash-quick" href="/catalog">
                     <strong>@T("سفارش سریع", "Quick order", "طلب سريع")</strong>
                     <span>@T("طرح را انتخاب کن و در چند دقیقه سفارش بده.", "Pick a design and order in minutes.", "اختر تصميماً واطلب في دقائق.")</span>
                 </a>

@@ -3,11 +3,10 @@
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     string[] steps = {
-        T("انتخاب طرح", "Choose design", "اختر التصميم"),
         T("انتخاب تیشرت", "Choose shirt", "اختر التيشرت"),
         T("تنظیمات چاپ", "Print settings", "إعدادات الطباعة"),
         T("بسته‌بندی", "Packaging", "التغليف"),
-        T("ثبت سفارش", "Submit order", "إرسال الطلب")
+        T("ثبت سفارش و پرداخت", "Submit & pay", "إرسال ودفع")
     };
 }
 <div class="container wizard-steps" aria-label="steps">

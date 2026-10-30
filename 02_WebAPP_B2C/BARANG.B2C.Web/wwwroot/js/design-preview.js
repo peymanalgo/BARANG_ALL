@@ -216,7 +216,7 @@
     }
 
     async function open(data) {
-        current = { ...data, colorImg: ShirtColors[0].img, placement: "FRONT_CENTER" };
+        current = { ...data, addto: data.addto || "", colorImg: ShirtColors[0].img, placement: "FRONT_CENTER" };
         updateShirtImage();
         const r = ensureRoot();
         r.classList.add("open");
@@ -264,11 +264,11 @@
         };
         document.cookie = "barang.preview=" + encodeURIComponent(JSON.stringify(payload)) + "; path=/; max-age=86400; samesite=lax";
         // داخل ویزارد (مرحله انتخاب طرح): مستقیم برو مرحله تیشرت؛ بیرون ویزارد: از مرحله طرح شروع کن
-        const inWizard = location.pathname.toLowerCase().startsWith("/order/select");
-        close();
-        location.href = inWizard
-            ? `/order/shirt/${current.id}`
-            : `/order/select?design=${current.id}`;
+        // ویزارد دیگر مرحله «انتخاب طرح» ندارد؛ همین‌جا مستقیم مرحله تیشرت شروع می‌شود
+        const addto = current.addto && current.addto !== "00000000-0000-0000-0000-000000000000"
+            ? "?addToOrderId=" + current.addto
+            : "";
+        location.href = `/order/shirt/${current.id}` + addto;
     }
 
     document.addEventListener("click", (e) => {
