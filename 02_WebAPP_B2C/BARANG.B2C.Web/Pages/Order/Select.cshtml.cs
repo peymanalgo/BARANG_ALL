@@ -90,7 +90,7 @@ public sealed class SelectModel(CoreApiClient core) : PageModel
         {
             return RedirectToPage(new { designId = Designs[0].Id, search = Search, category = Category, mode = ConceptMode ? "concept" : null });
         }
-        ViewData["Title"] = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "Choose a design · Pirang Khan", "ar" => "اختر تصميماً · بيرنگ خان", _ => "انتخاب طرح · پیرنگ خان" };
+        ViewData["Title"] = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "Choose a design · Peyrang Khan", "ar" => "اختر تصميماً · بيرنگ خان", _ => "انتخاب طرح · پیرنگ خان" };
         return Page();
     }
 

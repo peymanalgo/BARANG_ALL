@@ -5,7 +5,7 @@
     Layout = null;
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    string Brand() => culture switch { "en" => "Pirang Khan", "ar" => "بيرنگ خان", _ => "پیرنگ خان" };
+    string Brand() => culture switch { "en" => "Peyrang Khan", "ar" => "بيرنگ خان", _ => "پیرنگ خان" };
     string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
     ViewData["Title"] = T("درگاه پرداخت آزمایشی", "Sandbox payment gateway", "بوابة الدفع التجريبية");
 }
@@ -23,7 +23,7 @@
             <span class="gateway-mark" aria-hidden="true">⚡</span>
             <div>
                 <strong>@T("درگاه پرداخت اینترنتی", "Internet payment gateway", "بوابة الدفع الإلكتروني")</strong>
-                <small>@T("محیط آزمایشی — درگاه تستی پیرنگ خان (نسخه ماک؛ درگاه واقعی بعداً متصل می‌شود).", "Sandbox environment — Pirang Khan test gateway (mock; the real gateway will be connected later).", "بيئة اختبارية — بوابة بيرانج خان التجريبية (نسخة وهمية؛ ستُربط البوابة الحقيقية لاحقاً).")</small>
+                <small>@T("محیط آزمایشی — درگاه تستی پیرنگ خان (نسخه ماک؛ درگاه واقعی بعداً متصل می‌شود).", "Sandbox environment — Peyrang Khan test gateway (mock; the real gateway will be connected later).", "بيئة اختبارية — بوابة بيرانج خان التجريبية (نسخة وهمية؛ ستُربط البوابة الحقيقية لاحقاً).")</small>
             </div>
         </header>
 

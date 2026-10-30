@@ -10,7 +10,7 @@
         return "/language/set?culture=" + c + "&returnUrl=" + Uri.EscapeDataString(target);
     }
     var q = Context.Request.Query["search"].ToString();
-    string Brand() => culture switch { "en" => "Pirang Khan", "ar" => "بيرنگ خان", _ => "پیرنگ خان" };
+    string Brand() => culture switch { "en" => "Peyrang Khan", "ar" => "بيرنگ خان", _ => "پیرنگ خان" };
 
 }
 <!DOCTYPE html>
@@ -117,13 +117,13 @@
         <div>
             <h3>@T("تماس با ما", "Contact", "اتصل بنا")</h3>
             <a href="mailto:salam@pirang.ir">salam@pirang.ir</a>
-            <a href="/about">@T("درباره پیرنگ خان", "About Pirang Khan", "عن پیرنگ خان")</a>
+            <a href="/about">@T("درباره پیرنگ خان", "About Peyrang Khan", "عن پیرنگ خان")</a>
         </div>
     </div>
     <div class="footer-base">
         <div class="container">
             <span>© @Brand() @DateTime.Now.Year</span>
-            <span dir="ltr" class="muted">PIRANG KHAN · B2C</span>
+            <span dir="ltr" class="muted">PEYRANG KHAN · B2C</span>
         </div>
     </div>
 </footer>

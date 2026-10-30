@@ -5,7 +5,7 @@
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     var dir = culture == "en" ? "ltr" : "rtl";
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    string Brand() => culture switch { "en" => "Pirang Khan", "ar" => "بيرنگ خان", _ => "پیرنگ خان" };
+    string Brand() => culture switch { "en" => "Peyrang Khan", "ar" => "بيرنگ خان", _ => "پیرنگ خان" };
     string? Active(string key) => ViewData["PanelActive"] as string == key ? "active" : null;
     var displayName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
     var username = User.FindFirst("barang:username")?.Value ?? User.Identity?.Name ?? "";
