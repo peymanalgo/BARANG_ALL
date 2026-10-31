@@ -378,7 +378,7 @@ else
         SelectedUser = ParseUserDetail(result.Value); EditUsername = SelectedUser.Account.Username; EditEnabled=SelectedUser.Account.State=="Active"; EditingUser=edit&&CanUserAccountEdit; ResetPasswordValue = ResetPasswordConfirm = DetailRoleId = ""; await SearchAssignmentRoles(""); ShowUserDetail = true;
     }
     private void BeginUserEdit(){if(SelectedUser is null||!CanUserAccountEdit)return;EditUsername=SelectedUser.Account.Username;EditEnabled=SelectedUser.Account.State=="Active";EditingUser=true;}
-    private void CancelUserEdit(){if(SelectedUser is null)return;EditUsername=SelectedUser.Account.Username;EditEnabled=SelectedUser.Account.State=="Active";EditingUser=false;}
+    private void CancelUserEdit(){CloseDialogs();}
     private async Task SaveUserAccount()
     {
         if(SelectedUser is null||!CanUserAccountEdit||string.IsNullOrWhiteSpace(EditUsername))return;
