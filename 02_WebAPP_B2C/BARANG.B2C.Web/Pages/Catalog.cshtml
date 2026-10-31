@@ -107,10 +107,7 @@
                             }
                         </span>
                     </a>
-                    <button type="button" class="preview-shirt-btn"
-                            data-design='@System.Text.Json.JsonSerializer.Serialize(new { id = d.Id.ToString(), title = d.Title, thumb = d.Thumbnail })'>
-                        @T("تیشرتت رو ببین", "See it on a t-shirt", "شاهدها على التيشرت")
-                    </button>
+
                     @if (Model.IsAuthenticated)
                     {
                         <form method="post" asp-page="/Account/Favorites" asp-page-handler="Toggle" class="fav-heart-form">

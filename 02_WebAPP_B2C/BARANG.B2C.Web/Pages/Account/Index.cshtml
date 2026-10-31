@@ -111,7 +111,7 @@
                         <div class="fav-grid">
                             @foreach (var f in Model.Favorites)
                             {
-                                <a class="fav-item" href="/design/@f.ArtworkId" title="@f.Title" data-preview-card='@System.Text.Json.JsonSerializer.Serialize(new { id = f.ArtworkId.ToString(), title = f.Title, thumb = f.ThumbnailUrl })'>
+                                <a class="fav-item" href="/design/@f.ArtworkId" title="@f.Title">
                                     @if (!string.IsNullOrWhiteSpace(f.ThumbnailUrl))
                                     {
                                         <img src="@f.ThumbnailUrl" alt="@f.Title" loading="lazy" />
@@ -232,7 +232,7 @@
                     @foreach (var o in Model.Offers)
                     {
                         <a class="offer-item" href="/order/select?design=@o.Id"
-                           data-preview-card='@System.Text.Json.JsonSerializer.Serialize(new { id = o.Id.ToString(), title = o.Title, thumb = o.ThumbnailUrl })'>
+                          >
                             @if (!string.IsNullOrWhiteSpace(o.ThumbnailUrl))
                             {
                                 <img src="@o.ThumbnailUrl" alt="@o.Title" loading="lazy" />

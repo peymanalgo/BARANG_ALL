@@ -63,10 +63,7 @@ else
                     <p class="design-desc">@Model.Description</p>
                 }
                 <div class="design-cta">
-                    <button type="button" class="btn btn-primary btn-lg preview-shirt-btn"
-                            data-design='@System.Text.Json.JsonSerializer.Serialize(new { id = Model.Id.ToString(), title = Model.Title, thumb = Model.Thumbnail })'>
-                        @T("سفارش این طرح", "Order this design", "اطلب هذا التصميم")
-                    </button>
+                    <a class="btn btn-primary btn-lg" href="/">@T("شروع طراحی تیشرت", "Start designing", "ابدأ التصميم")</a>
                     <a class="btn btn-ghost" href="/catalog">@T("طرح‌های دیگر", "Other designs", "تصاميم أخرى")</a>
                 </div>
                 <ul class="design-notes">

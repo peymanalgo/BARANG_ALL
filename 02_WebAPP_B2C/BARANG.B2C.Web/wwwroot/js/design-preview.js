@@ -1,11 +1,8 @@
-// پیش‌نمایش «تیشرتت رو ببین» — مودال مشترک روی کارت‌های طرح.
-// موتور ترکیب: طرح (با حذف پس‌زمینه) روی عکس واقعی تیشرت در canvas کشیده می‌شود.
-// - انتخاب رنگ تیشرت: عکس تیشرت همان رنگ (سفید/مشکی/قرمز/آبی)
-// - انتخاب رنگ طرح: «رنگ واقعی طرح» یا هر رنگ دیگر (سیلوئت تک‌رنگ)
-// - محل قرار گرفتن تصویر: جلو وسط/بالا/پایین، پشت وسط/بالا/پایین، آستین چپ/راست
-//   (کدهای محل چاپ فرم سفارش Core) — محل‌های پشت، تیشرت را به نمای پشت (یقه کوچکتر) می‌برند
-// - طرح قابل درگ است؛ هنگام شروع سفارش چک می‌شود کل تصویر روی تیشرت باشد
-// - شروع سفارش: انتخاب‌ها در کوکی barang.preview و ورود مستقیم به مرحله تیشرت ویزارد
+// پنجره «طراحی تیشرت» — نقطه ورود واحد ثبت سفارش.
+// فقط از دو دکمه صفحه اصلی («شروع طراحی تیشرت» و «شروع کن» در بنر اولین سفارش)
+// باز می‌شود. کاربر داخل پنجره طرح را انتخاب می‌کند، رنگ تیشرت و رنگ طرح و
+// محل قرار گرفتن تصویر را تنظیم می‌کند، طرح را می‌کشد و با «شروع سفارش»
+// وارد مرحله تیشرت ویزارد می‌شود (مرحله «انتخاب طرح» در ویزارد وجود ندارد).
 (() => {
     const ShirtColors = [
         { name: "سفید", en: "white", img: "/images/shirts/white.jpg" },
@@ -35,14 +32,16 @@
         { code: "SLEEVE_RIGHT", name: "آستین راست", view: "front", core: "SLEEVE", zone: { x: 0.80, y: 0.28, w: 0.15, h: 0.19 }, allowed: { x: 0.78, y: 0.25, w: 0.19, h: 0.24 } }
     ];
     const T = {
-        title: "تیشرتت رو ببین",
-        shirtColor: "انتخاب رنگ تیشرت",
-        designColor: "انتخاب رنگ طرح",
-        placement: "محل قرار گرفتن تصویر",
+        title: "طراحی تیشرت",
+        pickDesign: "۱. طرح خود را انتخاب کنید",
+        placement: "۲. محل قرار گرفتن تصویر",
+        shirtColor: "۳. انتخاب رنگ تیشرت",
+        designColor: "۴. انتخاب رنگ طرح",
         start: "شروع سفارش",
         close: "بستن",
         previewAlt: "طرح روی تیشرت",
-        offShirt: "لطفاً تصویر را کاملاً بر روی تیشرت قرار دهید."
+        offShirt: "لطفاً تصویر را کاملاً بر روی تیشرت قرار دهید.",
+        pickFirst: "اول یک طرح انتخاب کنید."
     };
     const CanvasSize = 640;
 
@@ -57,14 +56,20 @@
         <div class="dpv-modal" role="dialog" aria-modal="true" aria-label="${T.title}">
             <button type="button" class="dpv-close" aria-label="${T.close}">×</button>
             <h3 class="dpv-title">${T.title} <span class="dpv-design-name"></span></h3>
-            <div class="dpv-stage">
+            <div class="dpv-picker" hidden>
+                <p class="dpv-picker-hint">${T.pickDesign}</p>
+                <div class="dpv-picker-grid"></div>
+            </div>
+            <div class="dpv-stage" hidden>
                 <canvas class="dpv-canvas" width="${CanvasSize}" height="${CanvasSize}" aria-label="${T.previewAlt}" role="img"></canvas>
             </div>
             <div class="dpv-error" hidden role="alert"></div>
-            <div class="dpv-row"><span class="dpv-label">${T.placement}:</span><div class="dpv-chips dpv-placements"></div></div>
-            <div class="dpv-row"><span class="dpv-label">${T.shirtColor}:</span><div class="dpv-swatches dpv-shirt-colors"></div></div>
-            <div class="dpv-row"><span class="dpv-label">${T.designColor}:</span><div class="dpv-swatches dpv-design-colors"></div></div>
-            <button type="button" class="btn btn-primary btn-lg btn-block dpv-start">${T.start}</button>
+            <div class="dpv-config" hidden>
+                <div class="dpv-row"><span class="dpv-label">${T.placement}:</span><div class="dpv-chips dpv-placements"></div></div>
+                <div class="dpv-row"><span class="dpv-label">${T.shirtColor}:</span><div class="dpv-swatches dpv-shirt-colors"></div></div>
+                <div class="dpv-row"><span class="dpv-label">${T.designColor}:</span><div class="dpv-swatches dpv-design-colors"></div></div>
+                <button type="button" class="btn btn-primary btn-lg btn-block dpv-start">${T.start}</button>
+            </div>
         </div>`;
         document.body.appendChild(root);
         root.querySelector(".dpv-close").addEventListener("click", close);
@@ -175,12 +180,12 @@
         const canvas = root.querySelector(".dpv-canvas");
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, CanvasSize, CanvasSize);
-        if (!current) return;
+        if (!current || !current.thumb) return;
         const picked = pickedPlacement();
         const shirtImg = await loadImage(current.shirtImg).catch(() => null);
         if (token !== renderToken) return;
         if (shirtImg) ctx.drawImage(shirtImg, 0, 0, CanvasSize, CanvasSize);
-        const cut = await getDesignCut(current.thumb || "");
+        const cut = await getDesignCut(current.thumb);
         if (!cut || token !== renderToken) return;
         const designSwatch = root.querySelector(".dpv-design-colors .picked");
         const useTint = designSwatch && designSwatch.dataset.hex;
@@ -269,7 +274,7 @@
         e.preventDefault();
         hideError();
         current.drag = { ox: p.x - r.x, oy: p.y - r.y };
-        try { e.target.setPointerCapture(e.pointerId); } catch { /* اشاره‌گر مصنوعی/آزادشده */ }
+        try { e.target.setPointerCapture(e.pointerId); } catch { /* اشاره‌گر مصنوعی */ }
         e.target.style.cursor = "grabbing";
     }
 
@@ -292,13 +297,21 @@
         }
     }
 
-    async function open(data) {
-        current = { ...data, addto: data.addto || "", colorImg: ShirtColors[0].img, placement: "FRONT_CENTER" };
+    function setMode(mode) {
+        // "picker": انتخاب طرح | "design": طرح انتخاب شده، تیشرت و تنظیمات
+        root.querySelector(".dpv-picker").hidden = mode !== "picker";
+        root.querySelector(".dpv-stage").hidden = mode !== "design";
+        root.querySelector(".dpv-config").hidden = mode !== "design";
+    }
+
+    // ورود به پنجره: با فهرست طرح‌ها (حالت انتخاب) یا یک طرح مشخص
+    async function open(designs, addto) {
+        current = { list: designs || [], addto: addto || "", colorImg: ShirtColors[0].img, placement: "FRONT_CENTER" };
         const r = ensureRoot();
         updateShirtImage();
         r.classList.add("open");
         document.body.style.overflow = "hidden";
-        r.querySelector(".dpv-design-name").textContent = data.title ? `— ${data.title}` : "";
+        r.querySelector(".dpv-design-name").textContent = "";
         hideError();
         const shirtBox = r.querySelector(".dpv-shirt-colors");
         const designBox = r.querySelector(".dpv-design-colors");
@@ -318,7 +331,39 @@
             if (i === 0) b.classList.add("picked");
             placementBox.appendChild(b);
         });
-        render();
+        if (current.list.length > 0) {
+            const grid = r.querySelector(".dpv-picker-grid");
+            grid.innerHTML = "";
+            for (const d of current.list) {
+                const item = document.createElement("button");
+                item.type = "button";
+                item.className = "dpv-picker-item";
+                const img = document.createElement("img");
+                img.src = d.thumb || "";
+                img.alt = d.title || "";
+                img.loading = "lazy";
+                item.appendChild(img);
+                const label = document.createElement("span");
+                label.textContent = d.title || "";
+                item.appendChild(label);
+                item.addEventListener("click", () => selectDesign(d));
+                grid.appendChild(item);
+            }
+            setMode("picker");
+        } else {
+            setMode("design");
+            await render();
+        }
+    }
+
+    async function selectDesign(d) {
+        current.id = d.id;
+        current.title = d.title || "";
+        current.thumb = d.thumb || "";
+        root.querySelector(".dpv-design-name").textContent = current.title ? `— ${current.title}` : "";
+        hideError();
+        setMode("design");
+        await render();
     }
 
     function close() {
@@ -328,7 +373,7 @@
     }
 
     function startOrder() {
-        if (!current) return;
+        if (!current || !current.thumb) return;
         // اعتبارسنجی: کل تصویر باید داخل ناحیه مجازِ محل انتخابی روی تیشرت باشد
         const picked = pickedPlacement();
         const r = current.rect;
@@ -363,26 +408,15 @@
         location.href = `/order/shirt/${current.id}` + addto;
     }
 
+    // تنها ورودهای پنجره: دکمه‌های «شروع طراحی تیشرت» و «شروع کن» صفحه اصلی
     document.addEventListener("click", (e) => {
-        const btn = e.target.closest(".preview-shirt-btn");
+        const btn = e.target.closest(".start-design-btn");
         if (!btn) return;
         e.preventDefault();
         e.stopPropagation();
-        let data = {};
-        try { data = JSON.parse(btn.dataset.design || "{}"); } catch { data = {}; }
-        open(data);
-    });
-
-    // هر جا کاربر قصد شروع سفارش از روی یک طرح را دارد (کارت‌های data-preview-card)
-    // اول این پاپ‌آپ باز می‌شود؛ ورود مستقیم به ویزارد ممکن نیست.
-    document.addEventListener("click", (e) => {
-        const card = e.target.closest("[data-preview-card]");
-        if (!card) return;
-        e.preventDefault();
-        e.stopPropagation();
-        let data = {};
-        try { data = JSON.parse(card.dataset.previewCard || "{}"); } catch { data = {}; }
-        open(data);
+        let designs = [];
+        try { designs = JSON.parse(btn.dataset.designs || "[]"); } catch { designs = []; }
+        open(designs, btn.dataset.addto || "");
     });
 
     document.addEventListener("click", (e) => {

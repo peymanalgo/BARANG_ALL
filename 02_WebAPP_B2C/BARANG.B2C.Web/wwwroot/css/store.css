@@ -870,3 +870,10 @@ html[dir="ltr"] .hero2-inner::before { background: linear-gradient(90deg, rgba(1
 .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.1rem; margin-top: 1.4rem; }
 .contact-card h2 { font-size: 1.05rem; margin-bottom: .6rem; }
 .contact-card p { margin-bottom: .45rem; line-height: 1.9; }
+/* انتخابگر طرح داخل پنجره «طراحی تیشرت» */
+.dpv-picker-hint { font-weight: 800; margin: 0 0 .7rem; }
+.dpv-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .8rem; max-height: 46vh; overflow: auto; padding: 2px; }
+.dpv-picker-item { display: flex; flex-direction: column; align-items: center; gap: .4rem; padding: .5rem; border: 2px solid var(--border, #e5e8f0); border-radius: 12px; background: var(--surface); cursor: pointer; font: inherit; }
+.dpv-picker-item img { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.dpv-picker-item span { font-size: .78rem; color: var(--text-2); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.dpv-picker-item:hover { border-color: var(--primary); }

@@ -31,7 +31,7 @@
             @foreach (var f in Model.Items)
             {
                 <div class="fav-card">
-                    <a href="/design/@f.ArtworkId" class="fav-card-media" data-preview-card='@System.Text.Json.JsonSerializer.Serialize(new { id = f.ArtworkId.ToString(), title = f.Title, thumb = f.ThumbnailUrl })'>
+                    <a href="/design/@f.ArtworkId" class="fav-card-media">
                         @if (!string.IsNullOrWhiteSpace(f.ThumbnailUrl))
                         {
                             <img src="@f.ThumbnailUrl" alt="@f.Title" loading="lazy" />
@@ -49,7 +49,7 @@
                     <div class="fav-card-body">
                         <strong class="fav-card-title">@f.Title</strong>
                         <small class="muted">@Date(f.CreatedAtUtc)</small>
-                        <button type="button" class="btn btn-primary btn-sm preview-shirt-btn" style="width:auto;display:inline-flex" data-design='@System.Text.Json.JsonSerializer.Serialize(new { id = f.ArtworkId.ToString(), title = f.Title, thumb = f.ThumbnailUrl })'>@T("تیشرتت رو ببین", "See it on a t-shirt", "شاهدها على التيشرت")</button>
+    
                     </div>
                 </div>
             }

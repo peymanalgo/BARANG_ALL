@@ -31,6 +31,7 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
     public WalletPaymentInfo? WalletPayment { get; private set; }
     public string? Paid { get; private set; }
     public string? PayError { get; private set; }
+    public IReadOnlyList<object> PickerDesigns { get; private set; } = [];
 
     public sealed record WalletPaymentInfo(string? OrderNumber, string OrderStatus, string CurrencyCode, decimal Total, decimal Paid, decimal Remaining, decimal WalletBalance, bool FullyPaid);
 
