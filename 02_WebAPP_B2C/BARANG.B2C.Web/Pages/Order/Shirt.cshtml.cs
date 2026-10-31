@@ -55,7 +55,11 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
         JsonElement? customer = await customers.CurrentAsync();
         if (customer is not JsonElement c || c.ValueKind != JsonValueKind.Object || !c.TryGetProperty("id", out JsonElement cid))
         {
-            return RedirectToPage("/Account/Index", new { error = "noprofile" });
+            // مهمان: اول وارد شود و دقیقاً از همین مرحله سفارش ادامه دهد
+            string returnUrl = Request.Path + Request.QueryString;
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToPage("/Account/CompleteProfile", new { returnUrl });
+            return RedirectToPage("/Account/Login", new { returnUrl });
         }
         HasProfile = true;
         string customerId = cid.GetString() ?? "";
@@ -130,7 +134,10 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
         JsonElement? customer = await customers.CurrentAsync();
         if (customer is not JsonElement c || c.ValueKind != JsonValueKind.Object || !c.TryGetProperty("id", out JsonElement cid))
         {
-            return RedirectToPage("/Account/Index", new { error = "noprofile" });
+            string returnUrl = Uri.EscapeDataString($"/order/shirt/{designId}?addToOrderId={addToOrderId}");
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToPage("/Account/CompleteProfile", new { returnUrl });
+            return RedirectToPage("/Account/Login", new { returnUrl });
         }
         if (VariantId is null || Quantity <= 0)
         {

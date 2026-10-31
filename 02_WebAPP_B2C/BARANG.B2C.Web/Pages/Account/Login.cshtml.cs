@@ -81,8 +81,11 @@ public sealed class LoginModel(CoreApiClient core, CustomerContext customers) : 
             return Page();
         }
         // First login with an incomplete account: force profile completion.
-        if (await customers.CurrentAsync() is null)
-            return LocalRedirect("/account/complete-profile");
+        // پروفایل مشتری هنوز ساخته نشده: تکمیل اجباری اطلاعات، و بعد ادامه همان مسیر
+        string profileTarget = "/account/complete-profile"
+            + (string.IsNullOrWhiteSpace(ReturnUrl) ? "" : "?returnUrl=" + Uri.EscapeDataString(ReturnUrl));
+        var profile = await customers.CurrentAsync();
+        if (profile is null) return LocalRedirect(profileTarget);
         return LocalRedirect(string.IsNullOrWhiteSpace(ReturnUrl) ? "/account" : ReturnUrl);
     }
 

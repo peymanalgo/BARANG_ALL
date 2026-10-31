@@ -219,6 +219,9 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
         HttpContext? context = accessor.HttpContext;
         if (context is null) return new(false, "no_context");
         await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties { IsPersistent = true, ExpiresUtc = DateTimeOffset.UtcNow.AddHours(12) });
+        // SignInAsync کوکی را می‌نویسد ولی HttpContext.User را در همین درخواست عوض نمی‌کند؛
+        // بدون این، فراخوانی‌های API در همین ریکوئست (مثل خواندن پروفایل بعد از ورود) بدون توکن می‌روند
+        context.User = principal;
         return new(true, null);
     }
 

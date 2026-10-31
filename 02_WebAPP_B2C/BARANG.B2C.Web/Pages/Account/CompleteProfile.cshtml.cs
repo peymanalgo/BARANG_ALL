@@ -33,6 +33,7 @@ public sealed class CompleteProfileModel(CoreApiClient core, CustomerContext cus
     [BindProperty] public string Email { get; set; } = "";
 
     public string? Error { get; private set; }
+    [BindProperty(SupportsGet = true)] public string? ReturnUrl { get; set; }
     public bool Saved { get; private set; }
     public bool IsJalali { get; private set; }
     public string? BirthPlaceholder { get; private set; }
@@ -120,8 +121,11 @@ public sealed class CompleteProfileModel(CoreApiClient core, CustomerContext cus
                 Response.Cookies.Delete("barang.ref");
             }
         }
-        return RedirectToPage("/Account/Index");
+        // پس از تکمیل اطلاعات، ادامه همان مسیری که کاربر در آن بود
+        return LocalRedirect(SafeReturnUrl() ?? "/account");
     }
+
+    private string? SafeReturnUrl() => Url.IsLocalUrl(ReturnUrl) ? ReturnUrl : null;
 
     // Accepts Jalali (fa) or Gregorian (en/ar) input in yyyy/MM/dd shape and
     // converts the Jalali one via the Persian calendar.
