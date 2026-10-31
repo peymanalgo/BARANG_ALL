@@ -878,9 +878,22 @@ html[dir="ltr"] .hero2-inner::before { background: linear-gradient(90deg, rgba(1
 .dpv-picker-item span { font-size: .78rem; color: var(--text-2); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .dpv-picker-item:hover { border-color: var(--primary); }
 /* صفحه طرح: تصویر تمام‌عرض + مشخصات زیر آن */
-.design-hero { margin: 0 0 1.4rem; background: var(--surface); border: 1px solid var(--border, #e5e8f0); border-radius: var(--radius); padding: 1.2rem; text-align: center; }
-.design-hero img { width: 100%; height: auto; max-height: 78vh; object-fit: contain; display: block; margin-inline: auto; }
-.design-hero figcaption { margin-top: .8rem; font-size: .82rem; }
+/* تصویر طرح: تمام‌صفحه، حفظ نسبت، وسط‌چین */
+.design-detail { overflow-x: clip; }
+.design-hero {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    background: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-height: calc(100vh - 170px);
+    overflow: hidden;
+}
+.design-hero img { max-width: 100%; max-height: calc(100vh - 170px); width: auto; height: auto; object-fit: contain; display: block; }
+.design-hero figcaption { position: absolute; inset-inline-end: 1rem; bottom: .6rem; font-size: .78rem; color: #8b93a3; }
+
+
 .design-specs h1 { margin-bottom: .4rem; }
 .design-specs .design-code { color: var(--text-2, #5b6478); font-size: .85rem; letter-spacing: .04em; margin: 0 0 .5rem; }
 .design-specs .chip { display: inline-block; margin-bottom: .6rem; }
