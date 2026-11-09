@@ -13,7 +13,7 @@
         <div class="hero2-copy reveal">
             <h1 class="hero2-title">@T("تیشرت تو، طرح تو!", "Your shirt, your design!", "قمیصك، تصميمك!")</h1>
             <p class="hero2-accent">@T("هر تصویری که بخوای، روی لباسی که می‌پوشی", "Any image you like, on the clothes you wear", "أي صورة تحبها، على الملابس التي ترتديها")</p>
-            <p class="hero2-sub">@T("در پیرنگ خان، هر طرحی که دوست داری رو روی تیشرتت چاپ کن!", "At Peyrang Khan, print any design you love on your t-shirt!", "في پیرنگ خان، اطبع أي تصميم تحبه على تيشيرتك!")</p>
+            <p class="hero2-sub">@T("در پیرنگ، هر طرحی که دوست داری رو روی تیشرتت چاپ کن!", "At Peyrang, print any design you love on your t-shirt!", "في پیرنگ، اطبع أي تصميم تحبه على تيشيرتك!")</p>
             <div class="hero-actions">
                 <button type="button" class="btn btn-primary btn-lg btn-shine start-design-btn" data-designs='@System.Text.Json.JsonSerializer.Serialize(Model.Featured.Select(d => new { id = d.Id.ToString(), title = d.Title, thumb = d.Thumbnail }))'>@T("شروع طراحی تیشرت ←", "Start designing ←", "ابدأ التصميم ←")</button>
             </div>

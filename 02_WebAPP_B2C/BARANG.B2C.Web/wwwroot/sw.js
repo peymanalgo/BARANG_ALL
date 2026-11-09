@@ -1,7 +1,7 @@
 // پیرنگ — Service Worker
 // استاتیک‌ها: stale-while-revalidate | صفحات: network-first با fallback آفلاین
 // API عمومی کاتالوگ: network-first با کش (مرور آفلاین کاتالوگ)
-const VERSION = "pirang-v1";
+const VERSION = "pirang-v2";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
 const API_CACHE = `${VERSION}-api`;
@@ -30,7 +30,12 @@ self.addEventListener("fetch", (event) => {
     if (url.origin !== location.origin) return;
 
     // صفحات (ناوبری): شبکه اول، fallback آفلاین
+    // صفحات احراز هویت (پنل مشتری) و پرداخت هرگز کش نمی‌شوند — داده شخصی روی دیسک ذخیره نشود
     if (request.mode === "navigate") {
+        if (url.pathname.startsWith("/account") || url.pathname.startsWith("/payment")) {
+            event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
+            return;
+        }
         event.respondWith(
             fetch(request).then((response) => {
                 const copy = response.clone();

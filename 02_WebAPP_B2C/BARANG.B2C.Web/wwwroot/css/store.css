@@ -899,3 +899,26 @@ html[dir="ltr"] .hero2-inner::before { background: linear-gradient(90deg, rgba(1
 .design-specs .chip { display: inline-block; margin-bottom: .6rem; }
 .design-specs .design-desc { line-height: 2; margin: .8rem 0 1rem; }
 .design-specs .design-notes { margin: 0 0 1.2rem; padding-inline-start: 1.2rem; line-height: 2; color: var(--text-2, #5b6478); }
+
+
+/* ---------- PWA: دکمه نصب + راهنمای iOS ---------- */
+.pwa-install-btn {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    z-index: 90; padding: 11px 24px; border: 0; border-radius: 999px;
+    background: var(--primary); color: #fff; font: inherit; font-weight: 700;
+    cursor: pointer; box-shadow: 0 6px 22px rgba(17, 17, 20, .28);
+    animation: pwa-pop .35s ease;
+}
+.pwa-install-btn:hover { background: var(--primary-600); }
+.pwa-install-btn[hidden] { display: none; }
+.pwa-ios-hint {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    z-index: 90; max-width: min(92vw, 440px); padding: 12px 20px; border-radius: 14px;
+    background: #111114; color: #fff; font-size: .85rem; line-height: 2; text-align: center;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, .3); cursor: pointer;
+    animation: pwa-pop .35s ease;
+}
+@keyframes pwa-pop {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

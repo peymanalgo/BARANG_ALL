@@ -5,11 +5,12 @@
   "lang": "fa",
   "dir": "rtl",
   "start_url": "/?source=pwa",
+  "id": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "browser"],
   "orientation": "portrait",
-  "theme_color": "#2b5cff",
+  "theme_color": "#111114",
   "background_color": "#f6f7fb",
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

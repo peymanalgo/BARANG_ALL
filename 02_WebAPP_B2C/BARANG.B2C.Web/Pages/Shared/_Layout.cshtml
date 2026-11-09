@@ -10,7 +10,7 @@
         return "/language/set?culture=" + c + "&returnUrl=" + Uri.EscapeDataString(target);
     }
     var q = Context.Request.Query["search"].ToString();
-    string Brand() => culture switch { "en" => "Peyrang Khan", "ar" => "بيرنگ خان", _ => "پیرنگ خان" };
+    string Brand() => culture switch { "en" => "Peyrang", "ar" => "بيرنگ", _ => "پیرنگ" };
 
 }
 <!DOCTYPE html>
@@ -24,6 +24,8 @@
     <link rel="manifest" href="~/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="~/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="پیرنگ" />
     <meta property="og:type" content="@(ViewData["OgType"] ?? "website")" />
     <meta property="og:site_name" content="@Brand()" />
     <meta property="og:title" content="@(ViewData["Title"] is string ot && ot.Length > 0 ? ot : $"{Brand()} — {T("فروشگاه طرح‌های چاپی", "Print-ready designs store", "متجر التصاميم الجاهزة للطباعة")}")" />
@@ -117,13 +119,13 @@
         <div>
             <h3>@T("تماس با ما", "Contact", "اتصل بنا")</h3>
             <a href="mailto:salam@pirang.ir">salam@pirang.ir</a>
-            <a href="/about">@T("درباره پیرنگ خان", "About Peyrang Khan", "عن پیرنگ خان")</a>
+            <a href="/about">@T("درباره پیرنگ", "About Peyrang", "عن پیرنگ")</a>
         </div>
     </div>
     <div class="footer-base">
         <div class="container">
             <span>© @Brand() @DateTime.Now.Year</span>
-            <span dir="ltr" class="muted">PEYRANG KHAN · B2C</span>
+            <span dir="ltr" class="muted">PEYRANG · B2C</span>
         </div>
     </div>
 </footer>

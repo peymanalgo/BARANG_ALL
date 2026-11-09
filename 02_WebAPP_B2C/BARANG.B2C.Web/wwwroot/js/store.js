@@ -25,12 +25,75 @@
 })();
 
 
-// ثبت Service Worker (PWA)
-if ("serviceWorker" in navigator) {
+// PWA: ثبت Service Worker + دکمه نصب + به‌روزرسانی خودکار
+(() => {
+    if (!("serviceWorker" in navigator)) return;
+
+    let refreshing = false;
+    // فقط وقتی صفحه از قبل تحت کنترل SW است، تحویل نسخه جدید → یک تازه‌سازی
+    // (بازدید اول نباید ری‌لود شود)
+    if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+            if (refreshing) return;
+            refreshing = true;
+            window.location.reload();
+        });
+    }
+
     window.addEventListener("load", () => {
         navigator.serviceWorker.register("/sw.js").catch(() => {});
     });
-}
+
+    // ---- دکمه نصب (اندروید/کروم/اج/دسکتاپ) ----
+    const I18N = {
+        fa: { install: "نصب اپلیکیشن پیرنگ", iosHint: "برای نصب اپ، در سافاری دکمه Share و سپس «Add to Home Screen» را بزنید." },
+        en: { install: "Install the Peyrang app", iosHint: "To install, tap the Share button in Safari, then “Add to Home Screen”." },
+        ar: { install: "ثبّت تطبيق پیرنگ", iosHint: "للتثبيت، اضغط زر المشاركة في سفاري ثم «أضف إلى الشاشة الرئيسية»." }
+    };
+    const lang = (document.documentElement.lang || "fa").slice(0, 2);
+    const t = I18N[lang] || I18N.fa;
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+    if (standalone) return; // داخل اپ نصب‌شده نیازی به دکمه نیست
+
+    let deferredPrompt = null;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pwa-install-btn";
+    btn.hidden = true;
+    btn.textContent = t.install;
+    btn.addEventListener("click", async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === "accepted") localStorage.setItem("pirang-install-done", "1");
+        btn.hidden = true;
+        deferredPrompt = null;
+    });
+    document.body.appendChild(btn);
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+        if (localStorage.getItem("pirang-install-done") === "1") return;
+        e.preventDefault();
+        deferredPrompt = e;
+        btn.hidden = false;
+    });
+    window.addEventListener("appinstalled", () => {
+        localStorage.setItem("pirang-install-done", "1");
+        btn.hidden = true;
+    });
+
+    // iOS سافاری beforeinstallprompt ندارد — راهنمای متنی یک‌باره
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isIos && !localStorage.getItem("pirang-ios-hint")) {
+        const hint = document.createElement("div");
+        hint.className = "pwa-ios-hint";
+        hint.textContent = t.iosHint;
+        const dismiss = () => { hint.remove(); localStorage.setItem("pirang-ios-hint", "1"); };
+        hint.addEventListener("click", dismiss);
+        document.body.appendChild(hint);
+        setTimeout(dismiss, 15000);
+    }
+})();
 // فلش‌های نوار دسته‌ها
 document.querySelectorAll('[data-strip-scroll]').forEach((btn) => {
     btn.addEventListener('click', () => {
