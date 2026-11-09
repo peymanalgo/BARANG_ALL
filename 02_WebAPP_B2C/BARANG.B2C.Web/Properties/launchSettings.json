@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "BARANG.B2C.Web": {
+      "commandName": "Project",
+      "applicationUrl": "http://0.0.0.0:5170",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

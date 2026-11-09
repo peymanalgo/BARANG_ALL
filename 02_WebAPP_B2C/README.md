@@ -11,7 +11,9 @@
 ```
 dotnet run --project BARANG.B2C.Web
 ```
-پیش‌فرض روی http://localhost:5170 بالا می‌آید (پورت از launchSettings). Core API باید روی `CoreApi:BaseUrl` (پیش‌فرض http://localhost:8080) در دسترس باشد.
+پیش‌فرض روی http://localhost:5170 بالا می‌آید (پورت از launchSettings؛ بایند `0.0.0.0` پس از طریق آی‌پی LAN مثل http://192.168.100.34:5170 هم در دسترس است — برای دسترسی از دستگاه‌های دیگر، پورت 5170 در فایروال ویندوز باز باشد). Core API باید روی `CoreApi:BaseUrl` (پیش‌فرض http://localhost:8080) در دسترس باشد.
+
+> اگر exe را مستقیم از `bin\Debug` اجرا می‌کنید، حتماً `ASPNETCORE_ENVIRONMENT=Development` ست باشد؛ در غیر این صورت wwwroot از خروجی build سرو می‌شود که وجود ندارد و CSS/JS خطای 404 می‌دهند.
 
 ## استقرار روی VPS ویندوزی
 1. `dotnet publish BARANG.B2C.Web -c Release -o publish`
