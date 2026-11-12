@@ -348,3 +348,25 @@ button[data-confirm], form[data-confirm] button { cursor: pointer; }
 .invite-text { margin: 0 0 10px; font-size: .76rem; opacity: .92; line-height: 1.7; }
 .invite-stats { display: flex; gap: 14px; margin-top: 9px; font-size: .72rem; opacity: .95; }
 .invite-stats span { background: rgba(255,255,255,.16); border-radius: 8px; padding: 3px 9px; }
+
+
+/* ---------- موبایلی‌سازی پنل: نوار تب پایین تیره + backdrop کشو ---------- */
+.panel-nav-backdrop { display: none; }
+@media (max-width: 760px) {
+    /* نوار تب داخل پنل به تم تیره پنل */
+    .panel-body .mobile-tabbar {
+        background: var(--panel-dark);
+        border-top: 1px solid rgba(255, 255, 255, .09);
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, .45);
+    }
+    .panel-body .mobile-tabbar a { color: #9d9db0; }
+    .panel-body .mobile-tabbar a.active { color: var(--panel-orange); }
+    /* backdrop: با لمس بیرون کشو، منو بسته می‌شود */
+    .panel-body.nav-open .panel-nav-backdrop {
+        display: block; position: fixed; inset: 0; z-index: 45;
+        background: rgba(0, 0, 0, .55); cursor: pointer;
+    }
+    /* محتوای پنل و انتهای کشو زیر نوار تب گم نشوند */
+    .panel-content { padding-bottom: 96px; }
+    .panel-sidebar { padding-bottom: 84px; }
+}

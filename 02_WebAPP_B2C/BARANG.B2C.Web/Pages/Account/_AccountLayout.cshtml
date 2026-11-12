@@ -7,6 +7,7 @@
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     string Brand() => culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", _ => "پی‌رنگ خان" };
     string? Active(string key) => ViewData["PanelActive"] as string == key ? "active" : null;
+    var route = (Context.Request.Path.Value ?? "/").Trim('/');
     var displayName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
     var username = User.FindFirst("barang:username")?.Value ?? User.Identity?.Name ?? "";
     var initial = string.IsNullOrWhiteSpace(displayName) ? "ک" : displayName.Trim()[0].ToString();
@@ -16,7 +17,7 @@
 <html lang="@culture" dir="@dir">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>@(ViewData["Title"] is string t && t.Length > 0 ? $"{t} · {Brand()}" : Brand())</title>
     <meta name="theme-color" content="#15151b" />
     <link rel="manifest" href="~/manifest.webmanifest" />
@@ -25,6 +26,7 @@
     <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true" />
 </head>
 <body class="panel-body">
+<label for="panelNavToggle" class="panel-nav-backdrop" aria-hidden="true"></label>
 <div class="panel-shell">
     <aside class="panel-sidebar" id="panelSidebar">
         <a class="panel-brand" href="/">
@@ -140,5 +142,25 @@
         });
     });
 </script>
+
+@* ---------- نوار تب پایین پنل (تجربه اپ موبایلی) ---------- *@
+<nav class="mobile-tabbar" aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية")">
+    <a href="/">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+        <span>@T("خانه", "Home", "الرئيسية")</span>
+    </a>
+    <a href="/catalog" class="@(route.StartsWith("catalog") || route.StartsWith("design") ? "active" : null)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"/></svg>
+        <span>@T("طرح‌ها", "Designs", "التصاميم")</span>
+    </a>
+    <a href="/account/orders" class="@(route.StartsWith("account/orders") ? "active" : null)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l1.2 12.2a1.5 1.5 0 0 1-1.5 1.8H6.3a1.5 1.5 0 0 1-1.5-1.8L6 7z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg>
+        <span>@T("سفارش‌ها", "Orders", "طلباتي")</span>
+    </a>
+    <a href="/account" class="@(route.StartsWith("account") && !route.StartsWith("account/orders") ? "active" : null)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.6 4.5-5.5 8-5.5s6.5 1.9 8 5.5"/></svg>
+        <span>@T("حساب", "Account", "حسابي")</span>
+    </a>
+</nav>
 </body>
 </html>
