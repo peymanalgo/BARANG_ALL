@@ -595,7 +595,7 @@ html[dir="ltr"] .order-go { transform: scaleX(-1); }
 
 /* ---------- print ---------- */
 @media print {
-    .store-header, .store-footer, .no-print, .breadcrumbs, .wizard-steps, .hero-scroll { display: none !important; }
+    .store-header, .store-footer, .no-print, .breadcrumbs, .wizard-steps, .hero-scroll, .mobile-tabbar { display: none !important; }
     body { background: #fff; }
     .card, .shipment-mini { box-shadow: none !important; border-color: #ddd !important; break-inside: avoid; }
     .store-main { padding: 0; }
@@ -961,4 +961,34 @@ a.brand .brand-name { color: var(--text); }
 @media (max-width: 560px) {
     .brand-logo { height: 32px; }
     .mascot-img { height: 170px; }
+}
+
+
+/* ---------- نوار تب پایین موبایل (تجربه اپ) ---------- */
+.mobile-tabbar { display: none; }
+@media (max-width: 760px) {
+    /* منوی بالایی در موبایل حذف می‌شود — نوار تب پایین جایگزین آن است */
+    .store-header .main-nav { display: none; }
+    .mobile-tabbar {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 80;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        box-shadow: 0 -6px 24px rgba(19, 26, 42, .08);
+        padding: 5px 6px calc(5px + env(safe-area-inset-bottom, 0px));
+    }
+    .mobile-tabbar a {
+        display: flex; flex-direction: column; align-items: center; gap: 3px;
+        padding: 7px 0 5px; border-radius: 12px; text-decoration: none;
+        -webkit-tap-highlight-color: transparent;
+        color: var(--text-2); font-size: .68rem; font-weight: 700;
+        transition: color .15s ease;
+    }
+    .mobile-tabbar a svg { opacity: .8; }
+    .mobile-tabbar a.active { color: var(--primary); }
+    .mobile-tabbar a.active svg { opacity: 1; }
+    /* جای نوار در انتهای صفحه */
+    body { padding-bottom: 76px; }
+    /* دکمه نصب PWA نباید زیر نوار برود */
+    .pwa-install-btn, .pwa-ios-hint { bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
 }
