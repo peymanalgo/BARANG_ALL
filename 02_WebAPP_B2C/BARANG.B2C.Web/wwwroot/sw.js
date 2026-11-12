@@ -1,7 +1,7 @@
 // پی‌رنگ — Service Worker
 // استاتیک‌ها: stale-while-revalidate | صفحات: network-first با fallback آفلاین
 // API عمومی کاتالوگ: network-first با کش (مرور آفلاین کاتالوگ)
-const VERSION = "pirang-v2";
+const VERSION = "pirang-v3";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
 const API_CACHE = `${VERSION}-api`;

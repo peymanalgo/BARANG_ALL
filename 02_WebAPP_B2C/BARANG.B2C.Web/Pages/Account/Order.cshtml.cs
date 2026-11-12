@@ -76,7 +76,7 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
                 w.TryGetProperty("walletBalance", out JsonElement wba) && wba.TryGetDecimal(out decimal wbal) ? wbal : 0,
                 w.TryGetProperty("fullyPaid", out JsonElement wfu) && wfu.ValueKind == JsonValueKind.True);
         }
-        ViewData["Title"] = $"{OrderNumber ?? "—"} · پی رنگ";
+        ViewData["Title"] = $"{OrderNumber ?? "—"} · پی‌رنگ";
         return Page();
     }
 

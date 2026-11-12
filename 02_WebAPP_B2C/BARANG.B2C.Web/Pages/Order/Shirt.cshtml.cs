@@ -125,7 +125,7 @@ public sealed class ShirtModel(CoreApiClient core, CustomerContext customers) : 
                 x.TryGetProperty("displayName", out JsonElement nm) ? nm.GetString() ?? "" : "")).ToList();
             if (Branches.Count == 1) BranchId ??= Branches[0].Id;
         }
-        ViewData["Title"] = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "Choose a t-shirt · Peyrang", "ar" => "اختر تيشيرت · بي رنگ", _ => "انتخاب تیشرت · پی رنگ" };
+        ViewData["Title"] = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "Choose a t-shirt · Peyrang", "ar" => "اختر تيشيرت · بي رنگ", _ => "انتخاب تیشرت · پی‌رنگ" };
         return Page();
     }
 
