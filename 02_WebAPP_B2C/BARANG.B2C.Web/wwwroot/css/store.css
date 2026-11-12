@@ -632,7 +632,7 @@ html[dir="ltr"] .order-go { transform: scaleX(-1); }
     .status-lg { font-size: .8rem; padding: .22rem .6rem; }
 }
 
-/* ---------- mascot band (پیرنگ‌خان) ---------- */
+/* ---------- mascot band (پی رنگ‌خان) ---------- */
 .mascot-band { display: flex; align-items: center; gap: 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 1.2rem 1.4rem; box-shadow: var(--shadow); margin-top: .6rem; }
 .mascot-img { width: 130px; height: 130px; flex: none; filter: drop-shadow(0 10px 18px rgba(19,26,42,.18)); animation: floaty 6s ease-in-out infinite; }
 .mascot-bubble { position: relative; background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent); border-radius: 16px; padding: .9rem 1.2rem; flex: 1; }
@@ -642,7 +642,7 @@ html[dir="ltr"] .mascot-bubble::before { transform: translateY(-50%) rotate(-135
 .mascot-bubble p { margin: .25rem 0 0; font-size: .95rem; color: var(--text); }
 @media (max-width: 560px) { .mascot-band { flex-direction: column; text-align: center; } .mascot-bubble::before { display: none; } }
 /* ============================================================
-   THEME V2 — پیرنگ خان (orange / cream / dark) per mockups
+   THEME V2 — پی رنگ خان (orange / cream / dark) per mockups
    ============================================================ */
 :root {
     --primary: #f97316;
@@ -958,7 +958,7 @@ a.brand .brand-name { color: var(--text); }
 .footer-brand-logo { height: 32px; width: auto; border-radius: 6px; }
 .footer-slogan { margin: .4rem 0 0; font-weight: 800; color: var(--primary); font-size: .95rem; }
 
-/* شخصیت پیرنگ خان — تصویر عمودی با پس‌زمینه سفید؛ داخل قاب گرد */
+/* شخصیت پی رنگ خان — تصویر عمودی با پس‌زمینه سفید؛ داخل قاب گرد */
 .mascot-img { width: auto; height: 210px; filter: none; border-radius: 18px; border: 4px solid var(--surface); box-shadow: 0 14px 30px rgba(19, 26, 42, .22); background: var(--surface); }
 
 @media (max-width: 560px) {

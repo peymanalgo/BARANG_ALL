@@ -84,7 +84,7 @@ public sealed class ReviewModel(CoreApiClient core, CustomerContext customers) :
                 Code: x.TryGetProperty("code", out JsonElement c) ? c.GetString() ?? "" : "",
                 Field: x.TryGetProperty("field", out JsonElement fl) ? fl.GetString() : null)).ToList();
         }
-        ViewData["Title"] = "قیمت و تأیید · پیرنگ";
+        ViewData["Title"] = "قیمت و تأیید · پی رنگ";
         return Page();
     }
 

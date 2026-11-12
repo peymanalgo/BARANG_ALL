@@ -3,7 +3,7 @@
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    ViewData["Title"] = T("ثبت‌نام در پیرنگ", "Create your account", "إنشاء حساب");
+    ViewData["Title"] = T("ثبت‌نام در پی رنگ", "Create your account", "إنشاء حساب");
 }
 <section class="container section auth-section">
     <div class="auth-card">
