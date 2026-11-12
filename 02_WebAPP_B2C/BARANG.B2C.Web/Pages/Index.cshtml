@@ -132,12 +132,3 @@
     </div>
 </section>
 
-@* ---------- CTA ---------- *@
-<section class="container section">
-    <div class="cta-band reveal">
-        <div class="cta-blobs" aria-hidden="true"><span></span><span></span><span></span></div>
-        <h2>@T("امروز اولین سفارشت را بزن", "Start your first order today", "ابدأ طلبك الأول اليوم")</h2>
-        <p>@T("از صدها طرح آماده شروع کن؛ ثبت سفارش کمتر از ۵ دقیقه است.", "Start from hundreds of ready designs; ordering takes under 5 minutes.", "ابدأ من مئات التصاميم الجاهزة؛ الطلب أقل من ٥ دقائق.")</p>
-        <button type="button" class="btn btn-lg cta-btn start-design-btn" data-designs='@System.Text.Json.JsonSerializer.Serialize(Model.Featured.Select(d => new { id = d.Id.ToString(), title = d.Title, thumb = d.Thumbnail }))'>@T("شروع کن", "Get started", "ابدأ الآن")</button>
-    </div>
-</section>
