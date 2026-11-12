@@ -655,44 +655,37 @@ html[dir="ltr"] .mascot-bubble::before { transform: translateY(-50%) rotate(-135
     --text: #191512;
     --text-2: #6b6257;
     --muted: #9a9184;
-    --header-bg: #111114;
+    --header-bg: #ffffff;
     --radius: 16px;
 }
 .brand-crown { color: var(--primary); display: inline-grid; place-items: center; }
-.brand-name { font-weight: 900; font-size: 1.25rem; color: #fff; letter-spacing: .01em; }
+.brand-name { font-weight: 900; font-size: 1.25rem; color: var(--text); letter-spacing: .01em; }
 a.brand { display: inline-flex; align-items: center; gap: .5rem; }
-a.brand .brand-name { color: #fff; }
+a.brand .brand-name { color: var(--text); }
 .store-header {
     background: var(--header-bg);
-    border-bottom: 1px solid #26262c;
+    border-bottom: 1px solid var(--border);
     box-shadow: none;
 }
-.store-header.scrolled { box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.store-header.scrolled { box-shadow: var(--shadow); }
 .main-nav { display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; }
 .header-inner .header-actions { margin-inline-start: auto; }
-.main-nav a { color: #c9c9d2; font-size: .9rem; font-weight: 650; padding: .3rem 0; position: relative; }
-.main-nav a:hover { color: #fff; }
+.main-nav a { color: var(--text-2); font-size: .9rem; font-weight: 650; padding: .3rem 0; position: relative; }
+.main-nav a:hover { color: var(--text); }
 .main-nav a.active { color: var(--primary); }
 .main-nav a.active::after { content: ""; position: absolute; inset-inline: 0; bottom: -6px; height: 3px; border-radius: 3px; background: var(--primary); }
-.header-search { background: #1d1d22; border: 1px solid #2c2c33; max-width: 430px; }
-.header-search input { color: #e7e9f2; }
-.header-search input::placeholder { color: #8b8b96; }
+.header-search { background: var(--surface-2); border: 1px solid var(--border); max-width: 430px; }
+.header-search input { color: var(--text); }
+.header-search input::placeholder { color: var(--muted); }
 .header-search:focus-within { background: #232329; border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent); }
 .header-search button { color: #fff; background: var(--primary); margin: 3px; border-radius: 999px; }
-.icon-btn { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; color: #e7e9f2; background: #1d1d22; border: 1px solid #2c2c33; }
+.icon-btn { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; color: var(--text-2); background: transparent; border: 1px solid var(--border); }
 .icon-btn:hover { color: var(--primary); border-color: var(--primary); }
 .header-actions .btn-primary { border-radius: 999px; }
 
 /* hero v2 — dark */
 .hero2 { position: relative; overflow: hidden; background: linear-gradient(160deg, #17181d 0%, #232019 55%, #191a20 100%); }
 .hero2-inner { position: relative; z-index: 2; padding: 4.5rem 0 4rem; display: flex; justify-content: flex-start; }
-.hero2-copy { max-width: 560px; }
-.hero2-title { color: #fff; font-size: clamp(2rem, 5vw, 3.3rem); font-weight: 950; line-height: 1.2; margin: 0 0 .3rem; }
-.hero2-accent { color: var(--primary); font-size: clamp(1.5rem, 3.6vw, 2.4rem); font-weight: 900; margin: 0 0 .8rem; }
-.hero2-sub { color: #b9bdc9; font-size: 1.02rem; max-width: 50ch; }
-.hero2 .hero-actions { margin-top: 1.6rem; }
-.hero2 .btn-primary { background: var(--primary); }
-.hero2 .btn-primary:hover { background: var(--primary-600); }
 .features2 { background: #17181d; border-bottom: 1px solid #26262c; padding: 1.1rem 0 1.6rem; position: relative; z-index: 2; }
 .features2-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .6rem 1.6rem; }
 .feat2 { text-align: center; color: #d7d9e2; font-size: .9rem; font-weight: 700; padding: .55rem .4rem; border: 1.5px solid #3a3b42; border-radius: 12px; }
@@ -784,18 +777,50 @@ a.brand .brand-name { color: #fff; }
 .hs-go:hover { filter: brightness(1.08); transform: translateY(-1px); }
 [dir="rtl"] .hs-field { padding: 6px 18px 6px 8px; }
 
-/* ---------- hero: photo pinned inside the container, exactly under the search bar ---------- */
+/* ---------- hero: عکس تیشرت‌ها (۷۵٪ عرض) + جستجوی شیشه‌ای تمام‌عرض ---------- */
 .hero2 { min-height: 0; display: block; }
-.hero2-inner { position: relative; display: block; padding-top: 0; padding-bottom: 0; }
-.hero2-photo { display: block; width: 100%; height: auto; }
-.hero2-inner::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(270deg, rgba(17,17,20,.72), rgba(17,17,20,.30) 52%, rgba(17,17,20,0) 100%); }
-html[dir="ltr"] .hero2-inner::before { background: linear-gradient(90deg, rgba(17,17,20,.72), rgba(17,17,20,.30) 52%, rgba(17,17,20,0) 100%); }
-.hero2-copy { position: absolute; z-index: 2; top: 0; bottom: 0; inset-inline-start: 0; max-width: 560px; height: fit-content; margin-block: auto; }
-@media (max-width: 900px) {
-    .hero2-photo { display: none; }
-    .hero2-inner::before { display: none; }
-    .hero2-copy { position: relative; top: auto; inset-inline-start: auto; padding: 2.5rem 0 2.75rem; max-width: none; }
+.hero2-inner { position: relative; display: block; padding: clamp(1rem, 2.5vw, 2rem) 0 clamp(1.2rem, 3vw, 2.4rem); }
+.hero-frame { position: relative; width: 75%; margin-inline: auto; }
+.hero2-photo { display: block; width: 100%; height: auto; border-radius: 22px; box-shadow: 0 26px 60px rgba(17, 17, 20, .38); }
+.hero-frame::before { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: 22px; background: linear-gradient(180deg, rgba(17,17,20,.16), rgba(17,17,20,.42)); }
+.hero2-search { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: clamp(.8rem, 2vw, 1.6rem); pointer-events: none; }
+.hero2-search form { pointer-events: auto; width: 100%; max-width: none; }
+.hero2-search .hs-field {
+    background: #ffffff;
+    border: 2px solid #ffffff;
+    border-radius: 18px;
+    max-width: none; width: 100%;
+    box-shadow: 0 16px 44px rgba(17, 17, 20, .4);
 }
+/* هنگام کلیک/ فوکوس هیچ تغییری در ظاهر ایجاد نمی‌شود */
+.hero2-search .hs-field:focus-within { border-color: #ffffff; box-shadow: 0 16px 44px rgba(17, 17, 20, .4); }
+.hero2-search .hs-icon-mag { color: var(--muted); }
+.hero2-search .hs-field input { color: var(--text); }
+.hero2-search .hs-field input::placeholder { color: #7a7f8c; }
+.hero2-search .mode-toggle { background: #fff; border-color: var(--border); color: var(--muted); }
+.hero2-search .hs-spark { color: var(--muted); }
+.hero2-search .mode-toggle input:checked ~ .hs-spark { color: var(--primary-600); filter: none; }
+@media (max-width: 900px) {
+    .hero-frame { width: 100%; }
+    .hero2-photo { border-radius: 16px; }
+    .hero2-search .hs-go { padding: 11px 18px; }
+}
+
+/* ---------- باکس شخصیت: تصویر سمت راست (۲۵٪) + پنل شعار و دکمه (۷۵٪) ---------- */
+.mascot-band { flex-direction: row; align-items: stretch; text-align: center; gap: 1.3rem; padding: 1.3rem 1.5rem 1.5rem; }
+.mascot-band .mascot-img { flex: 0 0 25%; width: 100%; height: clamp(200px, 26vw, 320px); object-fit: contain; }
+.mascot-bubble { flex: 1 1 75%; display: flex; flex-direction: column; justify-content: center; border-radius: 20px; padding: 1.2rem 1.5rem 1.5rem; }
+.mascot-bubble::before { display: none; }
+.mascot-bubble .mascot-slogan { font-size: clamp(1.15rem, 2.6vw, 1.5rem); font-weight: 900; color: var(--primary); margin: .3rem 0 1rem; }
+.mascot-bubble .mascot-cta { width: 100%; justify-content: center; font-size: 1.05rem; padding: .9rem 1rem; border-radius: 14px; }
+.mascot-bubble p { margin: .9rem 0 0; }
+@media (max-width: 560px) {
+    .mascot-band { flex-direction: column; padding: 1.2rem 1rem 1.4rem; }
+    .mascot-band .mascot-img { flex: none; width: auto; height: 185px; }
+}
+
+/* برای اسکرین‌ریدرها — عنوان صفحه بدون نمایش بصری */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (max-width: 760px) {
     .header-inner { flex-wrap: wrap; row-gap: 0; }
     .main-nav { order: 3; width: 100%; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }
@@ -921,4 +946,22 @@ html[dir="ltr"] .hero2-inner::before { background: linear-gradient(90deg, rgba(1
 @keyframes pwa-pop {
     from { opacity: 0; transform: translateX(-50%) translateY(10px); }
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+
+/* ---------- Brand v2: wordmark + name + persona mascot + slogan ---------- */
+.brand { flex-direction: row; align-items: center; gap: .55rem; }
+.brand-logo { height: 40px; width: auto; display: block; }
+
+.store-footer .brand-name { color: var(--text); }
+.footer-brand { display: flex; align-items: center; gap: .55rem; }
+.footer-brand-logo { height: 32px; width: auto; border-radius: 6px; }
+.footer-slogan { margin: .4rem 0 0; font-weight: 800; color: var(--primary); font-size: .95rem; }
+
+/* شخصیت پیرنگ خان — تصویر عمودی با پس‌زمینه سفید؛ داخل قاب گرد */
+.mascot-img { width: auto; height: 210px; filter: none; border-radius: 18px; border: 4px solid var(--surface); box-shadow: 0 14px 30px rgba(19, 26, 42, .22); background: var(--surface); }
+
+@media (max-width: 560px) {
+    .brand-logo { height: 32px; }
+    .mascot-img { height: 170px; }
 }
