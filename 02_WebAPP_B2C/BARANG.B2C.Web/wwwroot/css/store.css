@@ -310,10 +310,7 @@ html[dir="rtl"] .btn-account { padding: .35rem .45rem .35rem .9rem; }
     transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
 }
 .design-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); color: var(--text); }
-.design-thumb { aspect-ratio: 1; background:
-    linear-gradient(45deg, var(--surface-2) 25%, transparent 25%, transparent 75%, var(--surface-2) 75%) 0 0/22px 22px,
-    linear-gradient(45deg, var(--surface-2) 25%, transparent 25%, transparent 75%, var(--surface-2) 75%) 11px 11px/22px 22px,
-    #fff; display: block; }
+.design-thumb { aspect-ratio: 1; background: #fff; display: block; }
 .design-thumb img { width: 100%; height: 100%; object-fit: contain; padding: .6rem; }
 .design-meta { display: flex; flex-direction: column; gap: .3rem; padding: .75rem .9rem .9rem; }
 .design-meta strong {
