@@ -11,7 +11,7 @@
         <div class="hero-frame">
             <img class="hero2-photo" src="~/images/hero-shirts.jpg" width="1200" height="800" loading="eager" fetchpriority="high"
                  alt="@T("تیشرت‌های چاپ‌شده با طرح‌های دلخواه روی چوب‌لباسی، بسته‌بندی و تیشرت روی زمین", "Printed custom t-shirts on hangers, packaging and a shirt on the floor", "تيشرتات مطبوعة بالتصاميم المخصصة على الشماعات والعبوة والتيشرت على الأرض")" />
-        <h1 class="sr-only">@T("پی رنگ — فروشگاه طرح‌های چاپی", "Peyrang — print designs store", "پی رنگ — متجر التصاميم الجاهزة للطباعة")</h1>
+        <h1 class="sr-only">@T("پی‌رنگ خان — فروشگاه طرح‌های چاپی", "Peyrang — print designs store", "پی‌رنگ — متجر التصاميم الجاهزة للطباعة")</h1>
         <div class="hero2-search reveal">
             <form class="header-search" action="/catalog" method="get" role="search">
                 <div class="hs-field">
@@ -102,10 +102,10 @@
 
 @* ---------- MASCOT ---------- *@
 <section class="container mascot-band reveal">
-    <img class="mascot-img" src="~/images/pirang-khan.jpg" asp-append-version="true" alt="پی رنگ خان" />
+    <img class="mascot-img" src="~/images/pirang-khan.jpg" asp-append-version="true" alt="پی‌رنگ خان" />
     <div class="mascot-bubble">
-        <strong>@T("پی رنگ‌خان می‌گه:", "Peyrang Khan says:", "پی رنگ‌خان يقول:")</strong>
-        <p class="mascot-slogan">@T("پی رنگ خان، نقشه‌ها داره برات!", "Peyrang Khan has the designs for you!", "پی رنگ خان لديه التصاميم من أجلك!")</p>
+        <strong>@T("پی‌رنگ‌خان می‌گه:", "Peyrang Khan says:", "پی‌رنگ‌خان يقول:")</strong>
+        <p class="mascot-slogan">@T("پی‌رنگ خان، نقشه‌ها داره برات!", "Peyrang Khan has the designs for you!", "پی‌رنگ خان لديه التصاميم من أجلك!")</p>
         <button type="button" class="btn btn-primary btn-lg btn-shine mascot-cta start-design-btn" data-designs='@System.Text.Json.JsonSerializer.Serialize(Model.Featured.Select(d => new { id = d.Id.ToString(), title = d.Title, thumb = d.Thumbnail }))'>@T("شروع طراحی تیشرت ←", "Start designing ←", "ابدأ التصميم ←")</button>
         <p>@T("هر طرحی پسندیدی، بگو تا با چند کلیک برات چاپش کنیم!", "Pick any design and we'll print it in a few clicks!", "أي تصميم يعجبك نطبعه بضغوطات!")</p>
     </div>

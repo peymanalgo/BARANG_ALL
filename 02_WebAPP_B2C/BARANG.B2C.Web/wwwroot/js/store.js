@@ -46,9 +46,9 @@
 
     // ---- دکمه نصب (اندروید/کروم/اج/دسکتاپ) ----
     const I18N = {
-        fa: { install: "نصب اپلیکیشن پی رنگ", iosHint: "برای نصب اپ، در سافاری دکمه Share و سپس «Add to Home Screen» را بزنید." },
+        fa: { install: "نصب اپلیکیشن پی‌رنگ", iosHint: "برای نصب اپ، در سافاری دکمه Share و سپس «Add to Home Screen» را بزنید." },
         en: { install: "Install the Peyrang app", iosHint: "To install, tap the Share button in Safari, then “Add to Home Screen”." },
-        ar: { install: "ثبّت تطبيق پی رنگ", iosHint: "للتثبيت، اضغط زر المشاركة في سفاري ثم «أضف إلى الشاشة الرئيسية»." }
+        ar: { install: "ثبّت تطبيق پی‌رنگ", iosHint: "للتثبيت، اضغط زر المشاركة في سفاري ثم «أضف إلى الشاشة الرئيسية»." }
     };
     const lang = (document.documentElement.lang || "fa").slice(0, 2);
     const t = I18N[lang] || I18N.fa;

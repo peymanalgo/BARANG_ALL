@@ -10,7 +10,7 @@
         return "/language/set?culture=" + c + "&returnUrl=" + Uri.EscapeDataString(target);
     }
     var q = Context.Request.Query["search"].ToString();
-    string Brand() => culture switch { "en" => "Peyrang", "ar" => "بي رنگ", _ => "پی رنگ" };
+    string Brand() => culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", _ => "پی‌رنگ خان" };
 
 }
 <!DOCTYPE html>
@@ -25,7 +25,7 @@
     <link rel="apple-touch-icon" href="~/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="پی رنگ" />
+    <meta name="apple-mobile-web-app-title" content="پی‌رنگ خان" />
     <meta property="og:type" content="@(ViewData["OgType"] ?? "website")" />
     <meta property="og:site_name" content="@Brand()" />
     <meta property="og:title" content="@(ViewData["Title"] is string ot && ot.Length > 0 ? ot : $"{Brand()} — {T("فروشگاه طرح‌های چاپی", "Print-ready designs store", "متجر التصاميم الجاهزة للطباعة")}")" />
@@ -47,7 +47,7 @@
 <header class="store-header">
     <div class="container header-inner">
         <a class="brand" href="/">
-            <img class="brand-logo" src="~/images/logo-wordmark-final.png" alt="پی رنگ" asp-append-version="true" />
+            <img class="brand-logo" src="~/images/logo-wordmark-final.png" alt="پی‌رنگ" asp-append-version="true" />
         </a>
         <nav class="main-nav" aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية")">
             <a href="/" class="@(route.Length == 0 ? "active" : null)">@T("صفحه اصلی", "Home", "الرئيسية")</a>
@@ -105,9 +105,9 @@
 <footer class="store-footer" id="contact">
     <div class="container footer-grid">
         <div>
-            <span class="footer-brand"><img class="footer-brand-logo" src="~/images/logo-wordmark-final.png" alt="پی رنگ" asp-append-version="true" /></span>
+            <span class="footer-brand"><img class="footer-brand-logo" src="~/images/logo-wordmark-final.png" alt="پی‌رنگ" asp-append-version="true" /></span>
             <p>@T("طرح‌های آماده چاپ روی پوشاک و هدایای تبلیغاتی؛ سفارش آنلاین، پیگیری تا تحویل.", "Ready-to-print designs for apparel and promotional gifts; order online, track until delivery.", "تصاميم جاهزة للطباعة على الملابس والهدايا الدعائية؛ اطلب عبر الإنترنت وتتبع حتى التسليم.")</p>
-            <p class="footer-slogan">@T("پی رنگ خان، نقشه‌ها داره برات!", "Peyrang Khan has the designs for you!", "پی رنگ خان لديه التصاميم من أجلك!")</p>
+            <p class="footer-slogan">@T("پی‌رنگ خان، نقشه‌ها داره برات!", "Peyrang Khan has the designs for you!", "پی‌رنگ خان لديه التصاميم من أجلك!")</p>
         </div>
         <div>
             <h3>@T("فروشگاه", "Store", "المتجر")</h3>
@@ -120,7 +120,7 @@
         <div>
             <h3>@T("تماس با ما", "Contact", "اتصل بنا")</h3>
             <a href="mailto:salam@pirang.ir">salam@pirang.ir</a>
-            <a href="/about">@T("درباره پی رنگ", "About Peyrang", "عن پی رنگ")</a>
+            <a href="/about">@T("درباره پی‌رنگ", "About Peyrang", "عن پی‌رنگ")</a>
         </div>
     </div>
     <div class="footer-base">
