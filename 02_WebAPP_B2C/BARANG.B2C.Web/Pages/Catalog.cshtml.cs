@@ -15,21 +15,20 @@ public sealed class CatalogModel(CoreApiClient core) : PageModel
     public int PageSize { get; private set; } = 24;
     [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty(SupportsGet = true)] public string? Category { get; set; }
-    [BindProperty(SupportsGet = true)] public string? Mode { get; set; }
     public IReadOnlyList<CategoryChip> Categories { get; private set; } = [];
     public Dictionary<string, string> CategoryNames => Categories.ToDictionary(c => c.Code, c => c.DisplayName);
 
     public bool HasNext => Page * PageSize < Total;
     public bool HasPrev => Page > 1;
-    public bool ConceptMode => string.Equals(Mode, "concept", StringComparison.OrdinalIgnoreCase);
+    // جستجو در کاتالوگ همیشه مفهومی است؛ حالت عادی فقط برای مرور دسته‌ها
+    public bool ConceptMode => !string.IsNullOrWhiteSpace(Search);
     public bool IsAuthenticated => User.Identity?.IsAuthenticated == true;
     public HashSet<string> FavoriteIds { get; private set; } = new(StringComparer.Ordinal);
     public string CurrentUrl => "/catalog" + QueryString.Create(new Dictionary<string, string?>
     {
         ["page"] = Page.ToString(),
         ["search"] = string.IsNullOrWhiteSpace(Search) ? null : Search.Trim(),
-        ["category"] = string.IsNullOrWhiteSpace(Category) ? null : Category.Trim(),
-        ["mode"] = ConceptMode ? "concept" : null
+        ["category"] = string.IsNullOrWhiteSpace(Category) ? null : Category.Trim()
     }).Value;
 
     public async Task OnGet([FromQuery] int? page)
@@ -94,7 +93,6 @@ public sealed class CatalogModel(CoreApiClient core) : PageModel
         ["page"] = pageNumber.ToString(),
         ["search"] = string.IsNullOrWhiteSpace(Search) ? null : Search.Trim(),
         ["category"] = string.IsNullOrWhiteSpace(Category) ? null : Category.Trim(),
-        ["mode"] = ConceptMode ? "concept" : null
     });
 }
 

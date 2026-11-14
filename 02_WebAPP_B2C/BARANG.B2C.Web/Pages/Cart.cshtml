@@ -1,0 +1,151 @@
+@page "/cart"
+@model CartModel
+@using System.Globalization
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    ViewData["Title"] = T("سبد خرید", "Cart", "السلة");
+}
+<section class="container section">
+    <nav class="breadcrumbs" aria-label="breadcrumb">
+        <a href="/">@T("فروشگاه", "Store", "المتجر")</a> ›
+        <span>@T("سبد خرید", "Cart", "السلة")</span>
+    </nav>
+    <header class="section-head">
+        <h1>🛒 @T("سبد خرید", "Cart", "السلة")</h1>
+        <a class="btn btn-primary btn-sm" href="/order/wizard?new=1">✨ @T("افزودن سفارش جدید", "Add new order", "أضف طلباً جديداً")</a>
+    </header>
+
+    @if (!Model.HasProfile)
+    {
+        <p class="empty">@T("برای دیدن سبد خرید ابتدا وارد حساب کاربری شوید.", "Sign in to your account to view the cart.", "سجّل الدخول لعرض السلة.")</p>
+    }
+    else if (Model.Items.Count == 0)
+    {
+        <p class="empty">@T("سبد خرید شما خالی است — از ویزارد، طرح بعدی‌ات را سفارش بده!", "Your cart is empty — order your next design from the wizard!", "سلتك فارغة — اطلب تصميمك التالي من المعالج!")</p>
+    }
+    else
+    {
+        <div class="cart-list">
+            @foreach (var item in Model.Items)
+            {
+                <article class="card cart-item" data-order-id="@item.OrderId" data-amount="@item.Amount.ToString("0", CultureInfo.InvariantCulture)">
+                    <div class="cart-item-main">
+                        <strong class="cart-item-title" dir="auto">@item.Title</strong>
+                        <small class="cart-item-meta" dir="auto">
+                            @string.Join(" · ", new[]
+                            {
+                                item.Product,
+                                item.Variant,
+                                item.Quantity > 1 ? T("تعداد: ", "Qty: ", "الكمية: ") + item.Quantity.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa")) : "",
+                                item.PrintSize.Length > 0 ? T("اندازه چاپ: ", "Print: ", "الطباعة: ") + item.PrintSize : "",
+                                item.Packaging.Length > 0 ? T("بسته‌بندی: ", "Packaging: ", "التغليف: ") + item.Packaging : "",
+                            }.Where(s => s.Length > 0))
+                        </small>
+                    </div>
+                    <div class="cart-item-amt">
+                        <b>@Money(item.Amount)</b>
+                        <small>@T("تومان", "Toman", "تومان")</small>
+                    </div>
+                    <button type="button" class="btn btn-ghost btn-sm cart-remove" data-remove="@item.OrderId" aria-label="@T("حذف از سبد", "Remove from cart", "إزالة من السلة")">
+                        🗑 @T("حذف", "Remove", "حذف")
+                    </button>
+                </article>
+            }
+        </div>
+
+        <footer class="cart-foot card">
+            <div class="cart-grand">
+                <span>@T("جمع کل سبد", "Cart total", "إجمالي السلة"):</span>
+                <b id="cart-grand">@Money(Model.GrandTotal)</b>
+                <small>@T("تومان", "Toman", "تومان")</small>
+            </div>
+            <div class="cart-actions">
+                <button type="button" class="btn btn-primary" id="cart-pay-gateway">🏦 @T("پرداخت همه (درگاه بانکی)", "Pay all (gateway)", "دفع الكل (بوابة)")</button>
+                <button type="button" class="btn btn-ghost" id="cart-pay-wallet">👛 @T("پرداخت همه (کیف پول)", "Pay all (wallet)", "دفع الكل (المحفظة)")</button>
+            </div>
+        </footer>
+    }
+
+    <div id="cart-result" class="alert" hidden aria-live="polite"></div>
+
+    @* توکن antiforgery برای POSTهای AJAX همان الگوی ویزارد *@
+    <form method="post" id="cart-af" hidden aria-hidden="true"></form>
+
+    <script>
+        (() => {
+            "use strict";
+            const box = document.getElementById("cart-result");
+            if (!box) return;
+            const L = @System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+            {
+                ["removeFail"] = T("حذف قلم ناموفق بود", "Could not remove the item", "تعذّر حذف العنصر"),
+                ["payFail"] = T("پرداخت ناموفق بود", "Payment failed", "فشل الدفع"),
+                ["paidOk"] = T("پرداخت انجام شد — سفارش‌های ثبت‌شده:", "Paid — submitted orders:", "تم الدفع — الطلبات المُرسلة:"),
+                ["someFailed"] = T("اقلام زیر پرداخت نشدند و در سبد ماندند:", "These items were not paid and stay in the cart:", "لم تُدفع هذه العناصر وبقيت في السلة:"),
+                ["empty"] = T("سبد پرداخت شد و خالی است ✅", "The cart was paid and is now empty ✅", "تم دفع السلة وهي الآن فارغة ✅"),
+                ["wallet"] = T("کیف پول", "wallet", "المحفظة"),
+                ["gateway"] = T("درگاه", "gateway", "بوابة"),
+                ["toman"] = T("تومان", "Toman", "تومان"),
+                ["confirmRemove"] = T("این قلم از سبد حذف شود؟", "Remove this item from the cart?", "إزالة هذا العنصر من السلة؟"),
+            });
+            const FA = @System.Text.Json.JsonSerializer.Serialize(culture) === "fa";
+            const fa = (n) => String(n).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
+            const fmt = (n) => (FA ? fa(String(n)) : String(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            const AF = document.querySelector("#cart-af input[name='__RequestVerificationToken']")?.value || "";
+            const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "RequestVerificationToken": AF }, body: JSON.stringify(body) }).then((r) => r.json());
+            const refreshBadge = () => { if (typeof window.barangRefreshCart === "function") window.barangRefreshCart(); };
+
+            function recompute() {
+                const rows = [...document.querySelectorAll(".cart-item")];
+                let total = 0;
+                rows.forEach((r) => { total += Number(r.dataset.amount) || 0; });
+                const el = document.getElementById("cart-grand");
+                if (el) el.textContent = fmt(Math.round(total));
+                if (!rows.length) setTimeout(() => location.reload(), 1600);
+            }
+            function say(html, ok) {
+                box.hidden = false;
+                box.className = "alert " + (ok ? "alert-ok" : "alert-error");
+                box.innerHTML = html;
+            }
+
+            document.querySelectorAll(".cart-remove").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    if (!confirm(L.confirmRemove)) return;
+                    btn.disabled = true;
+                    const data = await post("/cart?handler=RemoveItem", { orderId: btn.dataset.remove });
+                    if (data.ok) {
+                        const row = btn.closest(".cart-item");
+                        if (row) row.remove();
+                        recompute(); refreshBadge();
+                    } else { btn.disabled = false; alert(L.removeFail + " (" + (data.problem || "") + ")"); }
+                });
+            });
+
+            async function payAll(method) {
+                const gw = document.getElementById("cart-pay-gateway"), wl = document.getElementById("cart-pay-wallet");
+                if (gw) gw.disabled = true; if (wl) wl.disabled = true;
+                const data = await post("/cart?handler=PayAll", { method });
+                [...(data.paid || []), ...(data.cleaned || [])].forEach((p) => {
+                    const row = document.querySelector('.cart-item[data-order-id="' + p.orderId + '"]');
+                    if (row) row.remove();
+                });
+                recompute(); refreshBadge();
+                const paidNums = (data.paid || []).map((p) => (p.orderNumber || p.orderId) + " (" + (p.paidWith === "wallet" ? L.wallet : L.gateway) + ")");
+                let html = "";
+                if (paidNums.length) html += "<div>✅ " + L.paidOk + " <b dir='ltr'>" + paidNums.join(" · ") + "</b></div>";
+                if ((data.failed || []).length) html += "<div>⚠️ " + L.someFailed + " <b>" + data.failed.map((f) => f.problem).join("، ") + "</b></div>";
+                if (!html.length) html = "⚠️ " + L.payFail;
+                const rowsLeft = document.querySelectorAll(".cart-item").length;
+                if (rowsLeft === 0 && !((data.failed || []).length)) say(L.empty, true);
+                else say(html, !(data.failed || []).length);
+                if (gw) gw.disabled = false; if (wl) wl.disabled = false;
+            }
+            const gwBtn = document.getElementById("cart-pay-gateway"), wlBtn = document.getElementById("cart-pay-wallet");
+            if (gwBtn) gwBtn.addEventListener("click", () => payAll("gateway"));
+            if (wlBtn) wlBtn.addEventListener("click", () => payAll("wallet"));
+        })();
+    </script>
+</section>

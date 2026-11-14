@@ -1,0 +1,685 @@
+<!doctype html>
+<html dir="rtl" lang="fa">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>پروتوتایپ ویزارد سفارش — پی‌رنگ خان</title>
+<style>
+:root{--bg1:#0b0f18;--bg2:#101725;--panel:#141c2b;--panel2:#1a2436;--line:rgba(255,255,255,.09);--ink:#eef2fa;--sub:#94a1b8;--acc:#f6b23c;--acc2:#8b5cf6;--ok:#34d399;--bad:#f87171;--tee:#f2f3f1}
+*{box-sizing:border-box}
+body{margin:0;font-family:Vazirmatn,Tahoma,'Segoe UI',sans-serif;background:radial-gradient(1200px 600px at 15% -10%,#18233a 0%,var(--bg1) 55%),var(--bg2);color:var(--ink);min-height:100vh}
+button{font-family:inherit}
+input,textarea,select{font-family:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:16px 20px 40px}
+.ltr{direction:ltr;text-align:left}
+.auto{direction:ltr;text-align:start}
+[dir=auto]:not([data-dir-force]){unicode-bidi:plaintext}
+
+/* ---------- hero (نقطه ورود) ---------- */
+.hero{min-height:92vh;display:flex;align-items:center;justify-content:center;text-align:center}
+.hero-card{background:rgba(20,28,43,.72);border:1px solid var(--line);border-radius:26px;padding:44px 48px;max-width:560px;box-shadow:0 30px 80px -30px rgba(0,0,0,.7)}
+.hero-card img.mascot{width:190px;border-radius:20px;box-shadow:0 18px 40px -12px rgba(246,178,60,.35)}
+.hero-card h1{margin:16px 0 6px;font-size:26px}
+.hero-card p{margin:0 0 22px;color:var(--sub);font-size:14px;line-height:1.9}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:13px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;transition:.18s}
+.btn-main{background:linear-gradient(135deg,#f6b23c,#f08a1d);color:#231303;box-shadow:0 12px 28px -10px rgba(246,178,60,.55)}
+.btn-main:hover{transform:translateY(-2px)}
+.btn-main:disabled{filter:grayscale(.8);opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+.btn-lg{padding:15px 34px;font-size:16px;border-radius:15px}
+.btn-sm{padding:8px 14px;font-size:12.5px;border-radius:10px}
+.hint{margin-top:14px;font-size:11.5px;color:var(--sub)}
+
+/* ---------- shell ---------- */
+header.shell{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0 15px;border-bottom:1px solid var(--line);margin-bottom:18px;flex-wrap:wrap}
+.brand{font-weight:800;font-size:17px;display:flex;align-items:center;gap:9px}
+.brand small{font-weight:400;color:var(--sub);font-size:11.5px}
+.steps{display:flex;gap:6px;list-style:none;margin:0;padding:0;font-size:11.5px;flex-wrap:wrap}
+.steps li{padding:7px 13px;border-radius:99px;border:1px solid var(--line);color:var(--sub);white-space:nowrap}
+.steps li.on{background:linear-gradient(135deg,rgba(246,178,60,.18),rgba(139,92,246,.15));border-color:rgba(246,178,60,.45);color:#ffd98a;font-weight:700}
+.steps li.done{border-color:rgba(52,211,153,.4);color:#8ff0c4}
+.phase{display:flex;flex-direction:column;gap:16px}
+.phase[hidden]{display:none}
+h2.ph{margin:0;font-size:19px}
+p.phd{margin:2px 0 0;color:var(--sub);font-size:12.5px}
+
+/* ---------- فاز ۱ ---------- */
+.grid1{display:grid;grid-template-columns:400px 1fr;gap:16px}
+@media(max-width:920px){.grid1{grid-template-columns:1fr}}
+.tools{background:rgba(16,23,37,.6);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.lbl{font-size:11.5px;color:var(--sub);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.mode{display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 6px 9px;border-radius:13px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;transition:.18s;text-align:center}
+.mode .ic{font-size:19px}
+.mode small{color:var(--sub);font-size:10px}
+.mode b{font-size:11.5px}
+.mode:hover{transform:translateY(-2px)}
+.mode.on{background:linear-gradient(160deg,rgba(246,178,60,.16),rgba(139,92,246,.12));border-color:rgba(246,178,60,.5);box-shadow:0 6px 18px -8px rgba(246,178,60,.45)}
+.pan{display:flex;flex-direction:column;gap:10px}
+.pan[hidden]{display:none}
+.ai{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#ffd98a}
+.dotp{width:9px;height:9px;border-radius:50%;background:var(--acc2);box-shadow:0 0 0 0 rgba(139,92,246,.6);animation:pp 1s infinite}
+@keyframes pp{70%{box-shadow:0 0 0 8px rgba(139,92,246,0)}100%{box-shadow:0 0 0 0 rgba(139,92,246,0)}}
+.search{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:10px 13px}
+.search:focus-within{border-color:rgba(246,178,60,.55);box-shadow:0 0 0 3px rgba(246,178,60,.15)}
+.search input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:var(--panel);color:var(--sub);border-radius:99px;padding:5px 12px;font-size:11px;cursor:pointer}
+.chips button:hover{color:var(--ink);border-color:rgba(246,178,60,.5)}
+.status{margin:0;font-size:11px;color:var(--sub)}
+.gridcards{display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow:auto;max-height:360px;padding-inline-end:4px}
+.cardart{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--panel);cursor:pointer;transition:.16s}
+.cardart:hover{transform:translateY(-3px);border-color:rgba(246,178,60,.55)}
+.cardart.on{border-color:var(--acc);box-shadow:0 0 0 2px rgba(246,178,60,.35)}
+.cardart .rank{position:absolute;top:6px;inset-inline-start:6px;background:rgba(11,15,24,.75);color:#ffd98a;font-size:9.5px;font-weight:700;padding:3px 7px;border-radius:99px}
+.cardart .a{width:100%;aspect-ratio:1;display:block}
+.cardart .a svg{width:100%;height:100%;display:block}
+.cardart figcaption{font-size:10px;color:var(--sub);padding:5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sk{aspect-ratio:1;border-radius:12px;background:linear-gradient(100deg,var(--panel) 40%,var(--panel2) 50%,var(--panel) 60%) 0 0/220% 100%;animation:sh 1.1s infinite}
+@keyframes sh{to{background-position:-120% 0}}
+.drop{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;border:2px dashed rgba(246,178,60,.4);border-radius:15px;padding:24px 14px;background:rgba(246,178,60,.05)}
+.drop .ic{font-size:28px}
+.drop small{color:var(--sub);font-size:11px}
+.drop.over{background:rgba(246,178,60,.14);border-color:var(--acc)}
+.check{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:12px}
+.check .row{display:flex;gap:10px;align-items:center}
+.check b{display:block;font-size:12.5px}
+.check .msg{font-size:11px;color:var(--sub)}
+.meter{height:7px;border-radius:99px;background:var(--panel2);margin:10px 0;overflow:hidden}
+.meter span{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--ok),var(--acc));transition:width .8s ease}
+.hints{list-style:none;margin:0;padding:0;font-size:11px;color:var(--sub);display:flex;flex-direction:column;gap:4px}
+.hints .ok{color:var(--ok);font-weight:700}
+textarea.tin,input.fin{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:13px;outline:none;resize:vertical}
+textarea.tin:focus,input.fin:focus{border-color:rgba(246,178,60,.5)}
+.fonts{display:flex;gap:6px;flex-wrap:wrap}
+.fbtn{flex:1;min-width:64px;padding:9px 6px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:12px;cursor:pointer}
+.fbtn.on{border-color:var(--acc);background:rgba(246,178,60,.14);color:#ffd98a}
+.dots{display:flex;gap:8px;flex-wrap:wrap}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.dot.on{border-color:var(--acc);transform:scale(1.15);box-shadow:0 0 0 3px rgba(246,178,60,.25)}
+input.rng{width:100%;accent-color:var(--acc)}
+.stagebox{background:rgba(20,28,43,.5);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;gap:3px}
+.seg button{border:none;background:none;color:var(--sub);font-size:12px;padding:7px 15px;border-radius:9px;cursor:pointer}
+.seg button.on{background:linear-gradient(135deg,rgba(246,178,60,.9),rgba(240,138,29,.9));color:#231303;font-weight:800}
+.stagewrap{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.scene{flex:1;min-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(60% 60% at 50% 42%,rgba(139,92,246,.10),transparent 70%);border-radius:16px;border:1px solid var(--line);position:relative;overflow:hidden;min-width:260px}
+.scene::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:22px 22px;pointer-events:none}
+.garm{width:min(380px,82%);aspect-ratio:300/340;position:relative;perspective:1100px;transition:transform .8s cubic-bezier(.25,1,.3,1);transform-style:preserve-3d}
+.garm.back{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden}
+.face.bk{transform:rotateY(180deg)}
+.face svg{width:100%;height:100%;display:block;filter:drop-shadow(0 24px 28px rgba(0,0,0,.45))}
+.prect{position:absolute;border:1.5px dashed rgba(246,178,60,.65);border-radius:6px;transition:all .45s cubic-bezier(.25,1,.3,1)}
+.prect::after{content:attr(data-lbl);position:absolute;top:-22px;inset-inline-start:50%;transform:translateX(50%);font-size:10px;color:#ffd98a;background:rgba(11,15,24,.7);padding:2px 8px;border-radius:99px;white-space:nowrap}
+.awrap{position:absolute;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab;transition:width .45s,height .45s}
+.awrap:active{cursor:grabbing}
+.awrap img,.awrap svg{max-width:100%;max-height:100%;width:auto;height:auto;display:block;pointer-events:none}
+.awrap .t{font-weight:900;text-align:center;line-height:1.35;pointer-events:none;word-break:break-word}
+.awrap.pop{animation:pop .6s cubic-bezier(.2,1.5,.35,1)}
+@keyframes pop{0%{transform:scale(.4);opacity:0;filter:drop-shadow(0 0 24px rgba(246,178,60,.9))}100%{transform:scale(1);opacity:1}}
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--sub);font-size:12px;gap:6px;text-align:center;padding:0 14px}
+.teebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.cards4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:860px){.cards4{grid-template-columns:repeat(2,1fr)}}
+.pcard{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:13px;cursor:pointer;transition:.16s;text-align:center}
+.pcard:hover{transform:translateY(-3px)}
+.pcard.on{border-color:var(--acc);background:linear-gradient(160deg,rgba(246,178,60,.13),rgba(139,92,246,.10));box-shadow:0 8px 22px -10px rgba(246,178,60,.4)}
+.pcard .ic{font-size:22px}
+.pcard b{display:block;font-size:12.5px;margin:6px 0 2px}
+.pcard small{color:var(--sub);font-size:10px;display:block}
+.pcard .pr{margin-top:7px;font-size:12px;color:#ffd98a;font-weight:700}
+.sumbar{position:sticky;bottom:10px;background:rgba(15,21,34,.92);border:1px solid var(--line);border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;backdrop-filter:blur(8px);box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
+.sumchips{display:flex;gap:6px;flex-wrap:wrap;font-size:11px;flex:1;min-width:180px}
+.schip{display:inline-flex;align-items:center;gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:6px 11px;color:var(--sub)}
+.schip b{color:#ffd98a}
+.liveprice{font-size:12px;color:var(--sub)}
+.liveprice b{font-size:16px;color:var(--ink)}
+
+/* ---------- فاز ۲ ---------- */
+h3.sec{margin:4px 0 8px;font-size:14px;color:#ffd98a}
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:760px){.cards3{grid-template-columns:1fr}}
+.pick{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:14px;cursor:pointer;transition:.16s}
+.pick:hover{transform:translateY(-3px)}
+.pick.on{border-color:var(--acc);background:linear-gradient(160deg,rgba(246,178,60,.13),rgba(139,92,246,.10))}
+.pick b{display:block;font-size:13px;margin-bottom:3px}
+.pick small{color:var(--sub);font-size:11px;display:block;line-height:1.7}
+.pick .pr{margin-top:8px;font-size:12px;color:#ffd98a;font-weight:700}
+.addrlist{display:flex;flex-direction:column;gap:8px}
+.arow{border:1px solid var(--line);background:var(--panel);border-radius:13px;padding:12px 14px;cursor:pointer;transition:.15s}
+.arow.on{border-color:var(--acc);background:rgba(246,178,60,.08)}
+.arow b{font-size:12.5px}
+.arow small{display:block;color:var(--sub);font-size:11px;margin-top:3px;line-height:1.8}
+.giftbox{margin-top:10px;border:1px solid rgba(139,92,246,.4);background:rgba(139,92,246,.07);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:9px}
+.giftbox[hidden]{display:none}
+.sw{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13px}
+.sw input{width:18px;height:18px;accent-color:var(--acc2)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.frow1{display:grid;grid-template-columns:2fr 1fr 1fr;gap:9px}
+@media(max-width:700px){.frow,.frow1{grid-template-columns:1fr}}
+.datein{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:13px;color-scheme:dark}
+
+/* ---------- فاز ۳ ---------- */
+.rev{display:grid;grid-template-columns:340px 1fr;gap:16px}
+@media(max-width:860px){.rev{grid-template-columns:1fr}}
+.revcard{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.revtee{background:radial-gradient(60% 60% at 50% 40%,rgba(139,92,246,.12),transparent 70%);border-radius:14px;border:1px solid var(--line);padding:12px;position:relative}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.kv span{color:var(--sub)}
+.kv b{font-weight:600}
+.pricebox{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}
+.pline{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px dashed var(--line);color:var(--ink)}
+.pline span{color:var(--sub)}
+.ptotal{display:flex;justify-content:space-between;align-items:center;padding-top:14px;font-size:15px}
+.ptotal b{font-size:22px;color:#ffd98a}
+.pnote{margin:10px 0 0;font-size:11px;color:var(--sub);display:flex;align-items:center;gap:6px}
+
+/* ---------- فاز ۴ ---------- */
+.paygrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.paygrid{grid-template-columns:1fr}}
+.paycard{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:20px;cursor:pointer;transition:.18s;text-align:center}
+.paycard:hover{transform:translateY(-3px);border-color:rgba(246,178,60,.5)}
+.paycard .ic{font-size:30px}
+.paycard b{display:block;margin:10px 0 4px;font-size:14.5px}
+.paycard small{color:var(--sub);font-size:11.5px;display:block;line-height:1.8}
+.paycard .bal{margin-top:10px;font-weight:700;color:#8ff0c4;font-size:13px}
+.totalhero{text-align:center;padding:10px 0 4px}
+.totalhero .n{font-size:38px;font-weight:900;color:#ffd98a}
+.totalhero small{color:var(--sub)}
+.overlay{position:fixed;inset:0;background:rgba(5,8,14,.72);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.overlay[hidden]{display:none}
+.gw{background:linear-gradient(160deg,#16233c,#0e1526);border:1px solid rgba(246,178,60,.4);border-radius:20px;padding:26px;width:min(430px,100%);text-align:center;box-shadow:0 40px 90px -20px rgba(0,0,0,.8)}
+.gw .bank{font-size:12px;color:var(--sub);letter-spacing:.12em;margin-bottom:14px}
+.gw .amt{font-size:26px;font-weight:900;color:#ffd98a;margin-bottom:4px}
+.gw small{color:var(--sub);display:block;margin-bottom:16px}
+.gwcard{background:#0b1120;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px;text-align:start}
+.gwcard .row{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);padding:5px 0}
+.gwcard .row b{color:var(--ink);font-family:monospace;letter-spacing:.18em}
+.success{text-align:center;padding:34px 10px}
+.success .big{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#123524,#0c2b1c);border:2px solid #1f7a4d;display:inline-flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:16px;animation:pop .6s cubic-bezier(.2,1.5,.35,1)}
+.success h2{margin:0 0 6px}
+.success .ord{color:#8ff0c4;font-weight:800;font-size:15px;margin-bottom:8px}
+.success p{color:var(--sub);font-size:12.5px;line-height:2;margin:0 0 20px}
+.navrow{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+footer.pn{margin-top:26px;text-align:center;color:var(--sub);font-size:11px;line-height:1.9;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ shell ═══════════ -->
+<div class="wrap" id="w-app">
+  <header class="shell">
+    <div class="brand">👑 پی‌رنگ خان <small>ساخت سفارش چاپ</small></div>
+    <ol class="steps" id="w-steps">
+      <li class="on">۱ · طراحی تیشرت</li><li>۲ · بسته‌بندی و ارسال</li><li>۳ · پیش‌نمایش سفارش</li><li>۴ · پرداخت و ثبت</li>
+    </ol>
+  </header>
+
+  <!-- ─────────── فاز ۱ : طراحی تیشرت ─────────── -->
+  <section class="phase" id="w-p1">
+    <div style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.35);border-radius:12px;padding:10px 14px;font-size:12px;color:#cbb8ff;line-height:1.9;margin-bottom:2px">🔍 ورود از صفحه نمایش طرح — طرح «گربه فضایی» به‌صورت پیش‌فرض انتخاب و روی تیشرت قرار گرفته. می‌توانی همین را سفارش بدهی، طرح دیگری از بانک انتخاب کنی، یا تب را به «طرح خودم» یا «متن و تایپوگرافی» تغییر بدهی.</div>
+    <div class="grid1">
+      <aside class="tools">
+        <div>
+          <div class="lbl">منبع طرح — با انتخاب هر مسیر، فقط همان مسیر نمایش داده می‌شود</div>
+          <div class="modes">
+            <button type="button" class="mode on" data-mode="bank"><span class="ic">🗂️</span><b>بانک طرح‌ها</b><small>۱۲۴٬۵۸۰ طرح</small></button>
+            <button type="button" class="mode" data-mode="upload"><span class="ic">🖼️</span><b>طرح خودم</b><small>PNG / JPG</small></button>
+            <button type="button" class="mode" data-mode="text"><span class="ic">✍️</span><b>متن و تایپوگرافی</b><small>فونت و رنگ</small></button>
+          </div>
+        </div>
+
+        <div class="pan" id="w-pan-bank">
+          <div class="ai"><span class="dotp" id="w-pulse" hidden></span> جستجوی مفهومی</div>
+          <div class="search"><input id="w-q" type="text" dir="auto" placeholder="دنبال چی هستی؟ مثلاً: گربه فضایی، شیر اسطوره‌ای…" aria-label="جستجوی مفهومی طرح"></div>
+          <div class="chips" id="w-chips"></div>
+          <p class="status" id="w-status" aria-live="polite">موتور مفهومی آماده است — از ۱۲۴٬۵۸۰ طرح</p>
+          <div class="gridcards" id="w-grid"></div>
+        </div>
+
+        <div class="pan" id="w-pan-upload" hidden>
+          <div class="drop" id="w-drop">
+            <span class="ic">☁️</span>
+            <b>فایل طرح را اینجا رها کن</b>
+            <small>PNG با پس‌زمینه شفاف بهترین نتیجه را می‌دهد — تحلیل کیفیت خودکار انجام می‌شود</small>
+            <label class="btn btn-ghost btn-sm">انتخاب فایل<input id="w-file" type="file" accept="image/*" hidden></label>
+            <button type="button" class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#cbb8ff;border:1px solid rgba(139,92,246,.35)" id="w-sample">بارگذاری نمونه دمو</button>
+          </div>
+          <div class="check" id="w-check" hidden>
+            <div class="row"><span style="font-size:20px">🔎</span><div><b>تحلیل هوشمند فایل</b><span class="msg" id="w-checkmsg">—</span></div></div>
+            <div class="meter"><span id="w-meter"></span></div>
+            <ul class="hints">
+              <li>حذف خودکار پس‌زمینه <span class="ok">آماده</span></li>
+              <li>بهینه‌سازی برای چاپ سنگر <span class="ok">فعال</span></li>
+              <li>پیشنهاد حداکثر اندازه: <b id="w-best">A3</b></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="pan" id="w-pan-text" hidden>
+          <div class="lbl" for="w-textin">متن طرح <span dir="ltr">RTL ← فارسی/عربی · LTR ← English</span></div>
+          <textarea class="tin" id="w-textin" rows="2" dir="auto" placeholder="مثلاً: پی‌رنگ خان، نقشه‌ها داره برات!"></textarea>
+          <div class="lbl">فونت</div>
+          <div class="fonts">
+            <button type="button" class="fbtn on" data-f="1" style="font-weight:900">لاله‌زار</button>
+            <button type="button" class="fbtn" data-f="2" style="font-weight:500;letter-spacing:.06em">وزیرمتن</button>
+            <button type="button" class="fbtn" data-f="3" style="font-style:italic;font-weight:700">دست‌نویس</button>
+            <button type="button" class="fbtn" data-f="4" style="font-weight:800;letter-spacing:.2em">استعداد</button>
+          </div>
+          <div class="lbl">رنگ متن</div>
+          <div class="dots" id="w-tdots"></div>
+          <div class="lbl">اندازه متن <output id="w-tsout">۱۰۰</output></div>
+          <input class="rng" id="w-tsz" type="range" min="55" max="150" value="100">
+        </div>
+      </aside>
+
+      <main style="display:flex;flex-direction:column;gap:14px;min-width:0">
+        <div class="stagebox">
+          <div class="stagewrap">
+            <div class="seg" id="w-side">
+              <button type="button" class="on" data-side="front">جلو</button>
+              <button type="button" data-side="back">پشت</button>
+            </div>
+            <div class="seg" id="w-code">
+              <button type="button" data-c="A3" title="۳۰ × ۴۲ سانتی‌متر">A3</button>
+              <button type="button" class="on" data-c="A4" title="۲۱ × ۲۹٫۷ سانتی‌متر">A4</button>
+              <button type="button" data-c="A5" title="۱۴ × ۲۱ سانتی‌متر">A5</button>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" id="w-center">🎯 وسط‌چین خودکار</button>
+          </div>
+          <div class="scene">
+            <div class="garm" id="w-garm">
+              <div class="face" id="w-ff"></div>
+              <div class="face bk" id="w-fb"></div>
+            </div>
+          </div>
+          <div class="teebar">
+            <span class="lbl" style="margin:0">رنگ تیشرت — پیش‌نمایش همان لحظه عوض می‌شود</span>
+            <div class="dots" id="w-cdots"></div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="sec">نوع محصول</h3>
+          <div class="cards4" id="w-products"></div>
+        </div>
+        <div>
+          <h3 class="sec">سایز تیشرت</h3>
+          <div class="seg" id="w-ssize" style="flex-wrap:wrap"></div>
+        </div>
+
+        <div class="sumbar">
+          <div class="sumchips" id="w-sumchips" aria-live="polite"></div>
+          <div class="liveprice">جمع سفارش: <b id="w-price">—</b> تومان</div>
+          <button type="button" class="btn btn-main" id="w-next1">ادامه — بسته‌بندی و ارسال ←</button>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ─────────── فاز ۲ : بسته‌بندی و ارسال ─────────── -->
+  <section class="phase" id="w-p2" hidden>
+    <h2 class="ph">بسته‌بندی و ارسال</h2>
+    <p class="phd">روش بسته‌بندی و آدرس گیرنده را انتخاب کن.</p>
+    <p class="phd">🚚 زمان ارسال: <b style="color:#ffd98a">۳ تا ۵ روز کاری</b></p>
+
+    <div>
+      <h3 class="sec">روش بسته‌بندی</h3>
+      <div class="cards3" id="w-pack"></div>
+    </div>
+
+    <div>
+      <h3 class="sec">آدرس تحویل</h3>
+      <div class="addrlist" id="w-addrs"></div>
+      <div style="margin-top:10px" id="w-newaddr" hidden>
+        <span class="lbl">مشخصات آدرس جدید</span>
+        <div class="frow1">
+          <input class="fin" type="text" placeholder="نشانی کامل" aria-label="نشانی کامل">
+          <input class="fin" type="text" placeholder="شهر" aria-label="شهر">
+          <input class="fin" type="text" placeholder="کد پستی" aria-label="کد پستی" inputmode="numeric">
+        </div>
+      </div>
+      <label class="sw" style="margin-top:12px"><input type="checkbox" id="w-gift"> 🎁 ارسال برای دیگران (هدیه)</label>
+      <div class="giftbox" id="w-giftbox" hidden>
+        <span class="lbl" style="margin:0">مشخصات گیرنده هدیه</span>
+        <div class="frow">
+          <input class="fin" type="text" placeholder="نام گیرنده" aria-label="نام گیرنده">
+          <input class="fin" type="text" placeholder="شماره تماس گیرنده" aria-label="شماره تماس گیرنده" inputmode="tel">
+        </div>
+        <input class="fin" type="text" placeholder="نشانی گیرنده" aria-label="نشانی گیرنده">
+        <input class="fin" type="text" placeholder="پیام مناسبت (روی کارت هدیه چاپ می‌شود) ✨" aria-label="پیام مناسبت">
+      </div>
+    </div>
+
+    <div class="navrow">
+      <button type="button" class="btn btn-ghost" id="w-back2">→ بازگشت به طراحی</button>
+      <button type="button" class="btn btn-main" id="w-next2">ادامه — پیش‌نمایش سفارش ←</button>
+    </div>
+  </section>
+
+  <!-- ─────────── فاز ۳ : پیش‌نمایش سفارش ─────────── -->
+  <section class="phase" id="w-p3" hidden>
+    <h2 class="ph">پیش‌نمایش سفارش</h2>
+    <p class="phd">همه چیز را چک کن — همه چیز را چک کن و در صورت تایید به پرداخت برو.</p>
+    <div class="rev">
+      <div class="revcard">
+        <div class="revtee" id="w-revtee"></div>
+        <div id="w-revlist"></div>
+      </div>
+      <div class="pricebox">
+        <h3 class="sec" style="margin-top:0">ریز قیمت سفارش</h3>
+        <div id="w-pricelines"></div>
+        <div class="ptotal"><span>مبلغ قابل پرداخت</span><b id="w-total">—</b></div>
+        <p class="pnote">⚙️ قیمت نهایی در سیستم واقعی سمت سرور (Core) محاسبه و اعتبارسنجی می‌شود؛ سمت کلاینت فقط نمایش است.</p>
+        <div class="navrow" style="margin-top:16px">
+          <button type="button" class="btn btn-ghost" id="w-back3">→ بازگشت</button>
+          <button type="button" class="btn btn-main" id="w-confirm">تایید و ادامه به پرداخت ←</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── فاز ۴ : پرداخت و ثبت سفارش ─────────── -->
+  <section class="phase" id="w-p4" hidden>
+    <div id="w-payarea">
+      <h2 class="ph">پرداخت و ثبت سفارش</h2>
+      <p class="phd">روش پرداخت را انتخاب کن — در این نسخه نمایشی، هر دو روش همیشه موفق هستند (ماک).</p>
+      <div class="totalhero"><div class="n" id="w-paytotal">—</div><small>تومان — مبلغ قابل پرداخت</small></div>
+      <div class="paygrid" style="margin-top:14px">
+        <div class="paycard" id="w-paygw" role="button" tabindex="0">
+          <span class="ic">🏦</span>
+          <b>درگاه پرداخت بانکی</b>
+          <small>انتقال به درگاه نمایشی و پرداخت آنلاین<br>(در این پروتوتایپ: همیشه موفق)</small>
+        </div>
+        <div class="paycard" id="w-paywallet" role="button" tabindex="0">
+          <span class="ic">👛</span>
+          <b>کیف پول</b>
+          <small>پرداخت از موجودی کیف پول</small>
+          <div class="bal">موجودی: ۵۰۰٬۰۰۰ تومان</div>
+        </div>
+      </div>
+      <div class="navrow" style="margin-top:16px">
+        <button type="button" class="btn btn-ghost" id="w-back4">→ بازگشت به پیش‌نمایش</button>
+      </div>
+    </div>
+    <div id="w-success" class="success" hidden>
+      <div class="big">✓</div>
+      <h2>سفارش شما ثبت شد!</h2>
+      <div class="ord" id="w-ordno">شماره سفارش: PRG-۱۰۲۴-۵۶۷</div>
+      <p id="w-successinfo">—</p>
+      <button type="button" class="btn btn-ghost" id="w-track">📍 پیگیری سفارش</button>
+      <button type="button" class="btn btn-main" id="w-again">بازگشت به فروشگاه</button>
+    </div>
+  </section>
+
+  <footer class="pn">پروتوتایپ UX برای پیاده‌سازی در محیط توسعه · فروشگاه پی‌رنگ خان (BARANG.B2C.Web) · قیمت‌ها و داده‌ها نمایشی است</footer>
+</div>
+
+<!-- درگاه نمایشی -->
+<div class="overlay" id="w-gw" hidden>
+  <div class="gw">
+    <div class="bank ltr" style="text-align:center">ZARINPAL-DEMO GATEWAY · SHOW-ONLY</div>
+    <div class="amt" id="w-gwamt">— تومان</div>
+    <small>پرداخت سفارش چاپ پی‌رنگ خان</small>
+    <div class="gwcard ltr">
+      <div class="row"><span>Card</span><b>6104 **** **** 3394</b></div>
+      <div class="row"><span>Holder</span><b>PEYRANG KHAN</b></div>
+      <div class="row"><span>OTP</span><b>••••</b></div>
+    </div>
+    <button type="button" class="btn btn-main btn-lg" id="w-gwpay">پرداخت (در ماک همیشه موفق ✓)</button>
+    <div><button type="button" class="btn btn-ghost btn-sm" id="w-gwcancel" style="margin-top:10px">انصراف</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var fa=function(n){return String(n).replace(/\d/g,function(d){return "۰۱۲۳۴۵۶۷۸۹"[d];});};
+var money=function(n){return fa(String(n).replace(/\B(?=(\d{3})+(?!\d))/g,","));};
+
+/* ---------- داده نمایشی طرح‌ها ---------- */
+var PALS=[["#f59e0b","#7c2d12","#1c1207"],["#38bdf8","#0c4a6e","#08131f"],["#f43f5e","#4c0519","#1c0710"],["#34d399","#064e3b","#061410"],["#a78bfa","#3730a3","#120f2b"],["#fb923c","#7c2d12","#170d07"],["#22d3ee","#155e75","#06171f"],["#e879f9","#701a75","#1b0a1e"]];
+var DATA=[
+ {t:"شیر اسطوره‌ای",c:"شیر حماسی جنگاور",m:0,p:0},{t:"گربه فضایی",c:"گربه فضا سیاره کیهان بامزه",m:1,p:1},{t:"اژدهای کوهستان",c:"اژدها حماسی اسطوره کوه",m:2,p:2},
+ {t:"موج و خورشید",c:"دریا موج خورشید طبیعت آرام",m:3,p:3},{t:"هلال و ستاره",c:"شب هلال ستاره آسمان رویایی",m:4,p:4},{t:"چشم طراوت",c:"چشم طلسم راز نظر",m:5,p:5},
+ {t:"دماوند",c:"کوه قله دماوند برف طبیعت",m:2,p:1},{t:"کهکشان مارپیچ",c:"کهکشان فضا ستاره بی‌نهایت",m:1,p:0},{t:"پنجه شیر",c:"شیر پنجه قدرت حماسی",m:6,p:2},
+ {t:"گل مریم",c:"گل طبیعت لطیف رویایی",m:7,p:6},{t:"روح موج",c:"موج آب دریا جزر",m:3,p:7},{t:"پرنده آتشین",c:"پرنده آتش سیمرغ پرواز",m:0,p:5},
+ {t:"مدار کهکشان",c:"سیاره مدار فضا نجوم",m:1,p:3},{t:"گرگ ماه",c:"گرگ ماه شب جنگل",m:4,p:0},{t:"خورشید داغ",c:"خورشید تابستان گرما",m:6,p:6},
+ {t:"تایپوگرافی «تک»",c:"تک تایپوگرافی متن کلمه",m:7,p:4},{t:"کوه‌های بنفش",c:"کوه بنفش غروب رویا",m:2,p:5},{t:"جزیره آبی",c:"جزیره دریا سفر آرامش",m:3,p:1},
+ {t:"ستاره دنباله‌دار",c:"ستاره شهاب آسمان آرزو",m:4,p:7},{t:"عقاب سربلند",c:"عقاب پرواز آزادی قدرت",m:5,p:3},{t:"قلب نئون",c:"قلب عشق نئون جوان",m:6,p:1},
+ {t:"مسیر راز",c:"راه مارپیچ راز سفر",m:1,p:2},{t:"تیغ و گل",c:"تیغ گل تضاد قدرت لطافت",m:7,p:0},{t:"غروب نارنجی",c:"غروب خورشید نارنجی آرامش",m:3,p:5}
+];
+function art(d){var P=PALS[d.p],a=P[0],b=P[1],bg=P[2];
+ var s='<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+d.t+'"><rect width="200" height="200" fill="'+bg+'"/>';
+ if(d.m===0){s+='<circle cx="100" cy="86" r="46" fill="'+a+'"/><path d="M30 160 L82 96 L120 160 Z" fill="'+b+'"/><path d="M96 160 L142 108 L176 160 Z" fill="'+a+'" opacity=".85"/><rect x="26" y="160" width="148" height="6" rx="3" fill="'+b+'"/>';}
+ else if(d.m===1){s+='<circle cx="100" cy="100" r="58" fill="none" stroke="'+a+'" stroke-width="7" opacity=".9"/><ellipse cx="100" cy="100" rx="86" ry="30" fill="none" stroke="'+b+'" stroke-width="5" transform="rotate(-18 100 100)"/><circle cx="152" cy="72" r="17" fill="'+a+'"/><circle cx="60" cy="128" r="8" fill="'+b+'"/><circle cx="40" cy="66" r="3.5" fill="'+a+'"/><circle cx="168" cy="132" r="4.5" fill="'+a+'"/>';}
+ else if(d.m===2){for(var i=0;i<3;i++){var y=64+i*42;s+='<path d="M18 '+y+' Q 60 '+(y-34)+' 100 '+y+' T 182 '+y+'" fill="none" stroke="'+(i===1?b:a)+'" stroke-width="'+(9-i*2)+'" stroke-linecap="round"/>';}s+='<circle cx="100" cy="40" r="20" fill="'+a+'"/>';}
+ else if(d.m===3){s+='<circle cx="100" cy="72" r="34" fill="'+a+'"/><path d="M40 158 L78 104 L104 142 L128 100 L164 158 Z" fill="'+b+'"/><path d="M60 158 L84 122 L108 158 Z" fill="'+a+'" opacity=".7"/><rect x="34" y="162" width="132" height="7" rx="3.5" fill="'+b+'"/>';}
+ else if(d.m===4){s+='<path d="M124 44 a56 56 0 1 0 0 112 a68 68 0 0 1 0 -112 Z" fill="'+a+'"/><path d="M64 44 l4.5 12 12 4.5 -12 4.5 -4.5 12 -4.5 -12 -12 -4.5 12 -4.5 Z" fill="'+b+'"/><circle cx="150" cy="150" r="4" fill="'+b+'"/><circle cx="60" cy="160" r="3" fill="'+b+'"/><circle cx="170" cy="70" r="3" fill="'+b+'"/>';}
+ else if(d.m===5){s+='<path d="M100 40 C 148 40 168 84 164 118 C 176 130 172 148 158 156 L 42 156 C 28 148 24 130 36 118 C 32 84 52 40 100 40 Z" fill="none" stroke="'+a+'" stroke-width="9"/><circle cx="100" cy="104" r="30" fill="'+b+'"/><circle cx="100" cy="104" r="12" fill="'+a+'"/>';}
+ else if(d.m===6){var pts="";for(var k=0;k<10;k++){var R=k%2?26:62,an=Math.PI*2*k/10-Math.PI/2;pts+=(100+R*Math.cos(an))+","+(100+R*Math.sin(an))+" ";}s+='<polygon points="'+pts.trim()+'" fill="'+a+'"/><g stroke="'+b+'" stroke-width="5" stroke-linecap="round">';for(var r=0;r<8;r++){var an2=Math.PI*r/4;s+='<line x1="'+(100+72*Math.cos(an2))+'" y1="'+(100+72*Math.sin(an2))+'" x2="'+(100+90*Math.cos(an2))+'" y2="'+(100+90*Math.sin(an2))+'"/>';}s+="</g>";}
+ else{var words=["تک","پارس","رها","دل"];var w=words[d.p%4];s+='<text x="100" y="118" text-anchor="middle" font-size="'+(w.length>2?52:78)+'" font-weight="900" fill="'+a+'" font-family="Vazirmatn,Tahoma">'+w+'</text><rect x="46" y="138" width="108" height="6" rx="3" fill="'+b+'"/><circle cx="100" cy="60" r="7" fill="'+b+'"/>';}
+ return s+"</svg>";}
+var SYN={"دریا":"موج","آرام":"آرامش","آسمان":"ستاره","کوه":"دماوند","عاشق":"قلب","حیوان":"گربه","فضانورد":"فضا","شجاع":"شیر"};
+function match(q){q=(q||"").trim();if(!q)return DATA.slice();
+ var toks=q.split(/[\s\u200C,،]+/).filter(Boolean).map(function(t){for(var k in SYN){if(t.indexOf(k)>-1)return SYN[k];}return t;});
+ return DATA.map(function(d){var hay=d.t+" "+d.c,sc=0;toks.forEach(function(t){if(hay.indexOf(t)>-1)sc+=(d.t.indexOf(t)>-1?3:1);});return{d:d,sc:sc};})
+  .filter(function(x){return x.sc>0;}).sort(function(a,b){return b.sc-a.sc;}).map(function(x){return x.d;});}
+
+/* ---------- تیشرت ---------- */
+function tee(side){var col=side==="front"?"#151515":"#d7d2c4";
+ var collar=side==="front"?"M96 24 Q150 62 204 24":"M96 24 Q150 40 204 24";
+ var seams='<g stroke="'+col+'" stroke-width="1.6" stroke-dasharray="4 4" opacity=".4" fill="none"><path d="M74 108 L74 314"/><path d="M226 108 L226 314"/><path d="M78 316 Q150 334 222 316"/></g>';
+ var band='<path d="'+collar+'" fill="none" stroke="'+col+'" stroke-width="6" opacity=".55" stroke-linecap="round"/>';
+ var seam=side==="back"?'<line x1="150" y1="44" x2="150" y2="326" stroke="'+col+'" stroke-width="1.4" stroke-dasharray="3 5" opacity=".3"/>':"";
+ return '<svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="'+collar+' L236 36 L294 94 L256 130 L228 108 L228 318 Q150 342 72 318 L72 108 L44 130 L6 94 L64 36 Z" fill="var(--teeC)" stroke="'+col+'" stroke-width="2.4"/>'+band+seams+seam+'</svg>';}
+var SZ={A3:{w:116,h:164,lbl:"A3 · ۳۰×۴۲"},A4:{w:82,h:116,lbl:"A4 · ۲۱×۲۹٫۷"},A5:{w:56,h:79,lbl:"A5 · ۱۴×۲۱"}};
+var EMPTY_HTML='<div class="empty">✨<br>اول یکی از سه مسیر را انتخاب کن:<br>طرح از بانک، آپلود فایل یا نوشتن متن — پیش‌نمایش همین‌جا زنده به‌روز می‌شود</div>';
+function buildFace(el,side){el.innerHTML=tee(side)+'<div class="prect" data-lbl="ناحیه چاپ"></div><div class="awrap">'+EMPTY_HTML+'</div>';
+ return{rect:el.querySelector(".prect"),wrap:el.querySelector(".awrap")};}
+function place(f,code,html){var box=f.wrap.parentElement.getBoundingClientRect();
+ if(box.width<10)return;
+ var G={w:box.width/300,h:box.height/340},P=SZ[code],px=P.w*G.w,py=P.h*G.h;
+ var L=(150*G.w-px/2)+"px",T=((118+P.h/2)*G.h-py/2)+"px";
+ f.rect.style.cssText+=";width:"+px+"px;height:"+py+"px;left:"+L+";top:"+T;
+ f.rect.style.left=L;f.rect.style.top=T;f.rect.style.width=px+"px";f.rect.style.height=py+"px";
+ f.rect.setAttribute("data-lbl",P.lbl+" سانت");
+ f.wrap.style.left=L;f.wrap.style.top=T;f.wrap.style.width=px+"px";f.wrap.style.height=py+"px";
+ if(html!==undefined){f.wrap.innerHTML=html||EMPTY_HTML;if(html){f.wrap.classList.remove("pop");void f.wrap.offsetWidth;f.wrap.classList.add("pop");}}}
+
+/* ---------- محاسبه قیمت (نمایشی — در سیستم واقعی سمت Core) ---------- */
+var PRODUCTS=[{id:"tshirt",n:"تیشرت گردن‌گرد نخی",d:"۱۰۰٪ پنبه · ۱۸۰ گرم",base:289000,ic:"👕"},{id:"polo",n:"پولوشرت یقه پیکه",d:"نخی پیکه · یقه دوخت‌دوبل",base:389000,ic:"🥼"},{id:"hoodie",n:"هودی کلاه‌دار",d:"کمند جیبی · داخل کرکی",base:599000,ic:"🧥"},{id:"kids",n:"تیشرت نوزادی",d:"پارچه ضدحساسیت نوزاد",base:219000,ic:"🧸"}];
+var CODE_P={A3:85000,A4:45000,A5:0};
+var DSRC_P={bank:0,upload:35000,text:25000};
+var PACKS=[{id:"simple",n:"بسته‌بندی ساده",d:"کیسه پارچه‌ای پی‌رنگ",p:0},{id:"gift",n:"بسته هدیه",d:"کاغذ کادو + روبان + کارت پیام",p:45000},{id:"lux",n:"جعبه لوکس",d:"جعبه هارد باوکس + روبان ساتن",p:95000}];
+var SIZES=["S","M","L","XL","2XL"];
+var TCOLS=[["#f2f3f1","سفید"],["#1a1a1a","مشکی"],["#d9c8a9","شیری"],["#9db8c9","آبی روشن"],["#7a1f1f","زرشکی"],["#2d4a2d","سبز تیره"]];
+function calc(){var items=[],total=0;
+ var prod=PRODUCTS.find(function(p){return p.id===W.product;});
+ if(prod){items.push(["تیشرت: "+prod.n,prod.base]);total+=prod.base;}
+ items.push(["اندازه چاپ "+W.code,CODE_P[W.code]]);total+=CODE_P[W.code];
+ if(W.design.mode){var dl={bank:"طرح از بانک",upload:"پردازش فایل شخصی",text:"تایپوگرافی متن"}[W.design.mode];items.push([dl,DSRC_P[W.design.mode]]);total+=DSRC_P[W.design.mode];}
+ var pk=PACKS.find(function(p){return p.id===W.pack;});if(pk){items.push(["بسته‌بندی: "+pk.n,pk.p]);total+=pk.p;}
+ return{items:items,total:total};}
+
+/* ---------- وضعیت ---------- */
+var W={phase:0,design:{mode:null,bank:null,img:null,txt:"",font:1,col:"#1c1917",tsz:100},side:"front",code:"A4",product:null,ssize:"L",tcol:"#f2f3f1",dx:0,dy:0,pack:null,addr:"a0",gift:false};
+var $=function(id){return document.getElementById(id);};
+var fF=buildFace($("w-ff"),"front"),fB=buildFace($("w-fb"),"back");
+$("w-ff").style.setProperty("--teeC","#f2f3f1");$("w-fb").style.setProperty("--teeC","#f2f3f1");
+
+function designHTML(){var m=W.design;
+ if(m.mode==="bank"&&m.bank)return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">'+m.bank.svg+"</div>";
+ if(m.mode==="upload"&&m.img)return '<img src="'+m.img+'" alt="طرح شما" style="object-fit:contain">';
+ if(m.mode==="text"&&m.txt)return '<div class="t" dir="auto" style="color:'+m.col+';font-size:'+Math.round(m.tsz/100*(SZ[W.code].w*0.42))+'px;'+(m.font===3?"font-style:italic;":"")+(m.font===2?"letter-spacing:.08em;font-weight:500;":m.font===4?"letter-spacing:.25em;":"")+'">'+m.txt.replace(/</g,"&lt;")+"</div>";
+ return null;}
+function renderPreview(){var html=designHTML();
+ var f=W.side==="front"?fF:fB;
+ place(f,W.code,html!==null?html:undefined);
+ if(html===null)f.wrap.innerHTML=EMPTY_HTML;
+ var other=W.side==="front"?fB:fF;
+ place(other,W.code,undefined);}
+function renderSum(){var chips=[],d=W.design;
+ var dname=d.mode==="bank"?(d.bank?d.bank.t:null):d.mode==="upload"?(d.img?"طرح خودت":null):d.mode==="text"?(d.txt?"«"+d.txt.slice(0,12)+"»":null):null;
+ chips.push(dname?["طرح",dname]:["طرح","—"]);
+ chips.push(["محل چاپ",W.side==="front"?"جلو":"پشت"]);
+ chips.push(["اندازه",W.code]);
+ var prod=PRODUCTS.find(function(p){return p.id===W.product;});
+ chips.push(["محصول",prod?prod.n:"—"]);
+ chips.push(["سایز",W.ssize]);
+ var tc=TCOLS.find(function(c){return c[0]===W.tcol;});
+ chips.push(["رنگ",tc?tc[1]:"—"]);
+ $("w-sumchips").innerHTML=chips.map(function(c){return '<span class="schip">'+c[0]+": <b>"+c[1]+"</b></span>";}).join("");
+ var t=calc();
+ $("w-price").textContent=W.product?money(t.total):"—";
+ $("w-next1").disabled=!(dname&&W.product);}
+
+/* ---------- فاز ۱: بانک ---------- */
+var CHIPS=["شیر اسطوره‌ای","گربه فضایی","دریا و موج","کوه دماوند","کهکشان","غروب نارنجی"];
+CHIPS.forEach(function(c){var b=document.createElement("button");b.type="button";b.textContent=c;
+ b.addEventListener("click",function(){$("w-q").value=c;runSearch();});$("w-chips").appendChild(b);});
+function runSearch(){var q=$("w-q").value;$("w-pulse").hidden=false;
+ var g=$("w-grid");g.innerHTML="";for(var i=0;i<6;i++){var sk=document.createElement("div");sk.className="sk";g.appendChild(sk);}
+ $("w-status").textContent="موتور مفهومی در حال جستجوی «"+(q||"پیشنهاد امروز")+"» میان ۱۲۴٬۵۸۰ طرح…";
+ setTimeout(function(){$("w-pulse").hidden=true;
+  var res=q?match(q):DATA.slice(0,10);
+  $("w-status").textContent=res.length?fa(res.length)+' طرح نزدیک به «'+q+'» — مرتب از نزدیک‌ترین':"چیزی پیدا نشد؛ کلیدواازه ساده‌تر امتحان کن";
+  g.innerHTML="";
+  res.slice(0,10).forEach(function(d,idx){var fig=document.createElement("figure");fig.className="cardart"+(W.design.bank&&W.design.bank.t===d.t?" on":"");
+   fig.innerHTML=(idx<3?'<span class="rank">'+fa(idx+1)+" نزدیک‌ترین</span>":"")+'<div class="a">'+art(d)+"</div><figcaption>"+d.t+"</figcaption>";
+   fig.addEventListener("click",function(){W.design={mode:"bank",bank:{t:d.t,svg:art(d)}};g.querySelectorAll(".cardart").forEach(function(c){c.classList.remove("on");});fig.classList.add("on");renderPreview();renderSum();});
+   g.appendChild(fig);});},600);}
+var stimer=null;$("w-q").addEventListener("input",function(){clearTimeout(stimer);stimer=setTimeout(runSearch,380);});
+
+/* ---------- فاز ۱: آپلود ---------- */
+function filePicked(file){if(!file)return;var url=URL.createObjectURL(file);
+ var im=new Image();im.onload=function(){var q=im.naturalWidth,msg,bp,best;
+  if(q>=1400){msg="کیفیت عالی — برای A3 هم مناسب است";bp=100;best="A3";}
+  else if(q>=800){msg="کیفیت خوب — تا A4 عالی چاپ می‌شود";bp=72;best="A4";}
+  else{msg="رزولوشن کم — پیشنهاد ما A5 است";bp=42;best="A5";}
+  $("w-check").hidden=false;$("w-checkmsg").textContent=msg;$("w-meter").style.width=bp+"%";$("w-best").textContent=best;
+  W.design={mode:"upload",img:url};renderPreview();renderSum();};im.src=url;}
+$("w-file").addEventListener("change",function(e){filePicked(e.target.files[0]);});
+$("w-sample").addEventListener("click",function(){$("w-check").hidden=false;
+ $("w-checkmsg").textContent="کیفیت عالی — برای A3 هم مناسب است";$("w-meter").style.width="100%";$("w-best").textContent="A3";
+ var d=DATA[1];W.design={mode:"upload",img:"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(art(d))};renderPreview();renderSum();});
+["dragover","dragleave","drop"].forEach(function(ev){$("w-drop").addEventListener(ev,function(e){e.preventDefault();$("w-drop").classList.toggle("over",ev==="dragover");
+ if(ev==="drop"){var f=e.dataTransfer.files[0];if(f&&/^image\//.test(f.type))filePicked(f);}});});
+
+/* ---------- فاز ۱: متن ---------- */
+var TCOLS_TEXT=["#1c1917","#ffffff","#f6b23c","#e11d48","#2563eb","#16a34a","#8b5cf6","#e879f9"];
+TCOLS_TEXT.forEach(function(c,i){var d=document.createElement("button");d.type="button";d.className="dot"+(i===0?" on":"");d.style.background=c;d.style.boxShadow="inset 0 0 0 1px rgba(0,0,0,.25)";d.setAttribute("aria-label","رنگ متن");
+ d.addEventListener("click",function(){$("w-tdots").querySelectorAll(".dot").forEach(function(x){x.classList.remove("on");});d.classList.add("on");
+  W.design.mode="text";W.design.col=c;if(!W.design.txt)W.design.txt="پی‌رنگ خان";renderPreview();renderSum();});$("w-tdots").appendChild(d);});
+document.querySelectorAll(".fbtn").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".fbtn").forEach(function(x){x.classList.remove("on");});b.classList.add("on");
+ W.design.mode="text";W.design.font=+b.dataset.f;if(!W.design.txt)W.design.txt="پی‌رنگ خان";renderPreview();renderSum();});});
+$("w-textin").addEventListener("input",function(e){W.design.mode="text";W.design.txt=e.target.value;renderPreview();renderSum();});
+$("w-tsz").addEventListener("input",function(e){W.design.tsz=+e.target.value;$("w-tsout").textContent=fa(W.design.tsz);if(W.design.mode==="text")renderPreview();});
+
+/* ---------- فاز ۱: کنترل‌ها ---------- */
+document.querySelectorAll(".mode").forEach(function(b){b.addEventListener("click",function(){
+ document.querySelectorAll(".mode").forEach(function(x){x.classList.remove("on");});b.classList.add("on");
+ W.design.mode=b.dataset.mode;
+ ["bank","upload","text"].forEach(function(m){$("w-pan-"+m).hidden=m!==W.design.mode;});
+ if(W.design.mode==="bank"&&W.design.bank===null)runSearch();});});
+$("w-side").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+ W.side=b.dataset.side;$("w-side").querySelectorAll("button").forEach(function(x){x.classList.remove("on");});b.classList.add("on");
+ $("w-garm").classList.toggle("back",W.side==="back");renderPreview();renderSum();});
+$("w-code").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+ W.code=b.dataset.c;$("w-code").querySelectorAll("button").forEach(function(x){x.classList.remove("on");});b.classList.add("on");
+ renderPreview();renderSum();});
+$("w-center").addEventListener("click",function(){W.dx=0;W.dy=0;renderPreview();});
+TCOLS.forEach(function(c,i){var d=document.createElement("button");d.type="button";d.className="dot"+(i===0?" on":"");d.style.background=c[0];d.title=c[1];d.setAttribute("aria-label","رنگ تیشرت "+c[1]);
+ d.addEventListener("click",function(){$("w-cdots").querySelectorAll(".dot").forEach(function(x){x.classList.remove("on");});d.classList.add("on");
+  W.tcol=c[0];$("w-ff").style.setProperty("--teeC",c[0]);$("w-fb").style.setProperty("--teeC",c[0]);renderSum();});$("w-cdots").appendChild(d);});
+PRODUCTS.forEach(function(p){var c=document.createElement("div");c.className="pcard"+(W.product===p.id?" on":"");
+ c.innerHTML='<span class="ic">'+p.ic+"</span><b>"+p.n+"</b><small>"+p.d+'</small><div class="pr">'+money(p.base)+" تومان</div>";
+ c.addEventListener("click",function(){W.product=p.id;document.querySelectorAll(".pcard").forEach(function(x){x.classList.remove("on");});c.classList.add("on");renderSum();});
+ $("w-products").appendChild(c);});
+SIZES.forEach(function(s){var b=document.createElement("button");b.type="button";b.textContent=s;if(s===W.ssize)b.classList.add("on");
+ b.addEventListener("click",function(){W.ssize=s;$("w-ssize").querySelectorAll("button").forEach(function(x){x.classList.remove("on");});b.classList.add("on");renderSum();});
+ $("w-ssize").appendChild(b);});
+/* درگ طرح */
+(function(){var down=false,sx,sy,ox,oy;
+ var w=fF.wrap;
+ w.parentElement.parentElement.addEventListener("pointerdown",function(e){if(w.querySelector(".empty"))return;if(!w.querySelector("img,svg,.t"))return;
+  down=true;sx=e.clientX;sy=e.clientY;ox=W.dx;oy=W.dy;});
+ window.addEventListener("pointermove",function(e){if(!down)return;W.dx=Math.max(-70,Math.min(70,ox+(e.clientX-sx)));W.dy=Math.max(-90,Math.min(90,oy+(e.clientY-sy)));w.style.transform="translate("+W.dx+"px,"+W.dy+"px)";});
+ window.addEventListener("pointerup",function(){down=false;});})();
+
+/* ---------- فاز ۲ ---------- */
+PACKS.forEach(function(p){var c=document.createElement("div");c.className="pick";
+ c.innerHTML="<b>"+p.n+"</b><small>"+p.d+"</small>"+(p.p?'<div class="pr">+'+money(p.p)+" تومان</div>":'<div class="pr" style="color:#8ff0c4">مجانی</div>');
+ c.addEventListener("click",function(){W.pack=p.id;$("w-pack").querySelectorAll(".pick").forEach(function(x){x.classList.remove("on");});c.classList.add("on");});
+ $("w-pack").appendChild(c);});
+var ADDRS=[{id:"a0",n:"خانه — مهرداد محمدی",a:"تهران، سعادت‌آباد، بلوار دریا، خیابان صراف‌ها، پلاک ۱۲، واحد ۴"},{"id":"a1",n:"محل کار",a:"تهران، ونک، خیابان گاندی جنوبی، برج نگین، طبقه ۷"}];
+ADDRS.forEach(function(x){var c=document.createElement("div");c.className="arow"+(W.addr===x.id?" on":"");
+ c.innerHTML="<b>📍 "+x.n+"</b><small>"+x.a+"</small>";
+ c.addEventListener("click",function(){W.addr=x.id;$("w-addrs").querySelectorAll(".arow").forEach(function(y){y.classList.remove("on");});c.classList.add("on");$("w-newaddr").hidden=true;});
+ $("w-addrs").appendChild(c);});
+(function(){var c=document.createElement("div");c.className="pick";
+ c.innerHTML="<b>＋ آدرس جدید</b><small>ثبت نشانی جدید برای این سفارش</small>";
+ c.addEventListener("click",function(){W.addr="new";$("w-addrs").querySelectorAll(".arow").forEach(function(y){y.classList.remove("on");});c.classList.add("on");$("w-newaddr").hidden=false;});
+ $("w-addrs").appendChild(c);})();
+$("w-gift").addEventListener("change",function(e){W.gift=e.target.checked;$("w-giftbox").hidden=!W.gift;});
+
+/* ---------- ناوبری فازها ---------- */
+function goPhase(n){W.phase=n;
+ [1,2,3,4].forEach(function(i){$("w-p"+i).hidden=i!==n;});
+ var steps=$("w-steps").children;
+ for(var i=0;i<4;i++){steps[i].className=i+1===n?"on":(i+1<n?"done":"");}
+ if(n===3)renderP3();
+ if(n===4){var t=calc();$("w-paytotal").textContent=money(t.total);$("w-payarea").hidden=false;$("w-success").hidden=true;}
+ window.scrollTo(0,0);}
+$("w-next1").addEventListener("click",function(){if($("w-next1").disabled)return;goPhase(2);});
+$("w-back2").addEventListener("click",function(){goPhase(1);});
+$("w-next2").addEventListener("click",function(){if(!W.pack){alert("اول روش بسته‌بندی را انتخاب کن");return;}goPhase(3);});
+$("w-back3").addEventListener("click",function(){goPhase(2);});
+$("w-confirm").addEventListener("click",function(){goPhase(4);});
+$("w-back4").addEventListener("click",function(){goPhase(3);});
+
+/* ---------- فاز ۳: رندر ---------- */
+function renderP3(){var t=calc(),d=W.design;
+ var prod=PRODUCTS.find(function(p){return p.id===W.product;});
+ var tc=TCOLS.find(function(c){return c[0]===W.tcol;});
+ var dname=d.mode==="bank"&&d.bank?"طرح بانک: "+d.bank.t:d.mode==="upload"&&d.img?"فایل شخصی شما":d.mode==="text"&&d.txt?"متن: «"+d.txt+"»":"—";
+ var addr=ADDRS.find(function(x){return x.id===W.addr;});
+ var pack=PACKS.find(function(p){return p.id===W.pack;});
+ $("w-revtee").innerHTML=(W.side==="back"?'<div class="garm back" style="width:230px;margin:0 auto"><div class="face">'+tee("back")+'</div><div class="face bk">'+tee("front")+"</div></div>":'<div class="garm" style="width:230px;margin:0 auto"><div class="face">'+tee("front")+'</div><div class="face bk">'+tee("back")+"</div></div>");
+ var rtee=$("w-revtee").querySelector(".garm");
+ rtee.style.setProperty("--teeC",W.tcol);
+ var html=designHTML();
+ var holder=document.createElement("div");holder.style.cssText="position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);width:120px;height:150px;display:flex;align-items:center;justify-content:center";
+ holder.innerHTML=html||'<span style="color:#94a1b8;font-size:12px">بدون طرح</span>';
+ $("w-revtee").appendChild(holder);
+ var kv=[["منبع طرح",dname],["محل چاپ",W.side==="front"?"جلو":"پشت"],["اندازه چاپ",SZ[W.code].lbl+" سانت"],["نوع محصول",prod?prod.n:"—"],["سایز",W.ssize],["رنگ تیشرت",tc?tc[1]:"—"],["بسته‌بندی",pack?pack.n:"—"],["زمان ارسال","۳ تا ۵ روز کاری"],["آدرس",W.addr==="new"?"آدرس جدید":addr?addr.a:"—"]];
+ if(W.gift)kv.push(["ارسال برای دیگران","بله — به‌همراه کارت مناسبت"]);
+ $("w-revlist").innerHTML=kv.map(function(x){return '<div class="kv"><span>'+x[0]+"</span><b>"+x[1]+"</b></div>";}).join("");
+ $("w-pricelines").innerHTML=t.items.map(function(it){return '<div class="pline"><span>'+it[0]+"</span><b>"+(it[1]?money(it[1]):"مجانی")+"</b></div>";}).join("");
+ $("w-total").textContent=money(t.total)+" تومان";}
+
+/* ---------- فاز ۴: پرداخت ---------- */
+function paid(method){$("w-payarea").hidden=true;var s=$("w-success");s.hidden=false;
+ var t=calc();
+ $("w-ordno").textContent="شماره سفارش: PRG-"+fa("1024")+ "-"+fa(String(Math.floor(Math.random()*900)+100));
+ $("w-successinfo").innerHTML="مبلغ "+money(t.total)+" تومان"+(method==="wallet"?" از کیف پول شما کسر شد":" از طریق درگاه پرداخت شد")+" · وضعیت: پرداخت موفق و سفارش ثبت شد ✅<br>در سیستم واقعی، این مرحله سمت Core نهایی‌سازی می‌شود (کسر موجودی کیف پول / وریفای درگاه) و سفارش وارد فرایند تولید می‌شود.";}
+$("w-paygw").addEventListener("click",function(){var t=calc();$("w-gwamt").textContent=money(t.total)+" تومان";$("w-gw").hidden=false;});
+$("w-gwcancel").addEventListener("click",function(){$("w-gw").hidden=true;});
+$("w-gwpay").addEventListener("click",function(){$("w-gw").hidden=true;paid("gateway");});
+$("w-paywallet").addEventListener("click",function(){paid("wallet");});
+$("w-track").addEventListener("click",function(){alert("در سیستم واقعی: رفتن به صفحه پیگیری سفارش در پنل کاربری");});
+$("w-again").addEventListener("click",function(){
+ W={phase:1,design:{mode:null,bank:null,img:null,txt:"",font:1,col:"#1c1917",tsz:100},side:"front",code:"A4",product:null,ssize:"L",tcol:"#f2f3f1",dx:0,dy:0,pack:null,addr:"a0",gift:false};
+ document.querySelectorAll(".mode,.pcard,.pick,.arow,.fbtn,.dot").forEach(function(x){x.classList.remove("on");});
+ $("w-ff").style.setProperty("--teeC","#f2f3f1");$("w-fb").style.setProperty("--teeC","#f2f3f1");
+ $("w-q").value="";$("w-textin").value="";$("w-grid").innerHTML="";$("w-pan-bank").hidden=true;$("w-pan-upload").hidden=true;$("w-pan-text").hidden=true;$("w-newaddr").hidden=true;$("w-giftbox").hidden=true;$("w-gift").checked=false;
+ fF.wrap.innerHTML=EMPTY_HTML;fB.wrap.innerHTML=EMPTY_HTML;
+ renderSum();goPhase(1);});
+
+window.addEventListener("resize",function(){clearTimeout(window.__rz);window.__rz=setTimeout(renderPreview,150);});
+W.design={mode:"bank",bank:{t:DATA[1].t,svg:art(DATA[1])}};runSearch();renderSum();renderPreview();
+})();
+</script>
+</body>
+</html>

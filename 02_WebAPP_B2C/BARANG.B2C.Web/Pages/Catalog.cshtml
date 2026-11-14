@@ -19,29 +19,13 @@
     </header>
 
     <form class="catalog-filter" action="/catalog" method="get">
-        <input type="hidden" name="category" value="@(Model.Category ?? "")" />
-        <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@(Model.ConceptMode ? T("جستجوی مفهومی (مطابقت معنا)…", "Concept search (semantic match)…", "بحث مفاهيمي (مطابقة معنوية)…") : T("جستجو در کد یا نام طرح…", "Search code or title…", "ابحث في الرمز أو العنوان…"))" />
+        <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@T("جستجوی مفهومی (مطابقت معنا)…", "Concept search (semantic match)…", "بحث مفاهيمي (مطابقة معنوية)…")" />
         @if (Model.Page > 1)
         {
             <input type="hidden" name="page" value="1" />
         }
-        <label class="mode-toggle" title="@T("جستجوی مفهومی: پیدا کردن طرح‌ها بر اساس معنا و مفهوم، نه فقط کلمات", "Concept search: find designs by meaning, not just keywords", "بحث مفاهيمي: إيجاد التصاميم حسب المعنى وليس الكلمات فقط")">
-            <input type="checkbox" name="mode" value="concept" @(Model.ConceptMode ? "checked" : null) aria-label="@T("جستجوی مفهومی", "Concept search", "بحث مفاهيمي")" />
-            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8-5-3.6-5 3.6 1.9-5.8L4 8.8h6.1z"/></svg>
-        </label>
         <button class="btn btn-primary" type="submit">@T("جستجو", "Search", "بحث")</button>
     </form>
-
-    @if (Model.Categories.Count > 0)
-    {
-        <div class="chip-row" role="navigation" aria-label="@T("دسته‌ها", "Categories", "الفئات")">
-            <a class="fchip @(string.IsNullOrWhiteSpace(Model.Category) ? "active" : null)" href="/catalog@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "?search=" + Uri.EscapeDataString(Model.Search.Trim()))">@T("همه", "All", "الكل")</a>
-            @foreach (var cat in Model.Categories)
-            {
-                <a class="fchip @(Model.Category == cat.Code ? "active" : null)" href="/catalog?category=@Uri.EscapeDataString(cat.Code)@(string.IsNullOrWhiteSpace(Model.Search) ? "" : "&search=" + Uri.EscapeDataString(Model.Search.Trim()))@(Model.ConceptMode ? "&mode=concept" : "")" title="@cat.DisplayName">@(string.IsNullOrWhiteSpace(cat.DisplayName) ? cat.Code : cat.DisplayName) <small>@cat.Count</small></a>
-            }
-        </div>
-    }
 
     @if (Model.ConceptMode && !Model.ConceptActive)
     {
@@ -63,6 +47,8 @@
             <div class="design-grid">
                 @foreach (var m in Model.ConceptResults)
                 {
+                    var pct = Math.Clamp(m.Score, 0, 100);
+                    var mm = pct <= 30 ? "mm-low" : pct <= 70 ? "mm-mid" : "mm-high";
                     <a class="design-card" href="/design/@m.Id">
                         <span class="design-thumb">
                             @if (!string.IsNullOrWhiteSpace(m.Thumbnail))
@@ -72,7 +58,10 @@
                         </span>
                         <span class="design-meta">
                             <strong>@m.Title</strong>
-                            <span class="score-chip">@m.Score٪ @T("تطابق", "match", "تطابق")</span>
+                            <span class="match-meter @mm" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@pct" title="@T("میزان تطابق مفهومی", "Concept match level", "مستوى التطابق المفاهيمي")">
+                                <span class="bar" aria-hidden="true"><i style="width:@(pct)%"></i></span>
+                                <b class="pct">@BARANG.B2C.Web.Services.AppDate.Percent(pct, culture)</b>
+                            </span>
                         </span>
                     </a>
                 }

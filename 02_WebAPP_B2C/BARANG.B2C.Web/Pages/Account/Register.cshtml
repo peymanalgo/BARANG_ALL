@@ -29,6 +29,10 @@
                     <span>@T("ایمیل یا شماره تلفن", "Email or mobile number", "البريد الإلكتروني أو الهاتف")</span>
                     <input type="text" asp-for="Target" dir="ltr" autocomplete="email" placeholder="09121234567" required />
                 </label>
+                <label>
+                    <span>@T("کد دعوت (اختیاری)", "Invitation code (optional)", "رمز الدعوة (اختياري)")</span>
+                    <input type="text" name="InviteCode" dir="ltr" placeholder="ABC123" value="@(Model.InviteCode ?? "")" maxlength="20" />
+                </label>
                 <button type="submit" class="btn btn-primary btn-lg btn-block">@T("دریافت کد تأیید", "Send verification code", "إرسال رمز التحقق")</button>
             </form>
             <p class="muted small">@T("قبلاً ثبت‌نام کرده‌اید؟", "Already have an account?", "لديك حساب بالفعل؟") <a href="/account/login">@T("وارد شوید", "Sign in", "سجّل الدخول")</a></p>

@@ -435,6 +435,15 @@ public static class ServicesCatalogData
                 In("culture", "string", "Query", false)),
             ListOut, "X-Company-ID", false),
 
+        N("catalog", "30", "POST", "/products/variant-image", "ProductManage", "—",
+            "بارگذاری تصویر گونه محصول", "Upload variant image", "رفع صورة الصنف",
+            "تصویر محصول یک گونه (واریانت) را با multipart/form-data (فیلد file، فقط تصویر) در باکت عمومی MinIO ذخیره می‌کند و storageKey و URL عمومی را برمی‌گرداند؛ کلید برگشتی در فیلد imageStorageKey ساخت/ویرایش واریانت ارسال می‌شود.",
+            "Stores a product-variant image uploaded via multipart/form-data (field file, images only) in the public MinIO bucket and returns its storageKey and public URL; the returned key is sent as imageStorageKey on variant create/update.",
+            "يخزن صورة الصنف المرفوعة عبر multipart/form-data (الحقل file، صور فقط) في حاوية MinIO العامة ويعيد storageKey وعنوان URL العام؛ يُرسل المفتاح كـ imageStorageKey عند إنشاء/تحرير المتغير.",
+            Inputs(
+                In("file", "file", "Form", true)),
+            "JSON: storageKey + url عمومی", "Bearer + X-Company-ID", false),
+
         N("files", "30", "POST", "/client/files/upload", "ClientFileUpload", "upload + هدر Idempotency-Key",
             "آپلود فایل طرح", "Upload design file", "رفع ملف التصميم",
             "فایل طرح را (multipart/form-data) آپلود می‌کند؛ با Idempotency-Key آپلود مجدد همان فایل، همان فایل قبلی را برمی‌گرداند. فایل وارد بانک طرح می‌شود و بندانگشتی می‌گیرد.",
@@ -474,6 +483,37 @@ public static class ServicesCatalogData
                 In("q", "string", "Query", true),
                 In("limit", "int", "Query", false)),
             "JSON: آرایه طرح‌های مشابه با score", "بدون هدر (عمومی)", true),
+
+        N("public", "34", "GET", "/public/wizard/config", "—", "عمومی — client-read",
+            "پیکربندی ویزارد سفارش B2C", "B2C order wizard configuration", "إعدادات معالج طلب B2C",
+            "پیکربندی ویزارد سفارش را برای فروشگاه برمی‌گرداند: محصولات فعال با واریانت‌ها و قیمت هر واریانت (از تعرفه‌های قیمت‌گذاری یا قیمت فروش محصول)، رنگ‌ها، اندازه‌های چاپ قابل قیمت‌گذاری و روش‌های بسته‌بندی با قیمت هر کدام؛ هر واریانت در صورت داشتن تصویر، imageUrl عمومی آن هم برگردانده می‌شود.",
+            "Returns the order-wizard configuration for the store: active products with variants and per-variant price (from pricing tariffs or product sales price), colors, priceable print sizes, and packaging options with their prices; each variant also carries its public imageUrl when an image is set.",
+            "يعيد إعدادات معالج الطلب للمتجر: المنتجات النشطة مع المتغيرات وسعر كل متغير (من تعريفات التسعير أو سعر بيع المنتج)، والألوان، وأحجام الطباعة القابلة للتسعير، وخيارات التغليف وأسعارها؛ ويشمل كل متغير عنوان imageUrl العام له إن وُجدت صورة.",
+            Inputs(In("culture", "string", "Query", false)),
+            "JSON: محصولات/اندازه‌ها/بسته‌بندی‌ها/رنگ‌ها", "بدون هدر (عمومی)", true),
+
+        N("public", "35", "POST", "/public/wizard/quote", "—", "عمومی — client-read",
+            "پیش‌فاکتور لحظه‌ای ویزارد", "Instant wizard quote", "عرض سعر فوري للمعالج",
+            "قیمت لحظه‌ای پیکربندی ویزارد (واریانت، اندازه چاپ، محل چاپ، بسته‌بندی، تعداد) را با همان تعرفه‌هایی محاسبه می‌کند که قیمت نهایی سفارش با آن‌ها قطعی می‌شود؛ ریز اقلام و جمع کل برمی‌گرداند.",
+            "Computes the instant price of a wizard configuration (variant, print size, position, packaging, quantity) using the very tariffs that finalize the order price; returns the line items and total.",
+            "يحسب السعر الفوري لتكوين المعالج (المتغير وحجم الطباعة وموضعها والتغليف والكمية) بنفس التعريفات التي تُثبّت سعر الطلب؛ يعيد البنود والإجمالي.",
+            Inputs(
+                In("productVariantId", "Guid", "Body", true),
+                In("printSizeCode", "string", "Body", false),
+                In("printPosition", "string", "Body", false),
+                In("packagingTypeCode", "string", "Body", false),
+                In("quantity", "int", "Body", false)),
+            "JSON: ریز اقلام قیمت و جمع کل", "بدون هدر (عمومی)", true),
+
+        N("orders", "18", "POST", "/client/orders/{id}/checkout-gateway-mock", "ClientOrderWrite", "submit",
+            "پرداخت درگاهی نمایشی و ثبت سفارش", "Mock gateway checkout", "الدفع عبر البوابة التجريبية وإتمام الطلب",
+            "در نسخه فعلی، پرداخت درگاه بانکی ماک است: مثل checkout کیف پول، قیمت‌گذاری نهایی و اعتبارسنجی را اتمیک انجام می‌دهد، پرداخت با مرجع MOCK ثبت و سفارش Submitted و وارد گردش کار می‌شود؛ جایگزین درگاه واقعی در آینده همین نقطه است.",
+            "In the current version the bank gateway is mocked: like the wallet checkout it finalizes pricing and validation atomically, registers a payment with a MOCK reference, and submits the order into the workflow; the real gateway will replace this same endpoint.",
+            "في النسخة الحالية تُحاكى بوابة الدفع: مثل إتمام المحفظة يُثبّت التسعير والتحقق بشكل ذري، ويُسجل دفع بمرجع MOCK ويُرسل الطلب إلى سير العمل؛ ستحل البوابة الحقيقية محل هذه النقطة نفسها.",
+            Inputs(
+                In("Idempotency-Key", "string", "Header", true, true),
+                In("version", "long", "Body", true)),
+            "JSON: سفارش ثبت‌شده + شناسه پرداخت", "Idempotency-Key + Bearer", false),
 
         N("notifications", "33", "GET", "/notifications/mine", "NotificationRead", "—",
             "اعلان‌های من", "My notifications", "إشعاراتي",

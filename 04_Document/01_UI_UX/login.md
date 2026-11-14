@@ -1,0 +1,1208 @@
+```html
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>برنگ | ورود به سیستم مدیریت سفارشات</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6f4cff;
+            --primary-dark: #5536e8;
+            --pink: #ff4fa3;
+            --orange: #ff9c4a;
+            --yellow: #ffd95a;
+            --cyan: #35d6d0;
+            --blue: #4d8dff;
+            --text: #242333;
+            --muted: #858494;
+            --border: rgba(111, 76, 255, 0.12);
+            --white: #ffffff;
+            --card: rgba(255, 255, 255, 0.88);
+        }
+
+        html, body {
+            min-height: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: "Vazirmatn", sans-serif;
+            color: var(--text);
+            overflow-x: hidden;
+
+            background:
+                radial-gradient(circle at 10% 20%, rgba(255, 217, 90, .32), transparent 22%),
+                radial-gradient(circle at 88% 15%, rgba(53, 214, 208, .26), transparent 23%),
+                radial-gradient(circle at 85% 82%, rgba(255, 79, 163, .22), transparent 25%),
+                radial-gradient(circle at 20% 85%, rgba(111, 76, 255, .20), transparent 26%),
+                linear-gradient(135deg, #f9f7ff 0%, #fffaf5 48%, #f5fffe 100%);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+
+            background-image:
+                radial-gradient(circle, rgba(111,76,255,.09) 1px, transparent 1px);
+
+            background-size: 26px 26px;
+            opacity: .5;
+        }
+
+        .page {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 36px 20px;
+        }
+
+        .login-shell {
+            width: min(1040px, 100%);
+            min-height: 620px;
+
+            display: grid;
+            grid-template-columns: .95fr 1.05fr;
+
+            background: rgba(255, 255, 255, .72);
+            border: 1px solid rgba(255,255,255,.8);
+            border-radius: 34px;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 35px 90px rgba(67, 54, 122, .14),
+                inset 0 1px 0 rgba(255,255,255,.8);
+
+            backdrop-filter: blur(18px);
+        }
+
+        /* =========================================
+           Brand / Illustration
+        ========================================= */
+
+        .brand-side {
+            position: relative;
+            overflow: hidden;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 50px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #7254ff 0%,
+                    #8b55ff 30%,
+                    #d54dc1 66%,
+                    #ff6b8f 100%
+                );
+        }
+
+        .brand-side::before {
+            content: "";
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            top: -180px;
+            right: -160px;
+
+            background: rgba(255,255,255,.09);
+        }
+
+        .brand-side::after {
+            content: "";
+            position: absolute;
+            width: 310px;
+            height: 310px;
+            border-radius: 50%;
+            left: -140px;
+            bottom: -130px;
+
+            border: 56px solid rgba(255,255,255,.07);
+        }
+
+        .brand-content {
+            position: relative;
+            z-index: 3;
+            width: 100%;
+            text-align: center;
+            color: white;
+        }
+
+        .brand-logo {
+            width: 76px;
+            height: 76px;
+            margin: 0 auto 20px;
+
+            border-radius: 24px;
+
+            display: grid;
+            place-items: center;
+
+            background: rgba(255,255,255,.16);
+            border: 1px solid rgba(255,255,255,.25);
+
+            backdrop-filter: blur(12px);
+
+            box-shadow: 0 18px 35px rgba(48, 20, 110, .20);
+        }
+
+        .brand-logo svg {
+            width: 45px;
+        }
+
+        .brand-name {
+            font-size: 38px;
+            font-weight: 800;
+            margin-bottom: 5px;
+            letter-spacing: -.5px;
+        }
+
+        .brand-fullname {
+            font-size: 13px;
+            opacity: .78;
+            margin-bottom: 34px;
+        }
+
+        .shirt-area {
+            width: 290px;
+            height: 275px;
+
+            margin: 0 auto 20px;
+
+            position: relative;
+
+            display: grid;
+            place-items: center;
+        }
+
+        .shirt-bg {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+
+            background: rgba(255,255,255,.10);
+            border: 1px solid rgba(255,255,255,.13);
+
+            backdrop-filter: blur(10px);
+        }
+
+        .shirt {
+            position: relative;
+            z-index: 2;
+            width: 210px;
+
+            filter:
+                drop-shadow(0 22px 22px rgba(51,22,100,.26));
+
+            animation: floating 5s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% {
+                transform: translateY(0) rotate(-2deg);
+            }
+            50% {
+                transform: translateY(-10px) rotate(2deg);
+            }
+        }
+
+        .color-dot {
+            position: absolute;
+            border-radius: 50%;
+
+            box-shadow: 0 10px 28px rgba(0,0,0,.12);
+            z-index: 3;
+        }
+
+        .color-dot.one {
+            width: 48px;
+            height: 48px;
+            background: #ffd95a;
+            left: 4px;
+            top: 43px;
+        }
+
+        .color-dot.two {
+            width: 31px;
+            height: 31px;
+            background: #3ce1cf;
+            right: 11px;
+            bottom: 38px;
+        }
+
+        .color-dot.three {
+            width: 25px;
+            height: 25px;
+            background: #ff944d;
+            right: 2px;
+            top: 78px;
+        }
+
+        .brand-tagline {
+            font-size: 21px;
+            line-height: 1.8;
+            font-weight: 700;
+        }
+
+        .brand-desc {
+            margin: 10px auto 0;
+            max-width: 360px;
+
+            font-size: 13px;
+            line-height: 2;
+            opacity: .75;
+        }
+
+        /* =========================================
+           Login
+        ========================================= */
+
+        .login-side {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 46px;
+            background: rgba(255,255,255,.58);
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 390px;
+        }
+
+        .mobile-brand {
+            display: none;
+        }
+
+        .language-switcher {
+            direction: ltr;
+
+            display: flex;
+            gap: 5px;
+
+            width: fit-content;
+            margin-inline-start: auto;
+            margin-bottom: 30px;
+
+            padding: 5px;
+
+            background: #f4f1ff;
+            border-radius: 13px;
+            border: 1px solid rgba(111,76,255,.08);
+        }
+
+        .lang-btn {
+            border: 0;
+            background: transparent;
+            padding: 8px 11px;
+
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+
+            color: #89869b;
+            cursor: pointer;
+
+            border-radius: 9px;
+            transition: .2s ease;
+        }
+
+        .lang-btn:hover {
+            color: var(--primary);
+        }
+
+        .lang-btn.active {
+            color: white;
+            background: linear-gradient(
+                135deg,
+                var(--primary),
+                #9f4dff
+            );
+
+            box-shadow: 0 6px 13px rgba(111,76,255,.19);
+        }
+
+        .welcome-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+
+            padding: 8px 13px;
+
+            border-radius: 40px;
+
+            background:
+                linear-gradient(
+                    120deg,
+                    rgba(111,76,255,.10),
+                    rgba(255,79,163,.08)
+                );
+
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: 700;
+
+            margin-bottom: 17px;
+        }
+
+        .login-title {
+            font-size: 30px;
+            font-weight: 800;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 2;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 17px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+
+            color: #575567;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap input {
+            width: 100%;
+            height: 56px;
+
+            border: 1.5px solid #ebe8f4;
+
+            border-radius: 15px;
+            outline: none;
+
+            background: rgba(250,249,255,.86);
+
+            padding-inline-start: 50px;
+            padding-inline-end: 45px;
+
+            font-family: inherit;
+            font-size: 13px;
+
+            color: var(--text);
+
+            transition: .25s ease;
+        }
+
+        .input-wrap input::placeholder {
+            color: #aaa8b5;
+        }
+
+        .input-wrap input:focus {
+            border-color: #8a69ff;
+            background: white;
+
+            box-shadow:
+                0 10px 28px rgba(111,76,255,.10);
+        }
+
+        .input-icon {
+            position: absolute;
+
+            inset-inline-start: 17px;
+            top: 50%;
+
+            transform: translateY(-50%);
+
+            width: 19px;
+            height: 19px;
+
+            color: #a09dae;
+        }
+
+        .toggle-password {
+            position: absolute;
+
+            inset-inline-end: 16px;
+            top: 50%;
+
+            transform: translateY(-50%);
+
+            border: 0;
+            background: transparent;
+
+            color: #a09dae;
+
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .toggle-password svg {
+            width: 20px;
+        }
+
+        .login-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin: 4px 1px 25px;
+
+            font-size: 12px;
+        }
+
+        .remember-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+
+            color: #686677;
+            cursor: pointer;
+        }
+
+        .remember-label input {
+            accent-color: var(--primary);
+        }
+
+        .forgot-link {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .login-button {
+            width: 100%;
+            height: 58px;
+
+            border: none;
+            border-radius: 16px;
+
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 800;
+
+            color: white;
+            cursor: pointer;
+
+            background:
+                linear-gradient(
+                    100deg,
+                    #694cff 0%,
+                    #914eff 38%,
+                    #e34db0 70%,
+                    #ff6c7e 100%
+                );
+
+            box-shadow:
+                0 14px 30px rgba(123,76,255,.23);
+
+            transition: .25s ease;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 18px 34px rgba(123,76,255,.29);
+        }
+
+        .login-button:active {
+            transform: scale(.99);
+        }
+
+        .company-footer {
+            margin-top: 31px;
+
+            text-align: center;
+
+            font-size: 10px;
+            line-height: 1.9;
+
+            color: #aaa8b4;
+        }
+
+        /* =========================================
+           Language direction helpers
+        ========================================= */
+
+        body[data-lang="en"] .login-box,
+        body[data-lang="en"] .company-footer {
+            direction: ltr;
+            text-align: left;
+        }
+
+        body[data-lang="en"] .company-footer {
+            text-align: center;
+        }
+
+        body[data-lang="ar"] .login-box,
+        body[data-lang="fa"] .login-box {
+            direction: rtl;
+            text-align: right;
+        }
+
+        /* =========================================
+           Responsive
+        ========================================= */
+
+        @media (max-width: 900px) {
+            .login-shell {
+                max-width: 520px;
+                min-height: auto;
+
+                grid-template-columns: 1fr;
+
+                border-radius: 28px;
+            }
+
+            .brand-side {
+                display: none;
+            }
+
+            .login-side {
+                padding: 38px 32px;
+            }
+
+            .mobile-brand {
+                display: flex;
+                align-items: center;
+                gap: 11px;
+
+                margin-bottom: 27px;
+            }
+
+            .mobile-logo {
+                width: 46px;
+                height: 46px;
+
+                border-radius: 14px;
+
+                display: grid;
+                place-items: center;
+
+                color: white;
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        #6f4cff,
+                        #d54dc1,
+                        #ff735f
+                    );
+
+                box-shadow:
+                    0 8px 18px rgba(111,76,255,.18);
+            }
+
+            .mobile-brand-name {
+                font-size: 20px;
+                font-weight: 800;
+            }
+
+            .mobile-company {
+                font-size: 10px;
+                color: var(--muted);
+            }
+
+            .language-switcher {
+                margin-bottom: 24px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .page {
+                padding: 16px;
+            }
+
+            .login-shell {
+                border-radius: 24px;
+            }
+
+            .login-side {
+                padding: 28px 21px 30px;
+            }
+
+            .login-title {
+                font-size: 25px;
+            }
+
+            .login-subtitle {
+                margin-bottom: 24px;
+            }
+
+            .language-switcher {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .lang-btn {
+                flex: 1;
+            }
+        }
+
+    </style>
+</head>
+
+<body data-lang="fa">
+
+<div class="page">
+
+    <main class="login-shell">
+
+        <!-- =================================
+             Brand side
+        ================================== -->
+
+        <section class="brand-side">
+
+            <div class="brand-content">
+
+                <div class="brand-logo">
+                    <svg viewBox="0 0 64 64" fill="none">
+                        <path
+                            d="M20 12L8 20L14 33L20 30V53H44V30L50 33L56 20L44 12C41 17 36 19 32 19C28 19 23 17 20 12Z"
+                            fill="white"
+                        />
+                    </svg>
+                </div>
+
+                <div class="brand-name">
+                    برنگ
+                </div>
+
+                <div class="brand-fullname">
+                    برنگ رستاک نیک گستر
+                </div>
+
+
+                <div class="shirt-area">
+
+                    <div class="shirt-bg"></div>
+
+                    <div class="color-dot one"></div>
+                    <div class="color-dot two"></div>
+                    <div class="color-dot three"></div>
+
+                    <svg
+                        class="shirt"
+                        viewBox="0 0 400 400"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+
+                        <defs>
+
+                            <linearGradient
+                                id="shirtGradient"
+                                x1="0"
+                                y1="0"
+                                x2="1"
+                                y2="1"
+                            >
+                                <stop offset="0%" stop-color="#ffffff"/>
+                                <stop offset="100%" stop-color="#f5efff"/>
+                            </linearGradient>
+
+                            <linearGradient
+                                id="printGradient"
+                                x1="0"
+                                y1="0"
+                                x2="1"
+                                y2="1"
+                            >
+                                <stop offset="0%" stop-color="#6f4cff"/>
+                                <stop offset="45%" stop-color="#ff4fa3"/>
+                                <stop offset="100%" stop-color="#ff9c4a"/>
+                            </linearGradient>
+
+                        </defs>
+
+                        <path
+                            d="
+                            M127 64
+                            C145 79 166 87 199 87
+                            C232 87 254 79 272 64
+                            L350 108
+                            L318 174
+                            L276 151
+                            L276 336
+                            C229 349 170 349 123 336
+                            L123 151
+                            L81 174
+                            L49 108
+                            Z
+                            "
+                            fill="url(#shirtGradient)"
+                        />
+
+                        <path
+                            d="
+                            M157 75
+                            C164 104 180 119 200 119
+                            C220 119 236 104 243 75
+                            "
+                            fill="none"
+                            stroke="#ece5f7"
+                            stroke-width="12"
+                            stroke-linecap="round"
+                        />
+
+                        <circle
+                            cx="200"
+                            cy="220"
+                            r="69"
+                            fill="#fbf9ff"
+                        />
+
+                        <path
+                            d="
+                            M157 225
+                            C169 184 207 172 232 193
+                            C258 215 241 256 201 262
+                            C171 266 148 249 157 225Z
+                            "
+                            fill="url(#printGradient)"
+                        />
+
+                        <circle
+                            cx="168"
+                            cy="199"
+                            r="14"
+                            fill="#ffd95a"
+                        />
+
+                        <circle
+                            cx="239"
+                            cy="242"
+                            r="12"
+                            fill="#36d8cc"
+                        />
+
+                        <path
+                            d="
+                            M177 244
+                            C195 220 216 212 241 220
+                            "
+                            stroke="white"
+                            stroke-width="9"
+                            stroke-linecap="round"
+                        />
+
+                    </svg>
+
+                </div>
+
+
+                <div class="brand-tagline" data-i18n="brandTagline">
+                    رنگ ایده‌هایت را مدیریت کن
+                </div>
+
+                <div class="brand-desc" data-i18n="brandDescription">
+                    سامانه مدیریت سفارشات چاپ و تولید پوشاک
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================
+             Login side
+        ================================== -->
+
+        <section class="login-side">
+
+            <div class="login-box">
+
+                <div class="mobile-brand">
+
+                    <div class="mobile-logo">
+                        👕
+                    </div>
+
+                    <div>
+                        <div class="mobile-brand-name">
+                            برنگ
+                        </div>
+
+                        <div class="mobile-company">
+                            برنگ رستاک نیک گستر
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <!-- Language switcher -->
+
+                <div class="language-switcher">
+
+                    <button
+                        class="lang-btn"
+                        onclick="setLanguage('en')"
+                        id="lang-en"
+                    >
+                        English
+                    </button>
+
+                    <button
+                        class="lang-btn active"
+                        onclick="setLanguage('fa')"
+                        id="lang-fa"
+                    >
+                        فارسی
+                    </button>
+
+                    <button
+                        class="lang-btn"
+                        onclick="setLanguage('ar')"
+                        id="lang-ar"
+                    >
+                        العربية
+                    </button>
+
+                </div>
+
+
+                <div class="welcome-label" data-i18n="welcome">
+                    👋 خوش آمدید
+                </div>
+
+                <h1
+                    class="login-title"
+                    data-i18n="title"
+                >
+                    ورود به پنل مدیریت
+                </h1>
+
+                <p
+                    class="login-subtitle"
+                    data-i18n="subtitle"
+                >
+                    برای مدیریت سفارشات، طرح‌ها و فرآیند چاپ وارد حساب کاربری خود شوید.
+                </p>
+
+
+                <!-- Username -->
+
+                <div class="form-group">
+
+                    <label
+                        class="form-label"
+                        data-i18n="usernameLabel"
+                    >
+                        نام کاربری
+                    </label>
+
+                    <div class="input-wrap">
+
+                        <svg
+                            class="input-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                        >
+                            <path d="M20 21a8 8 0 0 0-16 0"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+
+                        <input
+                            id="username"
+                            type="text"
+                            data-placeholder="usernamePlaceholder"
+                            placeholder="نام کاربری خود را وارد کنید"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- Password -->
+
+                <div class="form-group">
+
+                    <label
+                        class="form-label"
+                        data-i18n="passwordLabel"
+                    >
+                        رمز عبور
+                    </label>
+
+                    <div class="input-wrap">
+
+                        <svg
+                            class="input-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                        >
+                            <rect
+                                x="4"
+                                y="10"
+                                width="16"
+                                height="11"
+                                rx="3"
+                            />
+
+                            <path
+                                d="M8 10V7a4 4 0 0 1 8 0v3"
+                            />
+                        </svg>
+
+                        <input
+                            id="password"
+                            type="password"
+                            data-placeholder="passwordPlaceholder"
+                            placeholder="رمز عبور خود را وارد کنید"
+                        >
+
+                        <button
+                            class="toggle-password"
+                            type="button"
+                            onclick="togglePassword()"
+                            aria-label="Toggle password"
+                        >
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                            >
+                                <path
+                                    d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"
+                                />
+
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="3"
+                                />
+                            </svg>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="login-options">
+
+                    <label class="remember-label">
+
+                        <input type="checkbox">
+
+                        <span data-i18n="remember">
+                            مرا به خاطر بسپار
+                        </span>
+
+                    </label>
+
+                    <a
+                        href="#"
+                        class="forgot-link"
+                        data-i18n="forgot"
+                    >
+                        فراموشی رمز عبور؟
+                    </a>
+
+                </div>
+
+
+                <button
+                    class="login-button"
+                    type="button"
+                    data-i18n="loginButton"
+                >
+                    ورود به سیستم
+                </button>
+
+
+                <div
+                    class="company-footer"
+                    data-i18n="footer"
+                >
+                    سامانه مدیریت سفارشات برنگ
+                    <br>
+                    برنگ رستاک نیک گستر
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script>
+
+    const translations = {
+
+        fa: {
+            direction: "rtl",
+            brandTagline: "رنگ ایده‌هایت را مدیریت کن",
+            brandDescription: "سامانه مدیریت سفارشات چاپ و تولید پوشاک",
+            welcome: "👋 خوش آمدید",
+            title: "ورود به پنل مدیریت",
+            subtitle:
+                "برای مدیریت سفارشات، طرح‌ها و فرآیند چاپ وارد حساب کاربری خود شوید.",
+            usernameLabel: "نام کاربری",
+            usernamePlaceholder: "نام کاربری خود را وارد کنید",
+            passwordLabel: "رمز عبور",
+            passwordPlaceholder: "رمز عبور خود را وارد کنید",
+            remember: "مرا به خاطر بسپار",
+            forgot: "فراموشی رمز عبور؟",
+            loginButton: "ورود به سیستم",
+            footer:
+                "سامانه مدیریت سفارشات برنگ<br>برنگ رستاک نیک گستر"
+        },
+
+        en: {
+            direction: "ltr",
+            brandTagline: "Manage the colors of your ideas",
+            brandDescription:
+                "Order management system for printing and apparel production",
+            welcome: "👋 Welcome back",
+            title: "Sign in to management panel",
+            subtitle:
+                "Sign in to manage orders, designs and the printing workflow.",
+            usernameLabel: "Username",
+            usernamePlaceholder: "Enter your username",
+            passwordLabel: "Password",
+            passwordPlaceholder: "Enter your password",
+            remember: "Remember me",
+            forgot: "Forgot password?",
+            loginButton: "Sign in",
+            footer:
+                "Berang Order Management System<br>Berang Rastak Nik Gostar"
+        },
+
+        ar: {
+            direction: "rtl",
+            brandTagline: "أدِر ألوان أفكارك",
+            brandDescription:
+                "نظام إدارة طلبات الطباعة وإنتاج الملابس",
+            welcome: "👋 أهلاً وسهلاً",
+            title: "تسجيل الدخول إلى لوحة الإدارة",
+            subtitle:
+                "سجّل الدخول لإدارة الطلبات والتصاميم ومراحل الطباعة.",
+            usernameLabel: "اسم المستخدم",
+            usernamePlaceholder: "أدخل اسم المستخدم",
+            passwordLabel: "كلمة المرور",
+            passwordPlaceholder: "أدخل كلمة المرور",
+            remember: "تذكرني",
+            forgot: "نسيت كلمة المرور؟",
+            loginButton: "تسجيل الدخول",
+            footer:
+                "نظام إدارة طلبات برنگ<br>برنگ رستاک نیک گستر"
+        }
+
+    };
+
+
+    function setLanguage(lang) {
+
+        const translation = translations[lang];
+
+        document.body.setAttribute(
+            "data-lang",
+            lang
+        );
+
+        document.documentElement.lang = lang;
+        document.documentElement.dir =
+            translation.direction;
+
+
+        document.querySelectorAll("[data-i18n]")
+            .forEach(element => {
+
+                const key =
+                    element.getAttribute("data-i18n");
+
+                if (translation[key]) {
+                    element.innerHTML =
+                        translation[key];
+                }
+
+            });
+
+
+        document.querySelectorAll("[data-placeholder]")
+            .forEach(element => {
+
+                const key =
+                    element.getAttribute("data-placeholder");
+
+                if (translation[key]) {
+                    element.placeholder =
+                        translation[key];
+                }
+
+            });
+
+
+        document.querySelectorAll(".lang-btn")
+            .forEach(button => {
+                button.classList.remove("active");
+            });
+
+
+        document
+            .getElementById("lang-" + lang)
+            .classList
+            .add("active");
+
+    }
+
+
+    function togglePassword() {
+
+        const passwordInput =
+            document.getElementById("password");
+
+        passwordInput.type =
+            passwordInput.type === "password"
+                ? "text"
+                : "password";
+
+    }
+
+</script>
+
+</body>
+</html>
+```

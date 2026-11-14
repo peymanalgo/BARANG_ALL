@@ -1,0 +1,122 @@
+@page "/manage/b2c/menu"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<h2>@L("منوهای اصلی سایت", "Site main menus", "القوائم الرئيسية")</h2>
+<p class="muted">@L("افزودن/حذف صفحات ساخته‌شده در منوی اصلی. آیتم «وبلاگ» ثابت است و حذف نمی‌شود.", "Add/remove built pages in the main menu. The Blog item is fixed and cannot be removed.", "إضافة/حذف الصفحات في القائمة الرئيسية. المدونة ثابتة لا تُحذف.")</p>
+
+<table class="table">
+    <thead><tr><th>#</th><th>@L("عنوان", "Title", "العنوان")</th><th>@L("نوع", "Type", "النوع")</th><th>URL</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var m in Items.OrderBy(x => x.Order))
+        {
+            <tr>
+                <td>@m.Order</td>
+                <td>@m.Label @if (m.Pinned) { <span class="b2c-pinned">@L("ثابت", "pinned", "مثبت")</span> }</td>
+                <td>@m.Type</td>
+                <td dir="ltr">@MenuUrl(m)</td>
+                <td>@if (!m.Pinned) { <button class="btn btn-sm" @onclick="() => Delete(m)">🗑</button> }</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="form-section">
+    <h3>+ @L("افزودن به منو", "Add to menu", "إضافة إلى القائمة")</h3>
+    <div class="form-grid">
+        <label><span>@L("نوع", "Type", "النوع")</span>
+            <select @bind="Draft.Type">
+                <option value="page">@L("صفحه", "Page", "صفحة")</option>
+                <option value="custom">@L("لینک دلخواه", "Custom link", "رابط مخصص")</option>
+            </select>
+        </label>
+        @if (Draft.Type == "page")
+        {
+            <label><span>@L("صفحه", "Page", "صفحة")</span>
+                <select @bind="Draft.PageId"><option value="">—</option>@foreach (var p in Pages) { <option value="@p.Id">@p.Title (@p.Slug)</option> }</select>
+            </label>
+        }
+        else
+        {
+            <label><span>@L("عنوان (فارسی)", "Title (fa)", "العنوان")</span><input @bind="Draft.Title" /></label>
+            <label><span>URL</span><input @bind="Draft.Url" dir="ltr" /></label>
+        }
+        <label><span>@L("ترتیب", "Order", "الترتيب")</span><input type="number" @bind="Draft.Order" /></label>
+    </div>
+    <button class="btn btn-primary btn-sm" style="margin-top:8px" @onclick="Add">@L("افزودن", "Add", "إضافة")</button>
+    @if (!string.IsNullOrEmpty(Message)) { <span class="muted">@Message</span> }
+</div>
+
+@code {
+    private List<MenuRow> Items = new();
+    private List<PageRef> Pages = new();
+    private string Message = "";
+    private DraftModel Draft = new();
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        var s = await Session();
+        if (s is null) return;
+        var mf = await Core.GetAsync("api/v1/site/menu", s.Value.Token, s.Value.Company, default);
+        Items.Clear();
+        if (mf.IsSuccess && mf.Value.ValueKind == JsonValueKind.Array)
+            foreach (var x in mf.Value.EnumerateArray())
+                Items.Add(new MenuRow(
+                    x.TryGetProperty("id", out var i) ? i.GetGuid() : Guid.Empty,
+                    Text(x, "itemType"),
+                    x.TryGetProperty("pageId", out var pi) && pi.ValueKind == JsonValueKind.String && Guid.TryParse(pi.GetString(), out var pid) ? pid : null,
+                    Text(x, "pageSlug"), Text(x, "titleFa"), Text(x, "url"),
+                    x.TryGetProperty("isPinned", out var pn) && pn.GetBoolean(),
+                    x.TryGetProperty("displayOrder", out var o) ? o.GetInt32() : 0));
+        var pf = await Core.GetAsync("api/v1/site/pages", s.Value.Token, s.Value.Company, default);
+        Pages.Clear();
+        if (pf.IsSuccess && pf.Value.ValueKind == JsonValueKind.Array)
+            foreach (var x in pf.Value.EnumerateArray())
+                Pages.Add(new PageRef(x.TryGetProperty("id", out var i) ? i.GetGuid() : Guid.Empty, Text(x, "titleFa"), Text(x, "slug")));
+    }
+
+    private string PageSlug(Guid id) => Pages.FirstOrDefault(p => p.Id == id)?.Slug ?? "";
+    private static string MenuUrl(MenuRow m) => m.Type == "blog" ? "/blog" : !string.IsNullOrWhiteSpace(m.Url) ? m.Url : !string.IsNullOrWhiteSpace(m.PageSlug) ? "/page/" + m.PageSlug : "—";
+
+    private async Task Add()
+    {
+        var s = await Session();
+        if (s is null) return;
+        Guid? pageId = Draft.Type == "page" && Guid.TryParse(Draft.PageId, out var g) ? g : null;
+        var r = await Core.SendAsync(HttpMethod.Post, "api/v1/site/menu", new
+        {
+            itemType = Draft.Type, pageId, titleFa = Draft.Title, titleEn = Draft.Title, titleAr = Draft.Title, url = Draft.Url, displayOrder = Draft.Order
+        }, s.Value.Token, s.Value.Company, default);
+        Message = r.IsSuccess ? L("افزوده شد ✓", "Added ✓", "تم ✓") : L("خطا", "Error", "خطأ");
+        Draft = new DraftModel();
+        await Load();
+    }
+
+    private async Task Delete(MenuRow m)
+    {
+        var s = await Session();
+        if (s is null) return;
+        var r = await Core.SendAsync(HttpMethod.Delete, $"api/v1/site/menu/{m.Id}", null, s.Value.Token, s.Value.Company, default);
+        Message = r.IsSuccess ? "" : L("حذف امکان‌پذیر نیست", "Cannot delete", "لا يمكن الحذف");
+        await Load();
+    }
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+    private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
+    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en, "ar" => ar, _ => fa };
+
+    private sealed record MenuRow(Guid Id, string Type, Guid? PageId, string PageSlug, string TitleFa, string Url, bool Pinned, int Order)
+    {
+        public string Label => Type == "blog" ? "وبلاگ" : TitleFa;
+    }
+    private sealed record PageRef(Guid Id, string Title, string Slug);
+    private sealed class DraftModel { public string Type = "page"; public string PageId = ""; public string Title = ""; public string Url = ""; public int Order = 10; }
+}

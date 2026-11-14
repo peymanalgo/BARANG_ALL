@@ -1,0 +1,26 @@
+@page "/page/{slug}"
+@model BARANG.B2C.Web.Pages.CmsPageModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = Model.Title;
+}
+<section class="container section">
+    @if (Model.NotFound)
+    {
+        <h1>@T("صفحه پیدا نشد", "Page not found", "الصفحة غير موجودة")</h1>
+        <p class="muted"><a href="/">← @T("بازگشت به خانه", "Back to home", "رجوع إلى الرئيسية")</a></p>
+    }
+    else
+    {
+        <nav class="breadcrumbs" aria-label="breadcrumb"><a href="/">@T("خانه", "Home", "الرئيسية")</a> / <span>@Model.Title</span></nav>
+        <article class="blog-article">
+            @if (!string.IsNullOrWhiteSpace(Model.CoverUrl))
+            {
+                <img class="blog-cover" src="@Model.CoverUrl" alt="@Model.Title" loading="lazy" />
+            }
+            <h1>@Model.Title</h1>
+            <div class="blog-body">@Html.Raw(Model.Body)</div>
+        </article>
+    }
+</section>

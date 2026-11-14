@@ -76,7 +76,8 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
                 w.TryGetProperty("walletBalance", out JsonElement wba) && wba.TryGetDecimal(out decimal wbal) ? wbal : 0,
                 w.TryGetProperty("fullyPaid", out JsonElement wfu) && wfu.ValueKind == JsonValueKind.True);
         }
-        ViewData["Title"] = $"{OrderNumber ?? "—"} · پی‌رنگ";
+        string brand = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "Peyrang", "ar" => "بي‌رنگ", _ => "پی‌رنگ" };
+        ViewData["Title"] = $"{OrderNumber ?? "—"} · {brand}";
         return Page();
     }
 
@@ -185,8 +186,9 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
     private static DateOnly? ParseDateOnly(string? iso) => DateOnly.TryParse(iso, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly d) ? d : null;
     private static DateTimeOffset? ParseDateTime(string? iso) => DateTimeOffset.TryParse(iso, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset d) ? d : null;
 
-    public string DateText(DateTimeOffset? at) => at is DateTimeOffset d ? d.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.GetCultureInfo(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en" ? "en" : "fa")) : "—";
-    public string DateText(DateOnly? d) => d is DateOnly v ? v.ToString("yyyy/MM/dd") : "—";
+    // Jalali + Persian digits for fa, Gregorian otherwise (shared AppDate policy)
+    public string DateText(DateTimeOffset? at) => at is DateTimeOffset d ? AppDate.FormatDateTime(d) : "—";
+    public string DateText(DateOnly? d) => d is DateOnly v ? AppDate.Format(v) : "—";
 
     public sealed record OrderAddressRow(string RecipientName, string RecipientMobile, string Line, string PostalCode);
     public sealed record PrintOpRow(string Position, string? Method, decimal? Width, decimal? Height, string? Notes);

@@ -106,16 +106,14 @@ public sealed class ReferralAdministration(CoreDbContext db, ITransactionExecuto
 
     // Called from WalletAdministration.PayOrderFromWalletAsync inside its transaction:
     // if this was the referred customer's first paid order, credit the referrer's wallet.
-    internal static async Task RewardFirstPaymentInsideTransactionAsync(CoreDbContext db, Guid customerId, DateTimeOffset now)
+    internal static async Task RewardFirstPaymentInsideTransactionAsync(CoreDbContext db, Guid customerId, Guid orderId, DateTimeOffset now)
     {
         CustomerReferral? referral = await db.CustomerReferrals.SingleOrDefaultAsync(x => x.ReferredCustomerId == customerId && x.Status == CustomerReferralStatus.Pending);
         if (referral is null) return;
-        // the purchase debit for this payment was just added in the same transaction:
-        // exactly one means this was the first paid order
-        int purchaseCount = await db.CustomerWalletTransactions
-            .Where(x => x.CustomerId == customerId && x.ReasonCode == WalletPolicy.ReasonPurchase && x.Direction == CustomerWalletDirection.Debit)
-            .CountAsync();
-        if (purchaseCount != 1) return;
+        // اولین خرید: هیچ سفارش ثبت‌شده‌ی دیگری (جز سفارش جاری) نباشد — پرداخت کیف پول یا درگاه
+        bool hasOtherPaidOrder = await db.Orders.AsNoTracking()
+            .AnyAsync(x => x.CustomerId == customerId && x.Status == OrderStatus.Submitted && x.Id != orderId);
+        if (hasOtherPaidOrder) return;
         Result<CustomerWalletTransaction> gift = CustomerWalletTransaction.Create(Guid.NewGuid(), referral.CompanyId, referral.ReferrerCustomerId, CustomerWalletDirection.Credit, referral.RewardAmount, referral.CurrencyCode, WalletPolicy.ReasonGift, $"referral:{referral.CodeUsed}", null, now);
         if (gift.IsFailure) return;
         db.Add(gift.Value);

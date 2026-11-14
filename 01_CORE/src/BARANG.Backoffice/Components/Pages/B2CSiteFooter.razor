@@ -1,0 +1,169 @@
+@page "/manage/b2c/footer"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<h2>@L("تنظیمات فوتر سایت", "Footer settings", "إعدادات التذييل")</h2>
+<p class="muted">@L("چهار ستون فوتر؛ در هر ستون می‌توانید صفحه، لینک، متن، HTML یا تصویر بندانگشتی اضافه/حذف کنید.", "Four footer columns; add/remove pages, links, text, HTML or thumbnails in each column.", "أربعة أعمدة؛ أضف/احذف صفحات أو روابط أو نصًا أو HTML أو صورًا.")</p>
+
+<div class="b2c-col-cards">
+    @for (int col = 1; col <= 4; col++)
+    {
+        int c = col;
+        <div class="form-section">
+            <h3>@L("ستون ", "Column ", "العمود ") @("۱۲۳۴"[c - 1])</h3>
+            @foreach (var w in Widgets.Where(x => x.Column == c).OrderBy(x => x.Order))
+            {
+                <div class="b2c-widget">
+                    <div>
+                        <b>@w.Label</b> <span class="muted" style="font-size:.7rem">@TypeText(w.Type)</span>
+                        @if (w.ImageUrl is not null) { <img src="@w.ImageUrl" alt="" /> }
+                    </div>
+                    <button class="btn btn-sm" @onclick="() => Delete(w)" title="@L("حذف", "Delete", "حذف")">🗑</button>
+                </div>
+            }
+            <details>
+                <summary style="cursor:pointer;font-size:.85rem">+ @L("افزودن آیتم", "Add item", "إضافة عنصر")</summary>
+                <div class="form-grid" style="margin-top:8px">
+                    <label><span>@L("نوع", "Type", "النوع")</span>
+                        <select @bind="Draft.Type">
+                            <option value="page">@L("صفحه", "Page", "صفحة")</option>
+                            <option value="menu">@L("لینک منو", "Menu link", "رابط")</option>
+                            <option value="text">@L("متن عادی", "Plain text", "نص")</option>
+                            <option value="html">HTML</option>
+                            <option value="image">@L("تصویر بندانگشتی", "Thumbnail", "صورة")</option>
+                        </select>
+                    </label>
+                    @if (Draft.Type == "page")
+                    {
+                        <label><span>@L("صفحه", "Page", "صفحة")</span>
+                            <select @bind="Draft.PageId"><option value="">—</option>@foreach (var p in Pages) { <option value="@p.Id">@p.Title (@p.Slug)</option> }</select>
+                        </label>
+                    }
+                    @if (Draft.Type == "menu")
+                    {
+                        <label><span>@L("عنوان", "Title", "العنوان")</span><input @bind="Draft.Title" /></label>
+                        <label><span>URL</span><input @bind="Draft.Url" dir="ltr" /></label>
+                    }
+                    @if (Draft.Type == "text")
+                    {
+                        <label><span>@L("متن", "Text", "النص")</span><textarea @bind="Draft.Text" rows="3"></textarea></label>
+                    }
+                    @if (Draft.Type == "html")
+                    {
+                        <label><span>HTML</span><textarea @bind="Draft.Html" rows="4" dir="ltr"></textarea></label>
+                    }
+                    @if (Draft.Type == "image")
+                    {
+                        <label><span>@L("تصویر", "Image", "صورة")</span>
+                            @if (Draft.ImageUrl is not null) { <img src="@Draft.ImageUrl" style="width:44px;height:44px;border-radius:8px" /> }
+                            <label class="btn btn-sm" style="cursor:pointer">@L("بارگذاری", "Upload", "تحميل")<InputFile OnChange="PickImage" hidden accept="image/*" /></label>
+                        </label>
+                    }
+                    <label><span>@L("ترتیب", "Order", "الترتيب")</span><input type="number" @bind="Draft.Order" /></label>
+                </div>
+                <button class="btn btn-sm btn-primary" style="margin-top:6px" @onclick="() => Add(c)">@L("افزودن به این ستون", "Add to this column", "أضف إلى هذا العمود")</button>
+            </details>
+        </div>
+    }
+</div>
+@if (!string.IsNullOrEmpty(Message)) { <p class="muted">@Message</p> }
+
+@code {
+    private List<WidgetRow> Widgets = new();
+    private List<PageRef> Pages = new();
+    private string Message = "";
+    private DraftModel Draft = new();
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        var s = await Session();
+        if (s is null) return;
+        var wf = await Core.GetAsync("api/v1/site/footer", s.Value.Token, s.Value.Company, default);
+        Widgets.Clear();
+        if (wf.IsSuccess && wf.Value.ValueKind == JsonValueKind.Array)
+            foreach (var x in wf.Value.EnumerateArray())
+                Widgets.Add(new WidgetRow(
+                    x.TryGetProperty("id", out var i) ? i.GetGuid() : Guid.Empty,
+                    x.TryGetProperty("columnIndex", out var ci) ? ci.GetInt32() : 1,
+                    Text(x, "widgetType"),
+                    x.TryGetProperty("pageId", out var pi) && pi.ValueKind == JsonValueKind.String && Guid.TryParse(pi.GetString(), out var pid) ? pid : null,
+                    Text(x, "pageTitleFa"), Text(x, "titleFa"), Text(x, "url"), Text(x, "imageUrl"),
+                    x.TryGetProperty("displayOrder", out var o) ? o.GetInt32() : 0));
+        var pf = await Core.GetAsync("api/v1/site/pages", s.Value.Token, s.Value.Company, default);
+        Pages.Clear();
+        if (pf.IsSuccess && pf.Value.ValueKind == JsonValueKind.Array)
+            foreach (var x in pf.Value.EnumerateArray())
+                Pages.Add(new PageRef(x.TryGetProperty("id", out var i) ? i.GetGuid() : Guid.Empty, Text(x, "titleFa"), Text(x, "slug")));
+    }
+
+    private async Task Add(int column)
+    {
+        var s = await Session();
+        if (s is null) return;
+        Guid? pageId = Draft.Type == "page" && Guid.TryParse(Draft.PageId, out var g) ? g : null;
+        var r = await Core.SendAsync(HttpMethod.Post, "api/v1/site/footer", new
+        {
+            columnIndex = column, widgetType = Draft.Type, pageId,
+            titleFa = Draft.Title, titleEn = Draft.Title, titleAr = Draft.Title,
+            text = Draft.Text, html = Draft.Html, imageStorageKey = Draft.ImageKey, url = Draft.Url,
+            displayOrder = Draft.Order, version = 0
+        }, s.Value.Token, s.Value.Company, default);
+        Message = r.IsSuccess ? L("افزوده شد ✓", "Added ✓", "تمت الإضافة ✓") : L("خطا", "Error", "خطأ");
+        Draft = new DraftModel();
+        await Load();
+    }
+
+    private async Task Delete(WidgetRow w)
+    {
+        var s = await Session();
+        if (s is null) return;
+        await Core.SendAsync(HttpMethod.Delete, $"api/v1/site/footer/{w.Id}", null, s.Value.Token, s.Value.Company, default);
+        await Load();
+    }
+
+    private async Task PickImage(InputFileChangeEventArgs e)
+    {
+        var s = await Session();
+        if (s is null) return;
+        var f = e.File;
+        await using var stream = f.OpenReadStream(maxAllowedSize: 25 * 1024 * 1024);
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+        memory.Position = 0;
+        var r = await Core.UploadAsync("api/v1/site/images", f.Name, f.ContentType, memory, f.Size, s.Value.Token, s.Value.Company, default);
+        if (r.IsSuccess)
+        {
+            Draft.ImageUrl = r.Value.TryGetProperty("url", out var u) ? u.GetString() : null;
+            Draft.ImageKey = r.Value.TryGetProperty("storageKey", out var k) ? k.GetString() : null;
+        }
+    }
+
+    private string TypeText(string t) => t switch
+    {
+        "page" => L("صفحه", "page", "صفحة"), "menu" => L("لینک", "link", "رابط"),
+        "html" => "HTML", "image" => L("تصویر", "image", "صورة"), _ => L("متن", "text", "نص")
+    };
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+    private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
+    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en, "ar" => ar, _ => fa };
+
+    private sealed record WidgetRow(Guid Id, int Column, string Type, Guid? PageId, string? PageTitle, string? Title, string? Url, string? ImageUrl, int Order)
+    {
+        public string Label => Type switch { "page" => PageTitle ?? "—", "menu" => Title ?? Url ?? "—", "text" => "متن", "html" => "HTML", "image" => Title ?? "تصویر", _ => "—" };
+    }
+    private sealed record PageRef(Guid Id, string Title, string Slug);
+    private sealed class DraftModel
+    {
+        public string Type = "menu"; public string PageId = ""; public string Title = ""; public string Url = "";
+        public string Text = ""; public string Html = ""; public string? ImageKey; public string? ImageUrl; public int Order = 10;
+    }
+}

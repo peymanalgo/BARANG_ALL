@@ -149,4 +149,4 @@
 <data name="Nav_Reference_equipment" xml:space="preserve"><value>داده‌های پایه تجهیزات</value></data>
 <data name="Nav_Pricing" xml:space="preserve"><value>قیمت‌گذاری</value></data>
 <data name="Nav_Cartable" xml:space="preserve"><value>کارتابل</value></data>
-</root>
+<data name="Nav_B2CSiteManagement"><value>مدیریت سایت B2C</value></data><data name="Nav_B2C_SiteSettings"><value>تنظیمات سایت</value></data><data name="Nav_B2C_Pages"><value>صفحات</value></data><data name="Nav_B2C_Footer"><value>تنظیمات فوتر</value></data><data name="Nav_B2C_MainMenu"><value>منوهای اصلی</value></data><data name="Nav_B2C_Blog"><value>وبلاگ</value></data></root>

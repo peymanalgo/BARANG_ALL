@@ -538,7 +538,7 @@ public sealed class SecurityAdministration(
 
     public static string NormalizePortalUsername(string target)
     {
-        string t = target.Trim();
+        string t = FoldUnicodeDigits(target.Trim());
         if (t.All(char.IsDigit) && t.Length is >= 4 and <= 20) return t.ToUpperInvariant();
         var sb = new System.Text.StringBuilder(t.Length);
         foreach (char c in t.ToLowerInvariant())
@@ -546,6 +546,22 @@ public sealed class SecurityAdministration(
         string s = sb.ToString();
         if (s.StartsWith('_')) s = "u" + s;
         return s.Length < 3 ? "user_" + s : s;
+    }
+
+    // ارقام فارسی/عربی → لاتین؛ بدون این، شماره‌ای که با کیبورد فارسی وارد شده با نام کاربری ذخیره‌شده مچ نمی‌شود
+    private static string FoldUnicodeDigits(string value)
+    {
+        System.Text.StringBuilder sb = new(value.Length);
+        foreach (char c in value)
+        {
+            sb.Append(c switch
+            {
+                >= '۰' and <= '۹' => (char)('0' + (c - '۰')),
+                >= '٠' and <= '٩' => (char)('0' + (c - '٠')),
+                _ => c
+            });
+        }
+        return sb.ToString();
     }
 
     public Task<Result> RequestPortalOtpAsync(string target, CancellationToken ct)

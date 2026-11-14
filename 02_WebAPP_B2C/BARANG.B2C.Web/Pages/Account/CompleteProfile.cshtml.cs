@@ -26,7 +26,6 @@ public sealed class CompleteProfileModel(CoreApiClient core, CustomerContext cus
     [BindProperty] public string FatherName { get; set; } = "";
     [BindProperty] public string BirthDate { get; set; } = "";
     [BindProperty] public string Gender { get; set; } = "";
-    [BindProperty] public string BirthCertificateNumber { get; set; } = "";
     [BindProperty] public string PlaceOfIssue { get; set; } = "";
     [BindProperty] public string Occupation { get; set; } = "";
     [BindProperty] public string Phone { get; set; } = "";
@@ -57,7 +56,7 @@ public sealed class CompleteProfileModel(CoreApiClient core, CustomerContext cus
         IsJalali = AppDate.IsJalali(AppDate.Culture());
         BirthPlaceholder = IsJalali ? "1370/05/12" : "1991/08/03";
         string culture = AppDate.Culture();
-        if (new[] { FirstName, LastName, Mobile, NationalId, FatherName, BirthDate, Gender, BirthCertificateNumber, PlaceOfIssue, Occupation }.Any(string.IsNullOrWhiteSpace)
+        if (new[] { FirstName, LastName, Mobile, NationalId, FatherName, BirthDate, Gender, PlaceOfIssue, Occupation }.Any(string.IsNullOrWhiteSpace)
             || !EmailPattern.IsMatch(Email.Trim()))
         {
             Error = culture switch
@@ -101,7 +100,6 @@ public sealed class CompleteProfileModel(CoreApiClient core, CustomerContext cus
             fatherName = FatherName.Trim(),
             birthDate = birth.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             genderCode = Gender,
-            birthCertificateNumber = NormalizeDigits(BirthCertificateNumber).Trim(),
             placeOfIssue = PlaceOfIssue.Trim(),
             occupation = Occupation.Trim()
         });
@@ -128,7 +126,8 @@ public sealed class CompleteProfileModel(CoreApiClient core, CustomerContext cus
     private string? SafeReturnUrl() => Url.IsLocalUrl(ReturnUrl) ? ReturnUrl : null;
 
     // Accepts Jalali (fa) or Gregorian (en/ar) input in yyyy/MM/dd shape and
-    // converts the Jalali one via the Persian calendar.
+    // converts the Jalali one via the Persian calendar. Canonical values from
+    // the date picker (yyyy-MM-dd, Gregorian) are recognized in every culture.
     private static DateOnly? ParseDate(string input, bool jalali)
     {
         string normalized = NormalizeDigits(input).Replace('-', '/');
@@ -139,6 +138,7 @@ public sealed class CompleteProfileModel(CoreApiClient core, CustomerContext cus
         {
             if (jalali)
             {
+                if (y > 1600) return new DateOnly(y, m, d); // مقدار استاندارد تقویم همیشه میلادی است
                 PersianCalendar pc = new();
                 DateTime gregorian = pc.ToDateTime(y, m, d, 0, 0, 0, 0);
                 return new DateOnly(gregorian.Year, gregorian.Month, gregorian.Day);

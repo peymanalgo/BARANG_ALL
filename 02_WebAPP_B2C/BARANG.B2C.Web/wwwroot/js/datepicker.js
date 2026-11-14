@@ -39,8 +39,9 @@
         return String(value).replace(/[0-9]/g, function (c) { return '۰۱۲۳۴۵۶۷۸۹'[c]; });
     }
 
-    function Calendar(input) {
+    function Calendar(input, iconButton) {
         this.input = input;
+        this.icon = iconButton || null;
         this.culture = input.getAttribute('data-culture') || 'fa';
         this.jalali = this.culture === 'fa';
         this.popup = null;
@@ -63,8 +64,9 @@
         var self = this;
         input.addEventListener('focus', function () { self.open(); });
         input.addEventListener('click', function () { self.open(); });
+        if (this.icon) this.icon.addEventListener('click', function (e) { e.preventDefault(); if (self.popup) self.close(); else self.open(); });
         document.addEventListener('click', function (e) {
-            if (self.popup && !self.popup.contains(e.target) && e.target !== input) self.close();
+            if (self.popup && !self.popup.contains(e.target) && e.target !== input && e.target !== self.icon && !(self.icon && self.icon.contains(e.target))) self.close();
         });
     }
 
@@ -75,8 +77,10 @@
         pop.className = 'barang-dp-popup';
         pop.innerHTML =
             '<div class="barang-dp-head">' +
+            '<button type="button" class="dp-nav dp-prev" aria-label="previous month">‹</button>' +
             '<select class="dp-month" aria-label="month"></select>' +
             '<select class="dp-year" aria-label="year"></select>' +
+            '<button type="button" class="dp-nav dp-next" aria-label="next month">›</button>' +
             '</div>' +
             '<div class="barang-dp-grid"></div>' +
             '<div class="barang-dp-actions">' +
@@ -85,6 +89,15 @@
             '</div>';
         this.input.parentElement.appendChild(pop);
         this.popup = pop;
+
+        function shiftMonth(delta) {
+            self.view.m += delta;
+            if (self.view.m < 1) { self.view.m = 12; self.view.y -= 1; }
+            if (self.view.m > 12) { self.view.m = 1; self.view.y += 1; }
+            self.renderGrid();
+        }
+        pop.querySelector('.dp-prev').addEventListener('click', function () { shiftMonth(-1); });
+        pop.querySelector('.dp-next').addEventListener('click', function () { shiftMonth(1); });
 
         var monthSel = pop.querySelector('.dp-month');
         var yearSel = pop.querySelector('.dp-year');
@@ -200,7 +213,13 @@
         wrap.className = 'barang-dp';
         input.parentNode.insertBefore(wrap, input);
         wrap.appendChild(input);
-        new Calendar(input);
+        var icon = document.createElement('button');
+        icon.type = 'button';
+        icon.className = 'dp-icon';
+        icon.setAttribute('aria-label', 'calendar');
+        icon.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
+        wrap.appendChild(icon);
+        new Calendar(input, icon);
         input.setAttribute('readonly', 'readonly');
     }
 

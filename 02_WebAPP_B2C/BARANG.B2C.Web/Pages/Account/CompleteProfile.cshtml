@@ -37,7 +37,8 @@
                 </label>
                 <label>
                     <span>@T("تاریخ تولد", "Birth date", "تاريخ الميلاد") @(Model.IsJalali ? T("(شمسی)", "(Jalali)", "(ميلادي)") : "") *</span>
-                    <input type="text" asp-for="BirthDate" dir="ltr" placeholder="@Model.BirthPlaceholder" required />
+                    <input type="hidden" asp-for="BirthDate" />
+                    <input type="text" data-dp data-culture="@culture" data-target="#BirthDate" readonly placeholder="@Model.BirthPlaceholder" required />
                 </label>
                 <label>
                     <span>@T("جنسیت", "Gender", "الجنس") *</span>
@@ -46,10 +47,6 @@
                         <option value="male">@T("مرد", "Male", "ذكر")</option>
                         <option value="female">@T("زن", "Female", "أنثى")</option>
                     </select>
-                </label>
-                <label>
-                    <span>@T("شماره شناسنامه", "Birth certificate no.", "رقم شهادة الميلاد") *</span>
-                    <input type="text" asp-for="BirthCertificateNumber" dir="ltr" inputmode="numeric" required />
                 </label>
                 <label>
                     <span>@T("محل صدور", "Place of issue", "مكان الإصدار") *</span>
@@ -68,7 +65,9 @@
                     <input type="email" asp-for="Email" dir="ltr" autocomplete="email" required />
                 </label>
             </div>
-            <button type="submit" class="btn btn-primary btn-lg btn-block">@T("ذخیره و ادامه", "Save and continue", "حفظ ومتابعة")</button>
-        </form>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">@T("ذخیره و ادامه", "Save and continue", "حفظ ومتابعة")</button>
+    </form>
     </div>
 </section>
+<link rel="stylesheet" href="~/css/datepicker.css" asp-append-version="true" />
+<script src="~/js/datepicker.js" defer asp-append-version="true"></script>

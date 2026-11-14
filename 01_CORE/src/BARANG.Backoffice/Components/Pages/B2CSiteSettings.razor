@@ -1,0 +1,119 @@
+@page "/manage/b2c/settings"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<h2>@L("تنظیمات سایت", "Site settings", "إعدادات الموقع")</h2>
+
+@if (Loading) { <p class="muted">…</p> }
+else if (Loaded)
+{
+    <div class="form-section">
+        <h3>@L("هویت سایت", "Site identity", "هوية الموقع")</h3>
+        <div class="form-grid">
+            <label><span>@L("نام سایت (فارسی)", "Site name (fa)", "اسم الموقع (فا)") *</span><input @bind="NameFa" /></label>
+            <label><span>@L("نام سایت (انگلیسی)", "Site name (en)", "اسم الموقع (إنجليزي)")</span><input @bind="NameEn" dir="ltr" /></label>
+            <label><span>@L("نام سایت (عربی)", "Site name (ar)", "اسم الموقع (عربي)")</span><input @bind="NameAr" dir="rtl" /></label>
+            <label><span>@L("شعار (فارسی)", "Slogan (fa)", "الشعار (فا)")</span><input @bind="SloganFa" /></label>
+            <label><span>@L("شعار (انگلیسی)", "Slogan (en)", "الشعار (إنجليزي)")</span><input @bind="SloganEn" dir="ltr" /></label>
+            <label><span>@L("ایمیل تماس", "Contact email", "بريد التواصل")</span><input @bind="Email" dir="ltr" /></label>
+            <label><span>@L("تلفن تماس", "Contact phone", "هاتف التواصل")</span><input @bind="Phone" dir="ltr" /></label>
+        </div>
+    </div>
+    <div class="form-section">
+        <h3>@L("لوگو و نمادک", "Logo & favicon", "الشعار والأيقونة")</h3>
+        <div class="form-grid">
+            <div>
+                <span>@L("لوگو", "Logo", "الشعار")</span>
+                <div style="display:flex;gap:8px;align-items:center">
+                    @if (!string.IsNullOrWhiteSpace(LogoUrl)) { <img src="@LogoUrl" style="height:44px" alt="logo" /> }
+                    else { <span class="muted">@L("بدون لوگو", "No logo", "بدون شعار")</span> }
+                    <label class="btn btn-sm" style="cursor:pointer">@L("بارگذاری", "Upload", "تحميل")<InputFile OnChange="e => PickFile(e, true)" hidden accept="image/*" /></label>
+                </div>
+            </div>
+            <div>
+                <span>@L("نمادک (favicon)", "Favicon", "الأيقونة")</span>
+                <div style="display:flex;gap:8px;align-items:center">
+                    @if (!string.IsNullOrWhiteSpace(FaviconUrl)) { <img src="@FaviconUrl" style="height:32px;width:32px" alt="favicon" /> }
+                    else { <span class="muted">@L("بدون نمادک", "No favicon", "بدون أيقونة")</span> }
+                    <label class="btn btn-sm" style="cursor:pointer">@L("بارگذاری", "Upload", "تحميل")<InputFile OnChange="e => PickFile(e, false)" hidden accept="image/*" /></label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="flex gap-8" style="margin-top:12px">
+        <button class="btn btn-primary" @onclick="Save" disabled="@Busy">@L("ذخیره", "Save", "حفظ")</button>
+        @if (!string.IsNullOrEmpty(Message)) { <span class="muted">@Message</span> }
+    </div>
+}
+
+@code {
+    private bool Loading = true;
+    private bool Loaded => !Loading;
+    private bool Busy;
+    private string Message = "";
+    private string NameFa = "", NameEn = "", NameAr = "", SloganFa = "", SloganEn = "", Email = "", Phone = "";
+    private string? LogoKey, LogoUrl, FaviconKey, FaviconUrl;
+    private long Version;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var s = await Session();
+        if (s is null) { Loading = false; return; }
+        var r = await Core.GetAsync("api/v1/site/settings", s.Value.Token, s.Value.Company, default);
+        if (r.IsSuccess)
+        {
+            JsonElement x = r.Value;
+            NameFa = Text(x, "siteNameFa"); NameEn = Text(x, "siteNameEn"); NameAr = Text(x, "siteNameAr");
+            SloganFa = Text(x, "sloganFa"); Email = Text(x, "contactEmail") ?? "salam@pirang.ir"; Phone = Text(x, "contactPhone") ?? "02100000000";
+            LogoKey = NullText(x, "logoStorageKey"); LogoUrl = NullText(x, "logoUrl");
+            FaviconKey = NullText(x, "faviconStorageKey"); FaviconUrl = NullText(x, "faviconUrl");
+            Version = x.TryGetProperty("version", out var v) ? v.GetInt64() : 1;
+        }
+        Loading = false;
+    }
+
+    private async Task PickFile(InputFileChangeEventArgs e, bool logo)
+    {
+        var s = await Session();
+        if (s is null) return;
+        var f = e.File;
+        await using var stream = f.OpenReadStream(maxAllowedSize: 25 * 1024 * 1024);
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+        memory.Position = 0;
+        var r = await Core.UploadAsync("api/v1/site/images", f.Name, f.ContentType, memory, f.Size, s.Value.Token, s.Value.Company, default);
+        if (!r.IsSuccess) return;
+        string? url = r.Value.TryGetProperty("url", out var u) ? u.GetString() : null;
+        string? key = r.Value.TryGetProperty("storageKey", out var k) ? k.GetString() : null;
+        if (logo) { LogoUrl = url; LogoKey = key; }
+        else { FaviconUrl = url; FaviconKey = key; }
+    }
+
+    private async Task Save()
+    {
+        var s = await Session();
+        if (s is null) return;
+        Busy = true;
+        var r = await Core.SendAsync(HttpMethod.Put, "api/v1/site/settings", new
+        {
+            siteNameFa = NameFa, siteNameEn = NameEn, siteNameAr = NameAr,
+            logoStorageKey = LogoKey, faviconStorageKey = FaviconKey,
+            sloganFa = SloganFa, sloganEn = "", sloganAr = "",
+            contactEmail = Email, contactPhone = Phone, version = Version
+        }, s.Value.Token, s.Value.Company, default);
+        Busy = false;
+        Message = r.IsSuccess ? L("ذخیره شد ✓", "Saved ✓", "تم الحفظ ✓") : L("خطا در ذخیره", "Save failed", "فشل الحفظ");
+        if (r.IsSuccess) Version = r.Value.TryGetProperty("version", out var v) ? v.GetInt64() : Version;
+    }
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+    private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
+    private static string? NullText(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en, "ar" => ar, _ => fa };
+}

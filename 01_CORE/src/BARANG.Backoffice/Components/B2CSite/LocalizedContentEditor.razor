@@ -1,0 +1,136 @@
+@* محتوای سه‌زبانه با تب — عنوان + ویرایشگر حرفه‌ای + سئو برای هر زبان + تصویر بندانگشتی/کاور *@
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<div class="lang-tabs" role="tablist">
+    @foreach (var t in Tabs)
+    {
+        <button type="button" class="lang-tab @(Active == t.Id ? "on" : "")" @onclick="() => Active = t.Id">@t.Label</button>
+    }
+</div>
+
+@foreach (var t in Tabs)
+{
+    @if (Active == t.Id)
+    {
+        <div class="form-section" style="margin-top:10px">
+            <div class="form-grid">
+                <label><span>@t.TitleLabel *</span><input value="@TitleFor(t.Id)" @oninput="e => SetTitle(t.Id, e.Value?.ToString())" /></label>
+                @if (ShowExcerpt)
+                {
+                    <label><span>@t.ExcerptLabel</span><textarea value="@ExcerptFor(t.Id)" @oninput="e => SetExcerpt(t.Id, e.Value?.ToString())" rows="2"></textarea></label>
+                }
+            </div>
+            <h4 style="margin:10px 0 4px">@t.BodyLabel</h4>
+            <HtmlEditor @ref=EditorRef Value="@BodyFor(t.Id)" ValueChanged="v => SetBody(t.Id, v)" DomIdSuffix="@($"lc-{Id}-{t.Id}")" ShowImageUpload="true" />
+            <details class="seo-box" style="margin-top:10px">
+                <summary style="cursor:pointer;font-weight:600">🔎 @SEOText("سئو (SEO)", "SEO", "SEO")</summary>
+                <div class="form-grid" style="margin-top:8px">
+                    <label style="grid-column:1/-1">
+                        <span>@SEOText("توضیحات متا (Meta Description)", "Meta description", "وصف الميتا")</span>
+                        <textarea value="@SeoFor(t.Id)" @oninput="e => SetSeo(t.Id, e.Value?.ToString())" rows="2" maxlength="600"></textarea>
+                    </label>
+                    <label style="grid-column:1/-1">
+                        <span>@SEOText("کلمات کلیدی و برچسب‌ها (با کاما جدا کنید)", "Keywords & tags (comma separated)", "الكلمات المفتاحية")</span>
+                        <input value="@KeywordsFor(t.Id)" @oninput="e => SetKeywords(t.Id, e.Value?.ToString())" placeholder="تیشرت, چاپ, طرح" />
+                    </label>
+                </div>
+            </details>
+        </div>
+    }
+}
+
+@if (ShowThumbnail)
+{
+    <div class="form-section" style="margin-top:10px">
+        <h3>@ThumbTitle</h3>
+        <p class="muted" style="font-size:.78rem">@ThumbHint</p>
+        <div style="display:flex;gap:10px;align-items:center">
+            @if (!string.IsNullOrWhiteSpace(ThumbnailUrl))
+            {
+                <img src="@ThumbnailUrl" style="width:96px;height:96px;border-radius:10px;object-fit:cover;border:1px solid var(--border)" alt="" />
+            }
+            else
+            {
+                <span class="muted">@SEOText("تصویری انتخاب نشده", "No image", "لا صورة")</span>
+            }
+            <label class="btn btn-sm" style="cursor:pointer">@SEOText("بارگذاری تصویر", "Upload image", "تحميل صورة")<InputFile OnChange="PickThumb" hidden accept="image/*" /></label>
+            @if (!string.IsNullOrWhiteSpace(ThumbnailUrl))
+            {
+                <button type="button" class="btn btn-sm" @onclick="ClearThumb">🗑 @SEOText("حذف", "Remove", "حذف")</button>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string TitleFa { get; set; } = ""; [Parameter] public EventCallback<string> TitleFaChanged { get; set; }
+    [Parameter] public string TitleEn { get; set; } = ""; [Parameter] public EventCallback<string> TitleEnChanged { get; set; }
+    [Parameter] public string TitleAr { get; set; } = ""; [Parameter] public EventCallback<string> TitleArChanged { get; set; }
+    [Parameter] public string BodyFa { get; set; } = ""; [Parameter] public EventCallback<string> BodyFaChanged { get; set; }
+    [Parameter] public string BodyEn { get; set; } = ""; [Parameter] public EventCallback<string> BodyEnChanged { get; set; }
+    [Parameter] public string BodyAr { get; set; } = ""; [Parameter] public EventCallback<string> BodyArChanged { get; set; }
+    [Parameter] public string ExcerptFa { get; set; } = ""; [Parameter] public EventCallback<string> ExcerptFaChanged { get; set; }
+    [Parameter] public string ExcerptEn { get; set; } = ""; [Parameter] public EventCallback<string> ExcerptEnChanged { get; set; }
+    [Parameter] public string SeoFa { get; set; } = ""; [Parameter] public EventCallback<string> SeoFaChanged { get; set; }
+    [Parameter] public string SeoEn { get; set; } = ""; [Parameter] public EventCallback<string> SeoEnChanged { get; set; }
+    [Parameter] public string SeoAr { get; set; } = ""; [Parameter] public EventCallback<string> SeoArChanged { get; set; }
+    [Parameter] public string KeywordsFa { get; set; } = ""; [Parameter] public EventCallback<string> KeywordsFaChanged { get; set; }
+    [Parameter] public string KeywordsEn { get; set; } = ""; [Parameter] public EventCallback<string> KeywordsEnChanged { get; set; }
+    [Parameter] public string KeywordsAr { get; set; } = ""; [Parameter] public EventCallback<string> KeywordsArChanged { get; set; }
+    [Parameter] public string? ThumbnailKey { get; set; } = ""; [Parameter] public EventCallback<string?> ThumbnailKeyChanged { get; set; }
+    [Parameter] public string? ThumbnailUrl { get; set; }
+    [Parameter] public bool ShowThumbnail { get; set; } = true;
+    [Parameter] public bool ShowExcerpt { get; set; } = false;
+    [Parameter] public string? ThumbTitle { get; set; }
+    [Parameter] public string? ThumbHint { get; set; }
+    private string Active = "fa";
+    private string Id = Guid.NewGuid().ToString("N")[..6];
+    private HtmlEditor? EditorRef;
+
+    private (string Id, string Label, string TitleLabel, string BodyLabel, string ExcerptLabel)[] Tabs =>
+    [
+        ("fa", "🇮🇷 محتوای فارسی", "عنوان (فارسی)", "متن محتوا (فارسی)", "خلاصه (فارسی)"),
+        ("en", "🇬🇧 English content", "Title (English)", "Body (English)", "Excerpt (English)"),
+        ("ar", "🇸🇦 المحتوى العربي", "العنوان (عربي)", "النص (عربي)", "المقتطف (عربي)"),
+    ];
+
+    private string TitleFor(string c) => c == "fa" ? TitleFa : c == "en" ? TitleEn : TitleAr;
+    private string BodyFor(string c) => c == "fa" ? BodyFa : c == "en" ? BodyEn : BodyAr;
+    private string ExcerptFor(string c) => c == "fa" ? ExcerptFa : c == "en" ? ExcerptEn : "";
+    private string SeoFor(string c) => c == "fa" ? SeoFa : c == "en" ? SeoEn : SeoAr;
+    private string KeywordsFor(string c) => c == "fa" ? KeywordsFa : c == "en" ? KeywordsEn : KeywordsAr;
+
+    private Task SetTitle(string c, string? v) => c == "fa" ? TitleFaChanged.InvokeAsync(v ?? "") : c == "en" ? TitleEnChanged.InvokeAsync(v ?? "") : TitleArChanged.InvokeAsync(v ?? "");
+    private Task SetBody(string c, string? v) => c == "fa" ? BodyFaChanged.InvokeAsync(v ?? "") : c == "en" ? BodyEnChanged.InvokeAsync(v ?? "") : BodyArChanged.InvokeAsync(v ?? "");
+    private Task SetExcerpt(string c, string? v) => c == "fa" ? ExcerptFaChanged.InvokeAsync(v ?? "") : ExcerptEnChanged.InvokeAsync(v ?? "");
+    private Task SetSeo(string c, string? v) => c == "fa" ? SeoFaChanged.InvokeAsync(v ?? "") : c == "en" ? SeoEnChanged.InvokeAsync(v ?? "") : SeoArChanged.InvokeAsync(v ?? "");
+    private Task SetKeywords(string c, string? v) => c == "fa" ? KeywordsFaChanged.InvokeAsync(v ?? "") : c == "en" ? KeywordsEnChanged.InvokeAsync(v ?? "") : KeywordsArChanged.InvokeAsync(v ?? "");
+
+    public Task SyncFromDom() => EditorRef != null ? EditorRef.SyncFromDom() : Task.CompletedTask;
+
+    private async Task PickThumb(InputFileChangeEventArgs e)
+    {
+        var s = await Session();
+        if (s is null) return;
+        var f = e.File;
+        await using var stream = f.OpenReadStream(maxAllowedSize: 25 * 1024 * 1024);
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+        memory.Position = 0;
+        var r = await Core.UploadAsync("api/v1/site/images", f.Name, f.ContentType, memory, f.Size, s.Value.Token, s.Value.Company, default);
+        if (r.IsSuccess)
+        {
+            string? key = r.Value.TryGetProperty("storageKey", out var k) ? k.GetString() : null;
+            await ThumbnailKeyChanged.InvokeAsync(key);
+        }
+    }
+    private Task ClearThumb() => ThumbnailKeyChanged.InvokeAsync(null);
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+    private string SEOText(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en, "ar" => ar, _ => fa };
+}

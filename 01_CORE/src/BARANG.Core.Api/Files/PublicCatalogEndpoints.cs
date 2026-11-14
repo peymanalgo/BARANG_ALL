@@ -33,7 +33,29 @@ public static class PublicCatalogEndpoints
                 string term=search?.Trim()??"";
                 if(term.Length>0)query=query.Where(x=>EF.Functions.ILike(x.Code,$"%{term}%")||EF.Functions.ILike(x.Title,$"%{term}%"));
                 string category=categoryCode?.Trim().ToUpperInvariant()??"";
-                if(category.Length>0)query=query.Where(x=>x.CategoryCode==category);
+                if(category.Length>0)
+                {
+                    // دسته‌ی انتخابی + تمام زیر‌دسته‌های آن (والدیت تا ریشه) — مشتری همه طرح‌های آن شاخه را یک‌جا می‌بیند
+                    List<(Guid Id,Guid? Parent,string Code)> catValues=await (from v in db.LookupValues.AsNoTracking() join ty in db.LookupTypes.AsNoTracking() on v.LookupTypeId equals ty.Id where ty.Code=="artwork.category" select new ValueTuple<Guid,Guid?,string>(v.Id,v.ParentId,v.Code)).ToListAsync(t);
+                    Dictionary<Guid,Guid?> parentOf=catValues.ToDictionary(v=>v.Id,v=>v.Parent);
+                    Dictionary<Guid,string> codeOf=catValues.ToDictionary(v=>v.Id,v=>v.Code);
+                    Guid? root=catValues.FirstOrDefault(v=>string.Equals(v.Code,category,StringComparison.OrdinalIgnoreCase)).Id;
+                    List<string> codes=new(){category};
+                    if(root is not null)
+                    {
+                        Queue<Guid> frontier=new(); frontier.Enqueue(root.Value);
+                        HashSet<Guid> seen=new(){root.Value};
+                        while(frontier.Count>0)
+                        {
+                            Guid current=frontier.Dequeue();
+                            foreach((Guid id,Guid? parent,string _) in catValues.Where(v=>v.Parent==current&&!seen.Contains(v.Id)))
+                            {
+                                seen.Add(id); frontier.Enqueue(id); codes.Add(codeOf[id]);
+                            }
+                        }
+                    }
+                    query=query.Where(x=>codes.Contains(x.CategoryCode!));
+                }
                 int size=Math.Clamp(pageSize??24,1,60);
                 int pageNumber=Math.Max(1,page??1);
                 long total=await query.LongCountAsync(t);

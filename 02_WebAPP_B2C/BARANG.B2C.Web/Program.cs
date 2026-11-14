@@ -25,6 +25,7 @@ builder.Services.AddHttpClient("core", c => c.BaseAddress = new Uri(builder.Conf
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CoreApiClient>();
 builder.Services.AddScoped<CustomerContext>();
+builder.Services.AddScoped<SiteContext>();
 builder.Services.AddRequestLocalization(o =>
 {
     o.SetDefaultCulture("fa").AddSupportedCultures("fa", "en", "ar").AddSupportedUICultures("fa", "en", "ar");

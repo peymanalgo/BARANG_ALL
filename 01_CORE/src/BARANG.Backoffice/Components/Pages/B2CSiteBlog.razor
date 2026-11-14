@@ -1,0 +1,163 @@
+@page "/manage/b2c/blog"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<h2>@L("وبلاگ سایت", "Site blog", "مدونة الموقع")</h2>
+<p class="muted">@L("مطالب این بخش در سایت B2C به‌صورت کارت‌های هم‌اندازه نمایش داده می‌شوند.", "Posts appear as uniform cards on the B2C store.", "تظهر التدوينات كبطاقات موحدة في المتجر.")</p>
+
+@if (Editing is null)
+{
+    <button class="btn btn-primary" @onclick="New">+ @L("مطلب جدید", "New post", "تدوينة جديدة")</button>
+    <table class="table" style="margin-top:10px">
+        <thead><tr><th>@L("عنوان", "Title", "العنوان")</th><th>Slug</th><th>@L("وضعیت", "Status", "الحالة")</th><th>@L("تاریخ انتشار", "Published", "تاريخ النشر")</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var p in Posts)
+            {
+                <tr>
+                    <td>@p.Title</td>
+                    <td dir="ltr">@p.Slug</td>
+                    <td>@(p.Published ? L("منتشر", "Published", "منشور") : L("پیش‌نویس", "Draft", "مسودة"))</td>
+                    <td>@p.Date</td>
+                    <td class="flex gap-4">
+                        <button class="btn btn-sm" @onclick="() => Edit(p)">✏️</button>
+                        <button class="btn btn-sm" @onclick="() => Delete(p)">🗑</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="form-section">
+        <h3>@(Editing.Id is null ? L("مطلب جدید", "New post", "تدوينة جديدة") : L("ویرایش مطلب", "Edit post", "تحرير"))</h3>
+        <div class="form-grid">
+            <label><span>Slug *</span><input @bind="Editing.Slug" dir="ltr" /></label>
+            <label class="flex gap-4 items-center"><input type="checkbox" @bind="Editing.Published" /> @L("منتشر شود", "Publish", "نشر")</label>
+        </div>
+    </div>
+    <LocalizedContentEditor @ref="_editor"
+        TitleFa="Editing.TitleFa" TitleFaChanged="v => Editing.TitleFa = v"
+        TitleEn="Editing.TitleEn" TitleEnChanged="v => Editing.TitleEn = v"
+        TitleAr="Editing.TitleAr" TitleArChanged="v => Editing.TitleAr = v"
+        BodyFa="Editing.BodyFa" BodyFaChanged="v => Editing.BodyFa = v"
+        BodyEn="Editing.BodyEn" BodyEnChanged="v => Editing.BodyEn = v"
+        BodyAr="Editing.BodyAr" BodyArChanged="v => Editing.BodyAr = v"
+        ExcerptFa="Editing.ExcerptFa" ExcerptFaChanged="v => Editing.ExcerptFa = v"
+        ExcerptEn="Editing.ExcerptEn" ExcerptEnChanged="v => Editing.ExcerptEn = v"
+        SeoFa="Editing.SeoFa" SeoFaChanged="v => Editing.SeoFa = v"
+        SeoEn="Editing.SeoEn" SeoEnChanged="v => Editing.SeoEn = v"
+        SeoAr="Editing.SeoAr" SeoArChanged="v => Editing.SeoAr = v"
+        KeywordsFa="Editing.KeywordsFa" KeywordsFaChanged="v => Editing.KeywordsFa = v"
+        KeywordsEn="Editing.KeywordsEn" KeywordsEnChanged="v => Editing.KeywordsEn = v"
+        KeywordsAr="Editing.KeywordsAr" KeywordsArChanged="v => Editing.KeywordsAr = v"
+        ThumbnailKey="Editing.ThumbKey" ThumbnailKeyChanged="v => { Editing.ThumbKey = v; Editing.ThumbPreviewUrl = v is null ? null : Editing.ThumbPreviewUrl; }"
+        ThumbnailUrl="@Editing.ThumbPreviewUrl"
+        ShowThumbnail="true" ShowExcerpt="true"
+        ThumbTitle="@L("تصویر بندانگشتی کارت", "Card thumbnail", "صورة البطاقة")"
+        ThumbHint="@L("این تصویر روی کارت مطلب در صفحه وبلاگ سایت نمایش داده می‌شود.", "Shown on the post card in the store blog page.", "تظهر على بطاقة التدوينة في المتجر.")" />
+    <div class="flex gap-8" style="margin-top:12px">
+        <button class="btn btn-primary" @onclick="Save" disabled="@Busy">💾 @L("ذخیره", "Save", "حفظ")</button>
+        <button class="btn" @onclick="() => Editing = null">@L("بازگشت", "Back", "رجوع")</button>
+        @if (!string.IsNullOrEmpty(Message)) { <span class="muted">@Message</span> }
+    </div>
+}
+
+@code {
+    private List<PostRow> Posts = new();
+    private EditModel? Editing;
+    private bool Busy;
+    private string Message = "";
+    private LocalizedContentEditor? _editor;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        var s = await Session();
+        if (s is null) return;
+        var r = await Core.GetAsync("api/v1/site/blog?page=1&pageSize=50&includeUnpublished=true", s.Value.Token, s.Value.Company, default);
+        Posts.Clear();
+        if (r.IsSuccess && r.Value.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array)
+            foreach (var x in items.EnumerateArray())
+                Posts.Add(new PostRow(
+                    x.TryGetProperty("id", out var i) ? i.GetGuid() : Guid.Empty,
+                    Text(x, "titleFa"), Text(x, "slug"),
+                    x.TryGetProperty("isPublished", out var p) && p.GetBoolean(),
+                    x.TryGetProperty("publishedAtUtc", out var d) && d.ValueKind == JsonValueKind.String ? d.GetString()?[..10] : "—"));
+    }
+
+    private void New() => Editing = new EditModel();
+
+    private async Task Edit(PostRow p)
+    {
+        var s = await Session();
+        if (s is null) return;
+        Editing = new EditModel { Id = p.Id, Slug = p.Slug, TitleFa = p.Title };
+        var r = await Core.GetAsync($"api/v1/site/blog/{p.Id}", s.Value.Token, s.Value.Company, default);
+        if (r.IsSuccess)
+        {
+            Editing.TitleFa = Text(r.Value, "titleFa"); Editing.TitleEn = Text(r.Value, "titleEn"); Editing.TitleAr = Text(r.Value, "titleAr");
+            Editing.ExcerptFa = Text(r.Value, "excerptFa"); Editing.ExcerptEn = Text(r.Value, "excerptEn");
+            Editing.BodyFa = Text(r.Value, "bodyFa"); Editing.BodyEn = Text(r.Value, "bodyEn"); Editing.BodyAr = Text(r.Value, "bodyAr");
+            Editing.SeoFa = Text(r.Value, "seoDescriptionFa"); Editing.SeoEn = Text(r.Value, "seoDescriptionEn"); Editing.SeoAr = Text(r.Value, "seoDescriptionAr");
+            Editing.KeywordsFa = Text(r.Value, "seoKeywordsFa"); Editing.KeywordsEn = Text(r.Value, "seoKeywordsEn"); Editing.KeywordsAr = Text(r.Value, "seoKeywordsAr");
+            Editing.ThumbPreviewUrl = Text(r.Value, "thumbnailUrl");
+            Editing.ThumbKey = Text(r.Value, "thumbnailStorageKey");
+            Editing.Version = r.Value.TryGetProperty("version", out var v) ? v.GetInt64() : 1;
+        }
+    }
+
+    private async Task Save()
+    {
+        var s = await Session();
+        if (s is null || Editing is null) return;
+        Busy = true;
+        if (_editor != null) await _editor.SyncFromDom();
+        var body = new
+        {
+            slug = Editing.Slug,
+            titleFa = Editing.TitleFa, titleEn = Editing.TitleEn, titleAr = Editing.TitleAr,
+            excerptFa = Editing.ExcerptFa, excerptEn = Editing.ExcerptEn, excerptAr = "",
+            bodyFa = Editing.BodyFa, bodyEn = Editing.BodyEn, bodyAr = Editing.BodyAr,
+            thumbnailStorageKey = Editing.ThumbKey,
+            seoDescriptionFa = Editing.SeoFa, seoDescriptionEn = Editing.SeoEn, seoDescriptionAr = Editing.SeoAr,
+            seoKeywordsFa = Editing.KeywordsFa, seoKeywordsEn = Editing.KeywordsEn, seoKeywordsAr = Editing.KeywordsAr,
+            isPublished = Editing.Published, version = Editing.Version
+        };
+        var r = Editing.Id is Guid id
+            ? await Core.SendAsync(HttpMethod.Put, $"api/v1/site/blog/{id}", body, s.Value.Token, s.Value.Company, default)
+            : await Core.SendAsync(HttpMethod.Post, "api/v1/site/blog", body, s.Value.Token, s.Value.Company, default);
+        Busy = false;
+        if (r.IsSuccess) { Message = L("ذخیره شد ✓", "Saved ✓", "تم ✓"); Editing = null; await Load(); }
+        else Message = L("خطا", "Error", "خطأ");
+    }
+
+    private async Task Delete(PostRow p)
+    {
+        var s = await Session();
+        if (s is null) return;
+        await Core.SendAsync(HttpMethod.Delete, $"api/v1/site/blog/{p.Id}", null, s.Value.Token, s.Value.Company, default);
+        await Load();
+    }
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+    private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
+    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en, "ar" => ar, _ => fa };
+
+    private sealed record PostRow(Guid Id, string Title, string Slug, bool Published, string? Date);
+    private sealed class EditModel
+    {
+        public Guid? Id; public string Slug = ""; public string TitleFa = "", TitleEn = "", TitleAr = "";
+        public string ExcerptFa = "", ExcerptEn = "";
+        public string BodyFa = "", BodyEn = "", BodyAr = "";
+        public string SeoFa = "", SeoEn = "", SeoAr = "", KeywordsFa = "", KeywordsEn = "", KeywordsAr = "";
+        public string? ThumbKey, ThumbPreviewUrl; public bool Published; public long Version;
+    }
+}

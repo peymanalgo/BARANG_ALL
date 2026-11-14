@@ -1,0 +1,184 @@
+@page "/manage/b2c/pages"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<h2>@L("صفحات سایت", "Site pages", "صفحات الموقع")</h2>
+<p class="muted">@L("ویرایش صفحات با ویرایشگر حرفه‌ای سه‌زبانه + سئو؛ محل نمایش صفحه را انتخاب کنید.", "Edit pages with the trilingual editor + SEO; choose where the page appears.", "حرر الصفحات بالمحرر ثلاثي اللغة مع SEO.")</p>
+
+@if (Editing is null)
+{
+    <button class="btn btn-primary" @onclick="NewPage">+ @L("صفحه جدید", "New page", "صفحة جديدة")</button>
+    <table class="table" style="margin-top:10px">
+        <thead><tr><th>@L("عنوان", "Title", "العنوان")</th><th>Slug</th><th>@L("محل نمایش", "Placement", "الموضع")</th><th>@L("وضعیت", "Status", "الحالة")</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var p in Pages)
+            {
+                <tr>
+                    <td>@p.Title</td>
+                    <td dir="ltr">@p.Slug</td>
+                    <td>@PlacementText(p.Placement, p.Column)</td>
+                    <td>@(p.Published ? L("منتشر", "Published", "منشور") : L("پیش‌نویس", "Draft", "مسودة"))</td>
+                    <td class="flex gap-4">
+                        <button class="btn btn-sm" @onclick="() => Edit(p)">✏️ @L("ویرایش", "Edit", "تحرير")</button>
+                        <button class="btn btn-sm" @onclick="() => Delete(p)">🗑</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="form-section">
+        <h3>@(Editing.Id is null ? L("صفحه جدید", "New page", "صفحة جديدة") : L("ویرایش صفحه", "Edit page", "تحرير الصفحة"))</h3>
+        <div class="form-grid">
+            <label><span>Slug (@L("حروف لاتین", "latin", "لاتيني"))*</span><input @bind="Editing.Slug" dir="ltr" /></label>
+            <label>
+                <span>@L("محل نمایش", "Placement", "الموضع")</span>
+                <select @bind="Editing.Placement">
+                    <option value="none">@L("فقط لینک مستقیم", "Direct link only", "رابط مباشر فقط")</option>
+                    <option value="main">@L("منوی اصلی", "Main menu", "القائمة الرئيسية")</option>
+                    <option value="footer">@L("فوتر", "Footer", "التذييل")</option>
+                </select>
+            </label>
+            @if (Editing.Placement == "footer")
+            {
+                <label><span>@L("ستون فوتر", "Footer column", "عمود التذييل")</span>
+                    <select @bind="Editing.Column">
+                        <option value="1">@L("ستون ۱", "Column 1", "العمود ١")</option>
+                        <option value="2">@L("ستون ۲", "Column 2", "العمود ٢")</option>
+                        <option value="3">@L("ستون ۳", "Column 3", "العمود ٣")</option>
+                        <option value="4">@L("ستون ۴", "Column 4", "العمود ٤")</option>
+                    </select>
+                </label>
+            }
+            <label class="flex gap-4 items-center"><input type="checkbox" @bind="Editing.Published" /> @L("منتشر شود", "Published", "منشور")</label>
+        </div>
+    </div>
+    <LocalizedContentEditor @ref="_editor"
+        TitleFa="Editing.TitleFa" TitleFaChanged="v => Editing.TitleFa = v"
+        TitleEn="Editing.TitleEn" TitleEnChanged="v => Editing.TitleEn = v"
+        TitleAr="Editing.TitleAr" TitleArChanged="v => Editing.TitleAr = v"
+        BodyFa="Editing.BodyFa" BodyFaChanged="v => Editing.BodyFa = v"
+        BodyEn="Editing.BodyEn" BodyEnChanged="v => Editing.BodyEn = v"
+        BodyAr="Editing.BodyAr" BodyArChanged="v => Editing.BodyAr = v"
+        SeoFa="Editing.SeoFa" SeoFaChanged="v => Editing.SeoFa = v"
+        SeoEn="Editing.SeoEn" SeoEnChanged="v => Editing.SeoEn = v"
+        SeoAr="Editing.SeoAr" SeoArChanged="v => Editing.SeoAr = v"
+        KeywordsFa="Editing.KeywordsFa" KeywordsFaChanged="v => Editing.KeywordsFa = v"
+        KeywordsEn="Editing.KeywordsEn" KeywordsEnChanged="v => Editing.KeywordsEn = v"
+        KeywordsAr="Editing.KeywordsAr" KeywordsArChanged="v => Editing.KeywordsAr = v"
+        ThumbnailKey="Editing.CoverKey" ThumbnailKeyChanged="v => { Editing.CoverKey = v; Editing.CoverPreviewUrl = v is null ? null : Editing.CoverPreviewUrl; }"
+        ThumbnailUrl="@Editing.CoverPreviewUrl"
+        ShowThumbnail="true"
+        ThumbTitle="@L("تصویر ابتدای صفحه (کاور)", "Page cover image", "صورة الغلاف")"
+        ThumbHint="@L("این تصویر در ابتدای صفحه، بالای محتوا به بازدیدکننده نمایش داده می‌شود.", "Shown at the top of the page, above the content.", "تظهر أعلى الصفحة قبل المحتوى.")" />
+    <div class="flex gap-8" style="margin-top:12px">
+        <button class="btn btn-primary" @onclick="Save" disabled="@Busy">💾 @L("ذخیره", "Save", "حفظ")</button>
+        <button class="btn" @onclick="() => Editing = null">@L("بازگشت", "Back", "رجوع")</button>
+        @if (!string.IsNullOrEmpty(Message)) { <span class="muted">@Message</span> }
+    </div>
+}
+
+@code {
+    private List<Row> Pages = new();
+    private EditModel? Editing;
+    private bool Busy;
+    private string Message = "";
+    private LocalizedContentEditor? _editor;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        var s = await Session();
+        if (s is null) return;
+        var r = await Core.GetAsync("api/v1/site/pages", s.Value.Token, s.Value.Company, default);
+        Pages.Clear();
+        if (r.IsSuccess && r.Value.ValueKind == JsonValueKind.Array)
+            foreach (var x in r.Value.EnumerateArray())
+                Pages.Add(new Row(
+                    x.TryGetProperty("id", out var i) ? i.GetGuid() : Guid.Empty,
+                    Text(x, "titleFa"), Text(x, "slug"), Text(x, "placement"),
+                    x.TryGetProperty("footerColumn", out var c) && c.ValueKind == JsonValueKind.Number ? c.GetInt32() : null,
+                    x.TryGetProperty("isPublished", out var p) && p.GetBoolean()));
+    }
+
+    private void NewPage() => Editing = new EditModel();
+
+    private async Task Edit(Row p)
+    {
+        var s = await Session();
+        if (s is null) return;
+        Editing = new EditModel { Id = p.Id, Slug = p.Slug, TitleFa = p.Title, Published = p.Published, Placement = p.Placement, Column = p.Column ?? 1 };
+        var r = await Core.GetAsync($"api/v1/site/pages/{p.Id}", s.Value.Token, s.Value.Company, default);
+        if (r.IsSuccess)
+        {
+            Editing.TitleFa = Text(r.Value, "titleFa"); Editing.TitleEn = Text(r.Value, "titleEn"); Editing.TitleAr = Text(r.Value, "titleAr");
+            Editing.BodyFa = Text(r.Value, "bodyFa"); Editing.BodyEn = Text(r.Value, "bodyEn"); Editing.BodyAr = Text(r.Value, "bodyAr");
+            Editing.SeoFa = Text(r.Value, "seoDescriptionFa"); Editing.SeoEn = Text(r.Value, "seoDescriptionEn"); Editing.SeoAr = Text(r.Value, "seoDescriptionAr");
+            Editing.KeywordsFa = Text(r.Value, "seoKeywordsFa"); Editing.KeywordsEn = Text(r.Value, "seoKeywordsEn"); Editing.KeywordsAr = Text(r.Value, "seoKeywordsAr");
+            Editing.CoverPreviewUrl = Text(r.Value, "coverUrl");
+            Editing.Version = r.Value.TryGetProperty("version", out var v) ? v.GetInt64() : 1;
+        }
+    }
+
+    private async Task Save()
+    {
+        var s = await Session();
+        if (s is null || Editing is null) return;
+        Busy = true;
+        if (_editor != null) await _editor.SyncFromDom();
+        var body = new
+        {
+            slug = Editing.Slug,
+            titleFa = Editing.TitleFa, titleEn = Editing.TitleEn, titleAr = Editing.TitleAr,
+            bodyFa = Editing.BodyFa, bodyEn = Editing.BodyEn, bodyAr = Editing.BodyAr,
+            coverStorageKey = Editing.CoverPreviewUrl is null ? Editing.CoverKey : Editing.CoverKey,
+            seoDescriptionFa = Editing.SeoFa, seoDescriptionEn = Editing.SeoEn, seoDescriptionAr = Editing.SeoAr,
+            seoKeywordsFa = Editing.KeywordsFa, seoKeywordsEn = Editing.KeywordsEn, seoKeywordsAr = Editing.KeywordsAr,
+            placement = Editing.Placement, footerColumn = Editing.Placement == "footer" ? Editing.Column : (int?)null,
+            isPublished = Editing.Published, displayOrder = 10, version = Editing.Version
+        };
+        var r = Editing.Id is Guid id
+            ? await Core.SendAsync(HttpMethod.Put, $"api/v1/site/pages/{id}", body, s.Value.Token, s.Value.Company, default)
+            : await Core.SendAsync(HttpMethod.Post, "api/v1/site/pages", body, s.Value.Token, s.Value.Company, default);
+        Busy = false;
+        if (r.IsSuccess) { Message = L("ذخیره شد ✓", "Saved ✓", "تم ✓"); Editing = null; await Load(); }
+        else Message = L("خطا", "Error", "خطأ");
+    }
+
+    private async Task Delete(Row p)
+    {
+        var s = await Session();
+        if (s is null) return;
+        await Core.SendAsync(HttpMethod.Delete, $"api/v1/site/pages/{p.Id}", null, s.Value.Token, s.Value.Company, default);
+        await Load();
+    }
+
+    private string PlacementText(string placement, int? col) => placement switch
+    {
+        "main" => L("منوی اصلی", "Main menu", "القائمة الرئيسية"),
+        "footer" => L("فوتر — ستون ", "Footer — col ", "التذييل — عمود ") + col,
+        _ => L("لینک مستقیم", "Direct link", "رابط مباشر")
+    };
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+    private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
+    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en, "ar" => ar, _ => fa };
+
+    private sealed record Row(Guid Id, string Title, string Slug, string Placement, int? Column, bool Published);
+    private sealed class EditModel
+    {
+        public Guid? Id; public string Slug = ""; public string TitleFa = "", TitleEn = "", TitleAr = "";
+        public string BodyFa = "", BodyEn = "", BodyAr = "";
+        public string SeoFa = "", SeoEn = "", SeoAr = "", KeywordsFa = "", KeywordsEn = "", KeywordsAr = "";
+        public string? CoverKey; public string? CoverPreviewUrl;
+        public string Placement = "none"; public int Column = 1; public bool Published = true; public long Version;
+    }
+}

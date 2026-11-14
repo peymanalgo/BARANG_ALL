@@ -66,7 +66,7 @@ else
                 <li>@T("امکان افزودن فایل طرح اختصاصی شما.", "You can attach your own custom file.", "يمكنك إرفاق ملفك الخاص.")</li>
             </ul>
             <div class="design-cta">
-                <a class="btn btn-primary btn-lg" href="/">@T("شروع طراحی تیشرت", "Start designing", "ابدأ التصميم")</a>
+                <a class="btn btn-primary btn-lg" href="/order/wizard?design=@Model.Id">@T("با همین طرح تیشرتت رو طراحی کن", "Design your shirt with this", "صمّم تيشيرتك بهذا التصميم")</a>
             </div>
         </div>
         @if (Model.Similar.Count > 0)
@@ -87,7 +87,7 @@ else
                         </span>
                         <span class="design-meta">
                             <strong>@sm.Title</strong>
-                            <span class="score-chip">@sm.Score٪ @T("تطابق", "match", "تطابق")</span>
+                            <span class="score-chip">@BARANG.B2C.Web.Services.AppDate.Percent(sm.Score, culture) @T("تطابق", "match", "تطابق")</span>
                         </span>
                     </a>
                 }

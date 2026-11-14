@@ -85,3 +85,7 @@ route_grid_hits.txt
 # Local git worktrees (content lives on their own branches)
 step1-order-lifecycle-contract/
 step2-clean/
+tools/RealOrderAcceptance/bin/
+tools/RealOrderAcceptance/obj/
+**/bin/Debug/**/.playwright/
+**/bin/Release/**/.playwright/

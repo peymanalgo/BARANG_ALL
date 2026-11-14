@@ -7,8 +7,8 @@
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
     string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.Format(d, culture);
-    string invitedCount = Model.InvitedCount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
-    string earnedText = Model.ReferralEarned.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string invitedCount = BARANG.B2C.Web.Services.AppDate.Digits(Model.InvitedCount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("en")), culture);
+    string earnedText = BARANG.B2C.Web.Services.AppDate.Digits(Model.ReferralEarned.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("en")), culture);
     string InvitedLabel = culture == "en" ? Model.InvitedCount + " invited" : culture == "ar" ? Model.InvitedCount + " مدعو" : invitedCount + " نفر دعوت شده";
     string EarnedLabel = culture == "en" ? earnedText + " Toman earned" : culture == "ar" ? earnedText + " تومان مكافأة" : earnedText + " تومان هدیه";
     string OrderStatusLabel(string s) => s switch

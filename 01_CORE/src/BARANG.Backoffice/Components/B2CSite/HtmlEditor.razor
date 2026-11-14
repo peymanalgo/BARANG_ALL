@@ -1,0 +1,88 @@
+@* ویرایشگر HTML مشترک CMS — contenteditable + تولبار JS + آپلود تصویر از Blazor *@
+@inject IJSRuntime JS
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+
+<div class="site-editor-wrap">
+    <div class="flex gap-4 items-center" style="margin-bottom:6px">
+        @if (ShowImageUpload)
+        {
+            <label class="btn btn-sm" style="cursor:pointer">
+                🖼 @Label("تصویر", "Image", "صورة")
+                <InputFile OnChange="PickImage" hidden accept="image/*" />
+            </label>
+        }
+        <span class="muted" style="font-size:.75rem">@Hint</span>
+    </div>
+    <div id="@DomId" data-site-editor data-target="@HiddenId" dir="auto">@((MarkupString)SafeHtml)</div>
+    <input type="hidden" id="@HiddenId" @bind-value="Value" @bind-value:event="oninput" />
+</div>
+
+@code {
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? DomIdSuffix { get; set; }
+    [Parameter] public bool ShowImageUpload { get; set; } = true;
+    [Parameter] public string? Hint { get; set; }
+    private string DomId => $"site-ed-{DomIdSuffix ?? Guid.NewGuid().ToString("N")[..8]}";
+    private string HiddenId => DomId + "-hidden";
+    private MarkupString SafeHtml => (MarkupString)(Value ?? "");
+
+    private string Label(string fa, string en, string ar)
+    {
+        string c = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        return c switch { "en" => en, "ar" => ar, _ => fa };
+    }
+
+    // بارگذاری تضمینی کتابخانه ویرایشگر و اسکن پس از هر رندر (تعویض تب) — idempotent
+    private const string BootScript = """
+        (function(){
+          var scan=function(){ window.barangSiteEditor && window.barangSiteEditor.scan(document); };
+          if(window.barangSiteEditor){ scan(); return; }
+          if(window.__siteEdLoading){ window.__siteEdQueue=(window.__siteEdQueue||[]).concat([scan]); return; }
+          window.__siteEdLoading=1; window.__siteEdQueue=[scan];
+          var s=document.createElement('script'); s.src='/js/site-editor.js';
+          s.onload=function(){ window.__siteEdLoading=0; (window.__siteEdQueue||[]).forEach(function(f){f();}); window.__siteEdQueue=[]; };
+          document.head.appendChild(s);
+        })();
+        """;
+
+    protected override async Task OnAfterRenderAsync(bool first)
+    {
+        await JS.InvokeVoidAsync("eval", BootScript);
+    }
+
+    private async Task PickImage(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null || file.Size == 0) return;
+        var session = await Session();
+        if (session is null) return;
+        await using var stream = file.OpenReadStream(maxAllowedSize: 25 * 1024 * 1024);
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+        memory.Position = 0;
+        var result = await Core.UploadAsync("api/v1/site/images", file.Name, file.ContentType, memory, file.Size, session.Value.Token, session.Value.Company, default);
+        if (!result.IsSuccess) return;
+        string? url = result.Value.TryGetProperty("url", out var u) ? u.GetString() : null;
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            await JS.InvokeVoidAsync("eval", $"window.barangSiteEditor && window.barangSiteEditor.insertImage('{DomId}', '{url.Replace("'", "\\'")}')");
+            await SyncFromDom();
+        }
+    }
+
+    public async Task SyncFromDom()
+    {
+        string html = await JS.InvokeAsync<string>("eval", $"window.barangSiteEditor ? window.barangSiteEditor.getHtml('{DomId}') : ''");
+        Value = html;
+        await ValueChanged.InvokeAsync(html);
+    }
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(BARANG.Backoffice.Auth.AuthClaimTypes.CompanyId)?.Value, out var c) &&
+               user.FindFirst(BARANG.Backoffice.Auth.AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+}

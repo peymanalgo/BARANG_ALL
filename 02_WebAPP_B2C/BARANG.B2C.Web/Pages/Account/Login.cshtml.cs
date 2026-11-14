@@ -34,7 +34,8 @@ public sealed class LoginModel(CoreApiClient core, CustomerContext customers) : 
     {
         SetCultureFromQuery();
         ReturnUrl = SafeUrl(returnUrl);
-        if (!IsValidTarget(Target.Trim()))
+        Target = NormalizeDigits(Target).Trim(); // ارقام فارسی/عربی → لاتین (همان چیزی که در دیتابیس ذخیره است)
+        if (!IsValidTarget(Target))
         {
             Error = CultureName() switch
             {
@@ -64,6 +65,7 @@ public sealed class LoginModel(CoreApiClient core, CustomerContext customers) : 
     {
         SetCultureFromQuery();
         ReturnUrl = SafeUrl(returnUrl);
+        Target = NormalizeDigits(Target).Trim();
         CodeSent = true;
         MaskedTarget = Mask(Target.Trim());
         string culture = CultureName();

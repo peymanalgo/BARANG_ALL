@@ -22,6 +22,12 @@ public static class ModuleCatalog
     public static bool IsVisible(BackofficeNavigationGroup group,System.Security.Claims.ClaimsPrincipal user)=>group.Permission is null||user.IsInRole("system.administrator")||user.HasClaim("barang:permission",group.Permission);
     public static readonly IReadOnlyList<BackofficeNavigationGroup> Navigation=
     [
+        Group("Nav_B2CSiteManagement","globe",
+            Item("Nav_B2C_SiteSettings","/manage/b2c/settings","b2c.site.read"),
+            Item("Nav_B2C_Pages","/manage/b2c/pages","b2c.site.read"),
+            Item("Nav_B2C_Footer","/manage/b2c/footer","b2c.site.read"),
+            Item("Nav_B2C_MainMenu","/manage/b2c/menu","b2c.site.read"),
+            Item("Nav_B2C_Blog","/manage/b2c/blog","b2c.site.read")),
         Group("Nav_MasterData","database",
             Item("Nav_Reference_shared","/master/reference-data/shared","lookup.read"),
             Item("Nav_Reference_customers","/master/reference-data/customers","lookup.read"),

@@ -1,0 +1,348 @@
+@page "/order/wizard"
+@model WizardModel
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    ViewData["Title"] = T("سفارش چاپ روی پوشاک", "Custom print order", "طلب طباعة مخصصة");
+
+    // دیکشنری ترجمه‌ها برای JS — همه متن‌های ویزارد از اینجا می‌آیند (سه زبان)
+    var i18n = new Dictionary<string, object>
+    {
+        ["dir"] = culture == "en" ? "ltr" : "rtl",
+        ["steps"] = new[] { T("۱ · طراحی تیشرت", "1 · Design", "١ · التصميم"), T("۲ · بسته‌بندی و ارسال", "2 · Packaging & shipping", "٢ · التغليف والشحن"), T("۳ · پیش‌نمایش سفارش", "3 · Review", "٣ · مراجعة الطلب"), T("۴ · پرداخت و ثبت", "4 · Payment", "٤ · الدفع") },
+        ["brandNote"] = T("ساخت سفارش چاپ", "custom print order", "إنشاء طلب طباعة"),
+        ["entryBanner"] = T("ورود از صفحه نمایش طرح — این طرح به‌صورت پیش‌فرض انتخاب و روی تیشرت قرار گرفته است. می‌توانی همین را سفارش بدهی، طرح دیگری از بانک انتخاب کنی، یا تب را به «طرح خودم» یا «متن و تایپوگرافی» تغییر بدهی.", "Entered from the design page — this design is preselected and placed on the shirt. Order it as is, pick another design, or switch to your own file or typography.", "دخلت من صفحة التصميم — هذا التصميم مختار وموضوع على التيشرت. اطلبه كما هو أو اختر غيره أو انتقل إلى ملفك أو الخط."),
+        ["designSource"] = T("منبع طرح", "Design source", "مصدر التصميم"),
+        ["sourceRule"] = T("با انتخاب هر مسیر، فقط همان مسیر نمایش داده می‌شود", "Selecting a tab shows only that panel", "اختيار تب يظهر لوحته فقط"),
+        ["tabBank"] = T("بانک طرح‌ها", "Design bank", "بنك التصاميم"),
+        ["tabBankHint"] = T("جستجوی مفهومی", "concept search", "بحث مفهومي"),
+        ["tabUpload"] = T("طرح خودم", "My own design", "تصميمي"),
+        ["tabUploadHint"] = T("PNG / JPG", "PNG / JPG", "PNG / JPG"),
+        ["tabText"] = T("متن و تایپوگرافی", "Text & typography", "نص وخط"),
+        ["tabTextHint"] = T("فونت و رنگ", "font & color", "خط ولون"),
+        ["searchPlaceholder"] = T("دنبال چی هستی؟ مثلاً: گربه فضایی، شیر اسطوره‌ای…", "What are you looking for? e.g. space cat, mythical lion…", "عمّ تبحث؟ مثلاً: قطة فضائية، أسطوري…"),
+        ["searchReady"] = T("موتور مفهومی آماده است", "Concept engine ready", "المحرك المفهومي جاهز"),
+        ["searchOf"] = T("طرح", "designs", "تصميم"),
+        ["searching"] = T("در حال جستجو…", "Searching…", "جارٍ البحث…"),
+        ["noResults"] = T("چیزی پیدا نشد؛ کلیدواژه ساده‌تر امتحان کن", "Nothing found; try a simpler keyword", "لا نتائج؛ جرّب كلمة أبسط"),
+        ["nearest"] = T("نزدیک‌ترین", "nearest", "الأقرب"),
+        ["dropTitle"] = T("فایل طرح را اینجا رها کن", "Drop your design file here", "أفلت ملف تصميمك هنا"),
+        ["dropHint"] = T("PNG با پس‌زمینه شفاف بهترین نتیجه را می‌دهد — تحلیل کیفیت خودکار انجام می‌شود", "Transparent-background PNG works best — automatic quality analysis", "PNG بخلفية شفافة أفضل — تحليل جودة تلقائي"),
+        ["pickFile"] = T("انتخاب فایل", "Choose file", "اختر ملفاً"),
+        ["analysis"] = T("تحلیل هوشمند فایل", "Smart file analysis", "تحليل ذكي للملف"),
+        ["qExcellent"] = T("کیفیت عالی — برای A3 هم مناسب است", "Excellent — suitable for A3 too", "ممتاز — يصلح حتى A3"),
+        ["qGood"] = T("کیفیت خوب — تا A4 عالی چاپ می‌شود", "Good — prints great up to A4", "جيد — طباعة ممتازة حتى A4"),
+        ["qLow"] = T("رزولوشن کم — پیشنهاد ما A5 است", "Low resolution — we suggest A5", "دقة منخفضة — نقترح A5"),
+        ["bestSize"] = T("پیشنهاد حداکثر اندازه", "Suggested max size", "الحجم الأقصى المقترح"),
+        ["bgRemove"] = T("حذف خودکار پس‌زمینه", "Auto background removal", "إزالة تلقائية للخلفية"),
+        ["ready"] = T("آماده", "Ready", "جاهز"),
+        ["optimize"] = T("بهینه‌سازی برای چاپ", "Print optimization", "تحسين للطباعة"),
+        ["active"] = T("فعال", "Active", "مفعل"),
+        ["textLabel"] = T("متن طرح", "Design text", "نص التصميم"),
+        ["rtlLtr"] = T("فارسی/عربی راست‌چین · انگلیسی چپ‌چین", "Persian/Arabic RTL · English LTR", "الفارسية/العربية يمين · الإنجليزية يسار"),
+        ["textPlaceholder"] = T("مثلاً: پی‌رنگ خان، نقشه‌ها داره برات!", "e.g. Peyrang Khan has the designs for you!", "مثلاً: پی‌رنگ خان لديه التصاميم!"),
+        ["font"] = T("فونت", "Font", "الخط"),
+        ["font1"] = T("لاله‌زار", "Lalezar", "لاله‌زار"), ["font2"] = T("وزیرمتن", "Vazirmatn", "وزیرمتن"), ["font3"] = T("دست‌نویس", "Handwritten", "يدوي"), ["font4"] = T("استعداد", "Bold caps", "استعداد"),
+        ["textColor"] = T("رنگ متن", "Text color", "لون النص"),
+        ["textSize"] = T("اندازه متن", "Text size", "حجم النص"),
+        ["front"] = T("جلو", "Front", "أمام"),
+        ["back"] = T("پشت", "Back", "خلف"),
+        ["autoCenter"] = T("وسط‌چین خودکار", "Auto center", "توسيط تلقائي"),
+        ["printArea"] = T("ناحیه چاپ", "Print area", "منطقة الطباعة"),
+        ["cm"] = T("سانت", "cm", "سم"),
+        ["shirtColor"] = T("رنگ تیشرت — پیش‌نمایش همان لحظه عوض می‌شود", "Shirt color — live preview", "لون التيشرت — معاينة فورية"),
+        ["productType"] = T("نوع محصول", "Product type", "نوع المنتج"),
+        ["shirtSize"] = T("سایز تیشرت", "Shirt size", "مقاس التيشرت"),
+        ["emptyStage"] = T("اول یکی از سه مسیر را انتخاب کن: طرح از بانک، آپلود فایل یا نوشتن متن — پیش‌نمایش همین‌جا زنده به‌روز می‌شود", "Pick one of three paths: bank design, your file, or text — live preview updates here", "اختر أحد المسارات الثلاثة: تصميم البنك أو ملفك أو نص — المعاينة تتحدث هنا"),
+        ["noDesign"] = T("طرح", "Design", "التصميم"),
+        ["yourDesign"] = T("طرح خودت", "Your design", "تصميمك"),
+        ["printSide"] = T("محل چاپ", "Print side", "موضع الطباعة"),
+        ["size"] = T("اندازه", "Size", "الحجم"),
+        ["product"] = T("محصول", "Product", "المنتج"),
+        ["color"] = T("رنگ", "Color", "اللون"),
+        ["orderTotal"] = T("جمع سفارش", "Order total", "إجمالي الطلب"),
+        ["toman"] = T("تومان", "Toman", "تومان"),
+        ["free"] = T("مجانی", "Free", "مجاناً"),
+        ["next1"] = T("ادامه — بسته‌بندی و ارسال ←", "Continue — packaging & shipping →", "متابعة — التغليف والشحن ←"),
+        ["p2Title"] = T("بسته‌بندی و ارسال", "Packaging & shipping", "التغليف والشحن"),
+        ["p2Desc"] = T("روش بسته‌بندی و آدرس گیرنده را انتخاب کن.", "Pick the packaging method and the recipient address.", "اختر طريقة التغليف وعنوان المستلم."),
+        ["shipTime"] = T("زمان ارسال", "Shipping time", "مدة الشحن"),
+        ["shipTimeValue"] = T("۳ تا ۵ روز کاری", "3–5 business days", "٣ إلى ٥ أيام عمل"),
+        ["packaging"] = T("روش بسته‌بندی", "Packaging method", "طريقة التغليف"),
+        ["address"] = T("آدرس تحویل", "Delivery address", "عنوان التسليم"),
+        ["newAddress"] = T("＋ آدرس جدید", "＋ New address", "＋ عنوان جديد"),
+        ["newAddressHint"] = T("ثبت نشانی جدید برای این سفارش", "Register a new address for this order", "تسجيل عنوان جديد لهذا الطلب"),
+        ["fullAddress"] = T("نشانی کامل", "Full address", "العنوان الكامل"),
+        ["city"] = T("شهر", "City", "المدينة"),
+        ["postalCode"] = T("کد پستی", "Postal code", "الرمز البريدي"),
+        ["gift"] = T("ارسال برای دیگران (هدیه)", "Send to someone else (gift)", "إرسال لشخص آخر (هدية)"),
+        ["giftDetails"] = T("مشخصات گیرنده هدیه", "Gift recipient details", "بيانات مستلم الهدية"),
+        ["giftName"] = T("نام گیرنده", "Recipient name", "اسم المستلم"),
+        ["giftPhone"] = T("شماره تماس گیرنده", "Recipient phone", "هاتف المستلم"),
+        ["giftAddress"] = T("نشانی گیرنده", "Recipient address", "عنوان المستلم"),
+        ["giftMessage"] = T("پیام مناسبت (روی کارت هدیه چاپ می‌شود) ✨", "Occasion message (printed on the gift card) ✨", "رسالة المناسبة (تُطبع على بطاقة الهدية) ✨"),
+        ["back2"] = T("→ بازگشت به طراحی", "→ Back to designing", "→ عودة للتصميم"),
+        ["next2"] = T("ادامه — پیش‌نمایش سفارش ←", "Continue — review →", "متابعة — مراجعة ←"),
+        ["pickPackFirst"] = T("اول روش بسته‌بندی را انتخاب کن", "Pick a packaging method first", "اختر طريقة التغليف أولاً"),
+        ["loginRequired"] = T("برای ادامه باید وارد حساب کاربری شوی", "Sign in to continue", "سجّل الدخول للمتابعة"),
+        ["login"] = T("ورود / ثبت‌نام", "Sign in / register", "تسجيل الدخول"),
+        ["p3Title"] = T("پیش‌نمایش سفارش", "Order review", "مراجعة الطلب"),
+        ["p3Desc"] = T("همه چیز را چک کن و در صورت تایید به پرداخت برو.", "Check everything, then proceed to payment.", "تحقق من كل شيء ثم انتقل للدفع."),
+        ["priceBreakdown"] = T("ریز قیمت سفارش", "Price breakdown", "تفصيل السعر"),
+        ["payable"] = T("مبلغ قابل پرداخت", "Payable amount", "المبلغ المستحق"),
+        ["serverPriceNote"] = T("قیمت نهایی سمت سرور محاسبه و اعتبارسنجی شده است؛ این صفحه فقط نمایش است.", "The final price is calculated and validated server-side; this page only displays it.", "السعر النهائي محسوب ومُتحقق منه في الخادم؛ هذه الصفحة للعرض فقط."),
+        ["back3"] = T("→ بازگشت", "→ Back", "→ عودة"),
+        ["confirm"] = T("تایید و ادامه به پرداخت ←", "Approve & continue to payment →", "موافقة ومتابعة للدفع ←"),
+        ["sourceBank"] = T("طرح بانک", "Bank design", "تصميم البنك"),
+        ["yourFile"] = T("فایل شخصی شما", "Your own file", "ملفك الخاص"),
+        ["textQuote"] = T("متن", "Text", "نص"),
+        ["printSize"] = T("اندازه چاپ", "Print size", "حجم الطباعة"),
+        ["p4Title"] = T("پرداخت و ثبت سفارش", "Payment & submit", "الدفع وإتمام الطلب"),
+        ["p4Desc"] = T("روش پرداخت را انتخاب کن — در این نسخه، درگاه نمایشی همیشه موفق است.", "Pick a payment method — in this version the demo gateway always succeeds.", "اختر طريقة الدفع — في هذه النسخة البوابة التجريبية تنجح دائماً."),
+        ["payGateway"] = T("درگاه پرداخت بانکی", "Bank payment gateway", "بوابة الدفع البنكية"),
+        ["payGatewayDesc"] = T("انتقال به درگاه نمایشی و پرداخت آنلاین (در این نسخه: همیشه موفق)", "Redirects to the demo gateway (always succeeds in this version)", "ينقلك إلى البوابة التجريبية (تنجح دائماً في هذه النسخة)"),
+        ["payWallet"] = T("کیف پول", "Wallet", "المحفظة"),
+        ["payWalletDesc"] = T("پرداخت از موجودی کیف پول", "Pay from your wallet balance", "الدفع من رصيد محفظتك"),
+        ["balance"] = T("موجودی", "Balance", "الرصيد"),
+        ["back4"] = T("→ بازگشت به پیش‌نمایش", "→ Back to review", "→ عودة للمراجعة"),
+        ["gwDemo"] = T("درگاه نمایشی", "DEMO GATEWAY", "بوابة تجريبية"),
+        ["gwPayOrder"] = T("پرداخت سفارش چاپ پی‌رنگ خان", "Peyrang Khan print order payment", "دفع طلب طباعة پی‌رنگ خان"),
+        ["gwPay"] = T("پرداخت", "Pay", "ادفع"),
+        ["gwCancel"] = T("انصراف", "Cancel", "إلغاء"),
+        ["successTitle"] = T("سفارش شما ثبت شد!", "Your order is submitted!", "تم إرسال طلبك!"),
+        ["orderNumber"] = T("شماره سفارش", "Order number", "رقم الطلب"),
+        ["paidViaWallet"] = T("از کیف پول شما کسر شد", "paid from your wallet", "دُفع من محفظتك"),
+        ["paidViaGateway"] = T("از طریق درگاه پرداخت شد", "paid via gateway", "دُفع عبر البوابة"),
+        ["successNote"] = T("وضعیت: پرداخت موفق و سفارش ثبت شد ✅ — سفارش وارد فرایند تولید می‌شود و در پنل کاربری قابل پیگیری است.", "Status: paid & submitted ✅ — the order enters production and is trackable in your panel.", "الحالة: مدفوع ومُرسل ✅ — يدخل الطلب الإنتاج ويمكن تتبعه في لوحتك."),
+        ["track"] = T("پیگیری سفارش", "Track order", "تتبع الطلب"),
+        ["again"] = T("🛒 سفارش جدید", "🛒 New order", "🛒 طلب جديد"),
+        ["loading"] = T("در حال بارگذاری…", "Loading…", "جارٍ التحميل…"),
+        ["errorGeneric"] = T("خطایی رخ داد؛ دوباره تلاش کن.", "Something went wrong; try again.", "حدث خطأ؛ حاول مجدداً."),
+        ["entryStore"] = T("از فروشگاه", "From store", "من المتجر"),
+        ["priceProduct"] = T("محصول", "Product", "المنتج"),
+        ["pricePrint"] = T("چاپ", "Printing", "الطباعة"),
+        ["pricePackaging"] = T("بسته‌بندی", "Packaging", "التغليف"),
+        ["priceShipping"] = T("ارسال", "Shipping", "الشحن"),
+        ["priceDiscount"] = T("تخفیف", "Discount", "الخصم"),
+        ["priceTax"] = T("مالیات", "Tax", "الضريبة"),
+        ["priceSubtotal"] = T("جمع کل", "Subtotal", "المجموع"),
+        ["priceFinal"] = T("مبلغ نهایی", "Final total", "الإجمالي النهائي"),
+        ["qty"] = T("تعداد", "Quantity", "الكمية"),
+        ["stockAvail"] = T("موجودی انبار", "Stock", "المخزون"),
+        ["stockOut"] = T("ناموجود", "Out of stock", "غير متوفر"),
+        ["sampleText"] = T("پی‌رنگ خان", "Peyrang Khan", "پی‌رنگ خان"),
+    };
+}
+<link rel="stylesheet" href="~/css/wizard.css" asp-append-version="true" />
+<form method="post" id="wz-af" hidden aria-hidden="true"></form>
+<section class="wizard-embed" id="wz" data-culture="@culture" data-auth="@(Model.IsAuthenticated ? "1" : "0")" data-entry-design="@(Model.EntryDesignId?.ToString() ?? "")">
+<div class="wrap">
+  <header class="shell">
+    <div class="brand">👑 @T("پی‌رنگ خان", "Peyrang Khan", "پی‌رنگ خان") <small>@i18n["brandNote"]</small></div>
+    <ol class="steps" id="w-steps"></ol>
+  </header>
+
+  <section class="phase" id="w-p1" hidden>
+    <div id="w-entrynote" class="entrynote" hidden>@i18n["entryBanner"]</div>
+    <div class="grid1">
+      <aside class="tools">
+        <div>
+          <div class="lbl">@i18n["designSource"] — @i18n["sourceRule"]</div>
+          <div class="modes">
+            <button type="button" class="mode" data-mode="bank"><span class="ic">🗂️</span><b>@i18n["tabBank"]</b><small id="w-bankcount">@i18n["tabBankHint"]</small></button>
+            <button type="button" class="mode" data-mode="upload"><span class="ic">🖼️</span><b>@i18n["tabUpload"]</b><small>@i18n["tabUploadHint"]</small></button>
+            <button type="button" class="mode" data-mode="text"><span class="ic">✍️</span><b>@i18n["tabText"]</b><small>@i18n["tabTextHint"]</small></button>
+          </div>
+        </div>
+
+        <div class="pan" id="w-pan-bank" hidden>
+          <div class="ai"><span class="dotp" id="w-pulse" hidden></span> @i18n["tabBankHint"]</div>
+          <div class="search"><input id="w-q" type="text" dir="auto" placeholder="@i18n["searchPlaceholder"]" aria-label="@i18n["tabBankHint"]"></div>
+          <div class="chips" id="w-chips"></div>
+          <p class="status" id="w-status" aria-live="polite">@i18n["searchReady"]</p>
+          <div class="gridcards" id="w-grid"></div>
+        </div>
+
+        <div class="pan" id="w-pan-upload" hidden>
+          <div class="drop" id="w-drop">
+            <span class="ic">☁️</span>
+            <b>@i18n["dropTitle"]</b>
+            <small>@i18n["dropHint"]</small>
+            <label class="btn btn-ghost btn-sm">@i18n["pickFile"]<input id="w-file" type="file" accept="image/*" hidden></label>
+          </div>
+          <div class="check" id="w-check" hidden>
+            <div class="row"><span style="font-size:20px">🔎</span><div><b>@i18n["analysis"]</b><span class="msg" id="w-checkmsg">—</span></div></div>
+            <div class="meter"><span id="w-meter"></span></div>
+            <ul class="hints">
+              <li>@i18n["bgRemove"] <span class="ok">@i18n["ready"]</span></li>
+              <li>@i18n["optimize"] <span class="ok">@i18n["active"]</span></li>
+              <li>@i18n["bestSize"]: <b id="w-best">A3</b></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="pan" id="w-pan-text" hidden>
+          <div class="lbl" for="w-textin">@i18n["textLabel"] <span dir="ltr">RTL ← fa/ar · LTR ← EN</span></div>
+          <textarea class="tin" id="w-textin" rows="2" dir="auto" placeholder="@i18n["textPlaceholder"]"></textarea>
+          <div class="lbl">@i18n["font"]</div>
+          <div class="fonts">
+            <button type="button" class="fbtn" data-f="1" style="font-weight:900">@i18n["font1"]</button>
+            <button type="button" class="fbtn" data-f="2" style="font-weight:500;letter-spacing:.06em">@i18n["font2"]</button>
+            <button type="button" class="fbtn" data-f="3" style="font-style:italic;font-weight:700">@i18n["font3"]</button>
+            <button type="button" class="fbtn" data-f="4" style="font-weight:800;letter-spacing:.2em">@i18n["font4"]</button>
+          </div>
+          <div class="lbl">@i18n["textColor"]</div>
+          <div class="dots" id="w-tdots"></div>
+          <div class="lbl">@i18n["textSize"] <output id="w-tsout">@BARANG.B2C.Web.Services.AppDate.Digits("100", culture)</output></div>
+          <input class="rng" id="w-tsz" type="range" min="55" max="150" value="100">
+        </div>
+      </aside>
+
+      <main style="display:flex;flex-direction:column;gap:14px;min-width:0">
+        <div class="stagebox">
+          <div class="stagewrap">
+            <div class="seg" id="w-side">
+              <button type="button" class="on" data-side="FRONT">@i18n["front"]</button>
+              <button type="button" data-side="BACK">@i18n["back"]</button>
+            </div>
+            <div class="seg" id="w-code"></div>
+            <button type="button" class="btn btn-ghost btn-sm" id="w-center">🎯 @i18n["autoCenter"]</button>
+          </div>
+          <div class="scene">
+            <div class="garm" id="w-garm">
+              <div class="face" id="w-ff"></div>
+              <div class="face bk" id="w-fb"></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="sec">@i18n["productType"]</h3>
+          <div class="products" id="w-products"><div class="sk" style="aspect-ratio:auto;height:90px"></div></div>
+        </div>
+        <div>
+          <h3 class="sec">@i18n["shirtSize"]</h3>
+          <div class="seg" id="w-ssize" style="flex-wrap:wrap"></div>
+        </div>
+
+        <div class="sumbar">
+          <div class="sumchips" id="w-sumchips" aria-live="polite"></div>
+          <div class="liveprice">@i18n["orderTotal"]: <b id="w-price">—</b> @i18n["toman"]</div>
+          <button type="button" class="btn btn-main" id="w-next1" disabled>@i18n["next1"]</button>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <section class="phase" id="w-p2" hidden>
+    <h2 class="ph">@i18n["p2Title"]</h2>
+    <p class="phd">@i18n["p2Desc"]</p>
+    <p class="phd">🚚 @i18n["shipTime"]: <b style="color:#ffd98a">@i18n["shipTimeValue"]</b></p>
+
+    <div>
+      <h3 class="sec">@i18n["packaging"]</h3>
+      <div class="cards3" id="w-pack"></div>
+    </div>
+
+    <div>
+      <h3 class="sec">@i18n["address"]</h3>
+      <div class="addrlist" id="w-addrs"></div>
+      <div style="margin-top:10px" id="w-newaddr" hidden>
+        <span class="lbl">@i18n["newAddress"]</span>
+        <div class="frow1">
+          <input class="fin" type="text" dir="auto" placeholder="@i18n["fullAddress"]" aria-label="@i18n["fullAddress"]" id="w-na-line">
+          <input class="fin" type="text" dir="auto" placeholder="@i18n["city"]" aria-label="@i18n["city"]" id="w-na-city">
+          <input class="fin" type="text" dir="auto" placeholder="@i18n["postalCode"]" aria-label="@i18n["postalCode"]" inputmode="numeric" id="w-na-postal">
+        </div>
+      </div>
+      <label class="sw" style="margin-top:12px"><input type="checkbox" id="w-gift"> 🎁 @i18n["gift"]</label>
+      <div class="giftbox" id="w-giftbox" hidden>
+        <span class="lbl" style="margin:0">@i18n["giftDetails"]</span>
+        <div class="frow">
+          <input class="fin" type="text" dir="auto" placeholder="@i18n["giftName"]" aria-label="@i18n["giftName"]" id="w-g-name">
+          <input class="fin" type="text" dir="ltr" placeholder="@i18n["giftPhone"]" aria-label="@i18n["giftPhone"]" inputmode="tel" id="w-g-phone">
+        </div>
+        <input class="fin" type="text" dir="auto" placeholder="@i18n["giftAddress"]" aria-label="@i18n["giftAddress"]" id="w-g-addr">
+        <input class="fin" type="text" dir="auto" placeholder="@i18n["giftMessage"]" aria-label="@i18n["giftMessage"]" id="w-g-msg">
+      </div>
+    </div>
+
+    <div class="navrow">
+      <button type="button" class="btn btn-ghost" id="w-back2">@i18n["back2"]</button>
+      <button type="button" class="btn btn-main" id="w-next2">@i18n["next2"]</button>
+    </div>
+  </section>
+
+  <section class="phase" id="w-p3" hidden>
+    <h2 class="ph">@i18n["p3Title"]</h2>
+    <p class="phd">@i18n["p3Desc"]</p>
+    <div class="rev">
+      <div class="revcard">
+        <div class="revtee" id="w-revtee"></div>
+        <div id="w-revlist"></div>
+      </div>
+      <div class="pricebox">
+        <h3 class="sec" style="margin-top:0">@i18n["priceBreakdown"]</h3>
+        <div id="w-pricelines"></div>
+        <div class="ptotal"><span>@i18n["payable"]</span><b id="w-total">—</b></div>
+        <p class="pnote">⚙️ @i18n["serverPriceNote"]</p>
+        <div class="navrow" style="margin-top:16px">
+          <button type="button" class="btn btn-ghost" id="w-back3">@i18n["back3"]</button>
+          <button type="button" class="btn btn-main" id="w-confirm">@i18n["confirm"]</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="phase" id="w-p4" hidden>
+    <div id="w-payarea">
+      <h2 class="ph">@i18n["p4Title"]</h2>
+      <p class="phd">@i18n["p4Desc"]</p>
+      <div class="totalhero"><div class="n" id="w-paytotal">—</div><small>@i18n["toman"] — @i18n["payable"]</small></div>
+      <div class="paygrid" style="margin-top:14px">
+        <div class="paycard" id="w-paygw" role="button" tabindex="0">
+          <span class="ic">🏦</span>
+          <b>@i18n["payGateway"]</b>
+          <small>@i18n["payGatewayDesc"]</small>
+        </div>
+        <div class="paycard" id="w-paywallet" role="button" tabindex="0">
+          <span class="ic">👛</span>
+          <b>@i18n["payWallet"]</b>
+          <small>@i18n["payWalletDesc"]</small>
+          <div class="bal" id="w-walletbal">—</div>
+        </div>
+      </div>
+      <div class="navrow" style="margin-top:16px">
+        <button type="button" class="btn btn-ghost" id="w-back4">@i18n["back4"]</button>
+      </div>
+    </div>
+    <div id="w-success" class="success" hidden>
+      <div class="big">✓</div>
+      <h2>@i18n["successTitle"]</h2>
+      <div class="ord" id="w-ordno"></div>
+      <p id="w-successinfo">—</p>
+      <button type="button" class="btn btn-ghost" id="w-track">📍 @i18n["track"]</button>
+      <button type="button" class="btn btn-main" id="w-again">@i18n["again"]</button>
+    </div>
+  </section>
+</div>
+</section>
+
+<div class="overlay" id="w-gw" hidden>
+  <div class="gw">
+    <div class="bank ltr" style="text-align:center">ZARINPAL-DEMO GATEWAY · @i18n["gwDemo"]</div>
+    <div class="amt" id="w-gwamt">—</div>
+    <small>@i18n["gwPayOrder"]</small>
+    <div class="gwcard ltr">
+      <div class="row"><span>Card</span><b>6104 **** **** 3394</b></div>
+      <div class="row"><span>Holder</span><b>PEYRANG KHAN</b></div>
+      <div class="row"><span>OTP</span><b>••••</b></div>
+    </div>
+    <button type="button" class="btn btn-main btn-lg" id="w-gwpay">@i18n["gwPay"] ✓</button>
+    <div><button type="button" class="btn btn-ghost btn-sm" id="w-gwcancel" style="margin-top:10px">@i18n["gwCancel"]</button></div>
+  </div>
+</div>
+
+<script id="wz-i18n" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(i18n))</script>
+<script id="wz-bootstrap" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new { auth = Model.IsAuthenticated, entryDesign = Model.EntryDesignId?.ToString() ?? "" }))</script>
+<script src="~/js/wizard.js" asp-append-version="true" defer></script>

@@ -149,4 +149,4 @@
 <data name="Nav_Reference_equipment" xml:space="preserve"><value>البيانات المرجعية للمعدات</value></data>
 <data name="Nav_Pricing" xml:space="preserve"><value>التسعير</value></data>
 <data name="Nav_Cartable" xml:space="preserve"><value>صندوق المهام</value></data>
-</root>
+<data name="Nav_B2CSiteManagement"><value>إدارة موقع B2C</value></data><data name="Nav_B2C_SiteSettings"><value>إعدادات الموقع</value></data><data name="Nav_B2C_Pages"><value>الصفحات</value></data><data name="Nav_B2C_Footer"><value>إعدادات التذييل</value></data><data name="Nav_B2C_MainMenu"><value>القوائم الرئيسية</value></data><data name="Nav_B2C_Blog"><value>المدونة</value></data></root>

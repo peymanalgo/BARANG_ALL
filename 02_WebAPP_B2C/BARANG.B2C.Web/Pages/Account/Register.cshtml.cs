@@ -20,6 +20,7 @@ public sealed class RegisterModel(CoreApiClient core) : PageModel
     [BindProperty] public string LastName { get; set; } = "";
     [BindProperty] public string Target { get; set; } = "";
     [BindProperty] public string Code { get; set; } = "";
+    [BindProperty(SupportsGet = true)] public string? InviteCode { get; set; }
 
     public bool CodeSent { get; private set; }
     public string? MaskedTarget { get; private set; }
@@ -31,13 +32,22 @@ public sealed class RegisterModel(CoreApiClient core) : PageModel
     {
         ReturnUrl = SafeUrl(returnUrl);
         SetCultureFromQuery();
+        RememberInvite();
+    }
+    private void RememberInvite()
+    {
+        string code = (InviteCode ?? Request.Query["ref"].ToString() ?? "").Trim().ToUpperInvariant();
+        if (code.Length is >= 4 and <= 20)
+            Response.Cookies.Append("barang.ref", code, new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(30), IsEssential = true });
     }
 
     public async Task<IActionResult> OnPostRequestCodeAsync(string? returnUrl)
     {
         SetCultureFromQuery();
         ReturnUrl = SafeUrl(returnUrl);
+        RememberInvite();
         string culture = CultureName();
+        Target = NormalizeDigits(Target).Trim(); // ارقام فارسی/عربی → لاتین
         if (string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
         {
             Error = culture switch { "en" => "Enter your first and last name.", "ar" => "أدخل الاسم والعائلة.", _ => "نام و نام خانوادگی را وارد کنید." };
@@ -64,6 +74,7 @@ public sealed class RegisterModel(CoreApiClient core) : PageModel
         SetCultureFromQuery();
         ReturnUrl = SafeUrl(returnUrl);
         string culture = CultureName();
+        Target = NormalizeDigits(Target).Trim();
         CodeSent = true;
         MaskedTarget = Mask(Target.Trim());
         if (string.IsNullOrWhiteSpace(Code))

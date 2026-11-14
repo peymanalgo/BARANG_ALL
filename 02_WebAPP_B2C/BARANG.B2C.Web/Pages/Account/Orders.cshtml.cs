@@ -37,12 +37,16 @@ public sealed class OrdersModel(CoreApiClient core, CustomerContext customers) :
             Total = el.TryGetProperty("totalCount", out JsonElement t) && t.TryGetInt64(out long n) ? n : 0;
             if (el.TryGetProperty("items", out JsonElement items) && items.ValueKind == JsonValueKind.Array)
             {
-                Orders = items.EnumerateArray().Select(x => new OrderRow(
+                // پیش‌نویس‌ها = اقلام سبد خرید هستند و در «سفارش‌های من» نمایش داده نمی‌شوند
+                Orders = items.EnumerateArray()
+                    .Where(x => !(x.TryGetProperty("status", out JsonElement st) && st.GetString() == "Draft"))
+                    .Select(x => new OrderRow(
                     x.TryGetProperty("id", out JsonElement id) && Guid.TryParse(id.GetString(), out Guid g) ? g : Guid.Empty,
                     x.TryGetProperty("orderNumber", out JsonElement num) ? num.GetString() : null,
-                    x.TryGetProperty("status", out JsonElement st) ? st.GetString() ?? "" : "",
+                    x.TryGetProperty("status", out JsonElement st2) ? st2.GetString() ?? "" : "",
                     x.TryGetProperty("orderDate", out JsonElement od) ? od.GetString() : null,
                     x.TryGetProperty("createdAtUtc", out JsonElement ca) ? ca.GetString() : null)).ToList();
+                Total = Math.Max(0, Total - (items.GetArrayLength() - Orders.Count));
             }
         }
         if (ReauthGuard() is { } r) return r;

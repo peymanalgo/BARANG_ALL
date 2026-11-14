@@ -1,0 +1,264 @@
+﻿id,parent_id,slug,name_fa,name_en,name_ar,level,sort_order,is_active
+cat-animals,,animals,حیوانات,Animals,الحيوانات,1,1,1
+cat-animals-cats,cat-animals,animals-cats,گربه‌ها,Cats,القطط,2,1,1
+cat-animals-dogs,cat-animals,animals-dogs,سگ‌ها,Dogs,الكلاب,2,2,1
+cat-animals-big-cats,cat-animals,animals-big-cats,شیر، ببر و پلنگ,Big Cats,القطط الكبيرة,2,3,1
+cat-animals-wolves-foxes,cat-animals,animals-wolves-foxes,گرگ و روباه,Wolves and Foxes,الذئاب والثعالب,2,4,1
+cat-animals-bears,cat-animals,animals-bears,خرس‌ها,Bears,الدببة,2,5,1
+cat-animals-hoofed-animals,cat-animals,animals-hoofed-animals,اسب، گوزن و جانوران سم‌دار,Hoofed Animals,الحيوانات ذات الحوافر,2,6,1
+cat-animals-primates,cat-animals,animals-primates,میمون‌ها و نخستی‌ها,Primates,الرئيسيات,2,7,1
+cat-animals-small-mammals,cat-animals,animals-small-mammals,خرگوش و پستانداران کوچک,Small Mammals,الثدييات الصغيرة,2,8,1
+cat-animals-birds,cat-animals,animals-birds,پرندگان,Birds,الطيور,2,9,1
+cat-animals-marine-animals,cat-animals,animals-marine-animals,جانوران دریایی,Marine Animals,الحيوانات البحرية,2,10,1
+cat-animals-reptiles-amphibians,cat-animals,animals-reptiles-amphibians,خزندگان و دوزیستان,Reptiles and Amphibians,الزواحف والبرمائيات,2,11,1
+cat-animals-insects-arachnids,cat-animals,animals-insects-arachnids,حشرات و عنکبوتیان,Insects and Arachnids,الحشرات والعنكبيات,2,12,1
+cat-animals-dinosaurs,cat-animals,animals-dinosaurs,دایناسورها و جانوران منقرض‌شده,Dinosaurs and Extinct Animals,الديناصورات والحيوانات المنقرضة,2,13,1
+cat-plants,,plants,گل‌ها و گیاهان,Flowers and Plants,الزهور والنباتات,1,2,1
+cat-plants-roses,cat-plants,plants-roses,گل رز,Roses,الورود,2,1,1
+cat-plants-wildflowers,cat-plants,plants-wildflowers,گل‌های وحشی,Wildflowers,الزهور البرية,2,2,1
+cat-plants-tropical-flowers,cat-plants,plants-tropical-flowers,گل‌های گرمسیری,Tropical Flowers,الزهور الاستوائية,2,3,1
+cat-plants-trees,cat-plants,plants-trees,درختان,Trees,الأشجار,2,4,1
+cat-plants-leaves-branches,cat-plants,plants-leaves-branches,برگ و شاخه,Leaves and Branches,الأوراق والأغصان,2,5,1
+cat-plants-cacti-succulents,cat-plants,plants-cacti-succulents,کاکتوس و ساکولنت,Cacti and Succulents,الصبار والنباتات العصارية,2,6,1
+cat-plants-mushrooms,cat-plants,plants-mushrooms,قارچ‌ها,Mushrooms,الفطر,2,7,1
+cat-plants-herbs,cat-plants,plants-herbs,گیاهان دارویی و معطر,Herbs,الأعشاب,2,8,1
+cat-landscapes,,landscapes,طبیعت و مناظر,Nature and Landscapes,الطبيعة والمناظر الطبيعية,1,3,1
+cat-landscapes-mountains,cat-landscapes,landscapes-mountains,کوه‌ها,Mountains,الجبال,2,1,1
+cat-landscapes-forests,cat-landscapes,landscapes-forests,جنگل‌ها,Forests,الغابات,2,2,1
+cat-landscapes-oceans-beaches,cat-landscapes,landscapes-oceans-beaches,دریا و ساحل,Oceans and Beaches,البحار والشواطئ,2,3,1
+cat-landscapes-rivers-lakes,cat-landscapes,landscapes-rivers-lakes,رودخانه و دریاچه,Rivers and Lakes,الأنهار والبحيرات,2,4,1
+cat-landscapes-deserts,cat-landscapes,landscapes-deserts,بیابان‌ها,Deserts,الصحارى,2,5,1
+cat-landscapes-islands,cat-landscapes,landscapes-islands,جزیره‌ها,Islands,الجزر,2,6,1
+cat-landscapes-waterfalls,cat-landscapes,landscapes-waterfalls,آبشارها,Waterfalls,الشلالات,2,7,1
+cat-landscapes-sky-clouds,cat-landscapes,landscapes-sky-clouds,آسمان و ابرها,Sky and Clouds,السماء والسحب,2,8,1
+cat-landscapes-sunrise-sunset,cat-landscapes,landscapes-sunrise-sunset,طلوع و غروب,Sunrise and Sunset,الشروق والغروب,2,9,1
+cat-landscapes-weather,cat-landscapes,landscapes-weather,پدیده‌های آب‌وهوایی,Weather Phenomena,الظواهر الجوية,2,10,1
+cat-space,,space,فضا و نجوم,Space and Astronomy,الفضاء والفلك,1,4,1
+cat-space-moon,cat-space,space-moon,ماه,Moon,القمر,2,1,1
+cat-space-sun,cat-space,space-sun,خورشید,Sun,الشمس,2,2,1
+cat-space-planets,cat-space,space-planets,سیاره‌ها,Planets,الكواكب,2,3,1
+cat-space-stars-galaxies,cat-space,space-stars-galaxies,ستاره‌ها و کهکشان‌ها,Stars and Galaxies,النجوم والمجرات,2,4,1
+cat-space-astronauts,cat-space,space-astronauts,فضانوردان,Astronauts,رواد الفضاء,2,5,1
+cat-space-spacecraft,cat-space,space-spacecraft,فضاپیما و ماهواره,Spacecraft and Satellites,المركبات الفضائية والأقمار الصناعية,2,6,1
+cat-space-constellations,cat-space,space-constellations,صورت‌های فلکی,Constellations,الكوكبات,2,7,1
+cat-people,,people,انسان و روابط,People and Relationships,الأشخاص والعلاقات,1,5,1
+cat-people-portraits,cat-people,people-portraits,چهره و پرتره,Faces and Portraits,الوجوه والصور الشخصية,2,1,1
+cat-people-body-silhouettes,cat-people,people-body-silhouettes,بدن و سیلوئت انسان,Bodies and Silhouettes,الأجسام والظلال البشرية,2,2,1
+cat-people-couples,cat-people,people-couples,زوج‌ها,Couples,الأزواج,2,3,1
+cat-people-family,cat-people,people-family,خانواده,Family,العائلة,2,4,1
+cat-people-friendship,cat-people,people-friendship,دوستی,Friendship,الصداقة,2,5,1
+cat-people-children,cat-people,people-children,کودکان,Children,الأطفال,2,6,1
+cat-people-hands-gestures,cat-people,people-hands-gestures,دست‌ها و ژست‌ها,Hands and Gestures,الأيدي والإيماءات,2,7,1
+cat-people-diversity-inclusion,cat-people,people-diversity-inclusion,تنوع و فراگیری,Diversity and Inclusion,التنوع والشمول,2,8,1
+cat-fantasy,,fantasy,فانتزی و موجودات خیالی,Fantasy and Imaginary Creatures,الخيال والمخلوقات الخيالية,1,6,1
+cat-fantasy-dragons,cat-fantasy,fantasy-dragons,اژدها,Dragons,التنانين,2,1,1
+cat-fantasy-unicorns,cat-fantasy,fantasy-unicorns,اسب تک‌شاخ,Unicorns,وحيد القرن الخيالي,2,2,1
+cat-fantasy-mermaids,cat-fantasy,fantasy-mermaids,پری دریایی,Mermaids,حوريات البحر,2,3,1
+cat-fantasy-fairies-elves,cat-fantasy,fantasy-fairies-elves,پری‌ها و الف‌ها,Fairies and Elves,الجنيات والإلف,2,4,1
+cat-fantasy-monsters,cat-fantasy,fantasy-monsters,هیولاها,Monsters,الوحوش,2,5,1
+cat-fantasy-aliens,cat-fantasy,fantasy-aliens,موجودات فضایی,Aliens,الكائنات الفضائية,2,6,1
+cat-fantasy-wizards-witches,cat-fantasy,fantasy-wizards-witches,جادوگران,Wizards and Witches,السحرة والساحرات,2,7,1
+cat-fantasy-mythical-creatures,cat-fantasy,fantasy-mythical-creatures,سایر موجودات اسطوره‌ای,Other Mythical Creatures,مخلوقات أسطورية أخرى,2,8,1
+cat-fantasy-fantasy-worlds,cat-fantasy,fantasy-fantasy-worlds,جهان‌ها و قلعه‌های خیالی,Fantasy Worlds and Castles,عوالم وقلاع خيالية,2,9,1
+cat-dark,,dark,وحشت و نمادهای تیره,Horror and Dark Motifs,الرعب والرموز الداكنة,1,7,1
+cat-dark-skulls-skeletons,cat-dark,dark-skulls-skeletons,جمجمه و اسکلت,Skulls and Skeletons,الجماجم والهياكل العظمية,2,1,1
+cat-dark-ghosts,cat-dark,dark-ghosts,ارواح,Ghosts,الأشباح,2,2,1
+cat-dark-zombies,cat-dark,dark-zombies,زامبی‌ها,Zombies,الزومبي,2,3,1
+cat-dark-vampires,cat-dark,dark-vampires,خون‌آشام‌ها,Vampires,مصاصو الدماء,2,4,1
+cat-dark-haunted-places,cat-dark,dark-haunted-places,مکان‌های تسخیرشده,Haunted Places,الأماكن المسكونة,2,5,1
+cat-dark-gothic-objects,cat-dark,dark-gothic-objects,اشیای گوتیک,Gothic Objects,العناصر القوطية,2,6,1
+cat-sports,,sports,ورزش و تناسب اندام,Sports and Fitness,الرياضة واللياقة البدنية,1,8,1
+cat-sports-football,cat-sports,sports-football,فوتبال,Football (Soccer),كرة القدم,2,1,1
+cat-sports-basketball,cat-sports,sports-basketball,بسکتبال,Basketball,كرة السلة,2,2,1
+cat-sports-volleyball,cat-sports,sports-volleyball,والیبال,Volleyball,الكرة الطائرة,2,3,1
+cat-sports-tennis-racket,cat-sports,sports-tennis-racket,تنیس و ورزش‌های راکتی,Tennis and Racket Sports,التنس ورياضات المضرب,2,4,1
+cat-sports-american-football,cat-sports,sports-american-football,فوتبال آمریکایی,American Football,كرة القدم الأمريكية,2,5,1
+cat-sports-baseball,cat-sports,sports-baseball,بیسبال,Baseball,البيسبول,2,6,1
+cat-sports-martial-arts,cat-sports,sports-martial-arts,ورزش‌های رزمی,Martial Arts,الفنون القتالية,2,7,1
+cat-sports-strength-training,cat-sports,sports-strength-training,بدنسازی و وزنه‌برداری,Strength Training,تمارين القوة,2,8,1
+cat-sports-running,cat-sports,sports-running,دویدن,Running,الجري,2,9,1
+cat-sports-cycling,cat-sports,sports-cycling,دوچرخه‌سواری,Cycling,ركوب الدراجات,2,10,1
+cat-sports-swimming,cat-sports,sports-swimming,شنا,Swimming,السباحة,2,11,1
+cat-sports-yoga-pilates,cat-sports,sports-yoga-pilates,یوگا و پیلاتس,Yoga and Pilates,اليوغا والبيلاتس,2,12,1
+cat-sports-skateboarding,cat-sports,sports-skateboarding,اسکیت‌برد,Skateboarding,التزلج بلوح,2,13,1
+cat-sports-surfing,cat-sports,sports-surfing,موج‌سواری,Surfing,ركوب الأمواج,2,14,1
+cat-sports-winter-sports,cat-sports,sports-winter-sports,ورزش‌های زمستانی,Winter Sports,الرياضات الشتوية,2,15,1
+cat-sports-golf,cat-sports,sports-golf,گلف,Golf,الغولف,2,16,1
+cat-outdoors,,outdoors,ماجراجویی و تفریح در طبیعت,Outdoor Adventure,المغامرات في الهواء الطلق,1,9,1
+cat-outdoors-camping,cat-outdoors,outdoors-camping,کمپینگ,Camping,التخييم,2,1,1
+cat-outdoors-hiking,cat-outdoors,outdoors-hiking,پیاده‌روی در طبیعت,Hiking,المشي في الطبيعة,2,2,1
+cat-outdoors-climbing,cat-outdoors,outdoors-climbing,صخره‌نوردی و کوهنوردی,Climbing,التسلق,2,3,1
+cat-outdoors-fishing,cat-outdoors,outdoors-fishing,ماهیگیری,Fishing,صيد الأسماك,2,4,1
+cat-outdoors-kayaking-rafting,cat-outdoors,outdoors-kayaking-rafting,کایاک و رفتینگ,Kayaking and Rafting,التجديف والرافتينغ,2,5,1
+cat-outdoors-diving,cat-outdoors,outdoors-diving,غواصی,Diving,الغوص,2,6,1
+cat-outdoors-off-road,cat-outdoors,outdoors-off-road,آفرود,Off-road Adventure,مغامرات الطرق الوعرة,2,7,1
+cat-music,,music,موسیقی و رقص,Music and Dance,الموسيقى والرقص,1,10,1
+cat-music-guitars,cat-music,music-guitars,گیتار,Guitars,الغيتارات,2,1,1
+cat-music-piano-keyboards,cat-music,music-piano-keyboards,پیانو و سازهای کلاویه‌ای,Piano and Keyboards,البيانو والآلات ذات المفاتيح,2,2,1
+cat-music-drums,cat-music,music-drums,درام و سازهای کوبه‌ای,Drums and Percussion,الطبول وآلات الإيقاع,2,3,1
+cat-music-wind-strings,cat-music,music-wind-strings,سازهای بادی و زهی,Wind and String Instruments,آلات النفخ والآلات الوترية,2,4,1
+cat-music-microphones,cat-music,music-microphones,میکروفون و خوانندگی,Microphones and Singing,الميكروفونات والغناء,2,5,1
+cat-music-dj-electronic,cat-music,music-dj-electronic,دی‌جی و موسیقی الکترونیک,DJ and Electronic Music,الدي جي والموسيقى الإلكترونية,2,6,1
+cat-music-records-cassettes,cat-music,music-records-cassettes,صفحه، کاست و پخش‌کننده,Records and Cassettes,الأسطوانات وأشرطة الكاسيت,2,7,1
+cat-music-notes,cat-music,music-notes,نت و نمادهای موسیقی,Musical Notes and Symbols,النوتات والرموز الموسيقية,2,8,1
+cat-music-dance,cat-music,music-dance,رقص,Dance,الرقص,2,9,1
+cat-gaming,,gaming,بازی و سرگرمی دیجیتال,Gaming,الألعاب الرقمية,1,11,1
+cat-gaming-controllers-consoles,cat-gaming,gaming-controllers-consoles,دسته و کنسول بازی,Controllers and Consoles,أذرع التحكم وأجهزة الألعاب,2,1,1
+cat-gaming-arcade,cat-gaming,gaming-arcade,بازی‌های آرکید,Arcade Games,ألعاب الأركيد,2,2,1
+cat-gaming-pc-gaming,cat-gaming,gaming-pc-gaming,بازی رایانه‌ای,PC Gaming,ألعاب الحاسوب,2,3,1
+cat-gaming-mobile-gaming,cat-gaming,gaming-mobile-gaming,بازی موبایل,Mobile Gaming,ألعاب الهاتف المحمول,2,4,1
+cat-gaming-esports,cat-gaming,gaming-esports,ورزش الکترونیک,Esports,الرياضات الإلكترونية,2,5,1
+cat-gaming-game-worlds,cat-gaming,gaming-game-worlds,جهان‌ها و عناصر بازی,Game Worlds and Elements,عوالم الألعاب وعناصرها,2,6,1
+cat-technology,,technology,فناوری و دنیای دیجیتال,Technology and Digital Life,التكنولوجيا والحياة الرقمية,1,12,1
+cat-technology-computers,cat-technology,technology-computers,رایانه و سخت‌افزار,Computers and Hardware,الحواسيب والأجهزة,2,1,1
+cat-technology-programming,cat-technology,technology-programming,برنامه‌نویسی,Programming,البرمجة,2,2,1
+cat-technology-robots,cat-technology,technology-robots,ربات‌ها,Robots,الروبوتات,2,3,1
+cat-technology-ai,cat-technology,technology-ai,هوش مصنوعی,Artificial Intelligence,الذكاء الاصطناعي,2,4,1
+cat-technology-circuits,cat-technology,technology-circuits,مدار و قطعات الکترونیکی,Circuits and Electronics,الدوائر والمكونات الإلكترونية,2,5,1
+cat-technology-internet-networks,cat-technology,technology-internet-networks,اینترنت و شبکه,Internet and Networks,الإنترنت والشبكات,2,6,1
+cat-technology-cybersecurity,cat-technology,technology-cybersecurity,امنیت سایبری,Cybersecurity,الأمن السيبراني,2,7,1
+cat-technology-virtual-reality,cat-technology,technology-virtual-reality,واقعیت مجازی,Virtual Reality,الواقع الافتراضي,2,8,1
+cat-science,,science,علم و آموزش,Science and Education,العلوم والتعليم,1,13,1
+cat-science-mathematics,cat-science,science-mathematics,ریاضی,Mathematics,الرياضيات,2,1,1
+cat-science-physics,cat-science,science-physics,فیزیک,Physics,الفيزياء,2,2,1
+cat-science-chemistry,cat-science,science-chemistry,شیمی,Chemistry,الكيمياء,2,3,1
+cat-science-biology,cat-science,science-biology,زیست‌شناسی,Biology,علم الأحياء,2,4,1
+cat-science-anatomy,cat-science,science-anatomy,آناتومی و بدن انسان,Anatomy,التشريح,2,5,1
+cat-science-geology,cat-science,science-geology,زمین‌شناسی,Geology,الجيولوجيا,2,6,1
+cat-science-books-reading,cat-science,science-books-reading,کتاب و مطالعه,Books and Reading,الكتب والقراءة,2,7,1
+cat-science-school-graduation,cat-science,science-school-graduation,مدرسه و فارغ‌التحصیلی,School and Graduation,المدرسة والتخرج,2,8,1
+cat-food,,food,خوراکی و نوشیدنی,Food and Drinks,الطعام والمشروبات,1,14,1
+cat-food-coffee,cat-food,food-coffee,قهوه,Coffee,القهوة,2,1,1
+cat-food-tea,cat-food,food-tea,چای,Tea,الشاي,2,2,1
+cat-food-fast-food,cat-food,food-fast-food,پیتزا، برگر و فست‌فود,Fast Food,الوجبات السريعة,2,3,1
+cat-food-sweets,cat-food,food-sweets,شیرینی و شکلات,Sweets and Chocolate,الحلويات والشوكولاتة,2,4,1
+cat-food-ice-cream,cat-food,food-ice-cream,بستنی,Ice Cream,المثلجات,2,5,1
+cat-food-fruit,cat-food,food-fruit,میوه‌ها,Fruit,الفواكه,2,6,1
+cat-food-vegetables,cat-food,food-vegetables,سبزیجات,Vegetables,الخضروات,2,7,1
+cat-food-bakery,cat-food,food-bakery,نان و محصولات نانوایی,Bread and Bakery,الخبز والمخبوزات,2,8,1
+cat-food-regional-food,cat-food,food-regional-food,غذاهای محلی و ملل,Regional and World Cuisine,الأطعمة المحلية والعالمية,2,9,1
+cat-food-soft-drinks,cat-food,food-soft-drinks,آبمیوه و نوشیدنی غیرالکلی,Juices and Soft Drinks,العصائر والمشروبات غير الكحولية,2,10,1
+cat-food-alcoholic-drinks,cat-food,food-alcoholic-drinks,نوشیدنی‌های الکلی,Alcoholic Drinks,المشروبات الكحولية,2,11,1
+cat-vehicles,,vehicles,وسایل نقلیه,Vehicles,المركبات,1,15,1
+cat-vehicles-cars,cat-vehicles,vehicles-cars,خودروها,Cars,السيارات,2,1,1
+cat-vehicles-motorcycles,cat-vehicles,vehicles-motorcycles,موتورسیکلت‌ها,Motorcycles,الدراجات النارية,2,2,1
+cat-vehicles-bicycles,cat-vehicles,vehicles-bicycles,دوچرخه‌ها,Bicycles,الدراجات الهوائية,2,3,1
+cat-vehicles-trucks,cat-vehicles,vehicles-trucks,کامیون‌ها,Trucks,الشاحنات,2,4,1
+cat-vehicles-aircraft,cat-vehicles,vehicles-aircraft,هواپیما و هلیکوپتر,Aircraft,الطائرات والمروحيات,2,5,1
+cat-vehicles-boats-ships,cat-vehicles,vehicles-boats-ships,قایق و کشتی,Boats and Ships,القوارب والسفن,2,6,1
+cat-vehicles-trains,cat-vehicles,vehicles-trains,قطارها,Trains,القطارات,2,7,1
+cat-vehicles-construction-vehicles,cat-vehicles,vehicles-construction-vehicles,ماشین‌آلات راه‌سازی,Construction Vehicles,مركبات البناء,2,8,1
+cat-travel,,travel,سفر و مکان‌ها,Travel and Places,السفر والأماكن,1,16,1
+cat-travel-cities-skylines,cat-travel,travel-cities-skylines,شهرها و خط آسمان,Cities and Skylines,المدن وخطوط الأفق,2,1,1
+cat-travel-landmarks,cat-travel,travel-landmarks,بناهای شاخص,Landmarks,المعالم البارزة,2,2,1
+cat-travel-maps,cat-travel,travel-maps,نقشه‌ها,Maps,الخرائط,2,3,1
+cat-travel-countries-regions,cat-travel,travel-countries-regions,کشورها و مناطق,Countries and Regions,البلدان والمناطق,2,4,1
+cat-travel-roads-routes,cat-travel,travel-roads-routes,جاده‌ها و مسیرها,Roads and Routes,الطرق والمسارات,2,5,1
+cat-travel-travel-objects,cat-travel,travel-travel-objects,چمدان، گذرنامه و وسایل سفر,Travel Objects,مستلزمات السفر,2,6,1
+cat-travel-villages,cat-travel,travel-villages,روستاها,Villages,القرى,2,7,1
+cat-culture,,culture,فرهنگ، میراث و تاریخ,Culture Heritage and History,الثقافة والتراث والتاريخ,1,17,1
+cat-culture-persian-heritage,cat-culture,culture-persian-heritage,فرهنگ و میراث ایرانی,Persian Heritage,التراث الإيراني,2,1,1
+cat-culture-arab-heritage,cat-culture,culture-arab-heritage,فرهنگ و میراث عربی,Arab Heritage,التراث العربي,2,2,1
+cat-culture-world-traditions,cat-culture,culture-world-traditions,فرهنگ‌ها و سنت‌های جهان,World Traditions,تقاليد العالم,2,3,1
+cat-culture-ancient-civilizations,cat-culture,culture-ancient-civilizations,تمدن‌های باستانی,Ancient Civilizations,الحضارات القديمة,2,4,1
+cat-culture-historical-figures,cat-culture,culture-historical-figures,شخصیت‌های تاریخی,Historical Figures,الشخصيات التاريخية,2,5,1
+cat-culture-folk-motifs,cat-culture,culture-folk-motifs,نقوش بومی و سنتی,Folk Motifs,الزخارف الشعبية والتقليدية,2,6,1
+cat-culture-mythology,cat-culture,culture-mythology,اسطوره‌ها و روایت‌های کهن,Mythology,الأساطير,2,7,1
+cat-spirituality,,spirituality,دین و معنویت,Religion and Spirituality,الدين والروحانيات,1,18,1
+cat-spirituality-islam,cat-spirituality,spirituality-islam,اسلام,Islam,الإسلام,2,1,1
+cat-spirituality-christianity,cat-spirituality,spirituality-christianity,مسیحیت,Christianity,المسيحية,2,2,1
+cat-spirituality-judaism,cat-spirituality,spirituality-judaism,یهودیت,Judaism,اليهودية,2,3,1
+cat-spirituality-buddhism,cat-spirituality,spirituality-buddhism,بودیسم,Buddhism,البوذية,2,4,1
+cat-spirituality-hinduism,cat-spirituality,spirituality-hinduism,هندوئیسم,Hinduism,الهندوسية,2,5,1
+cat-spirituality-other-faiths,cat-spirituality,spirituality-other-faiths,سایر ادیان,Other Faiths,ديانات أخرى,2,6,1
+cat-spirituality-meditation,cat-spirituality,spirituality-meditation,مراقبه و آرامش درونی,Meditation and Inner Peace,التأمل والسلام الداخلي,2,7,1
+cat-spirituality-spiritual-symbols,cat-spirituality,spirituality-spiritual-symbols,نمادهای معنوی,Spiritual Symbols,الرموز الروحية,2,8,1
+cat-occupations,,occupations,شغل‌ها و حرفه‌ها,Occupations,المهن,1,19,1
+cat-occupations-medical,cat-occupations,occupations-medical,پزشکی و پرستاری,Medicine and Nursing,الطب والتمريض,2,1,1
+cat-occupations-engineering,cat-occupations,occupations-engineering,مهندسی و معماری,Engineering and Architecture,الهندسة والعمارة,2,2,1
+cat-occupations-teaching,cat-occupations,occupations-teaching,آموزگاری,Teaching,التدريس,2,3,1
+cat-occupations-cooking,cat-occupations,occupations-cooking,آشپزی,Cooking,الطبخ,2,4,1
+cat-occupations-crafts-trades,cat-occupations,occupations-crafts-trades,صنایع دستی و حرفه‌های فنی,Crafts and Skilled Trades,الحرف والمهن الفنية,2,5,1
+cat-occupations-agriculture,cat-occupations,occupations-agriculture,کشاورزی و دامداری,Agriculture and Farming,الزراعة وتربية الحيوانات,2,6,1
+cat-occupations-emergency-services,cat-occupations,occupations-emergency-services,امداد و آتش‌نشانی,Emergency Services,خدمات الطوارئ,2,7,1
+cat-occupations-business,cat-occupations,occupations-business,کسب‌وکار و کارآفرینی,Business and Entrepreneurship,الأعمال وريادة الأعمال,2,8,1
+cat-hobbies,,hobbies,هنر و سرگرمی‌ها,Arts and Hobbies,الفنون والهوايات,1,20,1
+cat-hobbies-painting,cat-hobbies,hobbies-painting,نقاشی,Painting,الرسم,2,1,1
+cat-hobbies-photography,cat-hobbies,hobbies-photography,عکاسی,Photography,التصوير الفوتوغرافي,2,2,1
+cat-hobbies-cinema-theater,cat-hobbies,hobbies-cinema-theater,سینما و تئاتر,Cinema and Theater,السينما والمسرح,2,3,1
+cat-hobbies-sewing-knitting,cat-hobbies,hobbies-sewing-knitting,خیاطی و بافتنی,Sewing and Knitting,الخياطة والحياكة,2,4,1
+cat-hobbies-gardening,cat-hobbies,hobbies-gardening,باغبانی,Gardening,البستنة,2,5,1
+cat-hobbies-board-games,cat-hobbies,hobbies-board-games,شطرنج و بازی‌های رومیزی,Chess and Board Games,الشطرنج وألعاب الطاولة,2,6,1
+cat-hobbies-pottery,cat-hobbies,hobbies-pottery,سفالگری,Pottery,صناعة الفخار,2,7,1
+cat-hobbies-writing,cat-hobbies,hobbies-writing,نویسندگی,Writing,الكتابة,2,8,1
+cat-messages,,messages,نوشته‌ها و پیام‌ها,Text and Messages,النصوص والرسائل,1,21,1
+cat-messages-motivational,cat-messages,messages-motivational,انگیزشی,Motivational,تحفيزية,2,1,1
+cat-messages-humorous,cat-messages,messages-humorous,طنز و شوخی,Humorous,فكاهية,2,2,1
+cat-messages-love,cat-messages,messages-love,عشق و محبت,Love and Affection,الحب والمودة,2,3,1
+cat-messages-self-expression,cat-messages,messages-self-expression,هویت فردی و بیان شخصیت,Self-expression,التعبير عن الذات,2,4,1
+cat-messages-life-quotes,cat-messages,messages-life-quotes,جملات درباره زندگی,Life Quotes,عبارات عن الحياة,2,5,1
+cat-messages-names-initials,cat-messages,messages-names-initials,نام‌ها و حروف اول,Names and Initials,الأسماء والأحرف الأولى,2,6,1
+cat-messages-numbers-dates,cat-messages,messages-numbers-dates,اعداد و تاریخ‌ها,Numbers and Dates,الأرقام والتواريخ,2,7,1
+cat-messages-single-words,cat-messages,messages-single-words,کلمات کوتاه,Single Words,كلمات مفردة,2,8,1
+cat-messages-social-messages,cat-messages,messages-social-messages,پیام‌های اجتماعی,Social Messages,رسائل اجتماعية,2,9,1
+cat-symbols,,symbols,نمادها و نشان‌ها,Symbols and Emblems,الرموز والشارات,1,22,1
+cat-symbols-hearts,cat-symbols,symbols-hearts,قلب‌ها,Hearts,القلوب,2,1,1
+cat-symbols-peace,cat-symbols,symbols-peace,نماد صلح,Peace Symbols,رموز السلام,2,2,1
+cat-symbols-smileys-emotions,cat-symbols,symbols-smileys-emotions,صورتک‌ها و احساسات,Smileys and Emotions,الوجوه التعبيرية والمشاعر,2,3,1
+cat-symbols-flags,cat-symbols,symbols-flags,پرچم‌ها,Flags,الأعلام,2,4,1
+cat-symbols-crests-badges,cat-symbols,symbols-crests-badges,نشان‌ها و سپرها,Crests and Badges,الشعارات والشارات,2,5,1
+cat-symbols-arrows,cat-symbols,symbols-arrows,فلش‌ها و جهت‌ها,Arrows and Directions,الأسهم والاتجاهات,2,6,1
+cat-symbols-zodiac,cat-symbols,symbols-zodiac,نمادهای برج‌های فلکی,Zodiac Signs,رموز الأبراج,2,7,1
+cat-symbols-luck,cat-symbols,symbols-luck,نمادهای شانس,Luck Symbols,رموز الحظ,2,8,1
+cat-symbols-awareness,cat-symbols,symbols-awareness,روبان‌ها و نمادهای آگاهی‌بخشی,Awareness Symbols,رموز التوعية,2,9,1
+cat-abstract,,abstract,انتزاعی و هندسی,Abstract and Geometric,التجريد والأشكال الهندسية,1,23,1
+cat-abstract-basic-shapes,cat-abstract,abstract-basic-shapes,اشکال هندسی پایه,Basic Geometric Shapes,الأشكال الهندسية الأساسية,2,1,1
+cat-abstract-organic-shapes,cat-abstract,abstract-organic-shapes,اشکال آزاد و ارگانیک,Organic Shapes,الأشكال العضوية والحرة,2,2,1
+cat-abstract-mandalas,cat-abstract,abstract-mandalas,ماندالا,Mandalas,الماندالا,2,3,1
+cat-abstract-optical-illusions,cat-abstract,abstract-optical-illusions,خطای دید,Optical Illusions,الخداع البصري,2,4,1
+cat-abstract-fractals,cat-abstract,abstract-fractals,فرکتال‌ها,Fractals,الأشكال الكسيرية,2,5,1
+cat-abstract-color-fields,cat-abstract,abstract-color-fields,لکه‌ها و سطوح رنگی,Color Fields,المساحات اللونية,2,6,1
+cat-abstract-splashes,cat-abstract,abstract-splashes,پاشش رنگ,Paint Splashes,رذاذ الطلاء,2,7,1
+cat-abstract-abstract-lines,cat-abstract,abstract-abstract-lines,خطوط انتزاعی,Abstract Lines,الخطوط التجريدية,2,8,1
+cat-patterns,,patterns,پترن و بافت,Patterns and Textures,الأنماط والملمس,1,24,1
+cat-patterns-stripes,cat-patterns,patterns-stripes,راه‌راه,Stripes,الخطوط المتوازية,2,1,1
+cat-patterns-checks,cat-patterns,patterns-checks,چهارخانه,Checks,المربعات,2,2,1
+cat-patterns-dots,cat-patterns,patterns-dots,خال‌خالی,Polka Dots,النقاط,2,3,1
+cat-patterns-floral-patterns,cat-patterns,patterns-floral-patterns,پترن گل‌دار,Floral Patterns,الأنماط الزهرية,2,4,1
+cat-patterns-animal-print,cat-patterns,patterns-animal-print,نقوش پوست حیوانات,Animal Print,نقوش جلود الحيوانات,2,5,1
+cat-patterns-camouflage,cat-patterns,patterns-camouflage,استتاری,Camouflage,التمويه,2,6,1
+cat-patterns-paisley,cat-patterns,patterns-paisley,بته‌جقه,Paisley,نقشة البيزلي,2,7,1
+cat-patterns-geometric-patterns,cat-patterns,patterns-geometric-patterns,پترن هندسی تکرارشونده,Repeating Geometric Patterns,أنماط هندسية متكررة,2,8,1
+cat-patterns-marble-stone,cat-patterns,patterns-marble-stone,بافت سنگ و مرمر,Marble and Stone Textures,ملمس الرخام والحجر,2,9,1
+cat-patterns-grunge,cat-patterns,patterns-grunge,بافت فرسوده و گرانج,Grunge Textures,ملمس مهترئ,2,10,1
+cat-patterns-tie-dye,cat-patterns,patterns-tie-dye,تای‌دای و بافت رنگی,Tie-dye Textures,أنماط الصباغة بالربط,2,11,1
+cat-objects,,objects,اشیا و عناصر روزمره,Objects and Everyday Items,الأشياء والعناصر اليومية,1,25,1
+cat-objects-clothing-accessories,cat-objects,objects-clothing-accessories,لباس و اکسسوری,Clothing and Accessories,الملابس والإكسسوارات,2,1,1
+cat-objects-beauty,cat-objects,objects-beauty,لوازم زیبایی,Beauty Items,مستلزمات التجميل,2,2,1
+cat-objects-household,cat-objects,objects-household,وسایل خانه,Household Objects,الأدوات المنزلية,2,3,1
+cat-objects-tools,cat-objects,objects-tools,ابزارها,Tools,الأدوات,2,4,1
+cat-objects-stationery,cat-objects,objects-stationery,لوازم‌التحریر,Stationery,القرطاسية,2,5,1
+cat-objects-clocks,cat-objects,objects-clocks,ساعت‌ها,Clocks and Watches,الساعات,2,6,1
+cat-objects-keys-locks,cat-objects,objects-keys-locks,کلید و قفل,Keys and Locks,المفاتيح والأقفال,2,7,1
+cat-objects-treasures,cat-objects,objects-treasures,جواهرات و گنج,Jewels and Treasure,المجوهرات والكنوز,2,8,1
+cat-causes,,causes,محیط زیست و دغدغه‌های اجتماعی,Environment and Social Causes,البيئة والقضايا الاجتماعية,1,26,1
+cat-causes-conservation,cat-causes,causes-conservation,حفاظت از طبیعت,Nature Conservation,حماية الطبيعة,2,1,1
+cat-causes-recycling,cat-causes,causes-recycling,بازیافت,Recycling,إعادة التدوير,2,2,1
+cat-causes-climate,cat-causes,causes-climate,تغییرات اقلیمی,Climate Change,تغير المناخ,2,3,1
+cat-causes-animal-welfare,cat-causes,causes-animal-welfare,حمایت از حیوانات,Animal Welfare,الرفق بالحيوان,2,4,1
+cat-causes-equality,cat-causes,causes-equality,برابری و حقوق انسانی,Equality and Human Rights,المساواة وحقوق الإنسان,2,5,1
+cat-causes-mental-wellbeing,cat-causes,causes-mental-wellbeing,سلامت روان و حال خوب,Mental Wellbeing,الصحة النفسية والعافية,2,6,1
+cat-causes-community,cat-causes,causes-community,همیاری و فعالیت اجتماعی,Community Support,التكافل المجتمعي,2,7,1
+cat-celebrations,,celebrations,جشن‌ها و مناسبت‌ها,Celebrations and Occasions,الاحتفالات والمناسبات,1,27,1
+cat-celebrations-birthday,cat-celebrations,celebrations-birthday,تولد,Birthday,عيد الميلاد الشخصي,2,1,1
+cat-celebrations-wedding,cat-celebrations,celebrations-wedding,عروسی و سالگرد ازدواج,Wedding and Anniversary,الزفاف وذكرى الزواج,2,2,1
+cat-celebrations-new-year,cat-celebrations,celebrations-new-year,سال نو میلادی,New Year,رأس السنة الميلادية,2,3,1
+cat-celebrations-nowruz,cat-celebrations,celebrations-nowruz,نوروز,Nowruz,النوروز,2,4,1
+cat-celebrations-yalda,cat-celebrations,celebrations-yalda,شب یلدا,Yalda Night,ليلة يلدا,2,5,1
+cat-celebrations-ramadan-eid,cat-celebrations,celebrations-ramadan-eid,رمضان و عیدهای اسلامی,Ramadan and Islamic Eids,رمضان والأعياد الإسلامية,2,6,1
+cat-celebrations-christmas,cat-celebrations,celebrations-christmas,کریسمس,Christmas,عيد الميلاد المجيد,2,7,1
+cat-celebrations-easter,cat-celebrations,celebrations-easter,عید پاک,Easter,عيد الفصح,2,8,1
+cat-celebrations-halloween,cat-celebrations,celebrations-halloween,هالووین,Halloween,الهالوين,2,9,1
+cat-celebrations-valentines,cat-celebrations,celebrations-valentines,ولنتاین,Valentine's Day,عيد الحب,2,10,1
+cat-celebrations-parents-days,cat-celebrations,celebrations-parents-days,روز مادر و روز پدر,Mother's and Father's Days,عيد الأم وعيد الأب,2,11,1
+cat-celebrations-national-days,cat-celebrations,celebrations-national-days,روزهای ملی,National Days,الأيام الوطنية,2,12,1
