@@ -111,6 +111,8 @@ else
             Editing.ThumbPreviewUrl = Text(r.Value, "thumbnailUrl");
             Editing.ThumbKey = Text(r.Value, "thumbnailStorageKey");
             Editing.ExcerptAr = Text(r.Value, "excerptAr"); // بدون فیلد ویرایش — فقط برای حفظ مقدار موجود هنگام ذخیره
+            // وضعیت انتشار از دیتیل خوانده می‌شود؛ قبلاً پیش‌فرض false بود و هر ویرایش پست را بی‌صدا از انتشار خارج می‌کرد
+            Editing.Published = r.Value.TryGetProperty("isPublished", out var pub) && pub.GetBoolean();
             Editing.Version = r.Value.TryGetProperty("version", out var v) ? v.GetInt64() : 1;
         }
     }

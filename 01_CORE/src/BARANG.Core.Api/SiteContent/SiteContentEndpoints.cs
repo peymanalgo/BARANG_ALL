@@ -68,9 +68,11 @@ public static class SiteContentEndpoints
             if (companyId is null) return Results.StatusCode(503);
             using IDisposable scope = companies.BeginScope(companyId.Value);
             await s.EnsureSeededAsync(ct);
-            Result<Domain.SiteContent.SitePage?> page = await tx.ExecuteAsync(async t => Result.Success(await db.SitePages.AsNoTracking()
-                .SingleOrDefaultAsync(x => x.CompanyId == companyId && x.Slug == normalizedSlug && x.IsPublished, ct)), ct);
-            return page.Value is null ? Results.NotFound() : Results.Json(new PublicPageView(page.Value.Slug, Pick(page.Value.TitleFa, page.Value.TitleEn, page.Value.TitleAr, culture), Pick(page.Value.BodyFa, page.Value.BodyEn, page.Value.BodyAr, culture), string.IsNullOrWhiteSpace(page.Value.CoverStorageKey) ? null : storage.GetPublicObjectUrl(page.Value.CoverStorageKey), PickNull(page.Value.SeoDescriptionFa, page.Value.SeoDescriptionEn, page.Value.SeoDescriptionAr, culture), JoinKeywords(page.Value, culture), page.Value.UpdatedAtUtc));
+            // کوئری در لیست (هرگز null نمی‌شود) — Result.Success(null) استثنا می‌داد؛ 404 تمیز برای slug غایب/منتشرنشده
+            Result<List<Domain.SiteContent.SitePage>> pageQuery = await tx.ExecuteAsync(async t => Result.Success(await db.SitePages.AsNoTracking()
+                .Where(x => x.CompanyId == companyId && x.Slug == normalizedSlug && x.IsPublished).ToListAsync(ct)), ct);
+            Domain.SiteContent.SitePage? page = pageQuery.IsSuccess ? pageQuery.Value.FirstOrDefault() : null;
+            return page is null ? Results.NotFound() : Results.Json(new PublicPageView(page.Slug, Pick(page.TitleFa, page.TitleEn, page.TitleAr, culture), Pick(page.BodyFa, page.BodyEn, page.BodyAr, culture), string.IsNullOrWhiteSpace(page.CoverStorageKey) ? null : storage.GetPublicObjectUrl(page.CoverStorageKey), PickNull(page.SeoDescriptionFa, page.SeoDescriptionEn, page.SeoDescriptionAr, culture), JoinKeywords(page, culture), page.UpdatedAtUtc));
         });
         pub.MapGet("/blog", async (int? page, int? pageSize, string? culture, IConfiguration configuration, CompanyContext companies, ISiteContentAdministration s, CancellationToken ct)
             => await PublicAsync(companies, configuration, s, (admin, token) => admin.ListBlogAsync(page ?? 1, Math.Min(pageSize ?? 12, 24), false, token), ct));
@@ -81,11 +83,11 @@ public static class SiteContentEndpoints
             if (companyId is null) return Results.StatusCode(503);
             using IDisposable scope = companies.BeginScope(companyId.Value);
             await s.EnsureSeededAsync(ct);
-            Result<Domain.SiteContent.BlogPost?> post = await tx.ExecuteAsync(async t => Result.Success(await db.BlogPosts.AsNoTracking()
-                .SingleOrDefaultAsync(x => x.CompanyId == companyId && x.Slug == normalizedSlug && x.IsPublished, ct)), ct);
-            if (post.Value is null) return Results.NotFound();
-            Domain.SiteContent.BlogPost v = post.Value;
-            return Results.Json(new PublicPostView(v.Id, v.Slug, Pick(v.TitleFa, v.TitleEn, v.TitleAr, culture), Pick(v.ExcerptFa, v.ExcerptEn, v.ExcerptAr, culture), Pick(v.BodyFa, v.BodyEn, v.BodyAr, culture), string.IsNullOrWhiteSpace(v.ThumbnailStorageKey) ? null : storage.GetPublicObjectUrl(v.ThumbnailStorageKey), PickNull(v.SeoDescriptionFa, v.SeoDescriptionEn, v.SeoDescriptionAr, culture), JoinKeywords(v, culture), v.PublishedAtUtc));
+            Result<List<Domain.SiteContent.BlogPost>> postQuery = await tx.ExecuteAsync(async t => Result.Success(await db.BlogPosts.AsNoTracking()
+                .Where(x => x.CompanyId == companyId && x.Slug == normalizedSlug && x.IsPublished).ToListAsync(ct)), ct);
+            Domain.SiteContent.BlogPost? post = postQuery.IsSuccess ? postQuery.Value.FirstOrDefault() : null;
+            if (post is null) return Results.NotFound();
+            return Results.Json(new PublicPostView(post.Id, post.Slug, Pick(post.TitleFa, post.TitleEn, post.TitleAr, culture), Pick(post.ExcerptFa, post.ExcerptEn, post.ExcerptAr, culture), Pick(post.BodyFa, post.BodyEn, post.BodyAr, culture), string.IsNullOrWhiteSpace(post.ThumbnailStorageKey) ? null : storage.GetPublicObjectUrl(post.ThumbnailStorageKey), PickNull(post.SeoDescriptionFa, post.SeoDescriptionEn, post.SeoDescriptionAr, culture), JoinKeywords(post, culture), post.PublishedAtUtc));
         });
         return endpoints;
     }
