@@ -4,60 +4,60 @@
 @{
     Layout = "_AccountLayout";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"));
     string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.FormatDateTime(d, culture);
     string ReasonLabel(string? code) => code switch
     {
-        "topup" => T("شارژ کیف پول", "Wallet top-up", "شحن المحفظة"),
-        "manual_adjustment" => T("تنظیم دستی", "Manual adjustment", "تعديل يدوي"),
-        "purchase" => T("خرید", "Purchase", "شراء"),
-        "order_refund" => T("بازگشت وجه سفارش", "Order refund", "استرداد الطلب"),
-        "gift" => T("هدیه دعوت از دوستان", "Referral gift", "هدية الدعوة"),
+        "topup" => T("شارژ کیف پول", "Wallet top-up", "شحن المحفظة", "Recarga de billetera"),
+        "manual_adjustment" => T("تنظیم دستی", "Manual adjustment", "تعديل يدوي", "Ajuste manual"),
+        "purchase" => T("خرید", "Purchase", "شراء", "Compra"),
+        "order_refund" => T("بازگشت وجه سفارش", "Order refund", "استرداد الطلب", "Reembolso del pedido"),
+        "gift" => T("هدیه دعوت از دوستان", "Referral gift", "هدية الدعوة", "Regalo por recomendación"),
         _ => code ?? "—"
     };
     string StatusLabel(string s) => s switch
     {
-        "Pending" => T("در انتظار پرداخت", "Pending", "قيد الدفع"),
-        "Paid" => T("پرداخت‌شده", "Paid", "مدفوع"),
-        "Failed" => T("ناموفق", "Failed", "فاشل"),
-        "Cancelled" => T("لغوشده", "Cancelled", "ملغى"),
+        "Pending" => T("در انتظار پرداخت", "Pending", "قيد الدفع", "Pendiente"),
+        "Paid" => T("پرداخت‌شده", "Paid", "مدفوع", "Pagado"),
+        "Failed" => T("ناموفق", "Failed", "فاشل", "Fallido"),
+        "Cancelled" => T("لغوشده", "Cancelled", "ملغى", "Cancelado"),
         _ => s
     };
     ViewData["PanelActive"] = "wallet";
-    ViewData["PanelTitle"] = T("کیف پول و تراکنش‌ها", "Wallet & transactions", "المحفظة والمعاملات");
+    ViewData["PanelTitle"] = T("کیف پول و تراکنش‌ها", "Wallet & transactions", "المحفظة والمعاملات", "Billetera y transacciones");
 }
 
 <div class="panel-content">
     <header class="panel-page-head">
-        <h1>@T("کیف پول و تراکنش‌ها", "Wallet & transactions", "المحفظة والمعاملات")</h1>
-        <p class="muted">@T("اعتبار کیف پولت برای پرداخت سریع‌تر سفارش‌ها.", "Your wallet credit for faster order payments.", "رصيد محفظتك للدفع أسرع.")</p>
+        <h1>@T("کیف پول و تراکنش‌ها", "Wallet & transactions", "المحفظة والمعاملات", "Billetera y transacciones")</h1>
+        <p class="muted">@T("اعتبار کیف پولت برای پرداخت سریع‌تر سفارش‌ها.", "Your wallet credit for faster order payments.", "رصيد محفظتك للدفع أسرع.", "Tu crédito de billetera para pagos más rápidos.")</p>
     </header>
 
     @if (Model.Charged == "1")
     {
-        <div class="alert alert-success" role="alert">@T("کیف پول با موفقیت شارژ شد.", "Your wallet was topped up successfully.", "تم شحن المحفظة بنجاح.")</div>
+        <div class="alert alert-success" role="alert">@T("کیف پول با موفقیت شارژ شد.", "Your wallet was topped up successfully.", "تم شحن المحفظة بنجاح.", "Tu billetera fue recargada con éxito.")</div>
     }
     @if (Model.Failed == "1")
     {
-        <div class="alert alert-error" role="alert">@T("پرداخت ناموفق بود؛ مبلغی به کیف پول اضافه نشد.", "The payment failed; nothing was added to your wallet.", "فشل الدفع؛ لم يُضف أي مبلغ إلى المحفظة.")</div>
+        <div class="alert alert-error" role="alert">@T("پرداخت ناموفق بود؛ مبلغی به کیف پول اضافه نشد.", "The payment failed; nothing was added to your wallet.", "فشل الدفع؛ لم يُضف أي مبلغ إلى المحفظة.", "El pago falló; no se añadió nada a tu billetera.")</div>
     }
     @if (Model.Error == "amount" || Model.Error == "topup-failed")
     {
-        <div class="alert alert-error" role="alert">@T("درخواست شارژ انجام نشد؛ مبلغ را بررسی و دوباره تلاش کن.", "The top-up request failed; check the amount and retry.", "فشل طلب الشحن؛ تحقق من المبلغ وحاول مجدداً.")</div>
+        <div class="alert alert-error" role="alert">@T("درخواست شارژ انجام نشد؛ مبلغ را بررسی و دوباره تلاش کن.", "The top-up request failed; check the amount and retry.", "فشل طلب الشحن؛ تحقق من المبلغ وحاول مجدداً.", "La solicitud de recarga falló; revisa el importe y reintenta.")</div>
     }
     @if (Model.Error == "below-minimum")
     {
-        <div class="alert alert-error" role="alert">@T("حداقل مبلغ شارژ ۱۰٬۰۰۰ است.", "The minimum top-up amount is 10,000.", "الحد الأدنى للشحن هو 10,000.")</div>
+        <div class="alert alert-error" role="alert">@T("حداقل مبلغ شارژ ۱۰٬۰۰۰ است.", "The minimum top-up amount is 10,000.", "الحد الأدنى للشحن هو 10,000.", "El importe mínimo de recarga es 10 000.")</div>
     }
 
     <div class="wallet-hero">
-        <span class="wallet-hero-label">@T("اعتبار فعلی", "Current balance", "الرصيد الحالي")</span>
-        <strong>@Money(Model.Balance) <small>@T("تومان", "Toman", "تومان")</small></strong>
+        <span class="wallet-hero-label">@T("اعتبار فعلی", "Current balance", "الرصيد الحالي", "Saldo actual")</span>
+        <strong>@Money(Model.Balance) <small>@T("تومان", "Toman", "تومان", "tomán")</small></strong>
     </div>
 
     <div class="dash-card charge-card">
-        <h2>@T("شارژ کیف پول", "Top up wallet", "شحن المحفظة")</h2>
+        <h2>@T("شارژ کیف پول", "Top up wallet", "شحن المحفظة", "Recargar billetera")</h2>
         <form method="post" asp-page-handler="Charge" class="charge-form">
             <div class="charge-presets">
                 @foreach (var preset in new[] { 100000m, 300000m, 500000m, 1000000m })
@@ -66,18 +66,18 @@
                 }
             </div>
             <label class="charge-amount">
-                <span>@T("مبلغ (تومان)", "Amount (Toman)", "المبلغ (تومان)")</span>
+                <span>@T("مبلغ (تومان)", "Amount (Toman)", "المبلغ (تومان)", "Importe (tomán)")</span>
                 <input type="number" id="chargeAmount" name="amount" min="10000" step="1000" required />
             </label>
-            <button type="submit" class="btn btn-primary">@T("رفتن به درگاه پرداخت", "Go to payment gateway", "الذهاب إلى بوابة الدفع")</button>
+            <button type="submit" class="btn btn-primary">@T("رفتن به درگاه پرداخت", "Go to payment gateway", "الذهاب إلى بوابة الدفع", "Ir a la pasarela de pago")</button>
         </form>
-        <small class="muted">@T("پرداخت از طریق درگاه آزمایشی انجام می‌شود (نسخه تستی).", "Payment goes through the sandbox gateway (test version).", "الدفع عبر بوابة اختبارية (نسخة تجريبية).")</small>
+        <small class="muted">@T("پرداخت از طریق درگاه آزمایشی انجام می‌شود (نسخه تستی).", "Payment goes through the sandbox gateway (test version).", "الدفع عبر بوابة اختبارية (نسخة تجريبية).", "El pago se procesa por la pasarela de pruebas (versión de prueba).")</small>
     </div>
 
     @if (Model.TopUps.Count > 0)
     {
         <div class="dash-card">
-            <div class="dash-card-head"><h2>@T("درخواست‌های شارژ", "Top-up requests", "طلبات الشحن")</h2></div>
+            <div class="dash-card-head"><h2>@T("درخواست‌های شارژ", "Top-up requests", "طلبات الشحن", "Solicitudes de recarga")</h2></div>
             <div class="topup-list">
                 @foreach (var t in Model.TopUps)
                 {
@@ -93,7 +93,7 @@
                             <form method="post" asp-page-handler="CancelTopUp" class="inline-form">
                                 <input type="hidden" name="topUpId" value="@t.Id" />
                                 <input type="hidden" name="version" value="@t.Version" />
-                                <button type="submit" class="btn btn-ghost btn-sm">@T("لغو", "Cancel", "إلغاء")</button>
+                                <button type="submit" class="btn btn-ghost btn-sm">@T("لغو", "Cancel", "إلغاء", "Cancelar")</button>
                             </form>
                         }
                     </div>
@@ -104,11 +104,11 @@
 
     <div class="dash-card">
         <div class="dash-card-head">
-            <h2>@T("تراکنش‌های اخیر", "Recent transactions", "أحدث المعاملات")</h2>
+            <h2>@T("تراکنش‌های اخیر", "Recent transactions", "أحدث المعاملات", "Transacciones recientes")</h2>
         </div>
         @if (Model.Items.Count == 0)
         {
-            <p class="empty">@T("هنوز تراکنشی ثبت نشده است.", "No transactions yet.", "لا معاملات بعد.")</p>
+            <p class="empty">@T("هنوز تراکنشی ثبت نشده است.", "No transactions yet.", "لا معاملات بعد.", "Aún no hay transacciones.")</p>
         }
         else
         {

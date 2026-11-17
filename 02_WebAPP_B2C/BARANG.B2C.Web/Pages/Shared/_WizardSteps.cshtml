@@ -1,12 +1,12 @@
 @model int
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     string[] steps = {
-        T("انتخاب تیشرت", "Choose shirt", "اختر التيشرت"),
-        T("تنظیمات چاپ", "Print settings", "إعدادات الطباعة"),
-        T("بسته‌بندی", "Packaging", "التغليف"),
-        T("ثبت سفارش و پرداخت", "Submit & pay", "إرسال ودفع")
+        T("انتخاب تیشرت", "Choose shirt", "اختر التيشرت", "Elegir camiseta"),
+        T("تنظیمات چاپ", "Print settings", "إعدادات الطباعة", "Ajustes de impresión"),
+        T("بسته‌بندی", "Packaging", "التغليف", "Embalaje"),
+        T("ثبت سفارش و پرداخت", "Submit & pay", "إرسال ودفع", "Enviar y pagar")
     };
 }
 <div class="container wizard-steps" aria-label="steps">

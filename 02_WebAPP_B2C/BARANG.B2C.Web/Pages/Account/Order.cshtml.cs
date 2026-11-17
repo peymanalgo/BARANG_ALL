@@ -76,7 +76,7 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
                 w.TryGetProperty("walletBalance", out JsonElement wba) && wba.TryGetDecimal(out decimal wbal) ? wbal : 0,
                 w.TryGetProperty("fullyPaid", out JsonElement wfu) && wfu.ValueKind == JsonValueKind.True);
         }
-        string brand = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "Peyrang", "ar" => "بي‌رنگ", _ => "پی‌رنگ" };
+        string brand = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "Peyrang", "ar" => "بي‌رنگ", "es" => "Peyrang", _ => "پی‌رنگ" };
         ViewData["Title"] = $"{OrderNumber ?? "—"} · {brand}";
         return Page();
     }

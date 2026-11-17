@@ -5,41 +5,41 @@
     Layout = "_AccountLayout";
     ViewData["PanelActive"] = "orders";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     string StatusLabel(string s) => s switch
     {
-        "Draft" => T("پیش‌نویس", "Draft", "مسودة"),
-        "Submitted" => T("ثبت‌شده", "Submitted", "مُرسل"),
-        "Cancelled" => T("لغوشده", "Cancelled", "ملغى"),
-        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم"),
+        "Draft" => T("پیش‌نویس", "Draft", "مسودة", "Borrador"),
+        "Submitted" => T("ثبت‌شده", "Submitted", "مُرسل", "Enviado"),
+        "Cancelled" => T("لغوشده", "Cancelled", "ملغى", "Cancelado"),
+        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم", "Entregado"),
         _ => s
     };
     string DateText(string? iso) => DateTimeOffset.TryParse(iso, out DateTimeOffset d) ? BARANG.B2C.Web.Services.AppDate.Format(d, culture) : "—";
-    ViewData["Title"] = T("سفارش‌های من", "My orders", "طلباتي");
+    ViewData["Title"] = T("سفارش‌های من", "My orders", "طلباتي", "Mis pedidos");
 }
 <section class="container section">
     <nav class="breadcrumbs" aria-label="breadcrumb">
-        <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a> ›
-        <span>@T("سفارش‌ها", "Orders", "الطلبات")</span>
+        <a href="/account">@T("حساب کاربری", "My account", "حسابي", "Mi cuenta")</a> ›
+        <span>@T("سفارش‌ها", "Orders", "الطلبات", "Pedidos")</span>
     </nav>
     <header class="section-head">
-        <h1>@T("سفارش‌های من", "My orders", "طلباتي")</h1>
-        <a class="btn btn-primary btn-sm" href="/catalog">@T("سفارش جدید", "New order", "طلب جديد")</a>
+        <h1>@T("سفارش‌های من", "My orders", "طلباتي", "Mis pedidos")</h1>
+        <a class="btn btn-primary btn-sm" href="/catalog">@T("سفارش جدید", "New order", "طلب جديد", "Nuevo pedido")</a>
     </header>
 
     @if (!Model.HasProfile)
     {
-        <p class="empty">@T("برای دیدن سفارش‌ها ابتدا از «حساب کاربری» پروفایل مشتری بسازید.", "Create your customer profile from the account hub first.", "أنشئ ملفك من مركز الحساب أولاً.")</p>
+        <p class="empty">@T("برای دیدن سفارش‌ها ابتدا از «حساب کاربری» پروفایل مشتری بسازید.", "Create your customer profile from the account hub first.", "أنشئ ملفك من مركز الحساب أولاً.", "Primero crea tu perfil de cliente desde el centro de la cuenta.")</p>
     }
     else if (Model.Orders.Count == 0)
     {
-        <p class="empty">@T("هنوز سفارشی ثبت نکرده‌اید.", "You have no orders yet.", "لا توجد طلبات بعد.")</p>
+        <p class="empty">@T("هنوز سفارشی ثبت نکرده‌اید.", "You have no orders yet.", "لا توجد طلبات بعد.", "Aún no tienes pedidos.")</p>
     }
     else
     {
         <form method="get" class="orders-search" style="margin-bottom:12px;display:flex;gap:8px;">
-            <input type="search" name="search" value="@Model.Search" placeholder="@T("جستجوی شماره سفارش…", "Search order number…", "جستجوی شماره سفارش…")" style="flex:1;max-width:340px;border:1px solid var(--panel-border);border-radius:10px;padding:9px 12px;font:inherit;background:#fff;color:var(--panel-ink)" />
-            <button type="submit" class="btn btn-primary btn-sm">@T("جستجو", "Search", "بحث")</button>
+            <input type="search" name="search" value="@Model.Search" placeholder="@T("جستجوی شماره سفارش…", "Search order number…", "جستجوی شماره سفارش…", "Buscar número de pedido…")" style="flex:1;max-width:340px;border:1px solid var(--panel-border);border-radius:10px;padding:9px 12px;font:inherit;background:#fff;color:var(--panel-ink)" />
+            <button type="submit" class="btn btn-primary btn-sm">@T("جستجو", "Search", "بحث", "Buscar")</button>
         </form>
         <div class="order-list">
             @foreach (var o in Model.Orders)
@@ -57,12 +57,12 @@
         <nav class="pagination" aria-label="pagination">
             @if (Model.HasPrev)
             {
-                <a class="btn btn-ghost btn-sm" href="/account/orders?page=@(Model.Page - 1)">← @T("قبلی", "Previous", "السابق")</a>
+                <a class="btn btn-ghost btn-sm" href="/account/orders?page=@(Model.Page - 1)">← @T("قبلی", "Previous", "السابق", "Anterior")</a>
             }
             <span class="page-info">@Model.Page / @Math.Max(1, (int)Math.Ceiling(Model.Total / 8.0))</span>
             @if (Model.HasNext)
             {
-                <a class="btn btn-ghost btn-sm" href="/account/orders?page=@(Model.Page + 1)">@T("بعدی", "Next", "التالي") →</a>
+                <a class="btn btn-ghost btn-sm" href="/account/orders?page=@(Model.Page + 1)">@T("بعدی", "Next", "التالي", "Siguiente") →</a>
             }
         </nav>
     }

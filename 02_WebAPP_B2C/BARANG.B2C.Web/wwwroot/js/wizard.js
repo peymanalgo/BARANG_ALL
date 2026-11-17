@@ -32,10 +32,10 @@
     const szPx = (code) => SZPX[(code || "").toUpperCase()] || SZPX.A4;
     // رنگ نمایشی تیشرت بر اساس نام رنگ (فقط ظاهر پیش‌نمایش)
     const HEX = [
-        [/سفید|أبيض|white/i, "#f2f3f1"], [/مشکی|سیاه|أسود|black/i, "#1a1a1a"], [/شیری|کرم|cream|beige/i, "#e8ddc8"],
-        [/قرمز|زرشکی|أحمر|red|crimson|burgundy/i, "#8e2323"], [/آبی|أزرق|blue/i, "#3f6d9e"], [/سبز|أخضر|green/i, "#2d5a3d"],
-        [/زرد|أصفر|yellow/i, "#dfb545"], [/نارنجی|برتقالي|orange/i, "#d97b3f"], [/خاکستری|طوسی|رمادي|gray|grey/i, "#8a8f98"],
-        [/صورتی|وردي|pink/i, "#d98ba3"], [/بنفش|بنفسجي|purple|violet/i, "#6d5a9e"],
+        [/سفید|أبيض|white|blanco/i, "#f2f3f1"], [/مشکی|سیاه|أسود|black|negro/i, "#1a1a1a"], [/شیری|کرم|cream|beige|crema/i, "#e8ddc8"],
+        [/قرمز|زرشکی|أحمر|red|crimson|burgundy|rojo/i, "#8e2323"], [/آبی|أزرق|blue|azul/i, "#3f6d9e"], [/سبز|أخضر|green|verde/i, "#2d5a3d"],
+        [/زرد|أصفر|yellow|amarillo/i, "#dfb545"], [/نارنجی|برتقالي|orange|naranja/i, "#d97b3f"], [/خاکستری|طوسی|رمادي|gray|grey|gris/i, "#8a8f98"],
+        [/صورتی|وردي|pink|rosa/i, "#d98ba3"], [/بنفش|بنفسجي|purple|violet|morado/i, "#6d5a9e"],
     ];
     const hexOf = (name, code) => {
         for (const [re, hex] of HEX) if (re.test(name || "") || re.test(code || "")) return hex;
@@ -43,18 +43,18 @@
     };
     // نام نمایشی رنگ: کانفیگ برای برخی کدها فقط نام لاتین دارد (BLACK/BLUE…) — به زبان کاربر برمی‌گردانیم
     const COLOR_NAMES = {
-        black: { fa: "مشکی", ar: "أسود", en: "Black" }, blue: { fa: "آبی", ar: "أزرق", en: "Blue" },
-        red: { fa: "قرمز", ar: "أحمر", en: "Red" }, white: { fa: "سفید", ar: "أبيض", en: "White" },
-        cream: { fa: "شیری", ar: "كريمي", en: "Cream" }, green: { fa: "سبز", ar: "أخضر", en: "Green" },
-        yellow: { fa: "زرد", ar: "أصفر", en: "Yellow" }, orange: { fa: "نارنجی", ar: "برتقالي", en: "Orange" },
-        gray: { fa: "خاکستری", ar: "رمادي", en: "Gray" }, grey: { fa: "خاکستری", ar: "رمادي", en: "Gray" },
-        pink: { fa: "صورتی", ar: "وردي", en: "Pink" }, purple: { fa: "بنفش", ar: "بنفسجي", en: "Purple" },
+        black: { fa: "مشکی", ar: "أسود", en: "Black", es: "Negro" }, blue: { fa: "آبی", ar: "أزرق", en: "Blue", es: "Azul" },
+        red: { fa: "قرمز", ar: "أحمر", en: "Red", es: "Rojo" }, white: { fa: "سفید", ar: "أبيض", en: "White", es: "Blanco" },
+        cream: { fa: "شیری", ar: "كريمي", en: "Cream", es: "Crema" }, green: { fa: "سبز", ar: "أخضر", en: "Green", es: "Verde" },
+        yellow: { fa: "زرد", ar: "أصفر", en: "Yellow", es: "Amarillo" }, orange: { fa: "نارنجی", ar: "برتقالي", en: "Orange", es: "Naranja" },
+        gray: { fa: "خاکستری", ar: "رمادي", en: "Gray", es: "Gris" }, grey: { fa: "خاکستری", ar: "رمادي", en: "Gray", es: "Gris" },
+        pink: { fa: "صورتی", ar: "وردي", en: "Pink", es: "Rosa" }, purple: { fa: "بنفش", ar: "بنفسجي", en: "Purple", es: "Morado" },
     };
     const colorName = (code) => {
         const c = (CONFIG.colors || []).find((x) => (x.code || "").toUpperCase() === String(code || "").toUpperCase());
         if (c && c.name && c.name.trim() && c.name.trim().toUpperCase() !== String(code || "").trim().toUpperCase()) return c.name;
         const m = COLOR_NAMES[String(code || "").trim().toLowerCase()];
-        if (m) return m[CULTURE === "ar" ? "ar" : CULTURE === "en" ? "en" : "fa"];
+        if (m) return m[CULTURE] || m.en || m.fa;
         return (c && c.name) || code || "—";
     };
     const TEXT_COLORS = ["#1c1917", "#ffffff", "#f6b23c", "#e11d48", "#2563eb", "#16a34a", "#8b5cf6", "#e879f9"];
@@ -86,7 +86,7 @@
         red: { FRONT: "/images/tee/red-front.jpg", BACK: "/images/tee/red-back.jpg", teeC: "#8e2323" },
         blue: { FRONT: "/images/tee/blue-front.jpg", BACK: "/images/tee/blue-back.jpg", teeC: "#2c4e7e" },
     };
-    const teeKey = () => { if (!CONFIG) return null; const n = colorName(W.colorCode) + " " + (W.colorCode || ""); const m = /آبی|أزرق|blue|ابو/i.test(n) ? "blue" : /سفید|أبيض|white/i.test(n) ? "white" : /قرمز|سرخ|أحمر|red/i.test(n) ? "red" : /مشکی|سیاه|أسود|black/i.test(n) ? "black" : null; return m; };
+    const teeKey = () => { if (!CONFIG) return null; const n = colorName(W.colorCode) + " " + (W.colorCode || ""); const m = /آبی|أزرق|blue|azul|ابو/i.test(n) ? "blue" : /سفید|أبيض|white|blanco/i.test(n) ? "white" : /قرمز|سرخ|أحمر|red|rojo/i.test(n) ? "red" : /مشکی|سیاه|أسود|black|negro/i.test(n) ? "black" : null; return m; };
     function tee(side) {
         // ترجیح اول: تصویر واقعی واریانت انتخاب‌شده از ERP (imageUrl در کانفیگ ویزارد)
         const curVariant = (CONFIG && (CONFIG.products || []).flatMap(p => p.variants || []).find(v => v.id === (W.variant && W.variant.id)));
@@ -350,7 +350,9 @@
 
     // ── فاز ۱: بانک طرح‌ها (جستجوی مفهومی از Core) ──
     const CHIPS = FA ? ["شیر اسطوره‌ای", "گربه فضایی", "دریا و موج", "کوه دماوند", "کهکشان", "غروب نارنجی"]
-        : CULTURE === "ar" ? ["أسد أسطوري", "قطة فضائية", "البحر والموج", "جبل", "مجرة", "غروب"] : ["mythical lion", "space cat", "sea and waves", "mountain", "galaxy", "sunset"];
+        : CULTURE === "ar" ? ["أسد أسطوري", "قطة فضائية", "البحر والموج", "جبل", "مجرة", "غروب"]
+        : CULTURE === "es" ? ["león mitológico", "gato espacial", "mar y olas", "montaña", "galaxia", "atardecer"]
+        : ["mythical lion", "space cat", "sea and waves", "mountain", "galaxy", "sunset"];
     CHIPS.forEach((c) => {
         const b = document.createElement("button");
         b.type = "button"; b.textContent = c;
@@ -377,7 +379,7 @@
                 const fig = document.createElement("figure");
                 fig.className = "cardart" + (W.bank && W.bank.id === d.id ? " on" : "");
                 fig.innerHTML = '<div class="a">' + (d.thumbnailUrl || d.previewUrl ? '<img loading="lazy" src="' + (d.thumbnailUrl || d.previewUrl) + '" alt="">' : "") + "</div><figcaption></figcaption>" +
-                    '<span class="match-meter ' + mm + '"><span class="bar" aria-hidden="true"><i style="width:' + pct + '%"></i></span><b class="pct">' + num(pct) + (CULTURE === "en" ? "%" : "٪") + "</b></span>";
+                    '<span class="match-meter ' + mm + '"><span class="bar" aria-hidden="true"><i style="width:' + pct + '%"></i></span><b class="pct">' + num(pct) + (CULTURE === "fa" || CULTURE === "ar" ? "٪" : "%") + "</b></span>";
                 fig.querySelector("figcaption").textContent = d.title || d.code || "";
                 fig.addEventListener("click", () => {
                     W.mode = "bank";

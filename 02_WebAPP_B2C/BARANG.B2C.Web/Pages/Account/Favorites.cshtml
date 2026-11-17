@@ -4,25 +4,25 @@
 @{
     Layout = "_AccountLayout";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.Format(d, culture);
     ViewData["PanelActive"] = "favorites";
-    ViewData["PanelTitle"] = T("طرح‌های مورد علاقه", "Favorites", "المفضلة");
+    ViewData["PanelTitle"] = T("طرح‌های مورد علاقه", "Favorites", "المفضلة", "Favoritos");
 }
 
 <div class="panel-content">
     <header class="panel-page-head">
-        <h1>@T("طرح‌های مورد علاقه", "Favorite designs", "التصاميم المفضلة")</h1>
-        <p class="muted">@T("طرح‌هایی که قلبشان کرده‌ای؛ با یک کلیک به سبد سفارش برو.", "The designs you loved; one click to start an order.", "التصاميم التي أحببتها؛ بنقرة واحدة ابدأ الطلب.")</p>
+        <h1>@T("طرح‌های مورد علاقه", "Favorite designs", "التصاميم المفضلة", "Diseños favoritos")</h1>
+        <p class="muted">@T("طرح‌هایی که قلبشان کرده‌ای؛ با یک کلیک به سبد سفارش برو.", "The designs you loved; one click to start an order.", "التصاميم التي أحببتها؛ بنقرة واحدة ابدأ الطلب.", "Los diseños que te encantaron; un clic para empezar un pedido.")</p>
     </header>
 
     @if (Model.Items.Count == 0)
     {
         <div class="dash-card empty-state">
             <span class="empty-emoji" aria-hidden="true">💛</span>
-            <h2>@T("هنوز علاقه‌مندی نداری", "No favorites yet", "لا مفضلات بعد")</h2>
-            <p class="muted">@T("در کاتالوگ طرح‌ها، روی قلب بزن تا این‌جا ذخیره شود.", "Tap the heart in the catalog to save designs here.", "اضغط على القلب في الكتالوغ لحفظ التصاميم هنا.")</p>
-            <a class="btn btn-primary" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم")</a>
+            <h2>@T("هنوز علاقه‌مندی نداری", "No favorites yet", "لا مفضلات بعد", "Aún no hay favoritos")</h2>
+            <p class="muted">@T("در کاتالوگ طرح‌ها، روی قلب بزن تا این‌جا ذخیره شود.", "Tap the heart in the catalog to save designs here.", "اضغط على القلب في الكتالوغ لحفظ التصاميم هنا.", "Toca el corazón en el catálogo para guardar diseños aquí.")</p>
+            <a class="btn btn-primary" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم", "Explorar diseños")</a>
         </div>
     }
     else
@@ -44,7 +44,7 @@
                     <form method="post" asp-page-handler="Toggle" class="fav-heart-form">
                         <input type="hidden" name="artworkId" value="@f.ArtworkId" />
                         <input type="hidden" name="returnUrl" value="/account/favorites" />
-                        <button type="submit" class="fav-heart on" title="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة")" aria-label="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة")">♥</button>
+                        <button type="submit" class="fav-heart on" title="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة", "Quitar de favoritos")" aria-label="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة", "Quitar de favoritos")">♥</button>
                     </form>
                     <div class="fav-card-body">
                         <strong class="fav-card-title">@f.Title</strong>

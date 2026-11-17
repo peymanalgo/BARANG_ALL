@@ -2,12 +2,12 @@
 @model CatalogModel
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    ViewData["Title"] = T("کاتالوگ طرح‌ها", "Design catalog", "كتالوج التصاميم");
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    ViewData["Title"] = T("کاتالوگ طرح‌ها", "Design catalog", "كتالوج التصاميم", "Catálogo de diseños");
 }
 <section class="container section">
     <header class="catalog-head">
-        <h1>@T("کاتالوگ طرح‌ها", "Design catalog", "كتالوج التصاميم")</h1>
+        <h1>@T("کاتالوگ طرح‌ها", "Design catalog", "كتالوج التصاميم", "Catálogo de diseños")</h1>
         @if (Model.ConceptActive)
         {
             <p class="muted">@T($"{Model.ConceptResults.Count} نتیجه مفهومی", $"{Model.ConceptResults.Count} concept matches", $"{Model.ConceptResults.Count} نتيجة مفاهيمية")</p>
@@ -19,28 +19,28 @@
     </header>
 
     <form class="catalog-filter" action="/catalog" method="get">
-        <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@T("جستجوی مفهومی (مطابقت معنا)…", "Concept search (semantic match)…", "بحث مفاهيمي (مطابقة معنوية)…")" />
+        <input type="search" name="search" value="@(Model.Search ?? "")" placeholder="@T("جستجوی مفهومی (مطابقت معنا)…", "Concept search (semantic match)…", "بحث مفاهيمي (مطابقة معنوية)…", "Búsqueda por conceptos (coincidencia semántica)…")" />
         @if (Model.Page > 1)
         {
             <input type="hidden" name="page" value="1" />
         }
-        <button class="btn btn-primary" type="submit">@T("جستجو", "Search", "بحث")</button>
+        <button class="btn btn-primary" type="submit">@T("جستجو", "Search", "بحث", "Buscar")</button>
     </form>
 
     @if (Model.ConceptMode && !Model.ConceptActive)
     {
-        <p class="empty">@T("برای جستجوی مفهومی، حداقل ۲ نویسه بنویسید.", "Type at least 2 characters for concept search.", "اكتب حرفين على الأقل للبحث المفاهيمي.")</p>
+        <p class="empty">@T("برای جستجوی مفهومی، حداقل ۲ نویسه بنویسید.", "Type at least 2 characters for concept search.", "اكتب حرفين على الأقل للبحث المفاهيمي.", "Escribe al menos 2 caracteres para la búsqueda por conceptos.")</p>
     }
 
     @if (Model.ConceptActive)
     {
         <div class="section-head" style="margin-top:.4rem">
-            <h2>@T("جستجوی مفهومی", "Concept search", "البحث المفهومي")</h2>
-            <span class="chip">@T("مرتب‌شده بر اساس شباهت معنایی", "sorted by semantic match", "مرتب حسب التشابه الدلالي")</span>
+            <h2>@T("جستجوی مفهومی", "Concept search", "البحث المفهومي", "Búsqueda por conceptos")</h2>
+            <span class="chip">@T("مرتب‌شده بر اساس شباهت معنایی", "sorted by semantic match", "مرتب حسب التشابه الدلالي", "ordenados por coincidencia semántica")</span>
         </div>
         @if (Model.ConceptResults.Count == 0)
         {
-            <p class="empty">@T("طرح مشابه‌ای برای این عبارت پیدا نشد.", "No similar designs for this phrase.", "لا توجد تصاميم مشابهة.")</p>
+            <p class="empty">@T("طرح مشابه‌ای برای این عبارت پیدا نشد.", "No similar designs for this phrase.", "لا توجد تصاميم مشابهة.", "No hay diseños similares para esta frase.")</p>
         }
         else
         {
@@ -58,7 +58,7 @@
                         </span>
                         <span class="design-meta">
                             <strong>@m.Title</strong>
-                            <span class="match-meter @mm" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@pct" title="@T("میزان تطابق مفهومی", "Concept match level", "مستوى التطابق المفاهيمي")">
+                            <span class="match-meter @mm" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@pct" title="@T("میزان تطابق مفهومی", "Concept match level", "مستوى التطابق المفاهيمي", "Nivel de coincidencia conceptual")">
                                 <span class="bar" aria-hidden="true"><i style="width:@(pct)%"></i></span>
                                 <b class="pct">@BARANG.B2C.Web.Services.AppDate.Percent(pct, culture)</b>
                             </span>
@@ -73,7 +73,7 @@
     {
         @if (Model.Designs.Count == 0)
         {
-            <p class="empty">@T("طرحی با این جستجو پیدا نشد.", "No designs match your search.", "لا توجد تصاميم مطابقة.")</p>
+            <p class="empty">@T("طرحی با این جستجو پیدا نشد.", "No designs match your search.", "لا توجد تصاميم مطابقة.", "Ningún diseño coincide con tu búsqueda.")</p>
         }
         else
         {
@@ -102,22 +102,22 @@
                         <form method="post" asp-page="/Account/Favorites" asp-page-handler="Toggle" class="fav-heart-form">
                             <input type="hidden" name="artworkId" value="@d.Id" />
                             <input type="hidden" name="returnUrl" value="@Model.CurrentUrl" />
-                            <button type="submit" class="fav-heart @(Model.FavoriteIds.Contains(d.Id.ToString()) ? "on" : null)" title="@T("علاقه‌مندی", "Favorite", "مفضل")" aria-label="@T("افزودن/حذف از علاقه‌مندی‌ها", "Toggle favorite", "تبديل المفضلة")">♥</button>
+                            <button type="submit" class="fav-heart @(Model.FavoriteIds.Contains(d.Id.ToString()) ? "on" : null)" title="@T("علاقه‌مندی", "Favorite", "مفضل", "Favorito")" aria-label="@T("افزودن/حذف از علاقه‌مندی‌ها", "Toggle favorite", "تبديل المفضلة", "Marcar favorito")">♥</button>
                         </form>
                     }
                 </div>
             }
         </div>
 
-        <nav class="pagination" aria-label="@T("صفحه‌بندی", "Pagination", "ترقيم الصفحات")">
+        <nav class="pagination" aria-label="@T("صفحه‌بندی", "Pagination", "ترقيم الصفحات", "Paginación")">
             @if (Model.HasPrev)
             {
-                <a class="btn btn-ghost btn-sm" href="@Model.PageLink(Model.Page - 1)">← @T("قبلی", "Previous", "السابق")</a>
+                <a class="btn btn-ghost btn-sm" href="@Model.PageLink(Model.Page - 1)">← @T("قبلی", "Previous", "السابق", "Anterior")</a>
             }
             <span class="page-info">@Model.Page / @Math.Max(1, (int)Math.Ceiling(Model.Total / (double)Model.PageSize))</span>
             @if (Model.HasNext)
             {
-                <a class="btn btn-ghost btn-sm" href="@Model.PageLink(Model.Page + 1)">@T("بعدی", "Next", "التالي") →</a>
+                <a class="btn btn-ghost btn-sm" href="@Model.PageLink(Model.Page + 1)">@T("بعدی", "Next", "التالي", "Siguiente") →</a>
             }
         </nav>
     }

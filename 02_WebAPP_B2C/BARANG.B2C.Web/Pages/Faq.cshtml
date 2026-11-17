@@ -2,30 +2,30 @@
 @model EmptyModel
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    ViewData["Title"] = T("سوالات متداول", "FAQ", "الأسئلة الشائعة");
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    ViewData["Title"] = T("سوالات متداول", "FAQ", "الأسئلة الشائعة", "Preguntas frecuentes");
     var faqs = new (string Q, string A)[]
     {
-        (T("چاپ روی چه جنسی‌هایی انجام می‌شود؟", "What fabrics do you print on?", "على أي أقمشة تُطبع؟"),
-         T("تیشرت‌های پنبه‌ای ۱۰۰٪ اصل با گرماژ ۱۸۰ تا ۲۲۰؛ در صورت درخواست، پولوشرت و جنسی‌های خاص هم قابل سفارش است.", "100% cotton t-shirts, 180–220 GSM; polo and special fabrics on request.", "تيشرتات قطن 100% بجرجة 180-220؛ البولو والأقمشة الخاصة عند الطلب.")),
-        (T("روش‌های چاپ کدام است؟", "Which print methods do you use?", "ما هي طرق الطباعة؟"),
-         T("دیجیتال DTG برای طرح‌های رنگی، سیلک‌اسکرین برای تیراژ بالا و سابلیمیشن برای پولوشرت.", "DTG digital for full-color, silkscreen for bulk, sublimation for polos.", "طباعة DTG للألوان الكاملة، الشاشة الحريرية للكميات الكبيرة، والتسامي للبولو.")),
-        (T("زمان تحویل چقدر است؟", "What is the delivery time?", "ما هو وقت التسليم؟"),
-         T("سفارش‌های معمولی ۳ تا ۵ روز کاری و سفارش‌های تیراژ بالاتر با توافق.", "Standard orders 3–5 business days; bulk by agreement.", "الطلبات العادية 3-5 أيام عمل؛ الكميات بالاتفاق.")),
-        (T("هزینه ارسال چقدر است؟", "Shipping cost?", "تكلفة الشحن؟"),
-         T("ارسال با پست و تیپاکس؛ هزینه بر اساس شهر و وزن در مرحله ثبت سفارش محاسبه می‌شود.", "Post or Tipax; cost calculated at checkout by city and weight.", "بريد أو تيباس؛ تحسب التكلفة عند الطلب حسب المدينة والوزن.")),
-        (T("امکان لغو سفارش هست؟", "Can I cancel an order?", "هل يمكن إلغاء الطلب؟"),
-         T("تا قبل از ورود به خط تولید از پنل کاربری قابل لغو است و وجه به کیف پول برمی‌گردد.", "Cancelable from your panel before production; refunds go to your wallet.", "يمكن الإلغاء من اللوحة قبل الإنتاج؛ يُعاد المبلغ إلى المحفظة.")),
-        (T("طرح اختصاصی خودم را چطور بفرستم؟", "How to submit my own design?", "كيف أرسل تصميمي الخاص؟"),
-         T("از بخش «طرح‌های سفارشی من» در پنل کاربری، فایل PNG با کیفیت بالا آپلود کنید.", "Upload a high-quality PNG from the 'My custom designs' section of your panel.", "ارفع صورة PNG عالية الجودة من قسم التصاميم المخصصة."))
+        (T("چاپ روی چه جنسی‌هایی انجام می‌شود؟", "What fabrics do you print on?", "على أي أقمشة تُطبع؟", "¿Sobre qué telas imprimen?"),
+         T("تیشرت‌های پنبه‌ای ۱۰۰٪ اصل با گرماژ ۱۸۰ تا ۲۲۰؛ در صورت درخواست، پولوشرت و جنسی‌های خاص هم قابل سفارش است.", "100% cotton t-shirts, 180–220 GSM; polo and special fabrics on request.", "تيشرتات قطن 100% بجرجة 180-220؛ البولو والأقمشة الخاصة عند الطلب.", "Camisetas de algodón 100 %, 180–220 g/m²; polo y telas especiales a petición.")),
+        (T("روش‌های چاپ کدام است؟", "Which print methods do you use?", "ما هي طرق الطباعة؟", "¿Qué métodos de impresión utilizan?"),
+         T("دیجیتال DTG برای طرح‌های رنگی، سیلک‌اسکرین برای تیراژ بالا و سابلیمیشن برای پولوشرت.", "DTG digital for full-color, silkscreen for bulk, sublimation for polos.", "طباعة DTG للألوان الكاملة، الشاشة الحريرية للكميات الكبيرة، والتسامي للبولو.", "DTG digital para todo color, serigrafía para grandes volúmenes, sublimación para polos.")),
+        (T("زمان تحویل چقدر است؟", "What is the delivery time?", "ما هو وقت التسليم؟", "¿Cuál es el tiempo de entrega?"),
+         T("سفارش‌های معمولی ۳ تا ۵ روز کاری و سفارش‌های تیراژ بالاتر با توافق.", "Standard orders 3–5 business days; bulk by agreement.", "الطلبات العادية 3-5 أيام عمل؛ الكميات بالاتفاق.", "Pedidos estándar en 3–5 días hábiles; grandes volúmenes según acuerdo.")),
+        (T("هزینه ارسال چقدر است؟", "Shipping cost?", "تكلفة الشحن؟", "¿Cuánto cuesta el envío?"),
+         T("ارسال با پست و تیپاکس؛ هزینه بر اساس شهر و وزن در مرحله ثبت سفارش محاسبه می‌شود.", "Post or Tipax; cost calculated at checkout by city and weight.", "بريد أو تيباس؛ تحسب التكلفة عند الطلب حسب المدينة والوزن.", "Post o Tipax; el costo se calcula en el pago según ciudad y peso.")),
+        (T("امکان لغو سفارش هست؟", "Can I cancel an order?", "هل يمكن إلغاء الطلب؟", "¿Puedo cancelar un pedido?"),
+         T("تا قبل از ورود به خط تولید از پنل کاربری قابل لغو است و وجه به کیف پول برمی‌گردد.", "Cancelable from your panel before production; refunds go to your wallet.", "يمكن الإلغاء من اللوحة قبل الإنتاج؛ يُعاد المبلغ إلى المحفظة.", "Puedes cancelarlo desde tu panel antes de la producción; el reembolso va a tu billetera.")),
+        (T("طرح اختصاصی خودم را چطور بفرستم؟", "How to submit my own design?", "كيف أرسل تصميمي الخاص؟", "¿Cómo envío mi propio diseño?"),
+         T("از بخش «طرح‌های سفارشی من» در پنل کاربری، فایل PNG با کیفیت بالا آپلود کنید.", "Upload a high-quality PNG from the 'My custom designs' section of your panel.", "ارفع صورة PNG عالية الجودة من قسم التصاميم المخصصة.", "Sube un PNG de alta calidad desde la sección «Mis diseños personalizados» de tu panel."))
     };
 }
 <!DOCTYPE html>
-<html lang="@culture" dir="@(culture == "en" ? "ltr" : "rtl")">
+<html lang="@culture" dir="@(culture is "en" or "es" ? "ltr" : "rtl")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] · @(culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", _ => "پی‌رنگ" })</title>
+    <title>@ViewData["Title"] · @(culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", "es" => "Peyrang", _ => "پی‌رنگ" })</title>
     <link rel="stylesheet" href="~/css/store.css" asp-append-version="true" />
     <style>
         .faq-page { max-width: 780px; margin: 0 auto; padding: 40px 20px 80px; }
@@ -36,10 +36,10 @@
     </style>
 </head>
 <body>
-<header class="store-header"><div class="container header-inner"><a class="brand" href="/"><img class="brand-logo" src="~/images/logo-wordmark-final.png" alt="@(culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", _ => "پی‌رنگ" })" asp-append-version="true" /></a><a class="btn btn-primary" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم")</a></div></header>
+<header class="store-header"><div class="container header-inner"><a class="brand" href="/"><img class="brand-logo" src="~/images/logo-wordmark-final.png" alt="@(culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", "es" => "Peyrang", _ => "پی‌رنگ" })" asp-append-version="true" /></a><a class="btn btn-primary" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم", "Explorar diseños")</a></div></header>
     <main class="faq-page">
-        <h1>@T("سوالات متداول", "Frequently asked questions", "الأسئلة الشائعة")</h1>
-        <p class="muted">@T("پاسخ پرتکرارترین سوال‌ها درباره چاپ و سفارش.", "Answers to the most common printing and ordering questions.", "أجوبة عن أكثر أسئلة الطباعة والطلب شيوعاً.")</p>
+        <h1>@T("سوالات متداول", "Frequently asked questions", "الأسئلة الشائعة", "Preguntas frecuentes")</h1>
+        <p class="muted">@T("پاسخ پرتکرارترین سوال‌ها درباره چاپ و سفارش.", "Answers to the most common printing and ordering questions.", "أجوبة عن أكثر أسئلة الطباعة والطلب شيوعاً.", "Respuestas a las preguntas más frecuentes sobre impresión y pedidos.")</p>
         @foreach (var f in faqs)
         {
             <details class="faq-item" open>

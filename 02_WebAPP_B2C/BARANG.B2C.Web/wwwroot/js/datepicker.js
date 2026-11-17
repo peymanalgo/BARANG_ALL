@@ -7,6 +7,7 @@
     var GREG_MONTHS_FA = ['ژانویه', 'فوریه', 'مارس', 'آپریل', 'مه', 'ژوئن', 'ژوئیه', 'اوت', 'سپتامبر', 'اکتبر', 'نوامبر', 'دسامبر'];
     var GREG_MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     var GREG_MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    var GREG_MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
     var JALALI_DOW = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
     var GREG_DOW = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
@@ -84,8 +85,8 @@
             '</div>' +
             '<div class="barang-dp-grid"></div>' +
             '<div class="barang-dp-actions">' +
-            '<button type="button" class="dp-clear">' + (this.jalali ? 'پاک کردن' : (this.culture === 'ar' ? 'مسح' : 'Clear')) + '</button>' +
-            '<button type="button" class="dp-today">' + (this.jalali ? 'امروز' : (this.culture === 'ar' ? 'اليوم' : 'Today')) + '</button>' +
+            '<button type="button" class="dp-clear">' + (this.jalali ? 'پاک کردن' : (this.culture === 'ar' ? 'مسح' : this.culture === 'es' ? 'Borrar' : 'Clear')) + '</button>' +
+            '<button type="button" class="dp-today">' + (this.jalali ? 'امروز' : (this.culture === 'ar' ? 'اليوم' : this.culture === 'es' ? 'Hoy' : 'Today')) + '</button>' +
             '</div>';
         this.input.parentElement.appendChild(pop);
         this.popup = pop;
@@ -101,7 +102,7 @@
 
         var monthSel = pop.querySelector('.dp-month');
         var yearSel = pop.querySelector('.dp-year');
-        var months = this.jalali ? JALALI_MONTHS : (this.culture === 'ar' ? GREG_MONTHS_AR : (this.culture === 'en' ? GREG_MONTHS_EN : GREG_MONTHS_FA));
+        var months = this.jalali ? JALALI_MONTHS : (this.culture === 'ar' ? GREG_MONTHS_AR : (this.culture === 'es' ? GREG_MONTHS_ES : (this.culture === 'en' ? GREG_MONTHS_EN : GREG_MONTHS_FA)));
         months.forEach(function (name, i) {
             var o = document.createElement('option');
             o.value = i + 1;

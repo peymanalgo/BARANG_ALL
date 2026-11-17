@@ -3,27 +3,27 @@
 @using System.Globalization
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
-    ViewData["Title"] = T("سبد خرید", "Cart", "السلة");
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"));
+    ViewData["Title"] = T("سبد خرید", "Cart", "السلة", "Carrito");
 }
 <section class="container section">
     <nav class="breadcrumbs" aria-label="breadcrumb">
-        <a href="/">@T("فروشگاه", "Store", "المتجر")</a> ›
-        <span>@T("سبد خرید", "Cart", "السلة")</span>
+        <a href="/">@T("فروشگاه", "Store", "المتجر", "Tienda")</a> ›
+        <span>@T("سبد خرید", "Cart", "السلة", "Carrito")</span>
     </nav>
     <header class="section-head">
-        <h1>🛒 @T("سبد خرید", "Cart", "السلة")</h1>
-        <a class="btn btn-primary btn-sm" href="/order/wizard?new=1">✨ @T("افزودن سفارش جدید", "Add new order", "أضف طلباً جديداً")</a>
+        <h1>🛒 @T("سبد خرید", "Cart", "السلة", "Carrito")</h1>
+        <a class="btn btn-primary btn-sm" href="/order/wizard?new=1">✨ @T("افزودن سفارش جدید", "Add new order", "أضف طلباً جديداً", "Nuevo pedido")</a>
     </header>
 
     @if (!Model.HasProfile)
     {
-        <p class="empty">@T("برای دیدن سبد خرید ابتدا وارد حساب کاربری شوید.", "Sign in to your account to view the cart.", "سجّل الدخول لعرض السلة.")</p>
+        <p class="empty">@T("برای دیدن سبد خرید ابتدا وارد حساب کاربری شوید.", "Sign in to your account to view the cart.", "سجّل الدخول لعرض السلة.", "Inicia sesión en tu cuenta para ver el carrito.")</p>
     }
     else if (Model.Items.Count == 0)
     {
-        <p class="empty">@T("سبد خرید شما خالی است — از ویزارد، طرح بعدی‌ات را سفارش بده!", "Your cart is empty — order your next design from the wizard!", "سلتك فارغة — اطلب تصميمك التالي من المعالج!")</p>
+        <p class="empty">@T("سبد خرید شما خالی است — از ویزارد، طرح بعدی‌ات را سفارش بده!", "Your cart is empty — order your next design from the wizard!", "سلتك فارغة — اطلب تصميمك التالي من المعالج!", "Tu carrito está vacío: ¡pide tu próximo diseño desde el asistente!")</p>
     }
     else
     {
@@ -38,18 +38,18 @@
                             {
                                 item.Product,
                                 item.Variant,
-                                item.Quantity > 1 ? T("تعداد: ", "Qty: ", "الكمية: ") + item.Quantity.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa")) : "",
-                                item.PrintSize.Length > 0 ? T("اندازه چاپ: ", "Print: ", "الطباعة: ") + item.PrintSize : "",
-                                item.Packaging.Length > 0 ? T("بسته‌بندی: ", "Packaging: ", "التغليف: ") + item.Packaging : "",
+                                item.Quantity > 1 ? T("تعداد: ", "Qty: ", "الكمية: ", "Cant.: ") + item.Quantity.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa")) : "",
+                                item.PrintSize.Length > 0 ? T("اندازه چاپ: ", "Print: ", "الطباعة: ", "Impresión: ") + item.PrintSize : "",
+                                item.Packaging.Length > 0 ? T("بسته‌بندی: ", "Packaging: ", "التغليف: ", "Embalaje: ") + item.Packaging : "",
                             }.Where(s => s.Length > 0))
                         </small>
                     </div>
                     <div class="cart-item-amt">
                         <b>@Money(item.Amount)</b>
-                        <small>@T("تومان", "Toman", "تومان")</small>
+                        <small>@T("تومان", "Toman", "تومان", "tomán")</small>
                     </div>
-                    <button type="button" class="btn btn-ghost btn-sm cart-remove" data-remove="@item.OrderId" aria-label="@T("حذف از سبد", "Remove from cart", "إزالة من السلة")">
-                        🗑 @T("حذف", "Remove", "حذف")
+                    <button type="button" class="btn btn-ghost btn-sm cart-remove" data-remove="@item.OrderId" aria-label="@T("حذف از سبد", "Remove from cart", "إزالة من السلة", "Quitar del carrito")">
+                        🗑 @T("حذف", "Remove", "حذف", "Quitar")
                     </button>
                 </article>
             }
@@ -57,13 +57,13 @@
 
         <footer class="cart-foot card">
             <div class="cart-grand">
-                <span>@T("جمع کل سبد", "Cart total", "إجمالي السلة"):</span>
+                <span>@T("جمع کل سبد", "Cart total", "إجمالي السلة", "Total del carrito"):</span>
                 <b id="cart-grand">@Money(Model.GrandTotal)</b>
-                <small>@T("تومان", "Toman", "تومان")</small>
+                <small>@T("تومان", "Toman", "تومان", "tomán")</small>
             </div>
             <div class="cart-actions">
-                <button type="button" class="btn btn-primary" id="cart-pay-gateway">🏦 @T("پرداخت همه (درگاه بانکی)", "Pay all (gateway)", "دفع الكل (بوابة)")</button>
-                <button type="button" class="btn btn-ghost" id="cart-pay-wallet">👛 @T("پرداخت همه (کیف پول)", "Pay all (wallet)", "دفع الكل (المحفظة)")</button>
+                <button type="button" class="btn btn-primary" id="cart-pay-gateway">🏦 @T("پرداخت همه (درگاه بانکی)", "Pay all (gateway)", "دفع الكل (بوابة)", "Pagar todo (pasarela)")</button>
+                <button type="button" class="btn btn-ghost" id="cart-pay-wallet">👛 @T("پرداخت همه (کیف پول)", "Pay all (wallet)", "دفع الكل (المحفظة)", "Pagar todo (billetera)")</button>
             </div>
         </footer>
     }
@@ -80,15 +80,15 @@
             if (!box) return;
             const L = @System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
             {
-                ["removeFail"] = T("حذف قلم ناموفق بود", "Could not remove the item", "تعذّر حذف العنصر"),
-                ["payFail"] = T("پرداخت ناموفق بود", "Payment failed", "فشل الدفع"),
-                ["paidOk"] = T("پرداخت انجام شد — سفارش‌های ثبت‌شده:", "Paid — submitted orders:", "تم الدفع — الطلبات المُرسلة:"),
-                ["someFailed"] = T("اقلام زیر پرداخت نشدند و در سبد ماندند:", "These items were not paid and stay in the cart:", "لم تُدفع هذه العناصر وبقيت في السلة:"),
-                ["empty"] = T("سبد پرداخت شد و خالی است ✅", "The cart was paid and is now empty ✅", "تم دفع السلة وهي الآن فارغة ✅"),
-                ["wallet"] = T("کیف پول", "wallet", "المحفظة"),
-                ["gateway"] = T("درگاه", "gateway", "بوابة"),
-                ["toman"] = T("تومان", "Toman", "تومان"),
-                ["confirmRemove"] = T("این قلم از سبد حذف شود؟", "Remove this item from the cart?", "إزالة هذا العنصر من السلة؟"),
+                ["removeFail"] = T("حذف قلم ناموفق بود", "Could not remove the item", "تعذّر حذف العنصر", "No se pudo eliminar el artículo"),
+                ["payFail"] = T("پرداخت ناموفق بود", "Payment failed", "فشل الدفع", "Pago fallido"),
+                ["paidOk"] = T("پرداخت انجام شد — سفارش‌های ثبت‌شده:", "Paid — submitted orders:", "تم الدفع — الطلبات المُرسلة:", "Pagado: pedidos enviados:"),
+                ["someFailed"] = T("اقلام زیر پرداخت نشدند و در سبد ماندند:", "These items were not paid and stay in the cart:", "لم تُدفع هذه العناصر وبقيت في السلة:", "Estos artículos no se pagaron y permanecen en el carrito:"),
+                ["empty"] = T("سبد پرداخت شد و خالی است ✅", "The cart was paid and is now empty ✅", "تم دفع السلة وهي الآن فارغة ✅", "El carrito fue pagado y ahora está vacío ✅"),
+                ["wallet"] = T("کیف پول", "wallet", "المحفظة", "billetera"),
+                ["gateway"] = T("درگاه", "gateway", "بوابة", "pasarela"),
+                ["toman"] = T("تومان", "Toman", "تومان", "tomán"),
+                ["confirmRemove"] = T("این قلم از سبد حذف شود؟", "Remove this item from the cart?", "إزالة هذا العنصر من السلة؟", "¿Quitar este artículo del carrito?"),
             });
             const FA = @System.Text.Json.JsonSerializer.Serialize(culture) === "fa";
             const fa = (n) => String(n).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);

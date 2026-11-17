@@ -4,29 +4,29 @@
 @{
     Layout = "_AccountLayout";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.Format(d, culture);
     ViewData["PanelActive"] = "customs";
-    ViewData["PanelTitle"] = T("طرح‌های سفارشی من", "My custom designs", "تصاميمي المخصصة");
+    ViewData["PanelTitle"] = T("طرح‌های سفارشی من", "My custom designs", "تصاميمي المخصصة", "Mis diseños personalizados");
 }
 
 <div class="panel-content">
     <header class="panel-page-head">
-        <h1>@T("طرح‌های سفارشی من", "My custom designs", "تصاميمي المخصصة")</h1>
-        <p class="muted">@T("طرح‌های اختصاصی‌ات را آپلود کن و هر وقت خواستی روی تیشرت چاپشان کن.", "Upload your own designs and print them on a t-shirt whenever you like.", "ارفع تصاميمك الخاصة واطبعها على التيشرت متى شئت.")</p>
+        <h1>@T("طرح‌های سفارشی من", "My custom designs", "تصاميمي المخصصة", "Mis diseños personalizados")</h1>
+        <p class="muted">@T("طرح‌های اختصاصی‌ات را آپلود کن و هر وقت خواستی روی تیشرت چاپشان کن.", "Upload your own designs and print them on a t-shirt whenever you like.", "ارفع تصاميمك الخاصة واطبعها على التيشرت متى شئت.", "Sube tus propios diseños e imprímelos en una camiseta cuando quieras.")</p>
     </header>
 
     @if (Model.Error == "upload")
     {
-        <div class="alert alert-error" role="alert">@T("بارگذاری فایل ناموفق بود؛ دوباره تلاش کن.", "The upload failed; please try again.", "فشل الرفع؛ حاول مرة أخرى.")</div>
+        <div class="alert alert-error" role="alert">@T("بارگذاری فایل ناموفق بود؛ دوباره تلاش کن.", "The upload failed; please try again.", "فشل الرفع؛ حاول مرة أخرى.", "La subida falló; inténtalo de nuevo.")</div>
     }
     @if (Model.Error == "file")
     {
-        <div class="alert alert-error" role="alert">@T("فایلی انتخاب نشده بود یا نامعتبر است.", "No valid file was selected.", "لم يتم اختيار ملف صالح.")</div>
+        <div class="alert alert-error" role="alert">@T("فایلی انتخاب نشده بود یا نامعتبر است.", "No valid file was selected.", "لم يتم اختيار ملف صالح.", "No se seleccionó un archivo válido.")</div>
     }
     @if (Model.Error == "title")
     {
-        <div class="alert alert-error" role="alert">@T("عنوان طرح الزامی است.", "The design title is required.", "عنوان التصميم مطلوب.")</div>
+        <div class="alert alert-error" role="alert">@T("عنوان طرح الزامی است.", "The design title is required.", "عنوان التصميم مطلوب.", "El título del diseño es obligatorio.")</div>
     }
 
     <div class="dash-card upload-card">
@@ -35,14 +35,14 @@
                 <span class="upload-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
                 </span>
-                <span class="upload-label">@T("انتخاب فایل طرح (PNG/JPG)", "Choose design file (PNG/JPG)", "اختر ملف التصميم (PNG/JPG)")</span>
+                <span class="upload-label">@T("انتخاب فایل طرح (PNG/JPG)", "Choose design file (PNG/JPG)", "اختر ملف التصميم (PNG/JPG)", "Elegir archivo de diseño (PNG/JPG)")</span>
                 <input type="file" asp-for="UploadFile" accept="image/png,image/jpeg,image/webp" required />
             </label>
             <label class="upload-title">
-                <span>@T("عنوان طرح", "Design title", "عنوان التصميم")</span>
+                <span>@T("عنوان طرح", "Design title", "عنوان التصميم", "Título del diseño")</span>
                 <input type="text" asp-for="UploadTitle" maxlength="120" required />
             </label>
-            <button type="submit" class="btn btn-primary">@T("بارگذاری طرح", "Upload design", "ارفع التصميم")</button>
+            <button type="submit" class="btn btn-primary">@T("بارگذاری طرح", "Upload design", "ارفع التصميم", "Subir diseño")</button>
         </form>
     </div>
 
@@ -50,8 +50,8 @@
     {
         <div class="dash-card empty-state">
             <span class="empty-emoji" aria-hidden="true">🎨</span>
-            <h2>@T("هنوز طرح سفارشی نداری", "No custom designs yet", "لا تصاميم مخصصة بعد")</h2>
-            <p class="muted">@T("اولین طرحت را با فرم بالا آپلود کن.", "Upload your first design with the form above.", "ارفع تصميمك الأول من النموذج أعلاه.")</p>
+            <h2>@T("هنوز طرح سفارشی نداری", "No custom designs yet", "لا تصاميم مخصصة بعد", "Aún no hay diseños personalizados")</h2>
+            <p class="muted">@T("اولین طرحت را با فرم بالا آپلود کن.", "Upload your first design with the form above.", "ارفع تصميمك الأول من النموذج أعلاه.", "Sube tu primer diseño con el formulario de arriba.")</p>
         </div>
     }
     else
@@ -77,9 +77,9 @@
                     <div class="fav-card-body">
                         <strong class="fav-card-title">@d.Title</strong>
                         <small class="muted">@Date(d.CreatedAtUtc)</small>
-                        <form method="post" asp-page-handler="Delete" data-confirm="@T("این طرح حذف شود؟", "Delete this design?", "أتحذف هذا التصميم؟")">
+                        <form method="post" asp-page-handler="Delete" data-confirm="@T("این طرح حذف شود؟", "Delete this design?", "أتحذف هذا التصميم؟", "¿Eliminar este diseño?")">
                             <input type="hidden" name="designId" value="@d.Id" />
-                            <button type="submit" class="btn btn-ghost btn-sm danger">@T("حذف", "Delete", "حذف")</button>
+                            <button type="submit" class="btn btn-ghost btn-sm danger">@T("حذف", "Delete", "حذف", "Eliminar")</button>
                         </form>
                     </div>
                 </div>

@@ -103,10 +103,10 @@ public static class SiteContentEndpoints
     }
     private static Guid? ResolvePublicCompany(IConfiguration configuration)
         => configuration.GetValue<string?>("Catalog:PublicCompanyId") is { } raw && Guid.TryParse(raw, out Guid id) && id != Guid.Empty ? id : null;
-    private static string? PickNull(string? fa, string? en, string? ar, string? culture) => (culture ?? "fa") switch { "en" => string.IsNullOrWhiteSpace(en) ? fa : en, "ar" => string.IsNullOrWhiteSpace(ar) ? (string.IsNullOrWhiteSpace(en) ? fa : ar) : ar, _ => fa };
+    private static string? PickNull(string? fa, string? en, string? ar, string? culture) => (culture ?? "fa") switch { "en" => string.IsNullOrWhiteSpace(en) ? fa : en, "ar" => string.IsNullOrWhiteSpace(ar) ? (string.IsNullOrWhiteSpace(en) ? fa : ar) : ar, "es" => string.IsNullOrWhiteSpace(en) ? fa : en, _ => fa };
     private static string? JoinKeywords(BARANG.Core.Domain.SiteContent.SitePage p, string? culture) => PickNull(p.SeoKeywordsFa, p.SeoKeywordsEn, p.SeoKeywordsAr, culture);
     private static string? JoinKeywords(BARANG.Core.Domain.SiteContent.BlogPost p, string? culture) => PickNull(p.SeoKeywordsFa, p.SeoKeywordsEn, p.SeoKeywordsAr, culture);
-    private static string Pick(string fa, string en, string ar, string? culture) => (culture ?? "fa") switch { "en" => string.IsNullOrWhiteSpace(en) ? fa : en, "ar" => string.IsNullOrWhiteSpace(ar) ? string.IsNullOrWhiteSpace(en) ? fa : ar : ar, _ => fa };
+    private static string Pick(string fa, string en, string ar, string? culture) => (culture ?? "fa") switch { "en" => string.IsNullOrWhiteSpace(en) ? fa : en, "ar" => string.IsNullOrWhiteSpace(ar) ? string.IsNullOrWhiteSpace(en) ? fa : ar : ar, "es" => string.IsNullOrWhiteSpace(en) ? fa : en, _ => fa };
     private sealed record PublicPageView(string Slug, string Title, string Body, string? CoverUrl, string? SeoDescription, string? SeoKeywords, DateTimeOffset UpdatedAtUtc);
     private sealed record PublicPostView(Guid Id, string Slug, string Title, string Excerpt, string Body, string? ThumbnailUrl, string? SeoDescription, string? SeoKeywords, DateTimeOffset? PublishedAtUtc);
     private static SiteResult<T> Map<T>(Result<T> result, bool created = false) => new(result, created);

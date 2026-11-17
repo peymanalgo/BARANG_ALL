@@ -35,7 +35,7 @@ public static class AppDate
     public static string Percent(int value, string? culture = null)
     {
         string c = culture ?? Culture();
-        return Digits(value.ToString(CultureInfo.InvariantCulture), c) + (c is "en" ? "%" : "٪");
+        return Digits(value.ToString(CultureInfo.InvariantCulture), c) + (c is "fa" or "ar" ? "٪" : "%");
     }
 
     public static string Format(DateTimeOffset value, string? culture = null)

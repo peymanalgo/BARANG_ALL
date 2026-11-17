@@ -10,7 +10,7 @@ public sealed class LanguageModel : PageModel
 {
     public IActionResult OnGet(string? culture, string? returnUrl)
     {
-        if (culture is "fa" or "en" or "ar")
+        if (culture is "fa" or "en" or "ar" or "es")
         {
             Response.Cookies.Append("barang.store.culture", CookieRequestCultureProvider.MakeCookieValue(new(culture)));
         }

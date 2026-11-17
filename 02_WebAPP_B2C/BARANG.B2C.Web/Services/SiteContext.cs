@@ -101,6 +101,6 @@ public sealed class SiteContext(CoreApiClient core)
 
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out JsonElement v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
     private static string? TextOrNull(JsonElement x, string p) { string v = Text(x, p); return v.Length == 0 ? null : v; }
-    private static string Pick(JsonElement x, string fa, string en, string ar, string culture) => culture switch { "en" => Text(x, en) is { Length: > 0 } e ? e : Text(x, fa), "ar" => Text(x, ar) is { Length: > 0 } a ? a : Text(x, fa), _ => Text(x, fa) };
+    private static string Pick(JsonElement x, string fa, string en, string ar, string culture) => culture switch { "en" => Text(x, en) is { Length: > 0 } e ? e : Text(x, fa), "ar" => Text(x, ar) is { Length: > 0 } a ? a : Text(x, fa), "es" => Text(x, en) is { Length: > 0 } e ? e : Text(x, fa), _ => Text(x, fa) };
     private static string? PickOrNull(JsonElement x, string fa, string en, string ar, string culture) { string v = Pick(x, fa, en, ar, culture); return v.Length == 0 ? null : v; }
 }

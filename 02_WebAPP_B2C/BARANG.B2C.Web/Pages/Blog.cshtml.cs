@@ -29,12 +29,14 @@ public sealed class BlogModel(SiteContext site) : PageModel
                 {
                     "en" => Text(x, "titleEn") is { Length: > 0 } e ? e : Text(x, "titleFa"),
                     "ar" => Text(x, "titleAr") is { Length: > 0 } a ? a : Text(x, "titleFa"),
+                    "es" => Text(x, "titleEn") is { Length: > 0 } e ? e : Text(x, "titleFa"),
                     _ => Text(x, "titleFa"),
                 };
                 string rawExcerpt = culture switch
                 {
                     "en" => Text(x, "excerptEn") is { Length: > 0 } e ? e : Text(x, "excerptFa"),
                     "ar" => Text(x, "excerptAr") is { Length: > 0 } a ? a : Text(x, "excerptFa"),
+                    "es" => Text(x, "excerptEn") is { Length: > 0 } e ? e : Text(x, "excerptFa"),
                     _ => Text(x, "excerptFa"),
                 };
                 if (rawExcerpt.Length == 0) rawExcerpt = Text(x, "excerptEn");

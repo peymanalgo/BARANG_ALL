@@ -2,17 +2,17 @@
 @model BARANG.B2C.Web.Pages.BlogModel
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    ViewData["Title"] = T("وبلاگ", "Blog", "المدونة");
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    ViewData["Title"] = T("وبلاگ", "Blog", "المدونة", "Blog");
 }
 <section class="container section">
     <header class="catalog-head">
-        <h1>@T("وبلاگ پی‌رنگ", "Peyrang blog", "مدونة بي‌رنگ")</h1>
-        <p class="muted">@(Model.Total > 0 ? string.Format(T("{0} مطلب", "{0} posts", "{0} تدوينات"), Model.Total.ToString("N0")) : T("به‌زودی مطالب تازه 🌱", "Fresh posts coming soon 🌱", "تدوينات جديدة قريبًا 🌱"))</p>
+        <h1>@T("وبلاگ پی‌رنگ", "Peyrang blog", "مدونة بي‌رنگ", "Blog de Peyrang")</h1>
+        <p class="muted">@(Model.Total > 0 ? string.Format(T("{0} مطلب", "{0} posts", "{0} تدوينات", "{0} publicaciones"), Model.Total.ToString("N0")) : T("به‌زودی مطالب تازه 🌱", "Fresh posts coming soon 🌱", "تدوينات جديدة قريبًا 🌱", "Nuevas publicaciones pronto 🌱"))</p>
     </header>
     @if (Model.Posts.Count == 0)
     {
-        <p class="empty">@T("هنوز مطلبی منتشر نشده است.", "No posts published yet.", "لم تُنشر أي تدوينات بعد.")</p>
+        <p class="empty">@T("هنوز مطلبی منتشر نشده است.", "No posts published yet.", "لم تُنشر أي تدوينات بعد.", "Aún no hay publicaciones.")</p>
     }
     else
     {
@@ -40,7 +40,7 @@
         </div>
         @if (Model.HasNext)
         {
-            <nav class="pagination"><a class="btn btn-ghost btn-sm" href="/blog?page=@(Model.Page + 1)">@T("مطالب قدیمی‌تر", "Older posts", "تدوينات أقدم") →</a></nav>
+            <nav class="pagination"><a class="btn btn-ghost btn-sm" href="/blog?page=@(Model.Page + 1)">@T("مطالب قدیمی‌تر", "Older posts", "تدوينات أقدم", "Publicaciones anteriores") →</a></nav>
         }
     }
 </section>

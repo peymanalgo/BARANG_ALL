@@ -6,45 +6,45 @@
 (() => {
     // Culture of the page drives every UI string (fa default like the server).
     const CULTURE = (document.documentElement.lang || "fa").slice(0, 2);
-    const L = (fa, en, ar) => (CULTURE === "en" ? en : CULTURE === "ar" ? ar : fa);
+    const L = (fa, en, ar, es = en) => (CULTURE === "en" ? en : CULTURE === "ar" ? ar : CULTURE === "es" ? es : fa);
     const ShirtColors = [
-        { name: L("سفید", "White", "أبيض"), key: "white", img: "/images/shirts/white.jpg" },
-        { name: L("مشکی", "Black", "أسود"), key: "black", img: "/images/shirts/black.jpg" },
-        { name: L("قرمز", "Red", "أحمر"), key: "red", img: "/images/shirts/red.jpg" },
-        { name: L("آبی", "Blue", "أزرق"), key: "blue", img: "/images/shirts/blue.jpg" }
+        { name: L("سفید", "White", "أبيض", "Blanco"), key: "white", img: "/images/shirts/white.jpg" },
+        { name: L("مشکی", "Black", "أسود", "Negro"), key: "black", img: "/images/shirts/black.jpg" },
+        { name: L("قرمز", "Red", "أحمر", "Rojo"), key: "red", img: "/images/shirts/red.jpg" },
+        { name: L("آبی", "Blue", "أزرق", "Azul"), key: "blue", img: "/images/shirts/blue.jpg" }
     ];
-    const RealColor = () => L("رنگ واقعی طرح", "Original design colors", "ألوان التصميم الأصلية");
+    const RealColor = () => L("رنگ واقعی طرح", "Original design colors", "ألوان التصميم الأصلية", "Colores originales del diseño");
     const TintColors = [
-        { name: L("قرمز", "Red", "أحمر"), hex: "#e23b34" },
-        { name: L("آبی", "Blue", "أزرق"), hex: "#1263dd" },
-        { name: L("سبز", "Green", "أخضر"), hex: "#1fab5c" },
-        { name: L("زرد", "Yellow", "أصفر"), hex: "#f7c62c" },
-        { name: L("بنفش", "Purple", "بنفسجي"), hex: "#7c5cd6" },
-        { name: L("نارنجی", "Orange", "برتقالي"), hex: "#f97316" },
-        { name: L("مشکی", "Black", "أسود"), hex: "#141418" }
+        { name: L("قرمز", "Red", "أحمر", "Rojo"), hex: "#e23b34" },
+        { name: L("آبی", "Blue", "أزرق", "Azul"), hex: "#1263dd" },
+        { name: L("سبز", "Green", "أخضر", "Verde"), hex: "#1fab5c" },
+        { name: L("زرد", "Yellow", "أصفر", "Amarillo"), hex: "#f7c62c" },
+        { name: L("بنفش", "Purple", "بنفسجي", "Morado"), hex: "#7c5cd6" },
+        { name: L("نارنجی", "Orange", "برتقالي", "Naranja"), hex: "#f97316" },
+        { name: L("مشکی", "Black", "أسود", "Negro"), hex: "#141418" }
     ];
     // محل‌های چاپ — کد دقیق + کد فرم سفارش Core (FRONT/BACK/SLEEVE) + نمای تیشرت + ناحیه پیش‌فرض + ناحیه مجاز
     const Placements = [
-        { code: "FRONT_CENTER", name: L("جلو وسط", "Front center", "الصدر وسط"), view: "front", core: "FRONT", zone: { x: 0.26, y: 0.24, w: 0.48, h: 0.42 }, allowed: { x: 0.20, y: 0.13, w: 0.60, h: 0.62 } },
-        { code: "FRONT_UPPER", name: L("جلو بالا", "Front upper", "الصدر أعلى"), view: "front", core: "FRONT", zone: { x: 0.30, y: 0.13, w: 0.40, h: 0.16 }, allowed: { x: 0.22, y: 0.12, w: 0.56, h: 0.22 } },
-        { code: "FRONT_LOWER", name: L("جلو پایین", "Front lower", "الصدر أسفل"), view: "front", core: "FRONT", zone: { x: 0.30, y: 0.55, w: 0.40, h: 0.27 }, allowed: { x: 0.22, y: 0.45, w: 0.56, h: 0.38 } },
-        { code: "BACK_CENTER", name: L("پشت وسط", "Back center", "الظهر وسط"), view: "back", core: "BACK", zone: { x: 0.26, y: 0.24, w: 0.48, h: 0.42 }, allowed: { x: 0.20, y: 0.13, w: 0.60, h: 0.62 } },
-        { code: "BACK_UPPER", name: L("پشت بالا", "Back upper", "الظهر أعلى"), view: "back", core: "BACK", zone: { x: 0.30, y: 0.13, w: 0.40, h: 0.16 }, allowed: { x: 0.22, y: 0.12, w: 0.56, h: 0.22 } },
-        { code: "BACK_LOWER", name: L("پشت پایین", "Back lower", "الظهر أسفل"), view: "back", core: "BACK", zone: { x: 0.30, y: 0.55, w: 0.40, h: 0.27 }, allowed: { x: 0.22, y: 0.45, w: 0.56, h: 0.38 } },
-        { code: "SLEEVE_LEFT", name: L("آستین چپ", "Left sleeve", "الكُم الأيسر"), view: "front", core: "SLEEVE", zone: { x: 0.05, y: 0.28, w: 0.15, h: 0.19 }, allowed: { x: 0.03, y: 0.25, w: 0.19, h: 0.24 } },
-        { code: "SLEEVE_RIGHT", name: L("آستین راست", "Right sleeve", "الكُم الأيمن"), view: "front", core: "SLEEVE", zone: { x: 0.80, y: 0.28, w: 0.15, h: 0.19 }, allowed: { x: 0.78, y: 0.25, w: 0.19, h: 0.24 } }
+        { code: "FRONT_CENTER", name: L("جلو وسط", "Front center", "الصدر وسط", "Pecho central"), view: "front", core: "FRONT", zone: { x: 0.26, y: 0.24, w: 0.48, h: 0.42 }, allowed: { x: 0.20, y: 0.13, w: 0.60, h: 0.62 } },
+        { code: "FRONT_UPPER", name: L("جلو بالا", "Front upper", "الصدر أعلى", "Pecho superior"), view: "front", core: "FRONT", zone: { x: 0.30, y: 0.13, w: 0.40, h: 0.16 }, allowed: { x: 0.22, y: 0.12, w: 0.56, h: 0.22 } },
+        { code: "FRONT_LOWER", name: L("جلو پایین", "Front lower", "الصدر أسفل", "Pecho inferior"), view: "front", core: "FRONT", zone: { x: 0.30, y: 0.55, w: 0.40, h: 0.27 }, allowed: { x: 0.22, y: 0.45, w: 0.56, h: 0.38 } },
+        { code: "BACK_CENTER", name: L("پشت وسط", "Back center", "الظهر وسط", "Espalda central"), view: "back", core: "BACK", zone: { x: 0.26, y: 0.24, w: 0.48, h: 0.42 }, allowed: { x: 0.20, y: 0.13, w: 0.60, h: 0.62 } },
+        { code: "BACK_UPPER", name: L("پشت بالا", "Back upper", "الظهر أعلى", "Espalda superior"), view: "back", core: "BACK", zone: { x: 0.30, y: 0.13, w: 0.40, h: 0.16 }, allowed: { x: 0.22, y: 0.12, w: 0.56, h: 0.22 } },
+        { code: "BACK_LOWER", name: L("پشت پایین", "Back lower", "الظهر أسفل", "Espalda inferior"), view: "back", core: "BACK", zone: { x: 0.30, y: 0.55, w: 0.40, h: 0.27 }, allowed: { x: 0.22, y: 0.45, w: 0.56, h: 0.38 } },
+        { code: "SLEEVE_LEFT", name: L("آستین چپ", "Left sleeve", "الكُم الأيسر", "Manga izquierda"), view: "front", core: "SLEEVE", zone: { x: 0.05, y: 0.28, w: 0.15, h: 0.19 }, allowed: { x: 0.03, y: 0.25, w: 0.19, h: 0.24 } },
+        { code: "SLEEVE_RIGHT", name: L("آستین راست", "Right sleeve", "الكُم الأيمن", "Manga derecha"), view: "front", core: "SLEEVE", zone: { x: 0.80, y: 0.28, w: 0.15, h: 0.19 }, allowed: { x: 0.78, y: 0.25, w: 0.19, h: 0.24 } }
     ];
     const T = {
-        title: L("طراحی تیشرت", "Design a t-shirt", "صمّم تيشرت"),
-        pickDesign: L("۱. طرح خود را انتخاب کنید", "1. Pick your design", "١. اختر تصميمك"),
-        placement: L("۲. محل قرار گرفتن تصویر", "2. Placement", "٢. موضع الطباعة"),
-        shirtColor: L("۳. انتخاب رنگ تیشرت", "3. Shirt color", "٣. لون التيشرت"),
-        designColor: L("۴. انتخاب رنگ طرح", "4. Design color", "٤. لون التصميم"),
-        start: L("شروع سفارش", "Start order", "ابدأ الطلب"),
-        close: L("بستن", "Close", "إغلاق"),
-        previewAlt: L("طرح روی تیشرت", "Design on the shirt", "التصميم على التيشرت"),
-        offShirt: L("لطفاً تصویر را کاملاً بر روی تیشرت قرار دهید.", "Please place the artwork fully on the shirt.", "يُرجى وضع التصميم بالكامل على التيشرت."),
-        pickFirst: L("اول یک طرح انتخاب کنید.", "Pick a design first.", "اختر تصميماً أولاً.")
+        title: L("طراحی تیشرت", "Design a t-shirt", "صمّم تيشرت", "Diseña una camiseta"),
+        pickDesign: L("۱. طرح خود را انتخاب کنید", "1. Pick your design", "١. اختر تصميمك", "1. Elige tu diseño"),
+        placement: L("۲. محل قرار گرفتن تصویر", "2. Placement", "٢. موضع الطباعة", "2. Ubicación"),
+        shirtColor: L("۳. انتخاب رنگ تیشرت", "3. Shirt color", "٣. لون التيشرت", "3. Color de la camiseta"),
+        designColor: L("۴. انتخاب رنگ طرح", "4. Design color", "٤. لون التصميم", "4. Color del diseño"),
+        start: L("شروع سفارش", "Start order", "ابدأ الطلب", "Iniciar pedido"),
+        close: L("بستن", "Close", "إغلاق", "Cerrar"),
+        previewAlt: L("طرح روی تیشرت", "Design on the shirt", "التصميم على التيشرت", "Diseño en la camiseta"),
+        offShirt: L("لطفاً تصویر را کاملاً بر روی تیشرت قرار دهید.", "Please place the artwork fully on the shirt.", "يُرجى وضع التصميم بالكامل على التيشرت.", "Coloca el diseño completamente sobre la camiseta."),
+        pickFirst: L("اول یک طرح انتخاب کنید.", "Pick a design first.", "اختر تصميماً أولاً.", "Elige primero un diseño.")
     };
     const CanvasSize = 640;
 

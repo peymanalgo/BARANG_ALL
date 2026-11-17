@@ -40,7 +40,7 @@ public sealed class LoginModel(CoreApiClient core, CustomerContext customers) : 
             Error = CultureName() switch
             {
                 "en" => "Enter a valid email address or 11-digit mobile number (e.g. 09121234567).",
-                "ar" => "أدخل بريدًا إلكترونيًا صحيحًا أو رقم هاتف مكونًا من 11 رقمًا.",
+                "ar" => "أدخل بريدًا إلكترونيًا صحيحًا أو رقم هاتف مكونًا من 11 رقمًا.", "es" => "Introduce un correo válido o un número de móvil de 11 dígitos (p. ej. 09121234567).",
                 _ => "یک ایمیل معتبر یا شماره موبایل ۱۱ رقمی (مثلاً ۰۹۱۲۱۲۳۴۵۶۷) وارد کنید."
             };
             return Page();
@@ -51,7 +51,7 @@ public sealed class LoginModel(CoreApiClient core, CustomerContext customers) : 
             Error = CultureName() switch
             {
                 "en" => "Could not send the verification code. Try again.",
-                "ar" => "لم يتم إرسال رمز التحقق. حاول مرة أخرى.",
+                "ar" => "لم يتم إرسال رمز التحقق. حاول مرة أخرى.", "es" => "No se pudo enviar el código de verificación. Inténtalo de nuevo.",
                 _ => "ارسال کد تأیید ناموفق بود. دوباره تلاش کنید."
             };
             return Page();
@@ -71,15 +71,15 @@ public sealed class LoginModel(CoreApiClient core, CustomerContext customers) : 
         string culture = CultureName();
         if (string.IsNullOrWhiteSpace(Code))
         {
-            Error = culture switch { "en" => "Enter the verification code.", "ar" => "أدخل رمز التحقق.", _ => "کد تأیید را وارد کنید." };
+            Error = culture switch { "en" => "Enter the verification code.", "ar" => "أدخل رمز التحقق.", "es" => "Introduce el código de verificación.", _ => "کد تأیید را وارد کنید." };
             return Page();
         }
         CoreApiClient.LoginOutcome outcome = await core.OtpLoginAsync(Target.Trim(), Code.Trim());
         if (!outcome.Ok)
         {
             Error = outcome.ProblemCode == "auth.user_not_found"
-                ? culture switch { "en" => "No account for this email/mobile — sign up first.", "ar" => "لا يوجد حساب لهذا البريد/الرقم — سجّل أولاً.", _ => "برای این ایمیل/شماره حسابی نیست — اول ثبت‌نام کنید." }
-                : culture switch { "en" => "The verification code is wrong.", "ar" => "رمز التحقق غير صحيح.", _ => "کد تأیید نادرست است." };
+                ? culture switch { "en" => "No account for this email/mobile — sign up first.", "ar" => "لا يوجد حساب لهذا البريد/الرقم — سجّل أولاً.", "es" => "No hay cuenta para este correo/número: regístrate primero.", _ => "برای این ایمیل/شماره حسابی نیست — اول ثبت‌نام کنید." }
+                : culture switch { "en" => "The verification code is wrong.", "ar" => "رمز التحقق غير صحيح.", "es" => "El código de verificación es incorrecto.", _ => "کد تأیید نادرست است." };
             return Page();
         }
         // First login with an incomplete account: force profile completion.
@@ -123,7 +123,7 @@ public sealed class LoginModel(CoreApiClient core, CustomerContext customers) : 
         if (Request.Query.TryGetValue("culture", out Microsoft.Extensions.Primitives.StringValues value))
         {
             string name = value.ToString();
-            if (name is "fa" or "en" or "ar") Response.Cookies.Append("barang.store.culture", CookieRequestCultureProvider.MakeCookieValue(new(name)));
+            if (name is "fa" or "en" or "ar" or "es") Response.Cookies.Append("barang.store.culture", CookieRequestCultureProvider.MakeCookieValue(new(name)));
         }
     }
 

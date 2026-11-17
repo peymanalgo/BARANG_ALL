@@ -11,17 +11,17 @@ public static class NotificationText
     {
         string code = templateCode?.Trim() ?? "";
         string arg = ExtractOrderNumber(payloadJson) ?? "";
-        string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+        string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
         return code switch
         {
-            "order.submitted" => string.Format(T("سفارش {0} ثبت شد و وارد مراحل تولید شد.", "Order {0} was submitted and entered production.", "تم إرسال الطلب {0} ودخل مرحلة الإنتاج."), arg),
-            "order.cancelled" => string.Format(T("سفارش {0} لغو شد.", "Order {0} was cancelled.", "تم إلغاء الطلب {0}."), arg),
-            "order.status.changed" => string.Format(T("وضعیت سفارش {0} به‌روزرسانی شد.", "The status of order {0} was updated.", "تم تحديث حالة الطلب {0}."), arg),
-            "shipment.dispatched" => string.Format(T("مرسوله سفارش {0} تحویل شرکت پست شد.", "The shipment for order {0} was handed to the carrier.", "سُلمت شحنة الطلب {0} إلى الناقل."), arg),
-            "shipment.delivered" => string.Format(T("سفارش {0} تحویل داده شد.", "Order {0} was delivered.", "تم تسليم الطلب {0}."), arg),
-            "order.price.approval_requested" => T("قیمت سفارش شما در انتظار تأیید است.", "Your order price is awaiting approval.", "سعر طلبك في انتظار الموافقة."),
-            "workflow.task.assigned" => T("یک کار جدید برای سفارش شما ثبت شد.", "A new task was registered for your order.", "تم تسجيل مهمة جديدة لطلبك."),
-            _ => code.Length > 0 ? code : T("اعلان", "Notification", "إشعار")
+            "order.submitted" => string.Format(T("سفارش {0} ثبت شد و وارد مراحل تولید شد.", "Order {0} was submitted and entered production.", "تم إرسال الطلب {0} ودخل مرحلة الإنتاج.", "El pedido {0} fue enviado y entró en producción."), arg),
+            "order.cancelled" => string.Format(T("سفارش {0} لغو شد.", "Order {0} was cancelled.", "تم إلغاء الطلب {0}.", "El pedido {0} fue cancelado."), arg),
+            "order.status.changed" => string.Format(T("وضعیت سفارش {0} به‌روزرسانی شد.", "The status of order {0} was updated.", "تم تحديث حالة الطلب {0}.", "El estado del pedido {0} fue actualizado."), arg),
+            "shipment.dispatched" => string.Format(T("مرسوله سفارش {0} تحویل شرکت پست شد.", "The shipment for order {0} was handed to the carrier.", "سُلمت شحنة الطلب {0} إلى الناقل.", "El envío del pedido {0} fue entregado al transportista."), arg),
+            "shipment.delivered" => string.Format(T("سفارش {0} تحویل داده شد.", "Order {0} was delivered.", "تم تسليم الطلب {0}.", "El pedido {0} fue entregado."), arg),
+            "order.price.approval_requested" => T("قیمت سفارش شما در انتظار تأیید است.", "Your order price is awaiting approval.", "سعر طلبك في انتظار الموافقة.", "El precio de tu pedido está pendiente de aprobación."),
+            "workflow.task.assigned" => T("یک کار جدید برای سفارش شما ثبت شد.", "A new task was registered for your order.", "تم تسجيل مهمة جديدة لطلبك.", "Se registró una nueva tarea para tu pedido."),
+            _ => code.Length > 0 ? code : T("اعلان", "Notification", "إشعار", "Notificación")
         };
     }
 

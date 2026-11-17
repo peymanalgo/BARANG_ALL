@@ -2,13 +2,13 @@
 @model RegisterModel
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    ViewData["Title"] = T("ثبت‌نام در پی‌رنگ", "Create your account", "إنشاء حساب");
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    ViewData["Title"] = T("ثبت‌نام در پی‌رنگ", "Create your account", "إنشاء حساب", "Crea tu cuenta");
 }
 <section class="container section auth-section">
     <div class="auth-card">
-        <h1>@T("ثبت‌نام", "Sign up", "التسجيل")</h1>
-        <p class="muted">@T("در دو قدم حساب بسازید: نامتان و ایمیل یا شماره موبایل، بعد کد تأیید.", "Two steps: your name and email or mobile, then the verification code.", "خطوتان: الاسم والبريد أو الهاتف، ثم رمز التحقق.")</p>
+        <h1>@T("ثبت‌نام", "Sign up", "التسجيل", "Registrarse")</h1>
+        <p class="muted">@T("در دو قدم حساب بسازید: نامتان و ایمیل یا شماره موبایل، بعد کد تأیید.", "Two steps: your name and email or mobile, then the verification code.", "خطوتان: الاسم والبريد أو الهاتف، ثم رمز التحقق.", "Dos pasos: tu nombre y correo o móvil, y luego el código de verificación.")</p>
         @if (Model.Error is not null)
         {
             <div class="alert alert-error" role="alert">@Model.Error</div>
@@ -18,24 +18,24 @@
             <form method="post" asp-page-handler="RequestCode" class="auth-form">
                 <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
                 <label>
-                    <span>@T("نام", "First name", "الاسم")</span>
+                    <span>@T("نام", "First name", "الاسم", "Nombre")</span>
                     <input type="text" asp-for="FirstName" autocomplete="given-name" required />
                 </label>
                 <label>
-                    <span>@T("نام خانوادگی", "Last name", "اسم العائلة")</span>
+                    <span>@T("نام خانوادگی", "Last name", "اسم العائلة", "Apellido")</span>
                     <input type="text" asp-for="LastName" autocomplete="family-name" required />
                 </label>
                 <label>
-                    <span>@T("ایمیل یا شماره تلفن", "Email or mobile number", "البريد الإلكتروني أو الهاتف")</span>
+                    <span>@T("ایمیل یا شماره تلفن", "Email or mobile number", "البريد الإلكتروني أو الهاتف", "Correo electrónico o número de móvil")</span>
                     <input type="text" asp-for="Target" dir="ltr" autocomplete="email" placeholder="09121234567" required />
                 </label>
                 <label>
-                    <span>@T("کد دعوت (اختیاری)", "Invitation code (optional)", "رمز الدعوة (اختياري)")</span>
+                    <span>@T("کد دعوت (اختیاری)", "Invitation code (optional)", "رمز الدعوة (اختياري)", "Código de invitación (opcional)")</span>
                     <input type="text" name="InviteCode" dir="ltr" placeholder="ABC123" value="@(Model.InviteCode ?? "")" maxlength="20" />
                 </label>
-                <button type="submit" class="btn btn-primary btn-lg btn-block">@T("دریافت کد تأیید", "Send verification code", "إرسال رمز التحقق")</button>
+                <button type="submit" class="btn btn-primary btn-lg btn-block">@T("دریافت کد تأیید", "Send verification code", "إرسال رمز التحقق", "Enviar código de verificación")</button>
             </form>
-            <p class="muted small">@T("قبلاً ثبت‌نام کرده‌اید؟", "Already have an account?", "لديك حساب بالفعل؟") <a href="/account/login">@T("وارد شوید", "Sign in", "سجّل الدخول")</a></p>
+            <p class="muted small">@T("قبلاً ثبت‌نام کرده‌اید؟", "Already have an account?", "لديك حساب بالفعل؟", "¿Ya tienes cuenta?") <a href="/account/login">@T("وارد شوید", "Sign in", "سجّل الدخول", "Iniciar sesión")</a></p>
         }
         else
         {
@@ -46,15 +46,15 @@
                 <input type="hidden" asp-for="LastName" />
                 <input type="hidden" asp-for="Target" />
                 <label>
-                    <span>@T("کد تأیید", "Verification code", "رمز التحقق")</span>
+                    <span>@T("کد تأیید", "Verification code", "رمز التحقق", "Código de verificación")</span>
                     <input type="text" asp-for="Code" dir="ltr" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="1111" required />
                 </label>
-                <p class="muted small">@T("محیط آزمایشی: کد ثابت ۱۱۱۱ را وارد کنید.", "Development environment: enter the fixed code 1111.", "بيئة التطوير: أدخل الرمز الثابت 1111.")</p>
-                <button type="submit" class="btn btn-primary btn-lg btn-block">@T("تأیید و ساخت حساب", "Verify and create account", "تحقق وأنشئ الحساب")</button>
+                <p class="muted small">@T("محیط آزمایشی: کد ثابت ۱۱۱۱ را وارد کنید.", "Development environment: enter the fixed code 1111.", "بيئة التطوير: أدخل الرمز الثابت 1111.", "Entorno de desarrollo: introduce el código fijo 1111.")</p>
+                <button type="submit" class="btn btn-primary btn-lg btn-block">@T("تأیید و ساخت حساب", "Verify and create account", "تحقق وأنشئ الحساب", "Verificar y crear cuenta")</button>
             </form>
             @if (Model.AlreadyRegistered)
             {
-                <p class="muted small"><a href="/account/login">@T("ورود با همین شماره/ایمیل", "Sign in with this email/mobile", "الدخول بنفس البريد/الهاتف")</a></p>
+                <p class="muted small"><a href="/account/login">@T("ورود با همین شماره/ایمیل", "Sign in with this email/mobile", "الدخول بنفس البريد/الهاتف", "Iniciar sesión con este correo/móvil")</a></p>
             }
         }
     </div>

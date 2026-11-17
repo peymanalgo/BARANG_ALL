@@ -62,7 +62,7 @@ public sealed class CompleteProfileModel(CoreApiClient core, CustomerContext cus
             Error = culture switch
             {
                 "en" => "Please fill all the fields below (with a valid email).",
-                "ar" => "يرجى إدخال جميع الحقول (مع بريد إلكتروني صحيح).",
+                "ar" => "يرجى إدخال جميع الحقول (مع بريد إلكتروني صحيح).", "es" => "Rellena todos los campos (con un correo válido).",
                 _ => "لطفاً همه فیلدها را (با ایمیل معتبر) کامل کنید."
             };
             return Page();
@@ -70,18 +70,18 @@ public sealed class CompleteProfileModel(CoreApiClient core, CustomerContext cus
         string mobile = NormalizeDigits(Mobile).Trim();
         if (!Regex.IsMatch(mobile, @"^0\d{10}$"))
         {
-            Error = culture switch { "en" => "Enter an 11-digit mobile number (e.g. 09121234567).", "ar" => "أدخل رقم هاتف مكونًا من 11 رقمًا.", _ => "شماره موبایل ۱۱ رقمی وارد کنید." };
+            Error = culture switch { "en" => "Enter an 11-digit mobile number (e.g. 09121234567).", "ar" => "أدخل رقم هاتف مكونًا من 11 رقمًا.", "es" => "Introduce un número de móvil de 11 dígitos (p. ej. 09121234567).", _ => "شماره موبایل ۱۱ رقمی وارد کنید." };
             return Page();
         }
         if (!NationalIdPattern.IsMatch(NormalizeDigits(NationalId).Trim()))
         {
-            Error = culture switch { "en" => "National id must be exactly 10 digits.", "ar" => "الرقم الوطني يجب أن يكون 10 أرقام.", _ => "کد ملی باید ۱۰ رقم باشد." };
+            Error = culture switch { "en" => "National id must be exactly 10 digits.", "ar" => "الرقم الوطني يجب أن يكون 10 أرقام.", "es" => "El código nacional debe tener exactamente 10 dígitos.", _ => "کد ملی باید ۱۰ رقم باشد." };
             return Page();
         }
         DateOnly? birth = ParseDate(BirthDate.Trim(), IsJalali);
         if (birth is null || birth.Value > DateOnly.FromDateTime(DateTime.UtcNow))
         {
-            Error = culture switch { "en" => "Enter a valid birth date.", "ar" => "أدخل تاريخ ميلاد صحيحًا.", _ => "تاریخ تولد معتبر وارد کنید." };
+            Error = culture switch { "en" => "Enter a valid birth date.", "ar" => "أدخل تاريخ ميلاد صحيحًا.", "es" => "Introduce una fecha de nacimiento válida.", _ => "تاریخ تولد معتبر وارد کنید." };
             return Page();
         }
         string first = FirstName.Trim(), last = LastName.Trim();
@@ -106,8 +106,8 @@ public sealed class CompleteProfileModel(CoreApiClient core, CustomerContext cus
         if (!ok)
         {
             Error = problem == "customers.code_exists"
-                ? culture switch { "en" => "A profile for this account already exists.", "ar" => "يوجد ملف لهذا الحساب بالفعل.", _ => "برای این حساب قبلاً پروفایل ساخته شده است." }
-                : culture switch { "en" => "Saving the profile failed. Check the entered values.", "ar" => "فشل حفظ الملف. تحقق من القيم.", _ => "ذخیره پروفایل ناموفق بود. مقادیر را بررسی کنید." };
+                ? culture switch { "en" => "A profile for this account already exists.", "ar" => "يوجد ملف لهذا الحساب بالفعل.", "es" => "Ya existe un perfil para esta cuenta.", _ => "برای این حساب قبلاً پروفایل ساخته شده است." }
+                : culture switch { "en" => "Saving the profile failed. Check the entered values.", "ar" => "فشل حفظ الملف. تحقق من القيم.", "es" => "Error al guardar el perfil. Revisa los valores introducidos.", _ => "ذخیره پروفایل ناموفق بود. مقادیر را بررسی کنید." };
             return Page();
         }
         if (value is JsonElement created && created.TryGetProperty("id", out JsonElement id))

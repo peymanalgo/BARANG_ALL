@@ -3,16 +3,16 @@
 @using System.Globalization
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"));
     string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.FormatDateTime(d, culture);
-    ViewData["Title"] = T("فاکتور سفارش", "Order invoice", "فاتورة الطلب");
+    ViewData["Title"] = T("فاکتور سفارش", "Order invoice", "فاتورة الطلب", "Factura del pedido");
 }
 <!DOCTYPE html>
-<html lang="@culture" dir="@(culture == "en" ? "ltr" : "rtl")">
+<html lang="@culture" dir="@(culture is "en" or "es" ? "ltr" : "rtl")">
 <head>
     <meta charset="utf-8" />
-    <title>@T("فاکتور", "Invoice", "فاتورة") @Model.OrderNumber · @(culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", _ => "پی‌رنگ" })</title>
+    <title>@T("فاکتور", "Invoice", "فاتورة", "Factura") @Model.OrderNumber · @(culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", "es" => "Peyrang", _ => "پی‌رنگ" })</title>
     <style>
         body { font-family: "BarangStore", "Vazirmatn", Tahoma, sans-serif; color: #1a1a1a; margin: 0; padding: 32px; background: #f5f5f5; }
         .inv { max-width: 720px; margin: 0 auto; background: #fff; padding: 32px; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
@@ -35,7 +35,7 @@
         <div class="inv-head">
             <div>
                 <span class="brand">@(culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", _ => "پی‌رنگ" })</span>
-                <div>@T("فاکتور سفارش", "Order invoice", "فاتورة الطلب")</div>
+                <div>@T("فاکتور سفارش", "Order invoice", "فاتورة الطلب", "Factura del pedido")</div>
             </div>
             <div style="text-align:end">
                 <strong dir="ltr">@Model.OrderNumber</strong>
@@ -46,15 +46,15 @@
             </div>
         </div>
         <div class="inv-meta">
-            <span>@T("مشتری", "Customer", "العميل"): <strong>@Model.CustomerName</strong></span>
-            <span>@T("وضعیت پرداخت", "Payment", "الدفع"): <strong>@(Model.FullyPaid ? T("پرداخت‌شده", "Paid", "مدفوع") : T("پرداخت‌نشده", "Unpaid", "غير مدفوع"))</strong></span>
+            <span>@T("مشتری", "Customer", "العميل", "Cliente"): <strong>@Model.CustomerName</strong></span>
+            <span>@T("وضعیت پرداخت", "Payment", "الدفع", "Pago"): <strong>@(Model.FullyPaid ? T("پرداخت‌شده", "Paid", "مدفوع", "Pagado") : T("پرداخت‌نشده", "Unpaid", "غير مدفوع", "No pagado"))</strong></span>
         </div>
         <table class="inv-items">
             <thead>
                 <tr>
-                    <th>@T("کالا", "Item", "الصنف")</th>
-                    <th>@T("واریانت", "Variant", "المتغير")</th>
-                    <th>@T("تعداد", "Qty", "الكمية")</th>
+                    <th>@T("کالا", "Item", "الصنف", "Artículo")</th>
+                    <th>@T("واریانت", "Variant", "المتغير", "Variante")</th>
+                    <th>@T("تعداد", "Qty", "الكمية", "Cant.")</th>
                 </tr>
             </thead>
             <tbody>
@@ -63,17 +63,17 @@
                     <tr>
                         <td>@it.ProductName</td>
                         <td dir="ltr">@it.VariantSku</td>
-                        <td>@it.Quantity.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</td>
+                        <td>@it.Quantity.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"))</td>
                     </tr>
                 }
             </tbody>
         </table>
         <div class="inv-total">
-            <span>@T("مبلغ کل", "Total", "الإجمالي"):</span>
-            <strong>@Money(Model.Total) @T("تومان", "Toman", "تومان")</strong>
+            <span>@T("مبلغ کل", "Total", "الإجمالي", "Total"):</span>
+            <strong>@Money(Model.Total) @T("تومان", "Toman", "تومان", "tomán")</strong>
         </div>
         <div class="inv-actions">
-            <button type="button" onclick="window.print()">@T("چاپ / ذخیره PDF", "Print / Save PDF", "طباعة / حفظ PDF")</button>
+            <button type="button" onclick="window.print()">@T("چاپ / ذخیره PDF", "Print / Save PDF", "طباعة / حفظ PDF", "Imprimir / Guardar PDF")</button>
         </div>
     </div>
 </body>

@@ -4,13 +4,13 @@
 @{
     Layout = null;
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    string Brand() => culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", _ => "پی‌رنگ" };
-    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
-    ViewData["Title"] = T("درگاه پرداخت آزمایشی", "Sandbox payment gateway", "بوابة الدفع التجريبية");
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    string Brand() => culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", "es" => "Peyrang", _ => "پی‌رنگ" };
+    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"));
+    ViewData["Title"] = T("درگاه پرداخت آزمایشی", "Sandbox payment gateway", "بوابة الدفع التجريبية", "Pasarela de pago de pruebas");
 }
 <!DOCTYPE html>
-<html lang="@culture" dir="@(culture == "en" ? "ltr" : "rtl")">
+<html lang="@culture" dir="@(culture is "en" or "es" ? "ltr" : "rtl")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -22,40 +22,40 @@
         <header class="gateway-head">
             <span class="gateway-mark" aria-hidden="true">⚡</span>
             <div>
-                <strong>@T("درگاه پرداخت اینترنتی", "Internet payment gateway", "بوابة الدفع الإلكتروني")</strong>
-                <small>@T("محیط آزمایشی — درگاه تستی پی‌رنگ (نسخه ماک؛ درگاه واقعی بعداً متصل می‌شود).", "Sandbox environment — Peyrang test gateway (mock; the real gateway will be connected later).", "بيئة اختبارية — بوابة بيرانج التجريبية (نسخة وهمية؛ ستُربط البوابة الحقيقية لاحقاً).")</small>
+                <strong>@T("درگاه پرداخت اینترنتی", "Internet payment gateway", "بوابة الدفع الإلكتروني", "Pasarela de pago por internet")</strong>
+                <small>@T("محیط آزمایشی — درگاه تستی پی‌رنگ (نسخه ماک؛ درگاه واقعی بعداً متصل می‌شود).", "Sandbox environment — Peyrang test gateway (mock; the real gateway will be connected later).", "بيئة اختبارية — بوابة بيرانج التجريبية (نسخة وهمية؛ ستُربط البوابة الحقيقية لاحقاً).", "Entorno de pruebas: pasarela de prueba de Peyrang (maqueta; la pasarela real se conectará más adelante).")</small>
             </div>
         </header>
 
         @if (Model.NotFound)
         {
             <section class="gateway-card gateway-error">
-                <h1>@T("تراکنش یافت نشد", "Transaction not found", "لم يتم العثور على المعاملة")</h1>
-                <p>@T("توکن پرداخت معتبر نیست یا منقضی شده است.", "The payment token is invalid or expired.", "رمز الدفع غير صالح أو منتهي.")</p>
+                <h1>@T("تراکنش یافت نشد", "Transaction not found", "لم يتم العثور على المعاملة", "Transacción no encontrada")</h1>
+                <p>@T("توکن پرداخت معتبر نیست یا منقضی شده است.", "The payment token is invalid or expired.", "رمز الدفع غير صالح أو منتهي.", "El token de pago no es válido o ha caducado.")</p>
             </section>
         }
         else if (Model.Result == "success")
         {
             <section class="gateway-card gateway-done ok">
                 <span class="gateway-check" aria-hidden="true">✓</span>
-                <h1>@T("پرداخت با موفقیت انجام شد", "Payment completed successfully", "تم الدفع بنجاح")</h1>
-                <p>@Money(Model.Info?.Amount ?? 0) @T("تومان به کیف پول شما شارژ شد.", "Toman was added to your wallet.", "تومان أُضيفت إلى محفظتك.")</p>
-                <a class="btn-ok" href="/account/wallet">@T("بازگشت به کیف پول", "Back to wallet", "العودة إلى المحفظة")</a>
+                <h1>@T("پرداخت با موفقیت انجام شد", "Payment completed successfully", "تم الدفع بنجاح", "Pago completado con éxito")</h1>
+                <p>@Money(Model.Info?.Amount ?? 0) @T("تومان به کیف پول شما شارژ شد.", "Toman was added to your wallet.", "تومان أُضيفت إلى محفظتك.", "tomán se añadieron a tu billetera.")</p>
+                <a class="btn-ok" href="/account/wallet">@T("بازگشت به کیف پول", "Back to wallet", "العودة إلى المحفظة", "Volver a la billetera")</a>
             </section>
         }
         else if (Model.Result == "failed")
         {
             <section class="gateway-card gateway-done fail">
                 <span class="gateway-check" aria-hidden="true">✕</span>
-                <h1>@T("پرداخت ناموفق بود", "Payment failed", "فشل الدفع")</h1>
-                <p>@T("مبلغی از حساب شما کسر نشد. می‌توانید دوباره تلاش کنید.", "Nothing was charged; you can try again.", "لم يُخصم أي مبلغ؛ يمكنك المحاولة مجدداً.")</p>
-                <a class="btn-ok" href="/account/wallet">@T("بازگشت به کیف پول", "Back to wallet", "العودة إلى المحفظة")</a>
+                <h1>@T("پرداخت ناموفق بود", "Payment failed", "فشل الدفع", "Pago fallido")</h1>
+                <p>@T("مبلغی از حساب شما کسر نشد. می‌توانید دوباره تلاش کنید.", "Nothing was charged; you can try again.", "لم يُخصم أي مبلغ؛ يمكنك المحاولة مجدداً.", "No se cobró nada; puedes intentarlo de nuevo.")</p>
+                <a class="btn-ok" href="/account/wallet">@T("بازگشت به کیف پول", "Back to wallet", "العودة إلى المحفظة", "Volver a la billetera")</a>
             </section>
         }
         else if (Model.Info is null)
         {
             <section class="gateway-card gateway-error">
-                <h1>@T("خطا در دریافت اطلاعات", "Error loading data", "خطأ في تحميل البيانات")</h1>
+                <h1>@T("خطا در دریافت اطلاعات", "Error loading data", "خطأ في تحميل البيانات", "Error al cargar los datos")</h1>
                 <p>@Model.LoadError</p>
             </section>
         }
@@ -63,24 +63,24 @@
         {
             <section class="gateway-card gateway-done @(Model.Info.Status == "Paid" ? "ok" : "fail")">
                 <span class="gateway-check" aria-hidden="true">@(Model.Info.Status == "Paid" ? "✓" : "✕")</span>
-                <h1>@(Model.Info.Status == "Paid" ? T("این تراکنش قبلاً پرداخت شده است", "This transaction was already paid", "تم دفع هذه المعاملة مسبقاً") : T("این تراکنش دیگر قابل پرداخت نیست", "This transaction is no longer payable", "لم تعد هذه المعاملة قابلة للدفع"))</h1>
-                <a class="btn-ok" href="/account/wallet">@T("بازگشت به کیف پول", "Back to wallet", "العودة إلى المحفظة")</a>
+                <h1>@(Model.Info.Status == "Paid" ? T("این تراکنش قبلاً پرداخت شده است", "This transaction was already paid", "تم دفع هذه المعاملة مسبقاً", "Esta transacción ya estaba pagada") : T("این تراکنش دیگر قابل پرداخت نیست", "This transaction is no longer payable", "لم تعد هذه المعاملة قابلة للدفع", "Esta transacción ya no se puede pagar"))</h1>
+                <a class="btn-ok" href="/account/wallet">@T("بازگشت به کیف پول", "Back to wallet", "العودة إلى المحفظة", "Volver a la billetera")</a>
             </section>
         }
         else
         {
             <section class="gateway-card">
                 <dl class="gateway-rows">
-                    <div><dt>@T("پذیرنده", "Merchant", "التاجر")</dt><dd>@Brand()</dd></div>
-                    <div><dt>@T("شماره پیگیری", "Tracking number", "رقم التتبع")</dt><dd dir="ltr">@Model.Info.Number</dd></div>
-                    <div><dt>@T("مبلغ قابل پرداخت", "Payable amount", "المبلغ المطلوب")</dt><dd class="gateway-amount">@Money(Model.Info.Amount) @T("تومان", "Toman", "تومان")</dd></div>
+                    <div><dt>@T("پذیرنده", "Merchant", "التاجر", "Comercio")</dt><dd>@Brand()</dd></div>
+                    <div><dt>@T("شماره پیگیری", "Tracking number", "رقم التتبع", "Número de seguimiento")</dt><dd dir="ltr">@Model.Info.Number</dd></div>
+                    <div><dt>@T("مبلغ قابل پرداخت", "Payable amount", "المبلغ المطلوب", "Importe a pagar")</dt><dd class="gateway-amount">@Money(Model.Info.Amount) @T("تومان", "Toman", "تومان", "tomán")</dd></div>
                 </dl>
                 <form method="post" class="gateway-actions">
                     <input type="hidden" name="token" value="@Model.Token" />
-                    <button type="submit" name="success" value="true" class="btn-pay">@T("پرداخت موفق (تست)", "Pay successfully (test)", "الدفع بنجاح (اختبار)")</button>
-                    <button type="submit" name="success" value="false" class="btn-fail">@T("پرداخت ناموفق (تست)", "Fail payment (test)", "فشل الدفع (اختبار)")</button>
+                    <button type="submit" name="success" value="true" class="btn-pay">@T("پرداخت موفق (تست)", "Pay successfully (test)", "الدفع بنجاح (اختبار)", "Pagar con éxito (prueba)")</button>
+                    <button type="submit" name="success" value="false" class="btn-fail">@T("پرداخت ناموفق (تست)", "Fail payment (test)", "فشل الدفع (اختبار)", "Fallo de pago (prueba)")</button>
                 </form>
-                <p class="gateway-note">@T("این صفحه شبیه‌ساز درگاه بانکی است؛ هر دکمه همان نتیجه واقعی را به سامانه گزارش می‌کند.", "This page simulates a bank gateway; each button reports its result to the system exactly like the real one.", "تحاكي هذه الصفحة بوابة بنكية؛ كل زر يبلغ النظام بنتيجته كالبوابة الحقيقية.")</p>
+                <p class="gateway-note">@T("این صفحه شبیه‌ساز درگاه بانکی است؛ هر دکمه همان نتیجه واقعی را به سامانه گزارش می‌کند.", "This page simulates a bank gateway; each button reports its result to the system exactly like the real one.", "تحاكي هذه الصفحة بوابة بنكية؛ كل زر يبلغ النظام بنتيجته كالبوابة الحقيقية.", "Esta página simula una pasarela bancaria; cada botón informa su resultado al sistema exactamente como la real.")</p>
             </section>
         }
     </main>

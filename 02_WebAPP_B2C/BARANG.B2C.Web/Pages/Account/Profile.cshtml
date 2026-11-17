@@ -4,19 +4,19 @@
     Layout = "_AccountLayout";
     ViewData["PanelActive"] = "profile";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    ViewData["Title"] = T("پروفایل من", "My profile", "ملفي");
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    ViewData["Title"] = T("پروفایل من", "My profile", "ملفي", "Mi perfil");
 }
 <section class="container section">
     <nav class="breadcrumbs" aria-label="breadcrumb">
-        <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a> ›
-        <span>@T("پروفایل", "Profile", "الملف")</span>
+        <a href="/account">@T("حساب کاربری", "My account", "حسابي", "Mi cuenta")</a> ›
+        <span>@T("پروفایل", "Profile", "الملف", "Perfil")</span>
     </nav>
     <header class="section-head">
-        <h1>@T("پروفایل من", "My profile", "ملفي")</h1>
-        <div class="completeness" title="@T("کامل بودن پروفایل", "Profile completeness", "اكتمال الملف")">
+        <h1>@T("پروفایل من", "My profile", "ملفي", "Mi perfil")</h1>
+        <div class="completeness" title="@T("کامل بودن پروفایل", "Profile completeness", "اكتمال الملف", "Completitud del perfil")">
             <div class="completeness-bar"><span style="width:@(Model.Completeness)%"></span></div>
-            <small class="muted">@BARANG.B2C.Web.Services.AppDate.Percent(Model.Completeness, culture) @T("تکمیل", "complete", "مكتمل")</small>
+            <small class="muted">@BARANG.B2C.Web.Services.AppDate.Percent(Model.Completeness, culture) @T("تکمیل", "complete", "مكتمل", "completo")</small>
         </div>
         @if (Model.CustomerCode is not null)
         {
@@ -26,64 +26,64 @@
 
     @if (Model.Saved == "1")
     {
-        <div class="alert alert-ok" role="status">@T("پروفایل با موفقیت ذخیره شد.", "Profile saved.", "تم حفظ الملف بنجاح.")</div>
+        <div class="alert alert-ok" role="status">@T("پروفایل با موفقیت ذخیره شد.", "Profile saved.", "تم حفظ الملف بنجاح.", "Perfil guardado.")</div>
     }
     @if (Model.Error is not null)
     {
         <div class="alert alert-error" role="alert">
             @(Model.Error switch
             {
-                "fields" => T("نام، نام خانوادگی و موبایل الزامی است.", "First name, last name and mobile are required.", "الاسم واسم العائلة والهاتف مطلوبة."),
-                "customer.version_conflict" or "core.database.concurrency_conflict" => T("پروفایل هم‌زمان تغییر کرده؛ صفحه را تازه کنید و دوباره ذخیره کنید.", "Profile changed concurrently; refresh and retry.", "تم تغيير الملف بالتزامن؛ حدّث الصفحة وأعد المحاولة."),
-                "customer.invalid_mobile" or "customer.invalid_phone" => T("شماره موبایل معتبر نیست.", "Mobile number is invalid.", "رقم الهاتف غير صالح."),
-                "customer.invalid_email" => T("ایمیل معتبر نیست.", "Email is invalid.", "البريد الإلكتروني غير صالح."),
-                "customer.duplicate_identifier" => T("این کد ملی قبلاً ثبت شده است.", "This national ID is already registered.", "رمز الوطن مسجل مسبقاً."),
-                "noprofile" => T("پروفایل مشتری یافت نشد.", "Customer profile not found.", "لم يتم العثور على ملف العميل."),
-                _ => T("ذخیره انجام نشد؛ دوباره تلاش کنید.", "Save failed; try again.", "فشل الحفظ؛ حاول مجدداً.")
+                "fields" => T("نام، نام خانوادگی و موبایل الزامی است.", "First name, last name and mobile are required.", "الاسم واسم العائلة والهاتف مطلوبة.", "El nombre, el apellido y el móvil son obligatorios."),
+                "customer.version_conflict" or "core.database.concurrency_conflict" => T("پروفایل هم‌زمان تغییر کرده؛ صفحه را تازه کنید و دوباره ذخیره کنید.", "Profile changed concurrently; refresh and retry.", "تم تغيير الملف بالتزامن؛ حدّث الصفحة وأعد المحاولة.", "El perfil cambió simultáneamente; recarga y reintenta."),
+                "customer.invalid_mobile" or "customer.invalid_phone" => T("شماره موبایل معتبر نیست.", "Mobile number is invalid.", "رقم الهاتف غير صالح.", "El número de móvil no es válido."),
+                "customer.invalid_email" => T("ایمیل معتبر نیست.", "Email is invalid.", "البريد الإلكتروني غير صالح.", "El correo electrónico no es válido."),
+                "customer.duplicate_identifier" => T("این کد ملی قبلاً ثبت شده است.", "This national ID is already registered.", "رمز الوطن مسجل مسبقاً.", "Este código nacional ya está registrado."),
+                "noprofile" => T("پروفایل مشتری یافت نشد.", "Customer profile not found.", "لم يتم العثور على ملف العميل.", "Perfil de cliente no encontrado."),
+                _ => T("ذخیره انجام نشد؛ دوباره تلاش کنید.", "Save failed; try again.", "فشل الحفظ؛ حاول مجدداً.", "Error al guardar; inténtalo de nuevo.")
             })
         </div>
     }
 
     @if (!Model.HasProfile)
     {
-        <p class="empty">@T("پروفایل مشتری یافت نشد.", "Customer profile not found.", "لم يتم العثور على ملف العميل.")</p>
+        <p class="empty">@T("پروفایل مشتری یافت نشد.", "Customer profile not found.", "لم يتم العثور على ملف العميل.", "Perfil de cliente no encontrado.")</p>
     }
     else
     {
         <form method="post" asp-page-handler="Save" class="card profile-edit">
             <div class="form-cols">
-                <label><span>@T("نام", "First name", "الاسم")</span>
+                <label><span>@T("نام", "First name", "الاسم", "Nombre")</span>
                     <input type="text" asp-for="FirstName" required />
                 </label>
-                <label><span>@T("نام خانوادگی", "Last name", "اسم العائلة")</span>
+                <label><span>@T("نام خانوادگی", "Last name", "اسم العائلة", "Apellido")</span>
                     <input type="text" asp-for="LastName" required />
                 </label>
-                <label><span>@T("نام نمایشی (اختیاری)", "Display name (optional)", "الاسم المعروض")</span>
+                <label><span>@T("نام نمایشی (اختیاری)", "Display name (optional)", "الاسم المعروض", "Nombre visible (opcional)")</span>
                     <input type="text" asp-for="DisplayNameInput" placeholder="@Model.DisplayName" />
                 </label>
-                <label><span>@T("موبایل", "Mobile", "الهاتف")</span>
+                <label><span>@T("موبایل", "Mobile", "الهاتف", "Móvil")</span>
                     <input type="text" asp-for="Mobile" dir="ltr" required />
                 </label>
-                <label><span>@T("تلفن ثابت (اختیاری)", "Phone (optional)", "الهاتف الثابت")</span>
+                <label><span>@T("تلفن ثابت (اختیاری)", "Phone (optional)", "الهاتف الثابت", "Teléfono (opcional)")</span>
                     <input type="text" asp-for="PrimaryPhone" dir="ltr" />
                 </label>
-                <label><span>@T("ایمیل", "Email", "البريد")</span>
+                <label><span>@T("ایمیل", "Email", "البريد", "Correo electrónico")</span>
                     <input type="email" asp-for="Email" dir="ltr" />
                 </label>
-                <label><span>@T("کد ملی", "National ID", "الرمز الوطني")</span>
+                <label><span>@T("کد ملی", "National ID", "الرمز الوطني", "Código nacional")</span>
                     <input type="text" asp-for="NationalId" dir="ltr" />
                 </label>
-                <label><span>@T("نام پدر (اختیاری)", "Father name (optional)", "اسم الأب")</span>
+                <label><span>@T("نام پدر (اختیاری)", "Father name (optional)", "اسم الأب", "Nombre del padre (opcional)")</span>
                     <input type="text" asp-for="FatherName" />
                 </label>
-                <label><span>@T("تاریخ تولد (اختیاری)", "Birth date (optional)", "تاريخ الميلاد")</span>
+                <label><span>@T("تاریخ تولد (اختیاری)", "Birth date (optional)", "تاريخ الميلاد", "Fecha de nacimiento (opcional)")</span>
                     <input type="hidden" asp-for="BirthDate" />
-                    <input type="text" data-dp data-culture="@culture" data-target="#BirthDate" readonly placeholder="@T("انتخاب تاریخ…", "Pick a date…", "اختر تاريخاً…")" value="@(string.IsNullOrWhiteSpace(Model.BirthDate) ? null : (culture == "fa" ? "" : Model.BirthDate))" />
+                    <input type="text" data-dp data-culture="@culture" data-target="#BirthDate" readonly placeholder="@T("انتخاب تاریخ…", "Pick a date…", "اختر تاريخاً…", "Elige una fecha…")" value="@(string.IsNullOrWhiteSpace(Model.BirthDate) ? null : (culture == "fa" ? "" : Model.BirthDate))" />
                 </label>
             </div>
             <div class="form-actions-row">
-                <button type="submit" class="btn btn-primary">@T("ذخیره تغییرات", "Save changes", "حفظ التغييرات")</button>
-                <span class="muted small">@T("تاریخ‌ها در فارسی شمسی و در دیگر زبان‌ها میلادی هستند.", "Dates are Jalali in Persian and Gregorian in other languages.", "التواريخ هجرية بالفارسية وميلادية ببقية اللغات.")</span>
+                <button type="submit" class="btn btn-primary">@T("ذخیره تغییرات", "Save changes", "حفظ التغييرات", "Guardar cambios")</button>
+                <span class="muted small">@T("تاریخ‌ها در فارسی شمسی و در دیگر زبان‌ها میلادی هستند.", "Dates are Jalali in Persian and Gregorian in other languages.", "التواريخ هجرية بالفارسية وميلادية ببقية اللغات.", "Las fechas son yalalíes en persa y gregorianas en los demás idiomas.")</span>
             </div>
         </form>
     }

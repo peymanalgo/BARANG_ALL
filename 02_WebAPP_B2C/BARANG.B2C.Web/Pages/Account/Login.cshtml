@@ -2,13 +2,13 @@
 @model LoginModel
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    ViewData["Title"] = T("ورود مشتریان", "Customer sign in", "دخول العملاء");
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    ViewData["Title"] = T("ورود مشتریان", "Customer sign in", "دخول العملاء", "Iniciar sesión como cliente");
 }
 <section class="container section auth-section">
     <div class="auth-card">
-        <h1>@T("ورود مشتریان", "Customer sign in", "دخول العملاء")</h1>
-        <p class="muted">@T("با ایمیل یا شماره موبایل وارد شوید؛ کد تأیید برایتان فرستاده می‌شود.", "Sign in with your email or mobile; we'll send you a verification code.", "سجّل الدخول بالبريد أو الهاتف؛ سنرسل لك رمز التحقق.")</p>
+        <h1>@T("ورود مشتریان", "Customer sign in", "دخول العملاء", "Iniciar sesión como cliente")</h1>
+        <p class="muted">@T("با ایمیل یا شماره موبایل وارد شوید؛ کد تأیید برایتان فرستاده می‌شود.", "Sign in with your email or mobile; we'll send you a verification code.", "سجّل الدخول بالبريد أو الهاتف؛ سنرسل لك رمز التحقق.", "Inicia sesión con tu correo o móvil; te enviaremos un código de verificación.")</p>
         @if (Model.Error is not null)
         {
             <div class="alert alert-error" role="alert">@Model.Error</div>
@@ -18,12 +18,12 @@
             <form method="post" asp-page-handler="RequestCode" class="auth-form">
                 <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
                 <label>
-                    <span>@T("ایمیل یا شماره تلفن", "Email or mobile number", "البريد الإلكتروني أو الهاتف")</span>
+                    <span>@T("ایمیل یا شماره تلفن", "Email or mobile number", "البريد الإلكتروني أو الهاتف", "Correo electrónico o número de móvil")</span>
                     <input type="text" asp-for="Target" dir="ltr" autocomplete="username" placeholder="09121234567" required />
                 </label>
-                <button type="submit" class="btn btn-primary btn-lg btn-block">@T("دریافت کد ورود", "Send sign-in code", "إرسال رمز الدخول")</button>
+                <button type="submit" class="btn btn-primary btn-lg btn-block">@T("دریافت کد ورود", "Send sign-in code", "إرسال رمز الدخول", "Enviar código de acceso")</button>
             </form>
-            <p class="muted small">@T("حساب ندارید؟", "No account yet?", "لا تملك حساباً؟") <a href="/account/register">@T("ثبت‌نام کنید", "Create one", "أنشئ حساباً")</a></p>
+            <p class="muted small">@T("حساب ندارید؟", "No account yet?", "لا تملك حساباً؟", "¿Aún no tienes cuenta?") <a href="/account/register">@T("ثبت‌نام کنید", "Create one", "أنشئ حساباً", "Crear una")</a></p>
         }
         else
         {
@@ -32,11 +32,11 @@
                 <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
                 <input type="hidden" asp-for="Target" />
                 <label>
-                    <span>@T("کد تأیید", "Verification code", "رمز التحقق")</span>
+                    <span>@T("کد تأیید", "Verification code", "رمز التحقق", "Código de verificación")</span>
                     <input type="text" asp-for="Code" dir="ltr" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="1111" required />
                 </label>
-                <p class="muted small">@T("محیط آزمایشی: کد ثابت ۱۱۱۱ را وارد کنید.", "Development environment: enter the fixed code 1111.", "بيئة التطوير: أدخل الرمز الثابت 1111.")</p>
-                <button type="submit" class="btn btn-primary btn-lg btn-block">@T("ورود", "Sign in", "دخول")</button>
+                <p class="muted small">@T("محیط آزمایشی: کد ثابت ۱۱۱۱ را وارد کنید.", "Development environment: enter the fixed code 1111.", "بيئة التطوير: أدخل الرمز الثابت 1111.", "Entorno de desarrollo: introduce el código fijo 1111.")</p>
+                <button type="submit" class="btn btn-primary btn-lg btn-block">@T("ورود", "Sign in", "دخول", "Iniciar sesión")</button>
             </form>
         }
     </div>

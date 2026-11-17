@@ -2,8 +2,8 @@
 @{
     Context.Response.Headers.CacheControl = "no-cache, no-store";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    var dir = culture == "en" ? "ltr" : "rtl";
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    var dir = culture is "en" or "es" ? "ltr" : "rtl";
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     var route = (Context.Request.Path.Value ?? "/").Trim('/');
     string CultureLink(string c)
     {
@@ -14,7 +14,7 @@
     // منو/فوتر/تنظیمات از CMS داخل ERP می‌آیند (کش ۶۰ ثانیه؛ در نبود API حالت ایستای فعلی)
     var site = Site.LoadAsync().GetAwaiter().GetResult();
     var SiteBrand = site.Settings?.SiteName;
-    string Brand() => SiteBrand ?? (culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", _ => "پی‌رنگ" });
+    string Brand() => SiteBrand ?? (culture switch { "en" => "Peyrang", "ar" => "بي‌رنگ", "es" => "Peyrang", _ => "پی‌رنگ" });
     var siteLogo = site.Settings?.LogoUrl;
     var cmsMenu = site.Menu;
     var cmsFooter = site.Footer;
@@ -25,8 +25,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>@(ViewData["Title"] is string t && t.Length > 0 ? $"{t} · {Brand()}" : $"{Brand()} — {T("فروشگاه طرح‌های چاپی", "Print-ready designs store", "متجر التصاميم الجاهزة للطباعة")}")</title>
-    <meta name="description" content="@(ViewData["Description"] ?? $"{Brand()} — {T("سفارش آنلاین چاپ طرح‌های مورد علاقه‌ات روی تیشرت", "Order your favourite designs printed on t-shirts online", "اطبع تصاميمك المفضلة على التيشرت عبر الإنترنت")}")" />
+    <title>@(ViewData["Title"] is string t && t.Length > 0 ? $"{t} · {Brand()}" : $"{Brand()} — {T("فروشگاه طرح‌های چاپی", "Print-ready designs store", "متجر التصاميم الجاهزة للطباعة", "Tienda de diseños listos para imprimir")}")</title>
+    <meta name="description" content="@(ViewData["Description"] ?? $"{Brand()} — {T("سفارش آنلاین چاپ طرح‌های مورد علاقه‌ات روی تیشرت", "Order your favourite designs printed on t-shirts online", "اطبع تصاميمك المفضلة على التيشرت عبر الإنترنت", "Pide en línea tus diseños favoritos impresos en camisetas")}")" />
     <meta name="theme-color" content="#ffffff" />
     <link rel="manifest" href="~/manifest.webmanifest" />
     @if (ViewData["Keywords"] is string kw && kw.Length > 0)
@@ -36,11 +36,11 @@
     <link rel="apple-touch-icon" href="~/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="@T("پی‌رنگ خان", "Peyrang Khan", "پی‌رنگ خان")" />
+    <meta name="apple-mobile-web-app-title" content="@T("پی‌رنگ خان", "Peyrang Khan", "پی‌رنگ خان", "Peyrang Khan")" />
     <meta property="og:type" content="@(ViewData["OgType"] ?? "website")" />
     <meta property="og:site_name" content="@Brand()" />
-    <meta property="og:title" content="@(ViewData["Title"] is string ot && ot.Length > 0 ? ot : $"{Brand()} — {T("فروشگاه طرح‌های چاپی", "Print-ready designs store", "متجر التصاميم الجاهزة للطباعة")}")" />
-    <meta property="og:description" content="@(ViewData["Description"] ?? T("سفارش آنلاین چاپ طرح‌های مورد علاقه‌ات روی تیشرت", "Order your favourite designs printed on t-shirts online", "اطبع تصاميمك المفضلة على التيشرت عبر الإنترنت"))" />
+    <meta property="og:title" content="@(ViewData["Title"] is string ot && ot.Length > 0 ? ot : $"{Brand()} — {T("فروشگاه طرح‌های چاپی", "Print-ready designs store", "متجر التصاميم الجاهزة للطباعة", "Tienda de diseños listos para imprimir")}")" />
+    <meta property="og:description" content="@(ViewData["Description"] ?? T("سفارش آنلاین چاپ طرح‌های مورد علاقه‌ات روی تیشرت", "Order your favourite designs printed on t-shirts online", "اطبع تصاميمك المفضلة على التيشرت عبر الإنترنت", "Pide en línea tus diseños favoritos impresos en camisetas"))" />
     @if (ViewData["OgImage"] is string ogImage && ogImage.Length > 0)
     {
         <meta property="og:image" content="@ogImage" />
@@ -49,6 +49,7 @@
     <link rel="alternate" hreflang="fa" href="@Context.Request.Path.Value?culture=fa" />
     <link rel="alternate" hreflang="en" href="@Context.Request.Path.Value?culture=en" />
     <link rel="alternate" hreflang="ar" href="@Context.Request.Path.Value?culture=ar" />
+    <link rel="alternate" hreflang="es" href="@Context.Request.Path.Value?culture=es" />
     <meta property="og:image" content="@($"{Context.Request.Scheme}://{Context.Request.Host}/images/pirang-khan.jpg")" />
     <meta property="og:url" content="@($"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path.Value}")" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -67,7 +68,7 @@
                 <img class="brand-logo" src="~/images/logo-wordmark-final.png" alt="@Brand()" asp-append-version="true" />
             }
         </a>
-        <nav class="main-nav" aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية")">
+        <nav class="main-nav" aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية", "Menú principal")">
             @if (cmsMenu.Count > 0)
             {
                 foreach (var m in cmsMenu)
@@ -78,45 +79,46 @@
             }
             else
             {
-                <a href="/" class="@(route.Length == 0 ? "active" : null)">@T("صفحه اصلی", "Home", "الرئيسية")</a>
-                <a href="/order/wizard" class="nav-cta @(route.StartsWith("order/wizard") ? "active" : null)">✨ @T("شروع طراحی تیشرت", "Start designing", "ابدأ التصميم")</a>
-                <a href="/catalog" class="@(route.StartsWith("catalog") ? "active" : null)">@T("طرح‌ها", "Designs", "التصامیم")</a>
-                <a href="/#features">@T("چاپ و بسته‌بندی", "Printing", "الطباعة")</a>
-                <a href="/about" class="@(route.StartsWith("about") ? "active" : null)">@T("درباره ما", "About", "من نحن")</a>
-                <a href="/contact" class="@(route.StartsWith("contact") ? "active" : null)">@T("تماس با ما", "Contact", "اتصل بنا")</a>
-                <a href="/blog" class="@(route.StartsWith("blog") ? "active" : null)">@T("وبلاگ", "Blog", "المدونة")</a>
+                <a href="/" class="@(route.Length == 0 ? "active" : null)">@T("صفحه اصلی", "Home", "الرئيسية", "Inicio")</a>
+                <a href="/order/wizard" class="nav-cta @(route.StartsWith("order/wizard") ? "active" : null)">✨ @T("شروع طراحی تیشرت", "Start designing", "ابدأ التصميم", "Empezar a diseñar")</a>
+                <a href="/catalog" class="@(route.StartsWith("catalog") ? "active" : null)">@T("طرح‌ها", "Designs", "التصامیم", "Diseños")</a>
+                <a href="/#features">@T("چاپ و بسته‌بندی", "Printing", "الطباعة", "Impresión")</a>
+                <a href="/about" class="@(route.StartsWith("about") ? "active" : null)">@T("درباره ما", "About", "من نحن", "Acerca de")</a>
+                <a href="/contact" class="@(route.StartsWith("contact") ? "active" : null)">@T("تماس با ما", "Contact", "اتصل بنا", "Contacto")</a>
+                <a href="/blog" class="@(route.StartsWith("blog") ? "active" : null)">@T("وبلاگ", "Blog", "المدونة", "Blog")</a>
             }
         </nav>
-        <nav class="header-actions" aria-label="@T("حساب کاربری", "Account", "الحساب")">
+        <nav class="header-actions" aria-label="@T("حساب کاربری", "Account", "الحساب", "Cuenta")">
             <details class="lang-menu">
-                <summary aria-label="@T("زبان", "Language", "اللغة")">
+                <summary aria-label="@T("زبان", "Language", "اللغة", "Idioma")">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9S14.5 18.4 12 21M12 3C9.5 5.6 8.1 8.7 8.1 12s1.4 6.4 3.9 9"/></svg>
                 </summary>
                 <div class="lang-pop">
                     <a href="@CultureLink("fa")" hreflang="fa">فارسی</a>
                     <a href="@CultureLink("en")" hreflang="en">English</a>
                     <a href="@CultureLink("ar")" hreflang="ar">العربية</a>
+                    <a href="@CultureLink("es")" hreflang="es">Español</a>
                 </div>
             </details>
             <details class="cart-menu lang-menu" data-cart-menu>
-                <summary aria-label="@T("سبد خرید", "Cart", "السلة")">
+                <summary aria-label="@T("سبد خرید", "Cart", "السلة", "Carrito")">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                     <span class="cart-badge" data-cart-badge hidden>0</span>
                 </summary>
                 <div class="cart-pop">
                     <div class="cart-pop-items" data-cart-items></div>
-                    <a class="cart-pop-link" href="/cart">@T("مشاهده سبد خرید", "View cart", "عرض السلة")</a>
+                    <a class="cart-pop-link" href="/cart">@T("مشاهده سبد خرید", "View cart", "عرض السلة", "Ver carrito")</a>
                 </div>
             </details>
-            <a class="icon-btn" href="/account/orders" aria-label="@T("سفارش‌های من", "My orders", "طلباتي")">
+            <a class="icon-btn" href="/account/orders" aria-label="@T("سفارش‌های من", "My orders", "طلباتي", "Mis pedidos")">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 7h12l1.2 12.2a1.5 1.5 0 0 1-1.5 1.8H6.3a1.5 1.5 0 0 1-1.5-1.8L6 7z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg>
             </a>
-            <a class="icon-btn" href="/account" aria-label="@T("حساب کاربری", "Account", "الحساب")">
+            <a class="icon-btn" href="/account" aria-label="@T("حساب کاربری", "Account", "الحساب", "Cuenta")">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.6 4.5-5.5 8-5.5s6.5 1.9 8 5.5"/></svg>
             </a>
             @if (User.Identity?.IsAuthenticated != true)
             {
-                <a class="btn btn-primary btn-sm" href="/account/login">@T("ورود / ثبت‌نام", "Sign in", "تسجيل الدخول")</a>
+                <a class="btn btn-primary btn-sm" href="/account/login">@T("ورود / ثبت‌نام", "Sign in", "تسجيل الدخول", "Iniciar sesión")</a>
             }
         </nav>
     </div>
@@ -127,8 +129,8 @@
             <form class="header-search" action="/catalog" method="get" role="search">
                 <div class="hs-field">
                     <svg class="hs-icon-mag" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M11 8a3 3 0 0 1 3 3" opacity=".55"/></svg>
-                    <input type="search" name="search" value="@q" placeholder="@T("جستجوی مفهومی طرح میان هزاران طرح متنوع برای شما...", "Concept-search thousands of designs...", "بحث مفاهيمي بين آلاف التصاميم...")" aria-label="@T("جستجوی مفهومی", "Concept search", "بحث مفاهيمي")" />
-                    <button type="submit" class="hs-go">@T("جستجو", "Search", "بحث")</button>
+                    <input type="search" name="search" value="@q" placeholder="@T("جستجوی مفهومی طرح میان هزاران طرح متنوع برای شما...", "Concept-search thousands of designs...", "بحث مفاهيمي بين آلاف التصاميم...", "Busca conceptualmente entre miles de diseños...")" aria-label="@T("جستجوی مفهومی", "Concept search", "بحث مفاهيمي", "Búsqueda por conceptos")" />
+                    <button type="submit" class="hs-go">@T("جستجو", "Search", "بحث", "Buscar")</button>
                 </div>
             </form>
         </div>
@@ -181,29 +183,29 @@
         <div class="container footer-grid">
             <div>
                 <span class="footer-brand"><img class="footer-brand-logo" src="~/images/logo-wordmark-final.png" alt="@Brand()" asp-append-version="true" /></span>
-                <p>@T("طرح‌های آماده چاپ روی پوشاک و هدایای تبلیغاتی؛ سفارش آنلاین، پیگیری تا تحویل.", "Ready-to-print designs for apparel and promotional gifts; order online, track until delivery.", "تصاميم جاهزة للطباعة على الملابس والهدايا الدعائية؛ اطلب عبر الإنترنت وتتبع حتى التسليم.")</p>
-                <p class="footer-slogan">@(string.IsNullOrWhiteSpace(site.Settings?.Slogan) ? T("پی‌رنگ خان، نقشه‌ها داره برات!", "Peyrang Khan has the designs for you!", "پی‌رنگ خان لديه التصاميم من أجلك!") : site.Settings.Slogan)</p>
+                <p>@T("طرح‌های آماده چاپ روی پوشاک و هدایای تبلیغاتی؛ سفارش آنلاین، پیگیری تا تحویل.", "Ready-to-print designs for apparel and promotional gifts; order online, track until delivery.", "تصاميم جاهزة للطباعة على الملابس والهدايا الدعائية؛ اطلب عبر الإنترنت وتتبع حتى التسليم.", "Diseños listos para imprimir en prendas y regalos publicitarios; pide en línea y sigue hasta la entrega.")</p>
+                <p class="footer-slogan">@(string.IsNullOrWhiteSpace(site.Settings?.Slogan) ? T("پی‌رنگ خان، نقشه‌ها داره برات!", "Peyrang Khan has the designs for you!", "پی‌رنگ خان لديه التصاميم من أجلك!", "¡Peyrang Khan tiene los diseños para ti!") : site.Settings.Slogan)</p>
             </div>
             <div>
-                <h3>@T("فروشگاه", "Store", "المتجر")</h3>
-                <a href="/catalog">@T("همه طرح‌ها", "All designs", "كل التصاميم")</a>
-                <a href="/account/orders">@T("پیگیری سفارش", "Track order", "تتبع الطلب")</a>
-                <a href="/faq">@T("سوالات متداول", "FAQ", "الأسئلة الشائعة")</a>
+                <h3>@T("فروشگاه", "Store", "المتجر", "Tienda")</h3>
+                <a href="/catalog">@T("همه طرح‌ها", "All designs", "كل التصاميم", "Todos los diseños")</a>
+                <a href="/account/orders">@T("پیگیری سفارش", "Track order", "تتبع الطلب", "Seguir pedido")</a>
+                <a href="/faq">@T("سوالات متداول", "FAQ", "الأسئلة الشائعة", "Preguntas frecuentes")</a>
                 <a href="tel:02100000000" dir="ltr">021-00000000</a>
-                <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a>
+                <a href="/account">@T("حساب کاربری", "My account", "حسابي", "Mi cuenta")</a>
             </div>
             <div>
-                <h3>@T("تماس با ما", "Contact", "اتصل بنا")</h3>
+                <h3>@T("تماس با ما", "Contact", "اتصل بنا", "Contacto")</h3>
                 <a href="mailto:salam@pirang.ir">salam@pirang.ir</a>
-                <a href="/about">@T("درباره پی‌رنگ", "About Peyrang", "عن پی‌رنگ")</a>
+                <a href="/about">@T("درباره پی‌رنگ", "About Peyrang", "عن پی‌رنگ", "Acerca de Peyrang")</a>
             </div>
             <div class="footer-licenses">
-                <h3>@T("مجوزها", "Licenses", "التراخيص")</h3>
+                <h3>@T("مجوزها", "Licenses", "التراخيص", "Licencias")</h3>
                 <div class="license-grid">
-                    <img src="~/images/license-badge-1.svg" alt="@T("مجوز نمونه ۱", "Sample license 1", "ترخيص نموذجي ١")" asp-append-version="true" />
-                    <img src="~/images/license-badge-2.svg" alt="@T("مجوز نمونه ۲", "Sample license 2", "ترخيص نموذجي ٢")" asp-append-version="true" />
-                    <img src="~/images/license-badge-3.svg" alt="@T("مجوز نمونه ۳", "Sample license 3", "ترخيص نموذجي ٣")" asp-append-version="true" />
-                    <img src="~/images/license-badge-4.svg" alt="@T("مجوز نمونه ۴", "Sample license 4", "ترخيص نموذجي ٤")" asp-append-version="true" />
+                    <img src="~/images/license-badge-1.svg" alt="@T("مجوز نمونه ۱", "Sample license 1", "ترخيص نموذجي ١", "Licencia de muestra 1")" asp-append-version="true" />
+                    <img src="~/images/license-badge-2.svg" alt="@T("مجوز نمونه ۲", "Sample license 2", "ترخيص نموذجي ٢", "Licencia de muestra 2")" asp-append-version="true" />
+                    <img src="~/images/license-badge-3.svg" alt="@T("مجوز نمونه ۳", "Sample license 3", "ترخيص نموذجي ٣", "Licencia de muestra 3")" asp-append-version="true" />
+                    <img src="~/images/license-badge-4.svg" alt="@T("مجوز نمونه ۴", "Sample license 4", "ترخيص نموذجي ٤", "Licencia de muestra 4")" asp-append-version="true" />
                 </div>
             </div>
         </div>
@@ -219,22 +221,22 @@
 <script src="~/js/design-preview.js" asp-append-version="true" defer></script>
 
 @* ---------- نوار تب پایین (تجربه اپ موبایلی) ---------- *@
-<nav class="mobile-tabbar" aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية")">
+<nav class="mobile-tabbar" aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية", "Menú principal")">
     <a href="/" class="@(route.Length == 0 ? "active" : null)">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
-        <span>@T("خانه", "Home", "الرئيسية")</span>
+        <span>@T("خانه", "Home", "الرئيسية", "Inicio")</span>
     </a>
     <a href="/catalog" class="@(route.StartsWith("catalog") || route.StartsWith("design") ? "active" : null)">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"/></svg>
-        <span>@T("طرح‌ها", "Designs", "التصاميم")</span>
+        <span>@T("طرح‌ها", "Designs", "التصاميم", "Diseños")</span>
     </a>
     <a href="/account/orders" class="@(route.StartsWith("account/orders") ? "active" : null)">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l1.2 12.2a1.5 1.5 0 0 1-1.5 1.8H6.3a1.5 1.5 0 0 1-1.5-1.8L6 7z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg>
-        <span>@T("سفارش‌ها", "Orders", "طلباتي")</span>
+        <span>@T("سفارش‌ها", "Orders", "طلباتي", "Pedidos")</span>
     </a>
     <a href="/account" class="@(route.StartsWith("account") && !route.StartsWith("account/orders") ? "active" : null)">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.6 4.5-5.5 8-5.5s6.5 1.9 8 5.5"/></svg>
-        <span>@T("حساب", "Account", "حسابي")</span>
+        <span>@T("حساب", "Account", "حسابي", "Cuenta")</span>
     </a>
 </nav>
 </body>

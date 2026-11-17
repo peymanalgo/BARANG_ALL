@@ -16,7 +16,7 @@ public sealed class SettingsModel : PageModel
         if (Request.Query.TryGetValue("culture", out Microsoft.Extensions.Primitives.StringValues value))
         {
             string name = value.ToString();
-            if (name is "fa" or "en" or "ar")
+            if (name is "fa" or "en" or "ar" or "es")
             {
                 Response.Cookies.Append("barang.store.culture", CookieRequestCultureProvider.MakeCookieValue(new(name)));
                 return RedirectToPage();

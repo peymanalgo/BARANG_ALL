@@ -5,39 +5,39 @@
     Layout = "_AccountLayout";
     ViewData["PanelActive"] = "dashboard";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.FormatDateTime(d, culture);
     string CategoryLabel(string c) => c switch
     {
-        "order" => T("سفارش", "Order", "طلب"),
-        "logistics" => T("لجستیک", "Logistics", "لوجستيات"),
-        "quality" => T("کیفیت", "Quality", "الجودة"),
-        "production" => T("تولید", "Production", "الإنتاج"),
-        "account" => T("حساب", "Account", "الحساب"),
-        "system" => T("سیستم", "System", "النظام"),
+        "order" => T("سفارش", "Order", "طلب", "Pedido"),
+        "logistics" => T("لجستیک", "Logistics", "لوجستيات", "Logística"),
+        "quality" => T("کیفیت", "Quality", "الجودة", "Calidad"),
+        "production" => T("تولید", "Production", "الإنتاج", "Producción"),
+        "account" => T("حساب", "Account", "الحساب", "Cuenta"),
+        "system" => T("سیستم", "System", "النظام", "Sistema"),
         _ => c
     };
-    ViewData["Title"] = T("اعلان‌های من", "My notifications", "إشعاراتي");
+    ViewData["Title"] = T("اعلان‌های من", "My notifications", "إشعاراتي", "Mis notificaciones");
 }
 <section class="container section">
     <nav class="breadcrumbs" aria-label="breadcrumb">
-        <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a> ›
-        <span>@T("اعلان‌ها", "Notifications", "الإشعارات")</span>
+        <a href="/account">@T("حساب کاربری", "My account", "حسابي", "Mi cuenta")</a> ›
+        <span>@T("اعلان‌ها", "Notifications", "الإشعارات", "Notificaciones")</span>
     </nav>
     <header class="section-head">
-        <h1>@T("اعلان‌های من", "My notifications", "إشعاراتي")</h1>
+        <h1>@T("اعلان‌های من", "My notifications", "إشعاراتي", "Mis notificaciones")</h1>
         <div class="row-actions">
-            <a class="btn btn-ghost btn-sm @(Model.Unread == "1" ? null : "chip-active-link")" href="/account/notifications?unread=1">@T("فقط خوانده‌نشده‌ها", "Unread only", "غير المقروء فقط")</a>
-            <a class="btn btn-ghost btn-sm" href="/account/notifications">@T("همه", "All", "الكل")</a>
+            <a class="btn btn-ghost btn-sm @(Model.Unread == "1" ? null : "chip-active-link")" href="/account/notifications?unread=1">@T("فقط خوانده‌نشده‌ها", "Unread only", "غير المقروء فقط", "Solo no leídas")</a>
+            <a class="btn btn-ghost btn-sm" href="/account/notifications">@T("همه", "All", "الكل", "Todo")</a>
             <form method="post" asp-page-handler="MarkAllRead">
-                <button type="submit" class="btn btn-ghost btn-sm">✓ @T("خواندن همه", "Mark all read", "تعليم الكل")</button>
+                <button type="submit" class="btn btn-ghost btn-sm">✓ @T("خواندن همه", "Mark all read", "تعليم الكل", "Marcar todo como leído")</button>
             </form>
         </div>
     </header>
 
     @if (Model.Notifications.Count == 0)
     {
-        <p class="empty">@T("اعلانی یافت نشد.", "No notifications found.", "لا توجد إشعارات.")</p>
+        <p class="empty">@T("اعلانی یافت نشد.", "No notifications found.", "لا توجد إشعارات.", "No se encontraron notificaciones.")</p>
     }
     else
     {
@@ -55,7 +55,7 @@
                         <form method="post" asp-page-handler="MarkRead">
                             <input type="hidden" name="id" value="@n.Id" />
                             <input type="hidden" name="version" value="@n.Version" />
-                            <button type="submit" class="btn btn-ghost btn-sm">✓ @T("خواندم", "Read", "مقروء")</button>
+                            <button type="submit" class="btn btn-ghost btn-sm">✓ @T("خواندم", "Read", "مقروء", "Leídas")</button>
                         </form>
                     }
                 </li>
@@ -64,12 +64,12 @@
         <nav class="pagination" aria-label="pagination">
             @if (Model.HasPrev)
             {
-                <a class="btn btn-ghost btn-sm" href="/account/notifications?page=@(Model.Page - 1)@(Model.Unread == "1" ? "&unread=1" : "")">← @T("قبلی", "Previous", "السابق")</a>
+                <a class="btn btn-ghost btn-sm" href="/account/notifications?page=@(Model.Page - 1)@(Model.Unread == "1" ? "&unread=1" : "")">← @T("قبلی", "Previous", "السابق", "Anterior")</a>
             }
             <span class="page-info">@Model.Page / @Math.Max(1, (int)Math.Ceiling(Model.Total / 12.0))</span>
             @if (Model.HasNext)
             {
-                <a class="btn btn-ghost btn-sm" href="/account/notifications?page=@(Model.Page + 1)@(Model.Unread == "1" ? "&unread=1" : "")">@T("بعدی", "Next", "التالي") →</a>
+                <a class="btn btn-ghost btn-sm" href="/account/notifications?page=@(Model.Page + 1)@(Model.Unread == "1" ? "&unread=1" : "")">@T("بعدی", "Next", "التالي", "Siguiente") →</a>
             }
         </nav>
     }

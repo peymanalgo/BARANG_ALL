@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 
-CultureInfo[] cultures = [new("fa"), new("en"), new("ar")];
+CultureInfo[] cultures = [new("fa"), new("en"), new("ar"), new("es")];
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseWindowsService();
@@ -28,7 +28,7 @@ builder.Services.AddScoped<CustomerContext>();
 builder.Services.AddScoped<SiteContext>();
 builder.Services.AddRequestLocalization(o =>
 {
-    o.SetDefaultCulture("fa").AddSupportedCultures("fa", "en", "ar").AddSupportedUICultures("fa", "en", "ar");
+    o.SetDefaultCulture("fa").AddSupportedCultures("fa", "en", "ar", "es").AddSupportedUICultures("fa", "en", "ar", "es");
     o.RequestCultureProviders = [new CookieRequestCultureProvider { CookieName = "barang.store.culture" }];
 });
 

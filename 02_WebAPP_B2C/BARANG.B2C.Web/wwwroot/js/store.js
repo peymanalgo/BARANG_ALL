@@ -48,7 +48,8 @@
     const I18N = {
         fa: { install: "نصب اپلیکیشن پی‌رنگ", iosHint: "برای نصب اپ، در سافاری دکمه Share و سپس «Add to Home Screen» را بزنید." },
         en: { install: "Install the Peyrang app", iosHint: "To install, tap the Share button in Safari, then “Add to Home Screen”." },
-        ar: { install: "ثبّت تطبيق پی‌رنگ", iosHint: "للتثبيت، اضغط زر المشاركة في سفاري ثم «أضف إلى الشاشة الرئيسية»." }
+        ar: { install: "ثبّت تطبيق پی‌رنگ", iosHint: "للتثبيت، اضغط زر المشاركة في سفاري ثم «أضف إلى الشاشة الرئيسية»." },
+        es: { install: "Instalar la app de Peyrang", iosHint: "Para instalar, toca el botón Compartir en Safari y luego «Añadir a pantalla de inicio»." }
     };
     const lang = (document.documentElement.lang || "fa").slice(0, 2);
     const t = I18N[lang] || I18N.fa;
@@ -124,6 +125,7 @@ window.barangFmtDate = (value) => {
         fa: { empty: "سبد خرید خالی است", toman: "تومان" },
         en: { empty: "Your cart is empty", toman: "Toman" },
         ar: { empty: "سلتك فارغة", toman: "تومان" },
+        es: { empty: "Tu carrito está vacío", toman: "tomán" },
     };
     const lang = (document.documentElement.lang || "fa").slice(0, 2);
     const t = I18N[lang] || I18N.fa;

@@ -50,18 +50,18 @@ public sealed class RegisterModel(CoreApiClient core) : PageModel
         Target = NormalizeDigits(Target).Trim(); // ارقام فارسی/عربی → لاتین
         if (string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
         {
-            Error = culture switch { "en" => "Enter your first and last name.", "ar" => "أدخل الاسم والعائلة.", _ => "نام و نام خانوادگی را وارد کنید." };
+            Error = culture switch { "en" => "Enter your first and last name.", "ar" => "أدخل الاسم والعائلة.", "es" => "Introduce tu nombre y apellido.", _ => "نام و نام خانوادگی را وارد کنید." };
             return Page();
         }
         if (!IsValidTarget(Target.Trim()))
         {
-            Error = culture switch { "en" => "Enter a valid email address or 11-digit mobile number (e.g. 09121234567).", "ar" => "أدخل بريدًا إلكترونيًا صحيحًا أو رقم هاتف مكونًا من 11 رقمًا.", _ => "یک ایمیل معتبر یا شماره موبایل ۱۱ رقمی (مثلاً ۰۹۱۲۱۲۳۴۵۶۷) وارد کنید." };
+            Error = culture switch { "en" => "Enter a valid email address or 11-digit mobile number (e.g. 09121234567).", "ar" => "أدخل بريدًا إلكترونيًا صحيحًا أو رقم هاتف مكونًا من 11 رقمًا.", "es" => "Introduce un correo válido o un número de móvil de 11 dígitos (p. ej. 09121234567).", _ => "یک ایمیل معتبر یا شماره موبایل ۱۱ رقمی (مثلاً ۰۹۱۲۱۲۳۴۵۶۷) وارد کنید." };
             return Page();
         }
         CoreApiClient.LoginOutcome sent = await core.OtpRequestAsync(Target.Trim());
         if (!sent.Ok)
         {
-            Error = culture switch { "en" => "Could not send the verification code. Try again.", "ar" => "لم يتم إرسال رمز التحقق. حاول مرة أخرى.", _ => "ارسال کد تأیید ناموفق بود. دوباره تلاش کنید." };
+            Error = culture switch { "en" => "Could not send the verification code. Try again.", "ar" => "لم يتم إرسال رمز التحقق. حاول مرة أخرى.", "es" => "No se pudo enviar el código de verificación. Inténtalo de nuevo.", _ => "ارسال کد تأیید ناموفق بود. دوباره تلاش کنید." };
             return Page();
         }
         CodeSent = true;
@@ -79,7 +79,7 @@ public sealed class RegisterModel(CoreApiClient core) : PageModel
         MaskedTarget = Mask(Target.Trim());
         if (string.IsNullOrWhiteSpace(Code))
         {
-            Error = culture switch { "en" => "Enter the verification code.", "ar" => "أدخل رمز التحقق.", _ => "کد تأیید را وارد کنید." };
+            Error = culture switch { "en" => "Enter the verification code.", "ar" => "أدخل رمز التحقق.", "es" => "Introduce el código de verificación.", _ => "کد تأیید را وارد کنید." };
             return Page();
         }
         CoreApiClient.LoginOutcome outcome = await core.OtpRegisterAsync(Target.Trim(), Code.Trim(), FirstName.Trim(), LastName.Trim());
@@ -88,11 +88,11 @@ public sealed class RegisterModel(CoreApiClient core) : PageModel
             if (outcome.ProblemCode == "auth.already_registered")
             {
                 AlreadyRegistered = true;
-                Error = culture switch { "en" => "This email/mobile is already registered. Sign in instead.", "ar" => "هذا البريد/الرقم مسجل بالفعل. سجّل الدخول بدلاً من ذلك.", _ => "این ایمیل/شماره قبلاً ثبت شده است. وارد شوید." };
+                Error = culture switch { "en" => "This email/mobile is already registered. Sign in instead.", "ar" => "هذا البريد/الرقم مسجل بالفعل. سجّل الدخول بدلاً من ذلك.", "es" => "Este correo/número ya está registrado. Inicia sesión.", _ => "این ایمیل/شماره قبلاً ثبت شده است. وارد شوید." };
             }
             else
             {
-                Error = culture switch { "en" => "The verification code is wrong.", "ar" => "رمز التحقق غير صحيح.", _ => "کد تأیید نادرست است." };
+                Error = culture switch { "en" => "The verification code is wrong.", "ar" => "رمز التحقق غير صحيح.", "es" => "El código de verificación es incorrecto.", _ => "کد تأیید نادرست است." };
             }
             return Page();
         }
@@ -129,7 +129,7 @@ public sealed class RegisterModel(CoreApiClient core) : PageModel
         if (Request.Query.TryGetValue("culture", out Microsoft.Extensions.Primitives.StringValues value))
         {
             string name = value.ToString();
-            if (name is "fa" or "en" or "ar") Response.Cookies.Append("barang.store.culture", CookieRequestCultureProvider.MakeCookieValue(new(name)));
+            if (name is "fa" or "en" or "ar" or "es") Response.Cookies.Append("barang.store.culture", CookieRequestCultureProvider.MakeCookieValue(new(name)));
         }
     }
 

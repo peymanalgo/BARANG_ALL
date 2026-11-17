@@ -1,13 +1,13 @@
 @page
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    ViewData["Title"] = T("خطا", "Error", "خطأ");
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    ViewData["Title"] = T("خطا", "Error", "خطأ", "Error");
 }
 <section class="container section">
     <div class="auth-card">
-        <h1>@T("خطایی رخ داد", "Something went wrong", "حدث خطأ")</h1>
-        <p class="muted">@T("لطفاً دوباره تلاش کنید یا به صفحه اصلی برگردید.", "Please try again or return to the home page.", "حاول مجدداً أو عد إلى الصفحة الرئيسية.")</p>
+        <h1>@T("خطایی رخ داد", "Something went wrong", "حدث خطأ", "Algo salió mal")</h1>
+        <p class="muted">@T("لطفاً دوباره تلاش کنید یا به صفحه اصلی برگردید.", "Please try again or return to the home page.", "حاول مجدداً أو عد إلى الصفحة الرئيسية.", "Inténtalo de nuevo o vuelve a la página de inicio.")</p>
         <a class="btn btn-primary" href="/">@(culture switch { "en" => "Peyrang home", "ar" => "بي‌رنگ", _ => "بازگشت به پی‌رنگ" })</a>
     </div>
 </section>

@@ -6,38 +6,38 @@
     Layout = "_AccountLayout";
     ViewData["PanelActive"] = "orders";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     string OrderLabel(string s) => s switch
     {
-        "Draft" => T("پیش‌نویس", "Draft", "مسودة"),
-        "Submitted" => T("ثبت‌شده — در حال پردازش", "Submitted — in progress", "مُرسل — قيد المعالجة"),
-        "Cancelled" => T("لغوشده", "Cancelled", "ملغى"),
-        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم"),
+        "Draft" => T("پیش‌نویس", "Draft", "مسودة", "Borrador"),
+        "Submitted" => T("ثبت‌شده — در حال پردازش", "Submitted — in progress", "مُرسل — قيد المعالجة", "Enviado — en curso"),
+        "Cancelled" => T("لغوشده", "Cancelled", "ملغى", "Cancelado"),
+        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم", "Entregado"),
         _ => s
     };
     string ShipmentLabel(string s) => s switch
     {
-        "Ready" => T("آماده ارسال", "Ready to ship", "جاهز للشحن"),
-        "Shipped" => T("ارسال‌شده", "Shipped", "مشحون"),
-        "InTransit" => T("در حال حمل", "In transit", "في الطريق"),
-        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم"),
-        "FailedDelivery" => T("ارسال ناموفق", "Failed delivery", "فشل التسليم"),
-        "Returned" => T("برگشتی", "Returned", "مرتجع"),
+        "Ready" => T("آماده ارسال", "Ready to ship", "جاهز للشحن", "Listo para enviar"),
+        "Shipped" => T("ارسال‌شده", "Shipped", "مشحون", "Enviado"),
+        "InTransit" => T("در حال حمل", "In transit", "في الطريق", "En tránsito"),
+        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم", "Entregado"),
+        "FailedDelivery" => T("ارسال ناموفق", "Failed delivery", "فشل التسليم", "Entrega fallida"),
+        "Returned" => T("برگشتی", "Returned", "مرتجع", "Devuelto"),
         _ => s
     };
     string EventLabel(string t) => t switch
     {
-        "Submitted" => T("سفارش ثبت شد", "Order submitted", "تم إرسال الطلب"),
-        "Cancelled" => T("سفارش لغو شد", "Order cancelled", "تم إلغاء الطلب"),
-        "StatusChanged" => T("به‌روزرسانی وضعیت", "Status updated", "تحديث الحالة"),
+        "Submitted" => T("سفارش ثبت شد", "Order submitted", "تم إرسال الطلب", "Pedido enviado"),
+        "Cancelled" => T("سفارش لغو شد", "Order cancelled", "تم إلغاء الطلب", "Pedido cancelado"),
+        "StatusChanged" => T("به‌روزرسانی وضعیت", "Status updated", "تحديث الحالة", "Estado actualizado"),
         _ => t
     };
     string PositionLabel(string p) => p switch
     {
-        "FRONT" => T("جلو", "Front", "الأمام"),
-        "BACK" => T("پشت", "Back", "الخلف"),
-        "SLEEVE" => T("آستین", "Sleeve", "الكم"),
-        "OTHER" => T("سایر", "Other", "أخرى"),
+        "FRONT" => T("جلو", "Front", "الأمام", "Delantero"),
+        "BACK" => T("پشت", "Back", "الخلف", "Trasero"),
+        "SLEEVE" => T("آستین", "Sleeve", "الكم", "Manga"),
+        "OTHER" => T("سایر", "Other", "أخرى", "Otro"),
         _ => p
     };
     string Num(decimal d) => d.ToString("0.##", CultureInfo.InvariantCulture);
@@ -56,7 +56,7 @@
             if (text.Length == 0) continue;
             if (prop.Name.Equals("total", StringComparison.OrdinalIgnoreCase) || prop.Name.Equals("totalAmount", StringComparison.OrdinalIgnoreCase) || prop.Name.Equals("grandTotal", StringComparison.OrdinalIgnoreCase))
             {
-                TotalRow = (T("مبلغ کل", "Total", "الإجمالي"), text);
+                TotalRow = (T("مبلغ کل", "Total", "الإجمالي", "Total"), text);
             }
             else if (prop.Value.ValueKind == JsonValueKind.Number)
             {
@@ -68,35 +68,35 @@
 }
 @if (!Model.Found)
 {
-    <section class="container section"><p class="empty">@T("سفارش پیدا نشد.", "Order not found.", "لم يتم العثور على الطلب.")</p></section>
+    <section class="container section"><p class="empty">@T("سفارش پیدا نشد.", "Order not found.", "لم يتم العثور على الطلب.", "Pedido no encontrado.")</p></section>
 }
 else
 {
     <section class="container section">
         <nav class="breadcrumbs no-print" aria-label="breadcrumb">
-            <a href="/account">@T("حساب کاربری", "My account", "حسابي")</a> ›
-            <a href="/account/orders">@T("سفارش‌ها", "Orders", "الطلبات")</a> ›
+            <a href="/account">@T("حساب کاربری", "My account", "حسابي", "Mi cuenta")</a> ›
+            <a href="/account/orders">@T("سفارش‌ها", "Orders", "الطلبات", "Pedidos")</a> ›
             <span dir="ltr">@(Model.OrderNumber ?? "—")</span>
         </nav>
         <header class="section-head tracking-head">
             <div>
-                <h1>@T("سفارش", "Order", "الطلب") <span dir="ltr">@(Model.OrderNumber ?? "—")</span></h1>
-                <p class="muted">@T("تاریخ سفارش", "Order date", "تاريخ الطلب"): @Model.DateText(Model.OrderDate) @if (Model.SubmittedAt is not null) { <span> · @T("ثبت: ", "Submitted: ", "أُرسل: ")@Model.DateText(Model.SubmittedAt)</span> }</p>
+                <h1>@T("سفارش", "Order", "الطلب", "Pedido") <span dir="ltr">@(Model.OrderNumber ?? "—")</span></h1>
+                <p class="muted">@T("تاریخ سفارش", "Order date", "تاريخ الطلب", "Fecha del pedido"): @Model.DateText(Model.OrderDate) @if (Model.SubmittedAt is not null) { <span> · @T("ثبت: ", "Submitted: ", "أُرسل: ", "Enviado: ")@Model.DateText(Model.SubmittedAt)</span> }</p>
             </div>
             <span class="status-chip st-@Model.OrderStatus.ToLowerInvariant() status-lg">@OrderLabel(Model.OrderStatus)</span>
         </header>
 
         @if (Model.Paid == "1")
         {
-            <div class="alert alert-ok" role="status">✓ @T("پرداخت از کیف پول با موفقیت انجام شد.", "Wallet payment completed successfully.", "تم الدفع من المحفظة بنجاح.")</div>
+            <div class="alert alert-ok" role="status">✓ @T("پرداخت از کیف پول با موفقیت انجام شد.", "Wallet payment completed successfully.", "تم الدفع من المحفظة بنجاح.", "Pago con billetera completado con éxito.")</div>
         }
         @if (!string.IsNullOrWhiteSpace(Model.PayError))
         {
             <div class="alert alert-error" role="alert">
                 @(Model.PayError == "wallet.insufficient_balance"
-                    ? T("موجودی کیف پول برای پرداخت این سفارش کافی نیست.", "Your wallet balance is not enough for this order.", "رصيد المحفظة غير كافٍ لهذا الطلب.")
-                    : T("پرداخت انجام نشد؛ دوباره تلاش کنید.", "Payment failed; try again.", "فشل الدفع؛ حاول مجدداً."))
-                <a href="/account/wallet">@T("شارژ کیف پول", "Top up wallet", "شحن المحفظة")</a>
+                    ? T("موجودی کیف پول برای پرداخت این سفارش کافی نیست.", "Your wallet balance is not enough for this order.", "رصيد المحفظة غير كافٍ لهذا الطلب.", "El saldo de tu billetera no alcanza para este pedido.")
+                    : T("پرداخت انجام نشد؛ دوباره تلاش کنید.", "Payment failed; try again.", "فشل الدفع؛ حاول مجدداً.", "El pago falló; inténtalo de nuevo."))
+                <a href="/account/wallet">@T("شارژ کیف پول", "Top up wallet", "شحن المحفظة", "Recargar billetera")</a>
             </div>
         }
 
@@ -105,27 +105,27 @@ else
             <div class="card wallet-pay-card">
                 <div class="wallet-pay-row">
                     <div>
-                        <strong>@T("وضعیت پرداخت", "Payment status", "حالة الدفع")</strong>
+                        <strong>@T("وضعیت پرداخت", "Payment status", "حالة الدفع", "Estado del pago")</strong>
                         @if (wp.FullyPaid)
                         {
-                            <span class="topup-status st-paid">@T("پرداخت‌شده", "Paid", "مدفوع")</span>
+                            <span class="topup-status st-paid">@T("پرداخت‌شده", "Paid", "مدفوع", "Pagado")</span>
                         }
                         else
                         {
-                            <span class="topup-status st-pending">@T("پرداخت‌نشده", "Unpaid", "غير مدفوع")</span>
+                            <span class="topup-status st-pending">@T("پرداخت‌نشده", "Unpaid", "غير مدفوع", "No pagado")</span>
                         }
                     </div>
                     <div class="wallet-pay-amounts">
-                        <span>@T("مبلغ کل", "Total", "الإجمالي"): <strong dir="ltr">@wp.Total.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong></span>
-                        <span>@T("پرداخت‌شده", "Paid", "المدفوع"): <strong dir="ltr">@wp.Paid.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong></span>
+                        <span>@T("مبلغ کل", "Total", "الإجمالي", "Total"): <strong dir="ltr">@wp.Total.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"))</strong></span>
+                        <span>@T("پرداخت‌شده", "Paid", "المدفوع", "Pagado"): <strong dir="ltr">@wp.Paid.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"))</strong></span>
                         @if (!wp.FullyPaid)
                         {
-                            <span>@T("باقی‌مانده", "Remaining", "المتبقي"): <strong dir="ltr">@wp.Remaining.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong></span>
+                            <span>@T("باقی‌مانده", "Remaining", "المتبقي", "Restante"): <strong dir="ltr">@wp.Remaining.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"))</strong></span>
                         }
                     </div>
                     @if (!wp.FullyPaid && Model.OrderStatus == "Submitted")
                     {
-                                                            <a class="btn btn-ghost" href="/account/orders/@Model.Id/invoice" target="_blank">@T("فاکتور", "Invoice", "فاتورة")</a>
+                                                            <a class="btn btn-ghost" href="/account/orders/@Model.Id/invoice" target="_blank">@T("فاکتور", "Invoice", "فاتورة", "Factura")</a>
 <form method="post" asp-page-handler="PayWallet" class="inline-form">
                             <input type="hidden" name="id" value="@Model.Id" />
                             <button type="submit" class="btn btn-primary" disabled="@(wp.WalletBalance < wp.Remaining)">
@@ -134,7 +134,7 @@ else
                             @if (wp.WalletBalance < wp.Remaining)
                             {
                                 <div class="charge-inline">
-                                    <small class="muted">@T("موجودی کافی نیست؛ مبلغ کسری را شارژ کنید:", "Insufficient balance; top up the deficit:", "الرصيد غير كافٍ؛ اشحن العجز:")</small>
+                                    <small class="muted">@T("موجودی کافی نیست؛ مبلغ کسری را شارژ کنید:", "Insufficient balance; top up the deficit:", "الرصيد غير كافٍ؛ اشحن العجز:", "Saldo insuficiente; cubre el faltante:")</small>
                                     <form method="post" asp-page="/Account/Wallet" asp-page-handler="Charge" class="inline-form" style="display:flex;gap:6px;margin-top:4px">
                                         <input type="hidden" name="amount" value="@(wp.Remaining - wp.WalletBalance)" />
                                         <input type="hidden" name="returnToken" value="1" />
@@ -151,18 +151,18 @@ else
         @if (Model.OrderStatus == "Draft")
         {
             <div class="alert alert-ok" role="status" style="display:flex;justify-content:space-between;align-items:center">
-                <span>@T("این سفارش پیش‌نویس است؛ هنوز ثبت نهایی نشده.", "This order is a draft; it is not submitted yet.", "هذا الطلب مسودة؛ لم يُرسل بعد.")</span>
-                <a class="btn btn-primary btn-sm" style="width:auto;display:inline-flex" href="/order/wizard">@T("افزودن طرح دیگر به این سفارش", "Add another design to this order", "أضف تصميماً آخر لهذا الطلب")</a>
+                <span>@T("این سفارش پیش‌نویس است؛ هنوز ثبت نهایی نشده.", "This order is a draft; it is not submitted yet.", "هذا الطلب مسودة؛ لم يُرسل بعد.", "Este pedido es un borrador; aún no se ha enviado.")</span>
+                <a class="btn btn-primary btn-sm" style="width:auto;display:inline-flex" href="/order/wizard">@T("افزودن طرح دیگر به این سفارش", "Add another design to this order", "أضف تصميماً آخر لهذا الطلب", "Añadir otro diseño a este pedido")</a>
             </div>
         }
         @if (Model.OrderStatus == "Cancelled")
         {
-            <div class="alert alert-error cancelled-banner" role="alert">✕ @T("این سفارش لغو شده است.", "This order was cancelled.", "تم إلغاء هذا الطلب.")</div>
+            <div class="alert alert-error cancelled-banner" role="alert">✕ @T("این سفارش لغو شده است.", "This order was cancelled.", "تم إلغاء هذا الطلب.", "Este pedido fue cancelado.")</div>
         }
         else
         {
             <div class="order-stepper" role="progressbar">
-                @{ var labels = new[] { T("ثبت سفارش", "Submitted", "إرسال الطلب"), T("ارسال", "Shipped", "الشحن"), T("تحویل", "Delivered", "التسليم") }; }
+                @{ var labels = new[] { T("ثبت سفارش", "Submitted", "إرسال الطلب", "Enviado"), T("ارسال", "Shipped", "الشحن", "Enviado"), T("تحویل", "Delivered", "التسليم", "Entregado") }; }
                 @for (int i = 1; i <= 3; i++)
                 {
                     var st = Model.Stage >= i ? "done" : Model.Stage + 1 == i ? "next" : "todo";
@@ -180,10 +180,10 @@ else
             <div class="alert alert-error" role="alert">
                 @(Model.Error switch
                 {
-                    "order.concurrency_conflict" or "core.database.concurrency_conflict" => T("سفارش هم‌زمان تغییر کرده؛ دوباره تلاش کنید.", "Order changed concurrently; try again.", "تم تغيير الطلب بالتزامن؛ حاول مجدداً."),
-                    "order.invalid_transition" or "order.not_draft" => T("این سفارش در وضعیت فعلی قابل لغو نیست.", "This order can no longer be cancelled.", "لا يمكن إلغاء هذا الطلب الآن."),
-                    "order.cancellation_reason_required" => T("دلیل لغو الزامی است.", "Cancellation reason is required.", "سبب الإلغاء مطلوب."),
-                    _ => T("عملیات انجام نشد؛ دوباره تلاش کنید.", "Operation failed; try again.", "فشلت العملية؛ حاول مجدداً.")
+                    "order.concurrency_conflict" or "core.database.concurrency_conflict" => T("سفارش هم‌زمان تغییر کرده؛ دوباره تلاش کنید.", "Order changed concurrently; try again.", "تم تغيير الطلب بالتزامن؛ حاول مجدداً.", "El pedido cambió simultáneamente; inténtalo de nuevo."),
+                    "order.invalid_transition" or "order.not_draft" => T("این سفارش در وضعیت فعلی قابل لغو نیست.", "This order can no longer be cancelled.", "لا يمكن إلغاء هذا الطلب الآن.", "Este pedido ya no se puede cancelar."),
+                    "order.cancellation_reason_required" => T("دلیل لغو الزامی است.", "Cancellation reason is required.", "سبب الإلغاء مطلوب.", "El motivo de cancelación es obligatorio."),
+                    _ => T("عملیات انجام نشد؛ دوباره تلاش کنید.", "Operation failed; try again.", "فشلت العملية؛ حاول مجدداً.", "La operación falló; inténtalo de nuevo.")
                 })
                 <span class="muted small" dir="ltr"> @Model.Error</span>
             </div>
@@ -192,10 +192,10 @@ else
         <div class="wizard-cols">
             <div style="display:flex;flex-direction:column;gap:1.1rem;min-width:0">
                 <div class="card">
-                    <h2>@T("اقلام سفارش", "Order items", "بنود الطلب")</h2>
+                    <h2>@T("اقلام سفارش", "Order items", "بنود الطلب", "Artículos del pedido")</h2>
                     @if (Model.Items.Count == 0)
                     {
-                        <p class="muted">@T("آیتمی ثبت نشده.", "No items.", "لا بنود.")</p>
+                        <p class="muted">@T("آیتمی ثبت نشده.", "No items.", "لا بنود.", "No hay artículos.")</p>
                     }
                     @foreach (var item in Model.Items)
                     {
@@ -231,7 +231,7 @@ else
                 @if (Model.ShippingAddress is not null)
                 {
                     <div class="card">
-                        <h2>@T("نشانی ارسال", "Shipping address", "عنوان الشحن")</h2>
+                        <h2>@T("نشانی ارسال", "Shipping address", "عنوان الشحن", "Dirección de envío")</h2>
                         <p><strong>@(string.IsNullOrWhiteSpace(Model.ShippingAddress.RecipientName) ? "—" : Model.ShippingAddress.RecipientName)</strong> <span class="muted" dir="ltr">@Model.ShippingAddress.RecipientMobile</span></p>
                         <p class="muted small">@Model.ShippingAddress.Line @if (!string.IsNullOrWhiteSpace(Model.ShippingAddress.PostalCode)) { <span dir="ltr"> · @Model.ShippingAddress.PostalCode</span> }</p>
                     </div>
@@ -240,7 +240,7 @@ else
                 @if (Model.Shipments.Count > 0)
                 {
                     <div class="card">
-                        <h2>@T("مرسولات", "Shipments", "الشحنات")</h2>
+                        <h2>@T("مرسولات", "Shipments", "الشحنات", "Envíos")</h2>
                         @foreach (var s in Model.Shipments)
                         {
                             <div class="shipment-mini">
@@ -248,8 +248,8 @@ else
                                     <strong dir="ltr">@s.Number</strong>
                                     <span class="status-chip st-@s.Status.ToLowerInvariant()">@ShipmentLabel(s.Status)</span>
                                 </div>
-                                <p class="muted small">@T("حمل‌کننده", "Carrier", "الناقل"): <span dir="ltr">@s.Carrier</span> · @T("کد رهگیری", "Tracking", "رمز التتبع"): <strong dir="ltr">@(string.IsNullOrWhiteSpace(s.TrackingCode) ? "—" : s.TrackingCode)</strong></p>
-                                <p class="muted small">@T("ارسال", "Shipped", "الشحن"): @Model.DateText(s.ShippedAt) · @T("تحویل", "Delivered", "التسليم"): @Model.DateText(s.DeliveredAt)</p>
+                                <p class="muted small">@T("حمل‌کننده", "Carrier", "الناقل", "Transportista"): <span dir="ltr">@s.Carrier</span> · @T("کد رهگیری", "Tracking", "رمز التتبع", "Seguimiento"): <strong dir="ltr">@(string.IsNullOrWhiteSpace(s.TrackingCode) ? "—" : s.TrackingCode)</strong></p>
+                                <p class="muted small">@T("ارسال", "Shipped", "الشحن", "Enviado"): @Model.DateText(s.ShippedAt) · @T("تحویل", "Delivered", "التسليم", "Entregado"): @Model.DateText(s.DeliveredAt)</p>
                             </div>
                         }
                     </div>
@@ -258,10 +258,10 @@ else
 
             <div style="display:flex;flex-direction:column;gap:1.1rem;min-width:0">
                 <div class="card price-panel">
-                    <h2>@T("خلاصه قیمت", "Price summary", "ملخص السعر")</h2>
+                    <h2>@T("خلاصه قیمت", "Price summary", "ملخص السعر", "Resumen de precios")</h2>
                     @if (QuoteRows.Count == 0 && TotalRow is null)
                     {
-                        <p class="muted small">@T("قیمت پس از تعریف تعرفه‌ها محاسبه می‌شود.", "Price appears once tariffs are set.", "يظهر السعر بعد تعيين التعريفات.")</p>
+                        <p class="muted small">@T("قیمت پس از تعریف تعرفه‌ها محاسبه می‌شود.", "Price appears once tariffs are set.", "يظهر السعر بعد تعيين التعريفات.", "El precio aparece cuando se fijen las tarifas.")</p>
                     }
                     else
                     {
@@ -281,11 +281,11 @@ else
                 @if (Cancellable)
                 {
                     <div class="card cancel-card no-print">
-                        <h2>@T("لغو سفارش", "Cancel order", "إلغاء الطلب")</h2>
+                        <h2>@T("لغو سفارش", "Cancel order", "إلغاء الطلب", "Cancelar pedido")</h2>
                         <form method="post" asp-page-handler="Cancel" class="auth-form">
                             @if (Model.CancelReasons.Count > 0)
                             {
-                                <label><span>@T("دلیل لغو", "Reason", "السبب")</span>
+                                <label><span>@T("دلیل لغو", "Reason", "السبب", "Motivo")</span>
                                     <select asp-for="CancelReason">
                                         @foreach (var (code, name) in Model.CancelReasons)
                                         {
@@ -294,10 +294,10 @@ else
                                     </select>
                                 </label>
                             }
-                            <label><span>@T("توضیح (اختیاری)", "Details (optional)", "تفاصيل")</span>
+                            <label><span>@T("توضیح (اختیاری)", "Details (optional)", "تفاصيل", "Detalles (opcional)")</span>
                                 <input type="text" asp-for="CancelText" />
                             </label>
-                            <button type="submit" class="btn btn-danger">@T("لغو این سفارش", "Cancel this order", "إلغاء هذا الطلب")</button>
+                            <button type="submit" class="btn btn-danger">@T("لغو این سفارش", "Cancel this order", "إلغاء هذا الطلب", "Cancelar este pedido")</button>
                         </form>
                     </div>
                 }
@@ -305,7 +305,7 @@ else
                 @if (Model.Timeline.Count > 0)
                 {
                     <div class="card">
-                        <h2>@T("خط زمانی", "Timeline", "الخط الزمني")</h2>
+                        <h2>@T("خط زمانی", "Timeline", "الخط الزمني", "Cronología")</h2>
                         <ol class="timeline">
                             @foreach (var e in Model.Timeline)
                             {
@@ -324,8 +324,8 @@ else
         </div>
 
         <div class="row-actions" style="margin-top:1.4rem">
-            <button type="button" class="btn btn-ghost btn-sm no-print" onclick="window.print()">🖨 @T("چاپ رسید", "Print receipt", "طباعة الإيصال")</button>
-            <a class="btn btn-ghost btn-sm" href="/account/orders">→ @T("بازگشت به سفارش‌ها", "Back to orders", "العودة إلى الطلبات")</a>
+            <button type="button" class="btn btn-ghost btn-sm no-print" onclick="window.print()">🖨 @T("چاپ رسید", "Print receipt", "طباعة الإيصال", "Imprimir recibo")</button>
+            <a class="btn btn-ghost btn-sm" href="/account/orders">→ @T("بازگشت به سفارش‌ها", "Back to orders", "العودة إلى الطلبات", "Volver a pedidos")</a>
         </div>
     </section>
 }

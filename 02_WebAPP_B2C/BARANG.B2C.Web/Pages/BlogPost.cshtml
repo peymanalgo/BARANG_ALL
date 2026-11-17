@@ -2,19 +2,19 @@
 @model BARANG.B2C.Web.Pages.BlogPostModel
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     ViewData["Title"] = Model.Title;
 }
 <section class="container section">
     @if (Model.NotFound)
     {
-        <h1>@T("مطلب پیدا نشد", "Post not found", "لم يتم العثور على التدوينة")</h1>
-        <p class="muted"><a href="/blog">← @T("بازگشت به وبلاگ", "Back to blog", "رجوع إلى المدونة")</a></p>
+        <h1>@T("مطلب پیدا نشد", "Post not found", "لم يتم العثور على التدوينة", "Publicación no encontrada")</h1>
+        <p class="muted"><a href="/blog">← @T("بازگشت به وبلاگ", "Back to blog", "رجوع إلى المدونة", "Volver al blog")</a></p>
     }
     else
     {
         <nav class="breadcrumbs" aria-label="breadcrumb">
-            <a href="/">@T("خانه", "Home", "الرئيسية")</a> / <a href="/blog">@T("وبلاگ", "Blog", "المدونة")</a> / <span>@Model.Title</span>
+            <a href="/">@T("خانه", "Home", "الرئيسية", "Inicio")</a> / <a href="/blog">@T("وبلاگ", "Blog", "المدونة", "Blog")</a> / <span>@Model.Title</span>
         </nav>
         <article class="blog-article">
             <h1>@Model.Title</h1>

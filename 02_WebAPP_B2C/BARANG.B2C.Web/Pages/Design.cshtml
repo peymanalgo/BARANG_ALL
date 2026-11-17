@@ -2,11 +2,11 @@
 @model DesignModel
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
 }
 @if (!Model.Found)
 {
-    <section class="container section"><p class="empty">@T("این طرح پیدا نشد.", "This design was not found.", "لم يتم العثور على هذا التصميم.")</p></section>
+    <section class="container section"><p class="empty">@T("این طرح پیدا نشد.", "This design was not found.", "لم يتم العثور على هذا التصميم.", "Este diseño no fue encontrado.")</p></section>
 }
 else
 {
@@ -35,8 +35,8 @@ else
     <script type="application/ld+json">@Html.Raw(ld)</script>
     <section class="container section design-detail">
         <nav class="breadcrumbs" aria-label="breadcrumb">
-            <a href="/">@T("خانه", "Home", "الرئيسية")</a> ›
-            <a href="/catalog">@T("کاتالوگ", "Catalog", "الكتالوج")</a> ›
+            <a href="/">@T("خانه", "Home", "الرئيسية", "Inicio")</a> ›
+            <a href="/catalog">@T("کاتالوگ", "Catalog", "الكتالوج", "Catálogo")</a> ›
             <span>@Model.Title</span>
         </nav>
         <figure class="design-hero">
@@ -48,7 +48,7 @@ else
             {
                 <img src="@Model.Thumbnail" alt="@Model.Title" />
             }
-            <figcaption class="muted">@T("پیش‌نمایش با علامت آب — فایل اصلی پس از سفارش تحویل می‌شود.", "Watermarked preview — the original file is delivered with your order.", "معاينة بعلامة مائية — يُسلّم الملف الأصلي مع طلبك.")</figcaption>
+            <figcaption class="muted">@T("پیش‌نمایش با علامت آب — فایل اصلی پس از سفارش تحویل می‌شود.", "Watermarked preview — the original file is delivered with your order.", "معاينة بعلامة مائية — يُسلّم الملف الأصلي مع طلبك.", "Vista previa con marca de agua: el archivo original se entrega con tu pedido.")</figcaption>
         </figure>
         <div class="design-specs">
             <h1>@Model.Title</h1>
@@ -62,18 +62,18 @@ else
                 <p class="design-desc">@Model.Description</p>
             }
             <ul class="design-notes">
-                <li>@T("فایل اصلی بدون علامت آب با کیفیت چاپ تحویل می‌شود.", "Original watermark-free print-quality file is delivered.", "يُسلّم الملف الأصلي بجودة الطباعة بدون علامة مائية.")</li>
-                <li>@T("امکان افزودن فایل طرح اختصاصی شما.", "You can attach your own custom file.", "يمكنك إرفاق ملفك الخاص.")</li>
+                <li>@T("فایل اصلی بدون علامت آب با کیفیت چاپ تحویل می‌شود.", "Original watermark-free print-quality file is delivered.", "يُسلّم الملف الأصلي بجودة الطباعة بدون علامة مائية.", "Se entrega el archivo original con calidad de impresión y sin marca de agua.")</li>
+                <li>@T("امکان افزودن فایل طرح اختصاصی شما.", "You can attach your own custom file.", "يمكنك إرفاق ملفك الخاص.", "Puedes adjuntar tu propio archivo.")</li>
             </ul>
             <div class="design-cta">
-                <a class="btn btn-primary btn-lg" href="/order/wizard?design=@Model.Id">@T("با همین طرح تیشرتت رو طراحی کن", "Design your shirt with this", "صمّم تيشيرتك بهذا التصميم")</a>
+                <a class="btn btn-primary btn-lg" href="/order/wizard?design=@Model.Id">@T("با همین طرح تیشرتت رو طراحی کن", "Design your shirt with this", "صمّم تيشيرتك بهذا التصميم", "Diseña tu camiseta con este")</a>
             </div>
         </div>
         @if (Model.Similar.Count > 0)
         {
             <div class="section-head" style="margin-top:1.6rem">
-                <h2>@T("طرح‌های مشابه", "Similar designs", "تصاميم مشابهة")</h2>
-                <span class="chip">@T("جستجوی مفهومی", "concept search", "بحث مفهومي")</span>
+                <h2>@T("طرح‌های مشابه", "Similar designs", "تصاميم مشابهة", "Diseños similares")</h2>
+                <span class="chip">@T("جستجوی مفهومی", "concept search", "بحث مفهومي", "búsqueda por conceptos")</span>
             </div>
             <div class="design-grid">
                 @foreach (var sm in Model.Similar)
@@ -87,7 +87,7 @@ else
                         </span>
                         <span class="design-meta">
                             <strong>@sm.Title</strong>
-                            <span class="score-chip">@BARANG.B2C.Web.Services.AppDate.Percent(sm.Score, culture) @T("تطابق", "match", "تطابق")</span>
+                            <span class="score-chip">@BARANG.B2C.Web.Services.AppDate.Percent(sm.Score, culture) @T("تطابق", "match", "تطابق", "coincidencia")</span>
                         </span>
                     </a>
                 }

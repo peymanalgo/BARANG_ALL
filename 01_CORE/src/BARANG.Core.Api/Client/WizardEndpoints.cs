@@ -180,9 +180,19 @@ public static class WizardEndpoints
           .ToDictionary(g => g.Key, g => Pick(g.Select(x => (x.Culture, x.Description!)), culture));
 
     private static string Pick(IEnumerable<(string Culture, string Value)> rows, string culture)
-        => rows.FirstOrDefault(x => string.Equals(x.Culture, culture, StringComparison.OrdinalIgnoreCase)).Value
-           ?? rows.FirstOrDefault(x => x.Culture == "fa").Value
-           ?? rows.FirstOrDefault().Value ?? "";
+    {
+        // es (and any culture whose row is missing) falls back en → fa, mirroring
+        // the public CMS Pick chain (es → en → fa) in SiteContentEndpoints.
+        if (!string.Equals(culture, "fa", StringComparison.OrdinalIgnoreCase))
+        {
+            string? wanted = rows.FirstOrDefault(x => string.Equals(x.Culture, culture, StringComparison.OrdinalIgnoreCase)).Value;
+            if (wanted is not null) return wanted;
+            string? en = rows.FirstOrDefault(x => x.Culture == "en").Value;
+            if (en is not null) return en;
+        }
+        return rows.FirstOrDefault(x => x.Culture == "fa").Value
+               ?? rows.FirstOrDefault().Value ?? "";
+    }
 
     private static string Name(Dictionary<string, string> names, string type, string code) => names.TryGetValue(type + "|" + code, out string? value) && value.Length > 0 ? value : code;
     private static string? Description(Dictionary<string, string> descriptions, string code) => descriptions.TryGetValue("print.size|" + code, out string? value) && value.Length > 0 ? value : null;

@@ -4,54 +4,54 @@
 @{
     Layout = "_AccountLayout";
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
-    string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
-    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"));
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"));
     string Date(DateTimeOffset d) => BARANG.B2C.Web.Services.AppDate.Format(d, culture);
     string invitedCount = BARANG.B2C.Web.Services.AppDate.Digits(Model.InvitedCount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("en")), culture);
     string earnedText = BARANG.B2C.Web.Services.AppDate.Digits(Model.ReferralEarned.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("en")), culture);
-    string InvitedLabel = culture == "en" ? Model.InvitedCount + " invited" : culture == "ar" ? Model.InvitedCount + " مدعو" : invitedCount + " نفر دعوت شده";
-    string EarnedLabel = culture == "en" ? earnedText + " Toman earned" : culture == "ar" ? earnedText + " تومان مكافأة" : earnedText + " تومان هدیه";
+    string InvitedLabel = culture == "en" ? Model.InvitedCount + " invited" : culture == "es" ? Model.InvitedCount + " invitados" : culture == "ar" ? Model.InvitedCount + " مدعو" : invitedCount + " نفر دعوت شده";
+    string EarnedLabel = culture == "en" ? earnedText + " Toman earned" : culture == "es" ? earnedText + " tomán ganados" : culture == "ar" ? earnedText + " تومان مكافأة" : earnedText + " تومان هدیه";
     string OrderStatusLabel(string s) => s switch
     {
-        "Draft" => T("پیش‌نویس", "Draft", "مسودة"),
-        "Submitted" => T("ثبت‌شده", "Submitted", "مُرسل"),
-        "Cancelled" => T("لغوشده", "Cancelled", "ملغى"),
-        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم"),
+        "Draft" => T("پیش‌نویس", "Draft", "مسودة", "Borrador"),
+        "Submitted" => T("ثبت‌شده", "Submitted", "مُرسل", "Enviado"),
+        "Cancelled" => T("لغوشده", "Cancelled", "ملغى", "Cancelado"),
+        "Delivered" => T("تحویل‌شده", "Delivered", "تم التسليم", "Entregado"),
         _ => s
     };
     int StepIndex(string s) => s switch { "Delivered" => 4, "Submitted" => 2, "Cancelled" => -1, _ => 1 };
-    string[] StepLabels() => [T("ثبت سفارش", "Placed", "تسجيل"), T("در حال تولید", "In production", "في الإنتاج"), T("ارسال", "Shipped", "الشحن"), T("تحویل", "Delivered", "التسليم")];
+    string[] StepLabels() => [T("ثبت سفارش", "Placed", "تسجيل", "Realizado"), T("در حال تولید", "In production", "في الإنتاج", "En producción"), T("ارسال", "Shipped", "الشحن", "Enviado"), T("تحویل", "Delivered", "التسليم", "Entregado")];
     string AddressTypeLabel(string? t) => t switch
     {
-        "home" => T("خانه", "Home", "المنزل"),
-        "work" => T("محل کار", "Work", "العمل"),
-        "billing" => T("صورتحساب", "Billing", "الفوترة"),
-        "shipping" => T("ارسال", "Shipping", "الشحن"),
-        "warehouse" => T("انبار", "Warehouse", "المستودع"),
-        _ => T("سایر", "Other", "أخرى")
+        "home" => T("خانه", "Home", "المنزل", "Inicio"),
+        "work" => T("محل کار", "Work", "العمل", "Trabajo"),
+        "billing" => T("صورتحساب", "Billing", "الفوترة", "Facturación"),
+        "shipping" => T("ارسال", "Shipping", "الشحن", "Envío"),
+        "warehouse" => T("انبار", "Warehouse", "المستودع", "Almacén"),
+        _ => T("سایر", "Other", "أخرى", "Otro")
     };
     ViewData["PanelActive"] = "dashboard";
-    ViewData["PanelTitle"] = T("داشبورد", "Dashboard", "لوحة التحكم");
+    ViewData["PanelTitle"] = T("داشبورد", "Dashboard", "لوحة التحكم", "Panel");
 }
 
 <div class="panel-content">
     @if (!Model.HasProfile)
     {
         <div class="card profile-create">
-            <h2>@T("تکمیل اطلاعات حساب", "Complete your profile", "أنشئ ملفك كعميل")</h2>
-            <p class="muted">@T("برای سفارش دادن و ثبت نشانی باید اطلاعات حساب کامل شود.", "To order and add addresses, your profile information must be completed.", "للطلب وإضافة العناوين يجب إكمال معلومات ملفك.")</p>
-            <a class="btn btn-primary" href="/account/complete-profile">@T("تکمیل اطلاعات", "Complete profile", "استكمال الملف")</a>
+            <h2>@T("تکمیل اطلاعات حساب", "Complete your profile", "أنشئ ملفك كعميل", "Completa tu perfil")</h2>
+            <p class="muted">@T("برای سفارش دادن و ثبت نشانی باید اطلاعات حساب کامل شود.", "To order and add addresses, your profile information must be completed.", "للطلب وإضافة العناوين يجب إكمال معلومات ملفك.", "Para pedir y añadir direcciones, debes completar los datos de tu perfil.")</p>
+            <a class="btn btn-primary" href="/account/complete-profile">@T("تکمیل اطلاعات", "Complete profile", "استكمال الملف", "Completar perfil")</a>
         </div>
     }
     else
     {
         <section class="dash-hero">
             <div class="dash-hero-text">
-                <h1>@T("سلام", "Hi", "مرحباً") @(Model.CustomerName ?? Model.DisplayName) <span class="wave">👋</span></h1>
-                <p>@T("خوش آمدی به دنیای طرح‌ها و تیشرت‌های خاص!", "Welcome to the world of special designs and t-shirts!", "مرحباً بك في عالم التصاميم والتيشرتات الخاصة!")</p>
+                <h1>@T("سلام", "Hi", "مرحباً", "Hola") @(Model.CustomerName ?? Model.DisplayName) <span class="wave">👋</span></h1>
+                <p>@T("خوش آمدی به دنیای طرح‌ها و تیشرت‌های خاص!", "Welcome to the world of special designs and t-shirts!", "مرحباً بك في عالم التصاميم والتيشرتات الخاصة!", "¡Bienvenido al mundo de los diseños especiales y las camisetas!")</p>
                 <div class="dash-hero-actions">
-                    <a class="btn btn-primary" href="/catalog">@T("سفارش جدید", "New order", "طلب جديد")</a>
-                    <a class="btn btn-light" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم")</a>
+                    <a class="btn btn-primary" href="/catalog">@T("سفارش جدید", "New order", "طلب جديد", "Nuevo pedido")</a>
+                    <a class="btn btn-light" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم", "Explorar diseños")</a>
                 </div>
             </div>
             <img class="dash-hero-art" src="~/images/pirang-khan.jpg" alt="" aria-hidden="true" />
@@ -63,35 +63,35 @@
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
                 </span>
                 <strong>@Money(Model.Wallet.Balance)</strong>
-                <span>@T("اعتبار کیف پول (تومان)", "Wallet credit (Toman)", "رصيد المحفظة")</span>
+                <span>@T("اعتبار کیف پول (تومان)", "Wallet credit (Toman)", "رصيد المحفظة", "Crédito de billetera (tomán)")</span>
             </a>
             <a class="dash-stat" href="/account/orders">
                 <span class="dash-stat-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
                 </span>
-                <strong>@Model.InProgressCount.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong>
-                <span>@T("در حال انجام", "In progress", "قيد التنفيذ")</span>
+                <strong>@Model.InProgressCount.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"))</strong>
+                <span>@T("در حال انجام", "In progress", "قيد التنفيذ", "En curso")</span>
             </a>
             <a class="dash-stat" href="/account/orders">
                 <span class="dash-stat-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                 </span>
-                <strong>@Model.DeliveredCount.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong>
-                <span>@T("سفارش موفق", "Delivered orders", "طلبات مسلمة")</span>
+                <strong>@Model.DeliveredCount.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"))</strong>
+                <span>@T("سفارش موفق", "Delivered orders", "طلبات مسلمة", "Pedidos entregados")</span>
             </a>
             <a class="dash-stat" href="/account/favorites">
                 <span class="dash-stat-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7z"/></svg>
                 </span>
-                <strong>@Model.FavoriteCount.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong>
-                <span>@T("طرح مورد علاقه", "Favorites", "مفضلة")</span>
+                <strong>@Model.FavoriteCount.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"))</strong>
+                <span>@T("طرح مورد علاقه", "Favorites", "مفضلة", "Favoritos")</span>
             </a>
             <a class="dash-stat" href="/account/addresses">
                 <span class="dash-stat-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 </span>
-                <strong>@Model.AddressCount.ToString("N0", CultureInfo.GetCultureInfo(culture == "en" ? "en" : "fa"))</strong>
-                <span>@T("آدرس ثبت‌شده", "Saved addresses", "عناوين محفوظة")</span>
+                <strong>@Model.AddressCount.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"))</strong>
+                <span>@T("آدرس ثبت‌شده", "Saved addresses", "عناوين محفوظة", "Direcciones guardadas")</span>
             </a>
         </section>
 
@@ -99,12 +99,12 @@
             <section class="dash-col">
                 <div class="dash-card">
                     <div class="dash-card-head">
-                        <h2>@T("طرح‌های مورد علاقه", "Favorite designs", "التصاميم المفضلة")</h2>
-                        <a class="link-more" href="/account/favorites">@T("همه ←", "All →", "الكل ←")</a>
+                        <h2>@T("طرح‌های مورد علاقه", "Favorite designs", "التصاميم المفضلة", "Diseños favoritos")</h2>
+                        <a class="link-more" href="/account/favorites">@T("همه ←", "All →", "الكل ←", "Todo →")</a>
                     </div>
                     @if (Model.Favorites.Count == 0)
                     {
-                        <p class="empty">@T("هنوز طرحی به علاقه‌مندی‌ها اضافه نکرده‌اید.", "No favorites yet.", "لا مفضلات بعد.")</p>
+                        <p class="empty">@T("هنوز طرحی به علاقه‌مندی‌ها اضافه نکرده‌اید.", "No favorites yet.", "لا مفضلات بعد.", "Aún no hay favoritos.")</p>
                     }
                     else
                     {
@@ -123,7 +123,7 @@
                                     <form method="post" asp-page="/Account/Favorites" asp-page-handler="Toggle" class="fav-heart-form">
                                         <input type="hidden" name="artworkId" value="@f.ArtworkId" />
                                         <input type="hidden" name="returnUrl" value="/account" />
-                                        <button type="submit" class="fav-heart on" title="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة")" aria-label="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة")">♥</button>
+                                        <button type="submit" class="fav-heart on" title="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة", "Quitar de favoritos")" aria-label="@T("حذف از علاقه‌مندی", "Remove favorite", "إزالة من المفضلة", "Quitar de favoritos")">♥</button>
                                     </form>
                                 </a>
                             }
@@ -133,12 +133,12 @@
 
                 <div class="dash-card">
                     <div class="dash-card-head">
-                        <h2>@T("آخرین سفارش‌ها", "Latest orders", "أحدث الطلبات")</h2>
-                        <a class="link-more" href="/account/orders">@T("همه ←", "All →", "الكل ←")</a>
+                        <h2>@T("آخرین سفارش‌ها", "Latest orders", "أحدث الطلبات", "Últimos pedidos")</h2>
+                        <a class="link-more" href="/account/orders">@T("همه ←", "All →", "الكل ←", "Todo →")</a>
                     </div>
                     @if (Model.RecentOrders.Count == 0)
                     {
-                        <p class="empty">@T("هنوز سفارشی ثبت نکرده‌اید.", "No orders yet.", "لا طلبات بعد.")</p>
+                        <p class="empty">@T("هنوز سفارشی ثبت نکرده‌اید.", "No orders yet.", "لا طلبات بعد.", "Aún no hay pedidos.")</p>
                     }
                     else
                     {
@@ -170,8 +170,8 @@
 
             <aside class="dash-side">
                 <div class="dash-card invite-card">
-                    <h2>@T("دعوت از دوستان", "Invite friends", "دعوة الأصدقاء")</h2>
-                    <p class="invite-text">@T("کد دعوتت را بفرست؛ با اولین خریدش اعتبار هدیه می‌گیری.", "Share your invite code; earn gift credit on their first purchase.", "شارك رمز الدعوة؛ اربح رصيد هدية على أول عملية شراء.")</p>
+                    <h2>@T("دعوت از دوستان", "Invite friends", "دعوة الأصدقاء", "Invita a tus amigos")</h2>
+                    <p class="invite-text">@T("کد دعوتت را بفرست؛ با اولین خریدش اعتبار هدیه می‌گیری.", "Share your invite code; earn gift credit on their first purchase.", "شارك رمز الدعوة؛ اربح رصيد هدية على أول عملية شراء.", "Comparte tu código de invitación y gana crédito de regalo con su primera compra.")</p>
                     <button type="button" class="btn-invite" data-copy="@($"?ref={Model.ReferralCode}")">
                         <span dir="ltr">@Model.ReferralCode</span>
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -182,29 +182,29 @@
                     </div>
                 </div>
                 <div class="dash-card wallet-card">
-                    <h2>@T("کیف پول من", "My wallet", "محفظتي")</h2>
-                    <p class="wallet-balance">@Money(Model.Wallet.Balance) <small>@T("تومان", "Toman", "تومان")</small></p>
-                    <a class="btn btn-light btn-sm" href="/account/wallet">@T("تراکنش‌ها", "Transactions", "المعاملات")</a>
+                    <h2>@T("کیف پول من", "My wallet", "محفظتي", "Mi billetera")</h2>
+                    <p class="wallet-balance">@Money(Model.Wallet.Balance) <small>@T("تومان", "Toman", "تومان", "tomán")</small></p>
+                    <a class="btn btn-light btn-sm" href="/account/wallet">@T("تراکنش‌ها", "Transactions", "المعاملات", "Transacciones")</a>
                 </div>
                 <a class="dash-quick" href="/catalog">
-                    <strong>@T("سفارش سریع", "Quick order", "طلب سريع")</strong>
-                    <span>@T("طرح را انتخاب کن و در چند دقیقه سفارش بده.", "Pick a design and order in minutes.", "اختر تصميماً واطلب في دقائق.")</span>
+                    <strong>@T("سفارش سریع", "Quick order", "طلب سريع", "Pedido rápido")</strong>
+                    <span>@T("طرح را انتخاب کن و در چند دقیقه سفارش بده.", "Pick a design and order in minutes.", "اختر تصميماً واطلب في دقائق.", "Elige un diseño y pide en minutos.")</span>
                 </a>
                 <a class="dash-quick" href="/account/custom-designs">
-                    <strong>@T("طراحی اختصاصی", "Custom design", "تصميم مخصص")</strong>
-                    <span>@T("طرح خودت را آپلود کن.", "Upload your own design.", "ارفع تصميمك الخاص.")</span>
+                    <strong>@T("طراحی اختصاصی", "Custom design", "تصميم مخصص", "Diseño personalizado")</strong>
+                    <span>@T("طرح خودت را آپلود کن.", "Upload your own design.", "ارفع تصميمك الخاص.", "Sube tu propio diseño.")</span>
                 </a>
                 <a class="dash-quick accent" href="/account/feedback">
-                    <strong>@T("نیاز به راهنمایی داری؟", "Need help?", "تحتاج مساعدة؟")</strong>
-                    <span>@T("سؤالت را بپرس یا پیشنهادت را بنویس.", "Ask a question or share a suggestion.", "اسأل أو شارك اقتراحك.")</span>
+                    <strong>@T("نیاز به راهنمایی داری؟", "Need help?", "تحتاج مساعدة؟", "¿Necesitas ayuda?")</strong>
+                    <span>@T("سؤالت را بپرس یا پیشنهادت را بنویس.", "Ask a question or share a suggestion.", "اسأل أو شارك اقتراحك.", "Haz una pregunta o comparte una sugerencia.")</span>
                 </a>
                 @if (Model.Notifications.Count > 0)
                 {
                     <div class="dash-card notif-mini">
                         <div class="dash-card-head">
-                            <h2>@T("اعلان‌ها", "Notifications", "الإشعارات")</h2>
+                            <h2>@T("اعلان‌ها", "Notifications", "الإشعارات", "Notificaciones")</h2>
                             <form method="post" asp-page-handler="MarkAllRead">
-                                <button type="submit" class="link-more as-button">@T("خواندن همه", "Mark all read", "الكل مقروء")</button>
+                                <button type="submit" class="link-more as-button">@T("خواندن همه", "Mark all read", "الكل مقروء", "Marcar todo como leído")</button>
                             </form>
                         </div>
                         <ul class="notif-list compact">
@@ -216,7 +216,7 @@
                                 </li>
                             }
                         </ul>
-                        <a class="link-more" href="/account/notifications">@T("همه اعلان‌ها ←", "All notifications →", "كل الإشعارات ←")</a>
+                        <a class="link-more" href="/account/notifications">@T("همه اعلان‌ها ←", "All notifications →", "كل الإشعارات ←", "Todas las notificaciones →")</a>
                     </div>
                 }
             </aside>
@@ -225,8 +225,8 @@
         <section class="dash-row">
             <div class="dash-card offers">
                 <div class="dash-card-head">
-                    <h2>@T("پیشنهادهای ویژه", "Special picks", "اختيارات مميزة")</h2>
-                    <a class="link-more" href="/catalog">@T("همه طرح‌ها ←", "All designs →", "كل التصاميم ←")</a>
+                    <h2>@T("پیشنهادهای ویژه", "Special picks", "اختيارات مميزة", "Selecciones especiales")</h2>
+                    <a class="link-more" href="/catalog">@T("همه طرح‌ها ←", "All designs →", "كل التصاميم ←", "Todos los diseños →")</a>
                 </div>
                 <div class="offer-grid">
                     @foreach (var o in Model.Offers)
@@ -242,25 +242,25 @@
                     }
                     @if (Model.Offers.Count == 0)
                     {
-                        <p class="empty">@T("طرحی برای نمایش نیست.", "No designs to show.", "لا تصاميم للعرض.")</p>
+                        <p class="empty">@T("طرحی برای نمایش نیست.", "No designs to show.", "لا تصاميم للعرض.", "No hay diseños para mostrar.")</p>
                     }
                 </div>
             </div>
 
             <a class="dash-add-design" href="/account/custom-designs">
                 <span class="plus" aria-hidden="true">+</span>
-                <strong>@T("افزودن طرح جدید", "Add new design", "إضافة تصميم جديد")</strong>
-                <span>@T("طرح اختصاصی‌ات را آپلود کن", "Upload your custom design", "ارفع تصميمك المخصص")</span>
+                <strong>@T("افزودن طرح جدید", "Add new design", "إضافة تصميم جديد", "Añadir nuevo diseño")</strong>
+                <span>@T("طرح اختصاصی‌ات را آپلود کن", "Upload your custom design", "ارفع تصميمك المخصص", "Sube tu diseño personalizado")</span>
             </a>
 
             <div class="dash-card addr">
                 <div class="dash-card-head">
-                    <h2>@T("آدرس‌های من", "My addresses", "عناويني")</h2>
-                    <a class="link-more" href="/account/addresses">@T("مدیریت ←", "Manage →", "إدارة ←")</a>
+                    <h2>@T("آدرس‌های من", "My addresses", "عناويني", "Mis direcciones")</h2>
+                    <a class="link-more" href="/account/addresses">@T("مدیریت ←", "Manage →", "إدارة ←", "Gestionar →")</a>
                 </div>
                 @if (Model.Addresses.Count == 0)
                 {
-                    <p class="empty">@T("هنوز آدرسی ثبت نکرده‌اید.", "No addresses yet.", "لا عناوين بعد.")</p>
+                    <p class="empty">@T("هنوز آدرسی ثبت نکرده‌اید.", "No addresses yet.", "لا عناوين بعد.", "Aún no hay direcciones.")</p>
                 }
                 else
                 {
@@ -273,7 +273,7 @@
                                     <span class="addr-chip">@AddressTypeLabel(ad.TypeCode)</span>
                                     @if (ad.IsDefault)
                                     {
-                                        <span class="addr-chip default">@T("پیش‌فرض", "Default", "افتراضي")</span>
+                                        <span class="addr-chip default">@T("پیش‌فرض", "Default", "افتراضي", "Predeterminado")</span>
                                     }
                                 </div>
                                 <p class="muted">@(string.IsNullOrWhiteSpace(ad.AddressLine) ? ad.City : $"{ad.City} — {ad.AddressLine}")</p>
