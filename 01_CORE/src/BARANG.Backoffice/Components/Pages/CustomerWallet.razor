@@ -176,7 +176,7 @@
     private const int PageSize = 20;
     private bool AdjustOpen; private string AdjustCustomerCode = "", AdjustDirection = "credit", AdjustNote = ""; private decimal AdjustAmount; private string? AdjustMessage;
 
-    private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"ar"=>ar,_=>fa};
+    private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>en,"ar"=>ar,_=>fa};
 
     private string StatusLabel(string s)=>s switch
     {

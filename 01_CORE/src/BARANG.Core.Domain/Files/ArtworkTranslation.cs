@@ -9,7 +9,7 @@ public sealed class ArtworkTranslation
 {
     public const int TitleMaxLength = 200;
     public const int DescriptionMaxLength = 2000;
-    public static readonly IReadOnlySet<string> SupportedCultures = new HashSet<string>(["fa", "en", "ar"], StringComparer.Ordinal);
+    public static readonly IReadOnlySet<string> SupportedCultures = new HashSet<string>(["fa", "en", "ar", "es"], StringComparer.Ordinal);
 
     public Guid Id { get; private set; }
     public Guid CompanyId { get; private set; }

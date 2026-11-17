@@ -72,7 +72,7 @@
         return language switch
         {
             "ar" => code == "pricing.product_price.missing" ? ProductPriceMessage("ar") : "لم يتم العثور على تعريفة نشطة لمكوّن التسعير المحدد.",
-            "en" => code == "pricing.product_price.missing" ? ProductPriceMessage("en") : "No active pricing tariff is configured for the affected order component.",
+            "en" => code == "pricing.product_price.missing" ? ProductPriceMessage("en") : "No active pricing tariff is configured for the affected order component.","es"=> code == "pricing.product_price.missing" ? ProductPriceMessage("en") : "No active pricing tariff is configured for the affected order component.",
             _ => code == "pricing.product_price.missing" ? ProductPriceMessage("fa") : "برای مؤلفه مربوط به سفارش تعرفه فعال تعریف نشده است."
         };
     }
@@ -85,7 +85,7 @@
         string date = values.TryGetValue("date", out string? raw) && Dates.TryParseCanonical(raw, out DateOnly parsed) ? Dates.Format(parsed, System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName) : "";
         return language switch
         {
-            "en" => string.IsNullOrWhiteSpace(date) ? $"No active sales price exists for {label}." : $"No active sales price exists for {label} on {date}.",
+            "en" => string.IsNullOrWhiteSpace(date) ? $"No active sales price exists for {label}." : $"No active sales price exists for {label} on {date}.","es"=>string.IsNullOrWhiteSpace(date) ? $"No active sales price exists for {label}." : $"No active sales price exists for {label} on {date}.",
             "ar" => string.IsNullOrWhiteSpace(date) ? $"لا يوجد سعر بيع نشط لـ{label}." : $"لا يوجد سعر بيع نشط لـ{label} في تاريخ {date}.",
             _ => string.IsNullOrWhiteSpace(date) ? $"برای {label} قیمت فروش فعال تعریف نشده است." : $"برای {label} در تاریخ {date} قیمت فروش فعال تعریف نشده است."
         };
@@ -93,7 +93,7 @@
     private string AmbiguousPricingMessage() => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch
     {
         "ar" => "أكثر من تعريفة نشطة تنطبق على أحد مكونات الطلب؛ يجب تصحيح إعداد التسعير.",
-        "en" => "More than one active tariff applies to an order component; pricing configuration must be corrected.",
+        "en" => "More than one active tariff applies to an order component; pricing configuration must be corrected.","es"=> "More than one active tariff applies to an order component; pricing configuration must be corrected.",
         _ => "بیش از یک تعرفه فعال برای یکی از مؤلفه‌های سفارش اعمال می‌شود؛ تنظیمات قیمت‌گذاری را اصلاح کنید."
     };
     private async Task<(string Token, Guid Company)?> Session() { var user = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid company) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? (token, company) : null; }

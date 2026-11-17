@@ -37,8 +37,8 @@
         <section class="reference-editor"><fieldset disabled="@(ReadOnly||Busy)"><div class="form-grid">
             <label><span>@T["Code"] *</span><input name="reference-code" dir="ltr" @bind="Code" disabled="@(EditingId is not null)" /></label>
             <label><span>@L["DisplayOrder"]</span><input type="number" name="reference-order" @bind="Order" /></label>
-            @foreach(string culture in Cultures){<label><span>@T["Name"] (@culture) *</span><input name="@($"reference-name-{culture}")" dir="@(culture=="en"?"ltr":"rtl")" value="@Names[culture]" @onchange="e=>Names[culture]=e.Value?.ToString()??string.Empty" /></label>
-                <label><span>@R["Description"] (@culture)</span><textarea name="@($"reference-description-{culture}")" dir="@(culture=="en"?"ltr":"rtl")" value="@Descriptions[culture]" @onchange="e=>Descriptions[culture]=e.Value?.ToString()??string.Empty"></textarea></label>}
+            @foreach(string culture in Cultures){<label><span>@T["Name"] (@culture) *</span><input name="@($"reference-name-{culture}")" dir="@(culture is "en" or "es" ?"ltr":"rtl")" value="@Names[culture]" @onchange="e=>Names[culture]=e.Value?.ToString()??string.Empty" /></label>
+                <label><span>@R["Description"] (@culture)</span><textarea name="@($"reference-description-{culture}")" dir="@(culture is "en" or "es" ?"ltr":"rtl")" value="@Descriptions[culture]" @onchange="e=>Descriptions[culture]=e.Value?.ToString()??string.Empty"></textarea></label>}
             @if(IsDefect){<label><span>@R["DefectCategory"] *</span><ReferenceSelect TypeCode="defect.category" UseCode="true" Name="reference-category" @bind-Value="CategoryCode" Disabled="@(ReadOnly||Busy)" /></label><label><span>@R["Severity"]</span><select name="reference-severity" @bind="Severity">@foreach(string severity in new[]{"Minor","Major","Critical"}){<option value="@severity">@R[severity]</option>}</select></label><label class="check-field"><input name="reference-blocking" type="checkbox" @bind="Blocking" /><span>@R["Blocking"]</span></label>}
             <label class="check-field"><input type="checkbox" @bind="Active" disabled="@(EditingId is null)" /><span>@T["Active"]</span></label>
         </div></fieldset></section>
@@ -61,7 +61,7 @@
     private string CategoryCode="",Severity="Minor";
     private bool Blocking;
     private const int PageSize=20;
-    private static readonly string[] Cultures=["fa","ar","en"];
+    private static readonly string[] Cultures=["fa","ar","en","es"];
     private List<Row> Rows=[];
     private string Search="",Sort="Code",Code="";
     private bool Descending,Loading,Busy,Dialog,DeleteDialog,ReadOnly,Success,Active=true;
@@ -123,5 +123,5 @@
     private async Task Delete(){if(Busy||Token is null||!CanManage||EditingId is null)return;Busy=true;var result=await Core.SendAsync(HttpMethod.Delete,$"{ValuePath(EditingId)}?version={Version}",null,Token,Company,default);Show(result);Busy=false;if(result.IsSuccess){DeleteDialog=false;await Reload();}}
     private void Show(ApiResult<JsonElement> result){Success=result.IsSuccess;Message=result.IsSuccess?T["OperationSucceeded"]:result.ProblemCode switch{"lookup.value_referenced" or "organization.delete.protected_dependency"=>R["Referenced"],"lookup.system_record_protected"=>R["Protected"],_=>result.Failure switch{ApiFailure.Forbidden=>T["Forbidden"],ApiFailure.Conflict=>T["ConcurrencyConflict"],_=>T["ValidationError"]}};}
     private static Row Parse(JsonElement x){var translations=x.GetProperty("translations").EnumerateArray().ToArray();return new(x.GetProperty("id").GetGuid(),x.GetProperty("code").GetString()!,x.GetProperty("displayOrder").GetInt32(),x.GetProperty("isActive").GetBoolean(),x.GetProperty("isSystem").GetBoolean(),x.GetProperty("version").GetInt64(),translations.ToDictionary(t=>t.GetProperty("culture").GetString()!,t=>t.GetProperty("displayName").GetString()!),translations.ToDictionary(t=>t.GetProperty("culture").GetString()!,t=>t.TryGetProperty("description",out var d)&&d.ValueKind==JsonValueKind.String?d.GetString()!:""),x.TryGetProperty("categoryCode",out var category)?category.GetString()??"":"",x.TryGetProperty("severity",out var severity)?severity.GetString()??"Minor":"Minor",x.TryGetProperty("isBlocking",out var blocking)&&blocking.GetBoolean());}
-    private sealed record Row(Guid Id,string Code,int Order,bool Active,bool System,long Version,Dictionary<string,string> Names,Dictionary<string,string> Descriptions,string Category,string Severity,bool Blocking){public string Caption(string culture)=>Names.GetValueOrDefault(culture,Names.GetValueOrDefault("fa",Code));}
+    private sealed record Row(Guid Id,string Code,int Order,bool Active,bool System,long Version,Dictionary<string,string> Names,Dictionary<string,string> Descriptions,string Category,string Severity,bool Blocking){public string Caption(string culture)=>Names.TryGetValue(culture,out var v)&&v.Length>0?v:(culture=="es"&&Names.TryGetValue("en",out var e)&&e.Length>0?e:Names.GetValueOrDefault("fa",Code));}
 }

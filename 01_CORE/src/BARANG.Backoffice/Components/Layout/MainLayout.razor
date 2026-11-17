@@ -92,9 +92,9 @@
 <div id="blazor-error-ui">@L["GenericError"] <a href="." class="reload">@L["Reload"]</a></div>
 
 @code {
-    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "en", "ar" => "ar", _ => "fa" };
-    private string Brand => CultureCode switch { "ar" => "برنگ", "en" => "BARANG", _ => "برنگ" };
-    private string VersionLabel => CultureCode switch { "ar" => "الإصدار " + BARANG.Backoffice.AppMeta.Version, "en" => "Version " + BARANG.Backoffice.AppMeta.Version, _ => "نسخه " + BARANG.Backoffice.AppMeta.Version };
+    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "en", "ar" => "ar", "es" => "es", _ => "fa" };
+    private string Brand => CultureCode switch { "ar" => "برنگ", "en" or "es" => "BARANG", _ => "برنگ" };
+    private string VersionLabel => CultureCode switch { "ar" => "الإصدار " + BARANG.Backoffice.AppMeta.Version, "en" => "Version " + BARANG.Backoffice.AppMeta.Version, "es" => "Versión " + BARANG.Backoffice.AppMeta.Version, _ => "نسخه " + BARANG.Backoffice.AppMeta.Version };
     private string DisplayName = "";
     private string CompanyName = "";
     private bool NavigationOpen;

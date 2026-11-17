@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="FollowUp" xml:space="preserve">
+    <value>Seguimiento</value>
+  </data>
+  <data name="SetFollowUp" xml:space="preserve">
+    <value>Fijar seguimiento</value>
+  </data>
+  <data name="ClearFollowUp" xml:space="preserve">
+    <value>Quitar seguimiento</value>
+  </data>
+  <data name="FollowUpReached" xml:space="preserve">
+    <value>Seguimiento listo</value>
+  </data>
+  <data name="FutureFollowUp" xml:space="preserve">
+    <value>Seguimiento futuro</value>
+  </data>
+  <data name="FollowUpFilter" xml:space="preserve">
+    <value>Seguimiento</value>
+  </data>
+  <data name="AllFollowUps" xml:space="preserve">
+    <value>Todos</value>
+  </data>
+  <data name="HasFollowUp" xml:space="preserve">
+    <value>Con seguimiento</value>
+  </data>
+  <data name="ReachedFilter" xml:space="preserve">
+    <value>Seguimiento alcanzado</value>
+  </data>
+  <data name="FutureFilter" xml:space="preserve">
+    <value>Seguimiento futuro</value>
+  </data>
+  <data name="NearestFollowUp" xml:space="preserve">
+    <value>Seguimiento más próximo</value>
+  </data>
+  <data name="LatestFollowUp" xml:space="preserve">
+    <value>Último seguimiento</value>
+  </data>
+  <data name="ReleaseTask" xml:space="preserve">
+    <value>Liberar tarea</value>
+  </data>
+  <data name="ReleasePrompt" xml:space="preserve">
+    <value>¿Devolver esta tarea a la cola?</value>
+  </data>
+  <data name="Released" xml:space="preserve">
+    <value>Tarea devuelta a la cola.</value>
+  </data>
+  <data name="FutureRequired" xml:space="preserve">
+    <value>La fecha de seguimiento debe estar en el futuro.</value>
+  </data>
+  <data name="SaveFailed" xml:space="preserve">
+    <value>No se pudo guardar el seguimiento.</value>
+  </data>
+  <data name="ReleaseFailed" xml:space="preserve">
+    <value>No se pudo liberar la tarea.</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>Hora</value>
+  </data>
+</root>

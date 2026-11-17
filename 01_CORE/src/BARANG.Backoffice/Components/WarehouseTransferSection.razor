@@ -35,7 +35,7 @@
 @code {
     private sealed record Row(Guid Id,string Reference,string SourceCode,string SourceName,string DestinationCode,string DestinationName,string ProductCode,string ProductName,string Sku,decimal Quantity,string UomCode,string Status,long Version);
     private string Search="",Status="",Sort="created",Source="",Destination="",Product="",Variant="",Reference="TR-"+Guid.NewGuid().ToString("N")[..10].ToUpperInvariant(),Reason="",Uom="",ViewStatus=""; private decimal Quantity=1; private int Page=1,TotalCount; private const int PageSize=20; private bool Loading,Dialog,ReadOnly,Success,Busy,ConfirmOpen; private string? Message,Error,ConfirmTitle,ConfirmDescription; private string ConfirmActionName=""; private decimal? SourceAvailability; private List<Row> Rows=[]; private List<SearchableSelectOption> WarehouseOptions=[],ProductOptions=[],VariantOptions=[]; private CancellationTokenSource? SearchCancellation;
-    private string Lang=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName; private bool Descending; private string T(string fa,string ar,string en)=>Lang switch{"en"=>en,"ar"=>ar,_=>fa};
+    private string Lang=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName; private bool Descending; private string T(string fa,string ar,string en)=>Lang switch{"en"=>en,"es"=>en,"ar"=>ar,_=>fa};
     private string StatusLabel(string value)=>value switch{"InTransit" or "0"=>T("در حال انتقال","قيد التحويل","In transit"),"Completed" or "1"=>T("تکمیل‌شده","مكتمل","Completed"),"Cancelled" or "2"=>T("لغوشده","ملغى","Cancelled"),_=>value};
     private static bool IsInTransit(string value)=>value is "InTransit" or "0";
     protected override async Task OnInitializedAsync(){await LoadSelectors();await Load();}

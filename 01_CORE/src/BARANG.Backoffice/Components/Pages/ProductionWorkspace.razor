@@ -151,11 +151,11 @@
  private int InProgressCount,SuspendedCount,PendingWarehouseCount,CompletedCount,TotalJobsAll,StatusTotal;
  private Dictionary<string,int> StatusCounts=new();
  private string? Token; private Guid Company;
- private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
+ private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","es"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
  private string ShiftSummary=>string.Join(" · ",ShiftList.Select(s=>$"{s.Title} ({s.Start:HH:mm}–{s.End:HH:mm})"));
  private readonly List<(string Title,TimeOnly Start,TimeOnly End)> ShiftList=[];
  protected override async Task OnInitializedAsync(){var u=(await AuthState.GetAuthenticationStateAsync()).User;Token=u.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await LoadShifts();await Load();}
- private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"ar"=>ar,_=>fa};
+ private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>en,"ar"=>ar,_=>fa};
  private string D2(string fa,string en,string ar)=>T(fa,en,ar);
  private string St(string s)=>s switch{"Planned"=>T("برنامه‌ریزی‌شده","Planned","مخطط"),"Ready"=>T("آماده","Ready","جاهز"),"InProgress"=>T("در جریان","In progress","قيد التنفيذ"),"Suspended"=>T("متوقف","Suspended","معلق"),"Failed"=>T("خطا","Failed","فشل"),"Completed"=>T("تکمیل‌شده","Completed","مكتمل"),_=>s};
  private string Jt(string t)=>t switch{"DesignPreparation"=>T("آماده‌سازی طرح","Design preparation","تجهيز التصميم"),"Print"=>T("چاپ","Print","طباعة"),"HeatPress"=>T("پرس حرارتی","Heat press","كبس حراري"),_=>t};

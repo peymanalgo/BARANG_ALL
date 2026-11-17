@@ -165,11 +165,11 @@ document.addEventListener('keydown', event => {
 });
 
 window.barangSetCulture = async code => {
-    if (!['fa', 'ar', 'en'].includes(code)) throw new Error('Unsupported UI language');
+    if (!['fa', 'ar', 'en', 'es'].includes(code)) throw new Error('Unsupported UI language');
     const root = document.documentElement;
     const previous = { lang: root.lang, dir: root.dir };
     root.lang = code;
-    root.dir = code === 'en' ? 'ltr' : 'rtl';
+    root.dir = (code === 'en' || code === 'es') ? 'ltr' : 'rtl';
     try {
         const response = await fetch('/culture?culture=' + encodeURIComponent(code) + '&live=true', {
             credentials: 'same-origin', cache: 'no-store'

@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Nav_Foundation" xml:space="preserve">
+    <value>Administración base</value>
+  </data>
+  <data name="Nav_Companies" xml:space="preserve">
+    <value>Empresas</value>
+  </data>
+  <data name="Nav_CompanySettings" xml:space="preserve">
+    <value>Configuración de la empresa</value>
+  </data>
+  <data name="Nav_Branches" xml:space="preserve">
+    <value>Sucursales</value>
+  </data>
+  <data name="Nav_Units" xml:space="preserve">
+    <value>Unidades organizativas</value>
+  </data>
+  <data name="Nav_Shifts" xml:space="preserve">
+    <value>Turnos de trabajo</value>
+  </data>
+  <data name="Nav_Warehouses" xml:space="preserve">
+    <value>Almacenes</value>
+  </data>
+  <data name="Nav_UserAccessManagement" xml:space="preserve">
+    <value>Gestión de usuarios y accesos</value>
+  </data>
+  <data name="Nav_Users" xml:space="preserve">
+    <value>Usuarios y acceso a empresas</value>
+  </data>
+  <data name="Nav_Roles" xml:space="preserve">
+    <value>Roles y permisos</value>
+  </data>
+  <data name="Nav_Audit" xml:space="preserve">
+    <value>Registro de auditoría</value>
+  </data>
+  <data name="Nav_MasterData" xml:space="preserve">
+    <value>Datos maestros</value>
+  </data>
+  <data name="Nav_Lookups" xml:space="preserve">
+    <value>Listas maestras y traducciones</value>
+  </data>
+  <data name="Nav_Products" xml:space="preserve">
+    <value>Productos</value>
+  </data>
+  <data name="Nav_Variants" xml:space="preserve">
+    <value>Variantes y SKU</value>
+  </data>
+  <data name="Nav_Suppliers" xml:space="preserve">
+    <value>Proveedores</value>
+  </data>
+  <data name="Nav_Equipment" xml:space="preserve">
+    <value>Equipos de la empresa</value>
+  </data>
+  <data name="Nav_CustomerWallet" xml:space="preserve">
+    <value>Monederos de clientes</value>
+  </data>
+  <data name="Nav_CustomerFeedbacks" xml:space="preserve">
+    <value>Opiniones de clientes</value>
+  </data>
+  <data name="Nav_Customers" xml:space="preserve">
+    <value>Clientes</value>
+  </data>
+  <data name="Nav_ArtworkFiles" xml:space="preserve">
+    <value>Banco de diseños</value>
+  </data>
+  <data name="Nav_ArtworkBank" xml:space="preserve">
+    <value>Banco de diseños</value>
+  </data>
+  <data name="Nav_ArtworkTags" xml:space="preserve">
+    <value>Categorías y etiquetas</value>
+  </data>
+  <data name="Nav_FileHistory" xml:space="preserve">
+    <value>Versiones, procesamiento e historial</value>
+  </data>
+  <data name="Nav_Orders" xml:space="preserve">
+    <value>Pedidos</value>
+  </data>
+  <data name="Nav_NewOrder" xml:space="preserve">
+    <value>Nuevo pedido</value>
+  </data>
+  <data name="Nav_OrderSearch" xml:space="preserve">
+    <value>Búsqueda y Pedido 360</value>
+  </data>
+  <data name="Nav_InventoryPurchasing" xml:space="preserve">
+    <value>Inventario y compras</value>
+  </data>
+  <data name="Nav_Inventory" xml:space="preserve">
+    <value>Saldos, libro mayor y reservas</value>
+  </data>
+  <data name="Nav_Shortages" xml:space="preserve">
+    <value>Faltantes</value>
+  </data>
+  <data name="Nav_Purchasing" xml:space="preserve">
+    <value>Solicitudes y órdenes de compra</value>
+  </data>
+  <data name="Nav_Production" xml:space="preserve">
+    <value>Producción</value>
+  </data>
+  <data name="Nav_Quality" xml:space="preserve">
+    <value>Calidad y reproducción</value>
+  </data>
+  <data name="Nav_QualityCatalogs" xml:space="preserve">
+    <value>Plantillas y catálogo de defectos</value>
+  </data>
+  <data name="Nav_Logistics" xml:space="preserve">
+    <value>Logística</value>
+  </data>
+  <data name="Nav_Workflow" xml:space="preserve">
+    <value>Flujo de trabajo</value>
+  </data>
+  <data name="Nav_Services" xml:space="preserve">
+    <value>Servicios</value>
+  </data>
+  <data name="Nav_Notifications" xml:space="preserve">
+    <value>Notificaciones</value>
+  </data>
+  <data name="Nav_ManagementDashboard" xml:space="preserve">
+    <value>Panel de gestión</value>
+  </data>
+  <data name="Nav_OrganizationalChart" xml:space="preserve">
+    <value>Organigrama</value>
+  </data>
+  <data name="Nav_Persons" xml:space="preserve">
+    <value>Personas</value>
+  </data>
+  <data name="Nav_Reference_customers" xml:space="preserve">
+    <value>Datos maestros de clientes</value>
+  </data>
+  <data name="Nav_Reference_shared" xml:space="preserve">
+    <value>Datos básicos compartidos</value>
+  </data>
+  <data name="Nav_Reference_products" xml:space="preserve">
+    <value>Datos maestros de productos</value>
+  </data>
+  <data name="Nav_Reference_artwork" xml:space="preserve">
+    <value>Datos maestros del banco de diseños</value>
+  </data>
+  <data name="Nav_DesignCategories" xml:space="preserve">
+    <value>Categorías de diseños</value>
+  </data>
+  <data name="Nav_Reference_orders" xml:space="preserve">
+    <value>Datos maestros de pedidos</value>
+  </data>
+  <data name="Nav_Reference_pricing" xml:space="preserve">
+    <value>Datos maestros de precios</value>
+  </data>
+  <data name="Nav_Reference_inventory" xml:space="preserve">
+    <value>Datos maestros de inventario y compras</value>
+  </data>
+  <data name="Nav_Reference_production" xml:space="preserve">
+    <value>Datos maestros de diseño, impresión y prensa térmica</value>
+  </data>
+  <data name="Nav_Reference_quality" xml:space="preserve">
+    <value>Datos maestros de control de calidad y reproducción</value>
+  </data>
+  <data name="Nav_Reference_logistics" xml:space="preserve">
+    <value>Datos maestros de embalaje, envío y entrega</value>
+  </data>
+  <data name="Nav_Reference_workflow" xml:space="preserve">
+    <value>Datos maestros de bandeja y flujo de trabajo</value>
+  </data>
+  <data name="Nav_SystemManagement" xml:space="preserve">
+    <value>Gestión del sistema</value>
+  </data>
+  <data name="Nav_Reference_suppliers" xml:space="preserve">
+    <value>Datos maestros de proveedores</value>
+  </data>
+  <data name="Nav_Reference_equipment" xml:space="preserve">
+    <value>Datos maestros de equipos</value>
+  </data>
+  <data name="Nav_Pricing" xml:space="preserve">
+    <value>Precios</value>
+  </data>
+  <data name="Nav_Cartable" xml:space="preserve">
+    <value>Bandeja</value>
+  </data>
+  <data name="Nav_B2CSiteManagement" xml:space="preserve">
+    <value>Gestión del sitio B2C</value>
+  </data>
+  <data name="Nav_B2C_SiteSettings" xml:space="preserve">
+    <value>Configuración del sitio</value>
+  </data>
+  <data name="Nav_B2C_Pages" xml:space="preserve">
+    <value>Páginas</value>
+  </data>
+  <data name="Nav_B2C_Footer" xml:space="preserve">
+    <value>Pie de página</value>
+  </data>
+  <data name="Nav_B2C_MainMenu" xml:space="preserve">
+    <value>Menús principales</value>
+  </data>
+  <data name="Nav_B2C_Blog" xml:space="preserve">
+    <value>Blog</value>
+  </data>
+</root>

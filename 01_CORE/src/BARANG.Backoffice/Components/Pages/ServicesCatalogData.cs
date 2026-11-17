@@ -2,7 +2,7 @@ namespace BARANG.Backoffice.Components.Pages;
 
 public sealed record ServiceGroup(string Id, string Fa, string En, string Ar)
 {
-    public string Name(string culture) => culture switch { "en" => En, "ar" => Ar, _ => Fa };
+    public string Name(string culture) => culture switch { "en" => En,"es"=>En, "ar" => Ar, _ => Fa };
 }
 
 public sealed record ServiceInput(string Name, string Type, string In, bool Required);
@@ -14,12 +14,12 @@ public sealed record ServiceInfo(
     ServiceInput[] Inputs, string Output, string Headers, bool PublicAccess, bool BearerOnly = false)
 {
     public const string BaseUrl = "/api/v1";
-    public string Name(string culture) => culture switch { "en" => NameEn, "ar" => NameAr, _ => NameFa };
+    public string Name(string culture) => culture switch { "en" => NameEn,"es"=>NameEn, "ar" => NameAr, _ => NameFa };
     public string FullRoute => BaseUrl + Route;
     public string Auth(string culture) => PublicAccess
-        ? culture switch { "en" => "None (public endpoint)", "ar" => "بدون مصادقة (عام)", _ => "بدون احراز هویت (عمومی)" }
+        ? culture switch { "en" => "None (public endpoint)","es"=>"None (public endpoint)", "ar" => "بدون مصادقة (عام)", _ => "بدون احراز هویت (عمومی)" }
         : BearerOnly ? "Bearer Token"
-        : culture switch { "en" => "Bearer Token + X-Company-ID header", "ar" => "Bearer Token + ترويسة X-Company-ID", _ => "Bearer Token + هدر X-Company-ID" };
+        : culture switch { "en" => "Bearer Token + X-Company-ID header","es"=>"Bearer Token + X-Company-ID header", "ar" => "Bearer Token + ترويسة X-Company-ID", _ => "Bearer Token + هدر X-Company-ID" };
 }
 
 public static class ServicesCatalogData

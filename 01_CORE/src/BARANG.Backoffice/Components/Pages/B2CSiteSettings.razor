@@ -119,5 +119,5 @@ else if (Loaded)
     }
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
     private static string? NullText(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
-    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en, "ar" => ar, _ => fa };
+    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>en, "ar" => ar, _ => fa };
 }

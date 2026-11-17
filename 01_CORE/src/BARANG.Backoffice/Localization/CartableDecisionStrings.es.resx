@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="RejectReasonRequired" xml:space="preserve">
+    <value>Se requiere una nota de decisión para rechazar el pedido.</value>
+  </data>
+  <data name="AuditRejectReasonRequired" xml:space="preserve">
+    <value>Se requiere una nota de decisión para el rechazo de auditoría.</value>
+  </data>
+  <data name="Attachments" xml:space="preserve">
+    <value>Adjuntos</value>
+  </data>
+  <data name="AddAttachment" xml:space="preserve">
+    <value>Añadir adjunto</value>
+  </data>
+  <data name="RemoveAttachment" xml:space="preserve">
+    <value>Quitar adjunto</value>
+  </data>
+  <data name="OpenAttachment" xml:space="preserve">
+    <value>Abrir adjunto</value>
+  </data>
+  <data name="UploadFailed" xml:space="preserve">
+    <value>La subida del adjunto falló.</value>
+  </data>
+  <data name="FileTooLarge" xml:space="preserve">
+    <value>El archivo supera el tamaño permitido.</value>
+  </data>
+  <data name="FileTypeNotAllowed" xml:space="preserve">
+    <value>Este tipo de archivo no está permitido.</value>
+  </data>
+  <data name="NoAttachments" xml:space="preserve">
+    <value>Sin adjuntos.</value>
+  </data>
+</root>

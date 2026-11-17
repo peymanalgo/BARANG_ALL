@@ -8,9 +8,9 @@ public sealed record HelpNode(
     string FaFeatures = "", string EnFeatures = "", string ArFeatures = "",
     IReadOnlyList<HelpNode>? Children = null)
 {
-    public string Name(string culture) => culture switch { "en" => En, "ar" => Ar, _ => Fa };
-    public string Purpose(string culture) => culture switch { "en" => EnPurpose, "ar" => ArPurpose, _ => FaPurpose };
-    public string Features(string culture) => culture switch { "en" => EnFeatures, "ar" => ArFeatures, _ => FaFeatures };
+    public string Name(string culture) => culture switch { "en" => En, "ar" => Ar, "es" => SpanishHelp.Name(Id, En), _ => Fa };
+    public string Purpose(string culture) => culture switch { "en" => EnPurpose, "ar" => ArPurpose, "es" => SpanishHelp.Purpose(Id, EnPurpose), _ => FaPurpose };
+    public string Features(string culture) => culture switch { "en" => EnFeatures, "ar" => ArFeatures, "es" => SpanishHelp.Features(Id, EnFeatures), _ => FaFeatures };
 }
 
 public static class HelpCatalog

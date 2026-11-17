@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Thumbnail" xml:space="preserve">
+    <value>Miniatura</value>
+  </data>
+  <data name="Code" xml:space="preserve">
+    <value>Código</value>
+  </data>
+  <data name="Title" xml:space="preserve">
+    <value>Título</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Descripción</value>
+  </data>
+  <data name="Classification" xml:space="preserve">
+    <value>Clasificación</value>
+  </data>
+  <data name="Category" xml:space="preserve">
+    <value>Categoría</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Estado</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Acciones</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>Información general</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>Archivos</value>
+  </data>
+  <data name="History" xml:space="preserve">
+    <value>Historial</value>
+  </data>
+  <data name="Timeline" xml:space="preserve">
+    <value>Historial</value>
+  </data>
+  <data name="Draft" xml:space="preserve">
+    <value>Borrador</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Activo</value>
+  </data>
+  <data name="Inactive" xml:space="preserve">
+    <value>Inactivo</value>
+  </data>
+  <data name="Archived" xml:space="preserve">
+    <value>Archivado</value>
+  </data>
+  <data name="Upload" xml:space="preserve">
+    <value>Subir archivo</value>
+  </data>
+  <data name="UploadComplete" xml:space="preserve">
+    <value>Carga completada.</value>
+  </data>
+  <data name="UploadFailed" xml:space="preserve">
+    <value>La subida del archivo falló.</value>
+  </data>
+  <data name="UploadPending" xml:space="preserve">
+    <value>Archivo subido; la miniatura está pendiente de procesarse.</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Creado</value>
+  </data>
+  <data name="Updated" xml:space="preserve">
+    <value>Actualizado</value>
+  </data>
+  <data name="Activated" xml:space="preserve">
+    <value>Activado</value>
+  </data>
+  <data name="Deactivated" xml:space="preserve">
+    <value>Desactivado</value>
+  </data>
+  <data name="FileUploaded" xml:space="preserve">
+    <value>Archivo subido</value>
+  </data>
+  <data name="Actor" xml:space="preserve">
+    <value>Actor</value>
+  </data>
+  <data name="OccurredAt" xml:space="preserve">
+    <value>Fecha y hora</value>
+  </data>
+  <data name="Event" xml:space="preserve">
+    <value>Evento</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>Detalles</value>
+  </data>
+  <data name="DesignRecord" xml:space="preserve">
+    <value>Registro del diseño</value>
+  </data>
+  <data name="OpenViewer" xml:space="preserve">
+    <value>Abrir visor completo</value>
+  </data>
+  <data name="Viewer" xml:space="preserve">
+    <value>Visor de diseños</value>
+  </data>
+  <data name="ConceptSearch" xml:space="preserve">
+    <value>Búsqueda conceptual</value>
+  </data>
+  <data name="SearchGo" xml:space="preserve">
+    <value>Buscar</value>
+  </data>
+  <data name="ConceptQueryPlaceholder" xml:space="preserve">
+    <value>p. ej. diseño de corazón rojo para una camiseta deportiva…</value>
+  </data>
+  <data name="ConceptSearchHint" xml:space="preserve">
+    <value>Describa el diseño que busca y pulse Buscar para explorar todo el banco de diseños.</value>
+  </data>
+  <data name="NoMatches" xml:space="preserve">
+    <value>Ningún diseño coincide con esta descripción.</value>
+  </data>
+  <data name="ConceptSearchFailed" xml:space="preserve">
+    <value>La búsqueda conceptual falló.</value>
+  </data>
+  <data name="NotDisplayable" xml:space="preserve">
+    <value>Este archivo no puede mostrarse.</value>
+  </data>
+  <data name="CopyCode" xml:space="preserve">
+    <value>Copiar código del diseño</value>
+  </data>
+  <data name="CodeCopied" xml:space="preserve">
+    <value>Código del diseño copiado</value>
+  </data>
+  <data name="ViewerFailed" xml:space="preserve">
+    <value>No se pudo cargar el diseño.</value>
+  </data>
+  <data name="FullPreview" xml:space="preserve">
+    <value>Vista previa completa del diseño</value>
+  </data>
+  <data name="Categories" xml:space="preserve">
+    <value>Categorías de diseños</value>
+  </data>
+  <data name="AddRoot" xml:space="preserve">
+    <value>Añadir categoría raíz</value>
+  </data>
+  <data name="AddChild" xml:space="preserve">
+    <value>Añadir subcategoría</value>
+  </data>
+  <data name="AddCategory" xml:space="preserve">
+    <value>Añadir categoría</value>
+  </data>
+  <data name="EditCategory" xml:space="preserve">
+    <value>Editar categoría</value>
+  </data>
+  <data name="ViewCategory" xml:space="preserve">
+    <value>Ver categoría</value>
+  </data>
+  <data name="Move" xml:space="preserve">
+    <value>Mover</value>
+  </data>
+  <data name="MoveCategory" xml:space="preserve">
+    <value>Mover categoría</value>
+  </data>
+  <data name="MoveCategoryHint" xml:space="preserve">
+    <value>Seleccione un nuevo padre; limpie la selección para mover a la raíz.</value>
+  </data>
+  <data name="DestinationParent" xml:space="preserve">
+    <value>Padre de destino</value>
+  </data>
+  <data name="ParentCategory" xml:space="preserve">
+    <value>Categoría padre</value>
+  </data>
+  <data name="CategoryPath" xml:space="preserve">
+    <value>Ruta de la categoría</value>
+  </data>
+  <data name="PersianCaption" xml:space="preserve">
+    <value>Título en persa</value>
+  </data>
+  <data name="ArabicCaption" xml:space="preserve">
+    <value>Título en árabe</value>
+  </data>
+  <data name="EnglishCaption" xml:space="preserve">
+    <value>Título en inglés</value>
+  </data>
+  <data name="SortOrder" xml:space="preserve">
+    <value>Orden</value>
+  </data>
+  <data name="SearchCategories" xml:space="preserve">
+    <value>Buscar categorías…</value>
+  </data>
+  <data name="ClearSearch" xml:space="preserve">
+    <value>Limpiar búsqueda</value>
+  </data>
+  <data name="NoMatchingCategories" xml:space="preserve">
+    <value>No se encontraron categorías coincidentes.</value>
+  </data>
+  <data name="Expand" xml:space="preserve">
+    <value>Expandir</value>
+  </data>
+  <data name="Collapse" xml:space="preserve">
+    <value>Contraer</value>
+  </data>
+  <data name="RequiredFields" xml:space="preserve">
+    <value>El código y los títulos en los tres idiomas son obligatorios.</value>
+  </data>
+  <data name="ConfirmActivate" xml:space="preserve">
+    <value>¿Activar esta categoría?</value>
+  </data>
+  <data name="ConfirmDeactivate" xml:space="preserve">
+    <value>¿Desactivar esta categoría?</value>
+  </data>
+  <data name="ConfirmDeleteCategory" xml:space="preserve">
+    <value>¿Eliminar esta categoría? La operación se rechaza si tiene hijas o dependencias.</value>
+  </data>
+  <data name="ActivateSucceeded" xml:space="preserve">
+    <value>Categoría activada.</value>
+  </data>
+  <data name="DeactivateSucceeded" xml:space="preserve">
+    <value>Categoría desactivada.</value>
+  </data>
+  <data name="MoveSucceeded" xml:space="preserve">
+    <value>Categoría movida.</value>
+  </data>
+  <data name="DeleteSucceeded" xml:space="preserve">
+    <value>Categoría eliminada.</value>
+  </data>
+  <data name="CategoryHasChildren" xml:space="preserve">
+    <value>Esta categoría tiene subcategorías y no puede eliminarse.</value>
+  </data>
+  <data name="CategoryReferenced" xml:space="preserve">
+    <value>Esta categoría está referenciada por datos de negocio y no puede eliminarse.</value>
+  </data>
+  <data name="CategoryCycle" xml:space="preserve">
+    <value>El padre seleccionado crearía un ciclo.</value>
+  </data>
+  <data name="InvalidParent" xml:space="preserve">
+    <value>El padre seleccionado no es válido.</value>
+  </data>
+</root>

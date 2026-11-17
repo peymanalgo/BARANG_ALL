@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Eyebrow" xml:space="preserve">
+    <value>PEDIDO 360° / Vista completa del pedido</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Cerrar</value>
+  </data>
+  <data name="MetricsTotal" xml:space="preserve">
+    <value>Total del pedido</value>
+  </data>
+  <data name="MetricsPaid" xml:space="preserve">
+    <value>Pagado</value>
+  </data>
+  <data name="MetricsBalance" xml:space="preserve">
+    <value>Saldo</value>
+  </data>
+  <data name="MetricsDue" xml:space="preserve">
+    <value>Fecha de entrega</value>
+  </data>
+  <data name="Overview" xml:space="preserve">
+    <value>Resumen del pedido</value>
+  </data>
+  <data name="OrderRoute" xml:space="preserve">
+    <value>Ruta del pedido</value>
+  </data>
+  <data name="LatestEvents" xml:space="preserve">
+    <value>Últimos eventos</value>
+  </data>
+  <data name="Progress" xml:space="preserve">
+    <value>Progreso del pedido</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>Detalles</value>
+  </data>
+  <data name="SelectedServices" xml:space="preserve">
+    <value>Servicios seleccionados</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>Diseños y archivos</value>
+  </data>
+  <data name="NoData" xml:space="preserve">
+    <value>Sin datos registrados.</value>
+  </data>
+  <data name="NoWorkflow" xml:space="preserve">
+    <value>No se ha iniciado ningún flujo de trabajo operativo ni bandeja para este pedido.</value>
+  </data>
+  <data name="NoHistory" xml:space="preserve">
+    <value>Sin historial registrado.</value>
+  </data>
+  <data name="Item" xml:space="preserve">
+    <value>Línea del pedido</value>
+  </data>
+  <data name="PrintOperations" xml:space="preserve">
+    <value>Operaciones de impresión</value>
+  </data>
+  <data name="Packaging" xml:space="preserve">
+    <value>Embalaje</value>
+  </data>
+  <data name="Delivery" xml:space="preserve">
+    <value>Entrega y envío</value>
+  </data>
+  <data name="PriceSnapshot" xml:space="preserve">
+    <value>Snapshot histórico de precio</value>
+  </data>
+  <data name="SecureFile" xml:space="preserve">
+    <value>Archivo protegido</value>
+  </data>
+  <data name="ReadOnly" xml:space="preserve">
+    <value>Esta vista es de solo lectura.</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>Reintentar</value>
+  </data>
+  <data name="Timeline" xml:space="preserve">
+    <value>Cronología</value>
+  </data>
+  <data name="Customer" xml:space="preserve">
+    <value>Cliente</value>
+  </data>
+  <data name="Product" xml:space="preserve">
+    <value>Producto</value>
+  </data>
+  <data name="Quantity" xml:space="preserve">
+    <value>Cantidad</value>
+  </data>
+  <data name="Unit" xml:space="preserve">
+    <value>Unidad</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Estado</value>
+  </data>
+  <data name="Source" xml:space="preserve">
+    <value>Origen</value>
+  </data>
+  <data name="OrderDate" xml:space="preserve">
+    <value>Fecha del pedido</value>
+  </data>
+  <data name="ExpectedDate" xml:space="preserve">
+    <value>Entrega prevista</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>Dirección</value>
+  </data>
+  <data name="ShippingMethod" xml:space="preserve">
+    <value>Método de envío</value>
+  </data>
+  <data name="Subtotal" xml:space="preserve">
+    <value>Subtotal</value>
+  </data>
+  <data name="Discount" xml:space="preserve">
+    <value>Descuento</value>
+  </data>
+  <data name="Tax" xml:space="preserve">
+    <value>Impuesto</value>
+  </data>
+  <data name="FinalTotal" xml:space="preserve">
+    <value>Total final</value>
+  </data>
+</root>

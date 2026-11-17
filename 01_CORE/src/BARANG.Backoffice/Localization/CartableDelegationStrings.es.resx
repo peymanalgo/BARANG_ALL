@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Forward" xml:space="preserve">
+    <value>Reenviar</value>
+  </data>
+  <data name="ForwardTo" xml:space="preserve">
+    <value>Reenviar a</value>
+  </data>
+  <data name="ForwardReason" xml:space="preserve">
+    <value>Motivo del reenvío</value>
+  </data>
+  <data name="ForwardPrompt" xml:space="preserve">
+    <value>¿Reenviar esta tarea a la persona seleccionada?</value>
+  </data>
+  <data name="ForwardedToYou" xml:space="preserve">
+    <value>Reenviada a usted</value>
+  </data>
+  <data name="ForwardFailed" xml:space="preserve">
+    <value>No se pudo reenviar la tarea.</value>
+  </data>
+  <data name="TargetSearch" xml:space="preserve">
+    <value>Buscar persona elegible</value>
+  </data>
+  <data name="NoTargets" xml:space="preserve">
+    <value>No se encontró otra persona elegible.</value>
+  </data>
+  <data name="Principal" xml:space="preserve">
+    <value>En nombre de</value>
+  </data>
+  <data name="Substitute" xml:space="preserve">
+    <value>Sustituto temporal</value>
+  </data>
+</root>

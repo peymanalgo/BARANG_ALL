@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="PrintConfiguration" xml:space="preserve">
+    <value>Configuración de impresión por línea</value>
+  </data>
+  <data name="Location" xml:space="preserve">
+    <value>Ubicación de impresión</value>
+  </data>
+  <data name="Method" xml:space="preserve">
+    <value>Método de impresión</value>
+  </data>
+  <data name="Width" xml:space="preserve">
+    <value>Ancho</value>
+  </data>
+  <data name="Height" xml:space="preserve">
+    <value>Alto</value>
+  </data>
+  <data name="ArtworkSource" xml:space="preserve">
+    <value>Origen del diseño</value>
+  </data>
+  <data name="DesignBank" xml:space="preserve">
+    <value>Banco de diseños</value>
+  </data>
+  <data name="UploadedFile" xml:space="preserve">
+    <value>Archivo subido</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>Sin registrar</value>
+  </data>
+  <data name="Note" xml:space="preserve">
+    <value>Nota</value>
+  </data>
+  <data name="Front" xml:space="preserve">
+    <value>Frente</value>
+  </data>
+  <data name="Back" xml:space="preserve">
+    <value>Espalda</value>
+  </data>
+  <data name="Sleeve" xml:space="preserve">
+    <value>Manga</value>
+  </data>
+  <data name="Other" xml:space="preserve">
+    <value>Otro</value>
+  </data>
+</root>

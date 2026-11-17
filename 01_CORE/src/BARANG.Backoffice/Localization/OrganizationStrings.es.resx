@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Chart" xml:space="preserve">
+    <value>Organigrama</value>
+  </data>
+  <data name="Persons" xml:space="preserve">
+    <value>Personas</value>
+  </data>
+  <data name="AddCompany" xml:space="preserve">
+    <value>Añadir empresa</value>
+  </data>
+  <data name="AddBranch" xml:space="preserve">
+    <value>Añadir sucursal</value>
+  </data>
+  <data name="AddUnit" xml:space="preserve">
+    <value>Añadir unidad organizativa</value>
+  </data>
+  <data name="AddPerson" xml:space="preserve">
+    <value>Añadir persona</value>
+  </data>
+  <data name="Company" xml:space="preserve">
+    <value>Empresa</value>
+  </data>
+  <data name="Branch" xml:space="preserve">
+    <value>Sucursal</value>
+  </data>
+  <data name="Office" xml:space="preserve">
+    <value>Oficina</value>
+  </data>
+  <data name="OrganizationalUnit" xml:space="preserve">
+    <value>Unidad organizativa</value>
+  </data>
+  <data name="Unit" xml:space="preserve">
+    <value>Unidad organizativa</value>
+  </data>
+  <data name="Person" xml:space="preserve">
+    <value>Persona</value>
+  </data>
+  <data name="Position" xml:space="preserve">
+    <value>Cargo</value>
+  </data>
+  <data name="SemanticRole" xml:space="preserve">
+    <value>Rol organizativo</value>
+  </data>
+  <data name="ReportsToPosition" xml:space="preserve">
+    <value>Depende del cargo</value>
+  </data>
+  <data name="Vacant" xml:space="preserve">
+    <value>Vacante</value>
+  </data>
+  <data name="Manager" xml:space="preserve">
+    <value>Gerente</value>
+  </data>
+  <data name="FullInformation" xml:space="preserve">
+    <value>Información completa</value>
+  </data>
+  <data name="OrganizationalChart" xml:space="preserve">
+    <value>Organigrama</value>
+  </data>
+  <data name="UserInformation" xml:space="preserve">
+    <value>Información de usuario</value>
+  </data>
+  <data name="RolesPermissions" xml:space="preserve">
+    <value>Roles y permisos efectivos</value>
+  </data>
+  <data name="NoAccount" xml:space="preserve">
+    <value>Esta persona no tiene cuenta de usuario.</value>
+  </data>
+  <data name="ReadOnly" xml:space="preserve">
+    <value>Esta sección es de solo lectura.</value>
+  </data>
+  <data name="PersonnelCode" xml:space="preserve">
+    <value>Código de personal</value>
+  </data>
+  <data name="FirstName" xml:space="preserve">
+    <value>Nombre</value>
+  </data>
+  <data name="LastName" xml:space="preserve">
+    <value>Apellido</value>
+  </data>
+  <data name="BirthDate" xml:space="preserve">
+    <value>Fecha de nacimiento</value>
+  </data>
+  <data name="NationalId" xml:space="preserve">
+    <value>ID nacional</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>Correo electrónico</value>
+  </data>
+  <data name="Phone" xml:space="preserve">
+    <value>Teléfono</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>Dirección</value>
+  </data>
+  <data name="Notes" xml:space="preserve">
+    <value>Notas</value>
+  </data>
+  <data name="EmptyChart" xml:space="preserve">
+    <value>No se ha registrado ninguna estructura organizativa.</value>
+  </data>
+  <data name="SearchPerson" xml:space="preserve">
+    <value>Buscar nombre o código de personal</value>
+  </data>
+  <data name="AssignedRoles" xml:space="preserve">
+    <value>Roles asignados</value>
+  </data>
+  <data name="EffectivePermissions" xml:space="preserve">
+    <value>Permisos efectivos</value>
+  </data>
+  <data name="ResetPassword" xml:space="preserve">
+    <value>Restablecer contraseña</value>
+  </data>
+  <data name="Website" xml:space="preserve">
+    <value>Sitio web</value>
+  </data>
+  <data name="AddressSection" xml:space="preserve">
+    <value>Dirección</value>
+  </data>
+  <data name="ContactInformation" xml:space="preserve">
+    <value>Información de contacto</value>
+  </data>
+  <data name="CreateUserAccount" xml:space="preserve">
+    <value>Crear cuenta de usuario</value>
+  </data>
+  <data name="SaveSuccess" xml:space="preserve">
+    <value>Guardado correctamente</value>
+  </data>
+  <data name="Deactivate" xml:space="preserve">
+    <value>Desactivar</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>Ver</value>
+  </data>
+  <data name="EconomicCode" xml:space="preserve">
+    <value>Código económico</value>
+  </data>
+  <data name="Mobile" xml:space="preserve">
+    <value>Móvil</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Cerrar</value>
+  </data>
+  <data name="StartDate" xml:space="preserve">
+    <value>Fecha de inicio</value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>Nombre comercial/mostrado</value>
+  </data>
+  <data name="City" xml:space="preserve">
+    <value>Ciudad</value>
+  </data>
+  <data name="Province" xml:space="preserve">
+    <value>Provincia</value>
+  </data>
+  <data name="BusinessInformation" xml:space="preserve">
+    <value>Información de negocio/sistema</value>
+  </data>
+  <data name="RegistrationNumber" xml:space="preserve">
+    <value>Número de registro</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Editar</value>
+  </data>
+  <data name="LegalName" xml:space="preserve">
+    <value>Razón social</value>
+  </data>
+  <data name="TaxId" xml:space="preserve">
+    <value>ID fiscal</value>
+  </data>
+  <data name="Username" xml:space="preserve">
+    <value>Nombre de usuario</value>
+  </data>
+  <data name="GeneralInformation" xml:space="preserve">
+    <value>Información general</value>
+  </data>
+  <data name="PrimaryAssignment" xml:space="preserve">
+    <value>Asignación principal</value>
+  </data>
+  <data name="EndDate" xml:space="preserve">
+    <value>Fecha de fin</value>
+  </data>
+  <data name="PostalCode" xml:space="preserve">
+    <value>Código postal</value>
+  </data>
+  <data name="AddSubordinate" xml:space="preserve">
+    <value>Añadir subordinado</value>
+  </data>
+  <data name="ConfirmPassword" xml:space="preserve">
+    <value>Confirmar contraseña</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Descripción</value>
+  </data>
+  <data name="CountryCode" xml:space="preserve">
+    <value>País</value>
+  </data>
+  <data name="SelectPerson" xml:space="preserve">
+    <value>Seleccionar persona</value>
+  </data>
+  <data name="Assignment" xml:space="preserve">
+    <value>Asignación organizativa</value>
+  </data>
+  <data name="Activate" xml:space="preserve">
+    <value>Activar</value>
+  </data>
+  <data name="DefaultCurrency" xml:space="preserve">
+    <value>Moneda predeterminada</value>
+  </data>
+  <data name="ParentUnit" xml:space="preserve">
+    <value>Unidad padre</value>
+  </data>
+  <data name="Enabled" xml:space="preserve">
+    <value>Habilitado</value>
+  </data>
+  <data name="NewPassword" xml:space="preserve">
+    <value>Nueva contraseña</value>
+  </data>
+  <data name="LegalInformation" xml:space="preserve">
+    <value>Información legal</value>
+  </data>
+  <data name="AccountCreated" xml:space="preserve">
+    <value>Cuenta de usuario creada</value>
+  </data>
+  <data name="Locked" xml:space="preserve">
+    <value>Bloqueada</value>
+  </data>
+  <data name="Calendar" xml:space="preserve">
+    <value>Calendario</value>
+  </data>
+  <data name="PreviousMonth" xml:space="preserve">
+    <value>Mes anterior</value>
+  </data>
+  <data name="NextMonth" xml:space="preserve">
+    <value>Mes siguiente</value>
+  </data>
+  <data name="SelectMonth" xml:space="preserve">
+    <value>Seleccionar mes</value>
+  </data>
+  <data name="SelectYear" xml:space="preserve">
+    <value>Seleccionar año</value>
+  </data>
+  <data name="PreviousYears" xml:space="preserve">
+    <value>Años anteriores</value>
+  </data>
+  <data name="NextYears" xml:space="preserve">
+    <value>Años siguientes</value>
+  </data>
+  <data name="AllStatuses" xml:space="preserve">
+    <value>Todos los estados</value>
+  </data>
+  <data name="Page" xml:space="preserve">
+    <value>Página</value>
+  </data>
+  <data name="UnsavedChangesTitle" xml:space="preserve">
+    <value>Cambios sin guardar</value>
+  </data>
+  <data name="UnsavedChangesMessage" xml:space="preserve">
+    <value>¿Descartar los cambios hechos en este editor?</value>
+  </data>
+  <data name="DiscardChanges" xml:space="preserve">
+    <value>Descartar cambios</value>
+  </data>
+  <data name="InvalidDate" xml:space="preserve">
+    <value>La fecha introducida no es válida.</value>
+  </data>
+  <data name="RequiredFields" xml:space="preserve">
+    <value>Complete los campos obligatorios.</value>
+  </data>
+  <data name="OperationFailed" xml:space="preserve">
+    <value>La operación falló. Revise la información e inténtelo de nuevo.</value>
+  </data>
+  <data name="SearchFailed" xml:space="preserve">
+    <value>La búsqueda de personas falló.</value>
+  </data>
+  <data name="DuplicateAssignment" xml:space="preserve">
+    <value>Esta persona ya tiene una asignación activa en esta unidad.</value>
+  </data>
+  <data name="ReportingCycle" xml:space="preserve">
+    <value>Este gerente crearía un ciclo de dependencia no válido.</value>
+  </data>
+  <data name="InvalidScope" xml:space="preserve">
+    <value>La relación organizativa seleccionada está fuera del ámbito válido de la empresa.</value>
+  </data>
+  <data name="DatePlaceholder" xml:space="preserve">
+    <value>aaaa/mm/dd</value>
+  </data>
+  <data name="AddChildUnit" xml:space="preserve">
+    <value>Añadir unidad hija</value>
+  </data>
+  <data name="Move" xml:space="preserve">
+    <value>Mover</value>
+  </data>
+  <data name="ChangeManager" xml:space="preserve">
+    <value>Cambiar gerente</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="RemoveAssignment" xml:space="preserve">
+    <value>Quitar asignación</value>
+  </data>
+  <data name="Expand" xml:space="preserve">
+    <value>Expandir</value>
+  </data>
+  <data name="Collapse" xml:space="preserve">
+    <value>Contraer</value>
+  </data>
+  <data name="More" xml:space="preserve">
+    <value>Más acciones</value>
+  </data>
+  <data name="ViewPerson" xml:space="preserve">
+    <value>Ver persona</value>
+  </data>
+  <data name="DeleteConfirmTitle" xml:space="preserve">
+    <value>Confirmar eliminación</value>
+  </data>
+  <data name="DeleteConfirmMessage" xml:space="preserve">
+    <value>¿Seguro que desea eliminar {0} «{1}»?</value>
+  </data>
+  <data name="DeleteBlockedChildren" xml:space="preserve">
+    <value>La eliminación no está disponible porque este elemento tiene hijos organizativos.</value>
+  </data>
+  <data name="DeleteProtectedDependency" xml:space="preserve">
+    <value>La eliminación no está disponible porque existe historial o referencias protegidas. Use Desactivar para conservar el historial.</value>
+  </data>
+  <data name="DeleteSuccess" xml:space="preserve">
+    <value>El elemento fue eliminado correctamente.</value>
+  </data>
+  <data name="PositionArchived" xml:space="preserve">
+    <value>El cargo no pudo eliminarse físicamente porque existen dependencias de historial o flujo de trabajo; se desactivó para conservar el historial.</value>
+  </data>
+  <data name="AssignedAutomatically" xml:space="preserve">
+    <value>Asignado automáticamente al guardar</value>
+  </data>
+  <data name="MoveUnitTitle" xml:space="preserve">
+    <value>Mover a unidad organizativa</value>
+  </data>
+  <data name="NoManager" xml:space="preserve">
+    <value>Sin gerente directo</value>
+  </data>
+  <data name="SearchChart" xml:space="preserve">
+    <value>Buscar empresa, sucursal, unidad o persona</value>
+  </data>
+  <data name="SearchChartNoResults" xml:space="preserve">
+    <value>Sin resultados del organigrama para «{0}».</value>
+  </data>
+  <data name="PrintChart" xml:space="preserve">
+    <value>Imprimir organigrama</value>
+  </data>
+  <data name="SelectPrintCompany" xml:space="preserve">
+    <value>Seleccionar empresa</value>
+  </data>
+  <data name="Print" xml:space="preserve">
+    <value>Imprimir</value>
+  </data>
+  <data name="SavePdf" xml:space="preserve">
+    <value>Guardar como PDF</value>
+  </data>
+  <data name="PrintDate" xml:space="preserve">
+    <value>Fecha de impresión (UTC)</value>
+  </data>
+  <data name="PrintError" xml:space="preserve">
+    <value>No se pudo cargar el organigrama de la empresa. Compruebe su acceso a la empresa e inténtelo de nuevo.</value>
+  </data>
+  <data name="PrintManager" xml:space="preserve">
+    <value>Gerente</value>
+  </data>
+  <data name="PrintEmployee" xml:space="preserve">
+    <value>Empleado</value>
+  </data>
+  <data name="PrintContinuation" xml:space="preserve">
+    <value>Continúa en la sección</value>
+  </data>
+  <data name="ManageCompanies" xml:space="preserve">
+    <value>Gestionar empresas</value>
+  </data>
+  <data name="CurrentCompanyChart" xml:space="preserve">
+    <value>Organigrama de la empresa actual</value>
+  </data>
+  <data name="CompanyAdministrationDenied" xml:space="preserve">
+    <value>No tiene acceso o permiso válidos para administrar esta empresa.</value>
+  </data>
+  <data name="DisplayOrderInvalid" xml:space="preserve">
+    <value>El orden de visualización debe ser un número entero mayor o igual que cero.</value>
+  </data>
+</root>

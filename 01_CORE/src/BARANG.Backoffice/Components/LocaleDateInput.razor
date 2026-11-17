@@ -67,6 +67,7 @@
 
     private static readonly string[] PersianMonths = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     private static readonly string[] ArabicMonths = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+    private static readonly string[] SpanishMonths = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
     private static readonly string[] EnglishMonths = CultureInfo.InvariantCulture.DateTimeFormat.MonthNames.Take(12).ToArray();
     private string Text = "", Panel = "days", LastCulture = "";
     private bool Open, Invalid, CultureReady;
@@ -76,8 +77,9 @@
     private string EffectiveCulture => LocalePolicy.Resolve(BarangCulture ?? CultureInfo.CurrentUICulture.Name).Code;
     private bool IsPersian => EffectiveCulture == "fa";
     private bool IsArabic => EffectiveCulture == "ar";
-    private string[] Weekdays => IsPersian ? ["ش", "ی", "د", "س", "چ", "پ", "ج"] : IsArabic ? ["ح", "ن", "ث", "ر", "خ", "ج", "س"] : ["S", "M", "T", "W", "T", "F", "S"];
-    private string[] MonthNames => IsPersian ? PersianMonths : IsArabic ? ArabicMonths : EnglishMonths;
+    private bool IsSpanish => EffectiveCulture == "es";
+    private string[] Weekdays => IsPersian ? ["ش", "ی", "د", "س", "چ", "پ", "ج"] : IsArabic ? ["ح", "ن", "ث", "ر", "خ", "ج", "س"] : IsSpanish ? ["D", "L", "M", "X", "J", "V", "S"] : ["S", "M", "T", "W", "T", "F", "S"];
+    private string[] MonthNames => IsPersian ? PersianMonths : IsArabic ? ArabicMonths : IsSpanish ? SpanishMonths : EnglishMonths;
     private int CurrentYear => Dates.CalendarDate(DisplayMonth, EffectiveCulture).Year;
     private int CurrentMonth => Dates.CalendarDate(DisplayMonth, EffectiveCulture).Month;
     private string MonthName => MonthNames[CurrentMonth - 1];

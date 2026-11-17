@@ -120,7 +120,7 @@
 
     private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() is var c && c is "en" or "ar" ? c : "fa";
     private string Dir => CultureCode == "en" ? "ltr" : "rtl";
-    private string T(string fa, string en, string ar) => CultureCode switch { "en" => en, "ar" => ar, _ => fa };
+    private string T(string fa, string en, string ar) => CultureCode switch { "en" => en,"es"=>en, "ar" => ar, _ => fa };
 
     private IReadOnlyList<ServiceGroup> Groups => ServicesCatalogData.Groups;
     private IEnumerable<ServiceInfo> Filtered

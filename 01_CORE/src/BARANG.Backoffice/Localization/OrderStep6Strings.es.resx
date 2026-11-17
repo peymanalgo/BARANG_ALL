@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Pricing" xml:space="preserve">
+    <value>Precios del pedido</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>El precio se calcula a partir de los datos guardados del pedido mediante el motor central de precios.</value>
+  </data>
+  <data name="Product" xml:space="preserve">
+    <value>Producto</value>
+  </data>
+  <data name="Print" xml:space="preserve">
+    <value>Impresión</value>
+  </data>
+  <data name="Design" xml:space="preserve">
+    <value>Diseño</value>
+  </data>
+  <data name="AdditionalServices" xml:space="preserve">
+    <value>Servicios adicionales</value>
+  </data>
+  <data name="Packaging" xml:space="preserve">
+    <value>Embalaje</value>
+  </data>
+  <data name="Shipping" xml:space="preserve">
+    <value>Envío</value>
+  </data>
+  <data name="Subtotal" xml:space="preserve">
+    <value>Subtotal</value>
+  </data>
+  <data name="Discount" xml:space="preserve">
+    <value>Descuento</value>
+  </data>
+  <data name="Tax" xml:space="preserve">
+    <value>Impuesto</value>
+  </data>
+  <data name="FinalTotal" xml:space="preserve">
+    <value>Total final</value>
+  </data>
+  <data name="Currency" xml:space="preserve">
+    <value>Moneda</value>
+  </data>
+  <data name="Recalculate" xml:space="preserve">
+    <value>Recalcular</value>
+  </data>
+  <data name="Stale" xml:space="preserve">
+    <value>El precio del pedido requiere recálculo.</value>
+  </data>
+  <data name="ItemBreakdown" xml:space="preserve">
+    <value>Desglose por línea</value>
+  </data>
+  <data name="OrderCharges" xml:space="preserve">
+    <value>Cargos del pedido</value>
+  </data>
+  <data name="NoPricing" xml:space="preserve">
+    <value>El precio todavía no se ha calculado.</value>
+  </data>
+  <data name="PricingFailed" xml:space="preserve">
+    <value>No se pudo calcular el precio del pedido.</value>
+  </data>
+  <data name="MissingTariff" xml:space="preserve">
+    <value>No se encontró una tarifa válida para un componente del pedido.</value>
+  </data>
+  <data name="InvalidCurrency" xml:space="preserve">
+    <value>Los componentes del pedido usan monedas distintas.</value>
+  </data>
+  <data name="NoItems" xml:space="preserve">
+    <value>Se requiere al menos una línea del pedido para el precio.</value>
+  </data>
+  <data name="Calculated" xml:space="preserve">
+    <value>Precio del pedido calculado correctamente.</value>
+  </data>
+  <data name="LoadingPricing" xml:space="preserve">
+    <value>Calculando el precio del pedido…</value>
+  </data>
+</root>

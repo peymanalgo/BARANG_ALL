@@ -32,7 +32,7 @@
     private bool Busy, Failed, Open;
     [CascadingParameter(Name = "BarangCulture")] private string? BarangCulture { get; set; }
     private string? BrowserCulture;
-    private static readonly (string Code, string Label)[] Languages = [("fa", "فارسی"), ("ar", "العربية"), ("en", "English")];
+    private static readonly (string Code, string Label)[] Languages = [("fa", "فارسی"), ("ar", "العربية"), ("en", "English"), ("es", "Español")];
     private string Current => LocalePolicy.Resolve(Culture?.Code ?? BarangCulture ?? BrowserCulture ?? CultureInfo.CurrentUICulture.Name).Code;
     private string CurrentLabel => Languages.First(l => l.Code == Current).Label;
     private string CultureUrl(string code) => $"/culture?culture={code}&returnUrl={Uri.EscapeDataString('/' + Navigation.ToBaseRelativePath(Navigation.Uri))}";

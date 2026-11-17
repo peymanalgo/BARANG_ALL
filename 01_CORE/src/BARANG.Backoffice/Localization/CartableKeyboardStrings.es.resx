@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="KeyboardShortcuts" xml:space="preserve">
+    <value>Atajos de teclado</value>
+  </data>
+  <data name="ShortcutFocusSearch" xml:space="preserve">
+    <value>Ir a la búsqueda</value>
+  </data>
+  <data name="ShortcutReload" xml:space="preserve">
+    <value>Recargar bandeja</value>
+  </data>
+  <data name="ShortcutPreview" xml:space="preserve">
+    <value>Vista rápida</value>
+  </data>
+  <data name="ShortcutView" xml:space="preserve">
+    <value>Abrir detalles</value>
+  </data>
+  <data name="ShortcutEscape" xml:space="preserve">
+    <value>Cerrar ventana abierta</value>
+  </data>
+</root>

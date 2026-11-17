@@ -18,7 +18,7 @@
 @code {
     private sealed record Row(string Kind, Guid Id, string Number, string Status, long Version);
     private List<Row> Rows = []; private string? Message; private bool Success; private string Lang => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-    private string T(string fa,string ar,string en)=>Lang switch { "ar"=>ar, "en"=>en, _=>fa };
+    private string T(string fa,string ar,string en)=>Lang switch { "ar"=>ar, "en"=>en,"es"=>en, _=>fa };
     private string StatusText(string s)=>s switch { "Submitted"=>T("ارسال‌شده برای تأیید","مرسل للاعتماد","Submitted for approval"), "Approved"=>T("تأییدشده","معتمد","Approved"), "Rejected"=>T("ردشده","مرفوض","Rejected"), "Sent"=>T("ارسال‌شده به تأمین‌کننده","مرسل للمورد","Sent to supplier"), _=>s };
     private static string StatusName(Row row)=>row.Status switch { "1"=>"Submitted", "2"=>"Approved", "3"=>"Rejected", "4" when row.Kind=="order"=>"Sent", _=>row.Status };
     private async Task<(string Token, Guid Company)?> Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token?(token,c):null;}

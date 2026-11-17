@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="From" xml:space="preserve">
+    <value>Desde</value>
+  </data>
+  <data name="To" xml:space="preserve">
+    <value>Hasta</value>
+  </data>
+  <data name="LoadFailed" xml:space="preserve">
+    <value>No se pudieron cargar los datos del flujo de trabajo.</value>
+  </data>
+  <data name="SaveFailed" xml:space="preserve">
+    <value>No se pudo guardar el borrador.</value>
+  </data>
+  <data name="PublishFailed" xml:space="preserve">
+    <value>La publicación falló; corrija los errores de validación.</value>
+  </data>
+  <data name="UnknownValidation" xml:space="preserve">
+    <value>Error de validación del flujo de trabajo.</value>
+  </data>
+</root>

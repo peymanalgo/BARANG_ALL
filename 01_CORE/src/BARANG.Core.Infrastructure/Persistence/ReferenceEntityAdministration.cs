@@ -14,7 +14,7 @@ namespace BARANG.Core.Infrastructure.Persistence;
 public sealed class ReferenceEntityAdministration(CoreDbContext db, ITransactionExecutor tx, ICompanyContext company,
     ICurrentActor actor, IAuditWriter audit, TimeProvider time) : IReferenceEntityAdministration
 {
-    private static readonly string[] Cultures = ["fa", "ar", "en"];
+    private static readonly string[] Cultures = ["fa", "ar", "en", "es"];
     public Task<Result<IReadOnlyList<ReferenceEntityValueView>>> ListAsync(string type, CancellationToken ct) =>
         tx.ExecuteAsync(async token =>
         {

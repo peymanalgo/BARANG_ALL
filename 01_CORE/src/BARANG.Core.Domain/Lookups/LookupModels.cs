@@ -34,7 +34,7 @@ public static class LookupText
             ?? list.FirstOrDefault().Name
             ?? "";
     }
-    public static IReadOnlySet<string> SupportedCultures { get; } = new HashSet<string>(["fa", "en", "ar"], StringComparer.Ordinal);
+    public static IReadOnlySet<string> SupportedCultures { get; } = new HashSet<string>(["fa", "en", "ar", "es"], StringComparer.Ordinal);
     public static string? NormalizeCode(string? value)
     {
         string code = value?.Trim().ToLowerInvariant() ?? string.Empty;

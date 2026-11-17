@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Undo" xml:space="preserve">
+    <value>Deshacer</value>
+  </data>
+  <data name="Redo" xml:space="preserve">
+    <value>Rehacer</value>
+  </data>
+  <data name="Duplicate" xml:space="preserve">
+    <value>Duplicar</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="DeleteConfirmation" xml:space="preserve">
+    <value>Este elemento y sus conexiones se quitarán del grafo de trabajo.</value>
+  </data>
+  <data name="Outcome" xml:space="preserve">
+    <value>Resultado del camino</value>
+  </data>
+  <data name="Approve" xml:space="preserve">
+    <value>Aprobar</value>
+  </data>
+  <data name="Reject" xml:space="preserve">
+    <value>Rechazar</value>
+  </data>
+  <data name="AuditReject" xml:space="preserve">
+    <value>Rechazo de auditoría</value>
+  </data>
+  <data name="SourceAnchor" xml:space="preserve">
+    <value>Ancla de origen</value>
+  </data>
+  <data name="TargetAnchor" xml:space="preserve">
+    <value>Ancla de destino</value>
+  </data>
+  <data name="Auto" xml:space="preserve">
+    <value>Automático</value>
+  </data>
+  <data name="Top" xml:space="preserve">
+    <value>Arriba</value>
+  </data>
+  <data name="Right" xml:space="preserve">
+    <value>Derecha</value>
+  </data>
+  <data name="Bottom" xml:space="preserve">
+    <value>Abajo</value>
+  </data>
+  <data name="Left" xml:space="preserve">
+    <value>Izquierda</value>
+  </data>
+  <data name="ConditionOnlyFromGateway" xml:space="preserve">
+    <value>Las condiciones y resultados solo se permiten en salidas de compuerta exclusiva.</value>
+  </data>
+  <data name="DuplicateNodeKey" xml:space="preserve">
+    <value>Las claves estables de nodo deben ser únicas.</value>
+  </data>
+  <data name="InvalidTransition" xml:space="preserve">
+    <value>La conexión no es válida.</value>
+  </data>
+  <data name="InvalidOutcome" xml:space="preserve">
+    <value>El resultado del camino no es válido.</value>
+  </data>
+  <data name="InvalidAnchor" xml:space="preserve">
+    <value>El ancla de conexión no es válida para este tipo de nodo.</value>
+  </data>
+</root>

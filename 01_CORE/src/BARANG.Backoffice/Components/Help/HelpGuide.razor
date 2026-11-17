@@ -2,7 +2,7 @@
 @using BARANG.Backoffice.Components.Help
 @inject IStringLocalizer<AppStrings> L
 @inject IJSRuntime JS
-<button type="button" class="help-launcher" title="@T("راهنمای سیستم", "System Guide", "دليل النظام")" aria-label="@T("راهنمای سیستم", "System Guide", "دليل النظام")" @onclick="Open">
+<button type="button" class="help-launcher" title="@T("راهنمای سیستم", "System Guide", "دليل النظام", "Guía del sistema")" aria-label="@T("راهنمای سیستم", "System Guide", "دليل النظام", "Guía del sistema")" @onclick="Open">
     <BarangIcon Name="help" />
 </button>
 
@@ -11,12 +11,12 @@
     <button type="button" class="help-backdrop" aria-hidden="true" tabindex="-1" @onclick="Close" @ref="_backdrop"></button>
     <div class="help-overlay" role="dialog" aria-modal="true" dir="@Dir" @ref="_overlay">
         <header class="help-header">
-            <h2><BarangIcon Name="help" /> @T("راهنمای سیستم", "System Guide", "دليل النظام")</h2>
-            <input type="search" class="help-search" placeholder="@T("جستجو در راهنما…", "Search the guide…", "ابحث في الدليل…")" value="@Filter" @oninput="SearchChanged" />
+            <h2><BarangIcon Name="help" /> @T("راهنمای سیستم", "System Guide", "دليل النظام", "Guía del sistema")</h2>
+            <input type="search" class="help-search" placeholder="@T("جستجو در راهنما…", "Search the guide…", "ابحث في الدليل…", "Buscar en la guía…")" value="@Filter" @oninput="SearchChanged" />
             <button type="button" class="help-close" aria-label="@L["Close"]" @onclick="Close"><BarangIcon Name="close" /></button>
         </header>
         <div class="help-body">
-            <nav class="help-tree" aria-label="@T("درخت منوها", "Menu tree", "شجرة القوائم")">
+            <nav class="help-tree" aria-label="@T("درخت منوها", "Menu tree", "شجرة القوائم", "Árbol de menús")">
                 <ul>
                     @foreach (var root in HelpCatalog.Roots)
                     {
@@ -29,18 +29,18 @@
                 {
                     <div class="help-empty">
                         <BarangIcon Name="help" />
-                        <p>@T("یکی از منوها را از درخت انتخاب کنید تا راهنمای کامل آن نمایش داده شود.", "Pick a menu from the tree to see its full guide.", "اختر قائمة من الشجرة لعرض دليلها الكامل.")</p>
+                        <p>@T("یکی از منوها را از درخت انتخاب کنید تا راهنمای کامل آن نمایش داده شود.", "Pick a menu from the tree to see its full guide.", "اختر قائمة من الشجرة لعرض دليلها الكامل.", "Elige un menú del árbol para ver su guía completa.")</p>
                     </div>
                 }
                 else
                 {
                     <p class="help-breadcrumb">@SelectedPath</p>
                     <h2>@Selected.Name(CultureCode)</h2>
-                    <h3 class="help-section-title">@T("هدف", "Purpose", "الهدف")</h3>
+                    <h3 class="help-section-title">@T("هدف", "Purpose", "الهدف", "Propósito")</h3>
                     <div class="help-text help-purpose"><p>@Selected.Purpose(CultureCode)</p></div>
                     @if (Selected.Features(CultureCode).Length > 0)
                     {
-                        <h3 class="help-section-title">@T("امکانات", "Features", "الميزات")</h3>
+                        <h3 class="help-section-title">@T("امکانات", "Features", "الميزات", "Prestaciones")</h3>
                         <ul class="help-features">
                             @foreach (var line in Selected.Features(CultureCode).Split('\n'))
                             {
@@ -50,7 +50,7 @@
                     }
                     @if (!string.IsNullOrWhiteSpace(Selected.Route))
                     {
-                        <a class="help-go" href="@Selected.Route">@T("رفتن به این بخش", "Open this section", "افتح هذا القسم")</a>
+                        <a class="help-go" href="@Selected.Route">@T("رفتن به این بخش", "Open this section", "افتح هذا القسم", "Abrir esta sección")</a>
                     }
                 }
             </section>
@@ -66,7 +66,7 @@
     private readonly HashSet<string> ExpandedIds = new() { "master", "system", "ref-shared", "ref-shared/price.group", "ref-artwork" };
 
     [CascadingParameter(Name = "BarangCulture")] private string? BarangCulture { get; set; }
-    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() is var c && c is "en" or "ar" ? c : "fa";
+    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() is var c && c is "en" or "ar" or "es" ? c : "fa";
     private string Dir => CultureCode == "en" ? "ltr" : "rtl";
     private string TrimmedFilter => Filter.Trim();
 
@@ -81,7 +81,7 @@
         }
     }
 
-    private string T(string fa,string en,string ar)=>CultureCode switch{"en"=>en,"ar"=>ar,_=>fa};
+    private string T(string fa,string en,string ar,string? es=null)=>CultureCode switch{"en"=>en,"ar"=>ar,"es"=>es??en,_=>fa};
     private void Open() { Visible = true; }
     private void Close() { Visible = false; }
     protected override async Task OnAfterRenderAsync(bool first)

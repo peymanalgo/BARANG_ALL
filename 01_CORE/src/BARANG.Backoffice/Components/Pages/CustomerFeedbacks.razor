@@ -101,7 +101,7 @@
         ("resolved", T("حل‌شده","Resolved","تم الحل"))
     };
 
-    private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"ar"=>ar,_=>fa};
+    private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>en,"ar"=>ar,_=>fa};
 
     private string StatusLabel(string code)=>code switch
     {

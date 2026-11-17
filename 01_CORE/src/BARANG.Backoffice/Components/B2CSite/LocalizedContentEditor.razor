@@ -145,5 +145,5 @@
         var user = (await AuthState.GetAuthenticationStateAsync()).User;
         return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
     }
-    private string SEOText(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en, "ar" => ar, _ => fa };
+    private string SEOText(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>en, "ar" => ar, _ => fa };
 }

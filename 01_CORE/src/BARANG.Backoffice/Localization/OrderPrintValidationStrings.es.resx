@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Incomplete" xml:space="preserve">
+    <value>La información de impresión está incompleta</value>
+  </data>
+  <data name="MissingMethod" xml:space="preserve">
+    <value>Seleccione un método de impresión.</value>
+  </data>
+  <data name="SaveBeforeNext" xml:space="preserve">
+    <value>Guarde con Añadir la información de impresión de la línea seleccionada antes de continuar.</value>
+  </data>
+  <data name="MissingArtwork" xml:space="preserve">
+    <value>Seleccione un diseño del banco o suba un archivo para esta línea.</value>
+  </data>
+  <data name="BothArtworkSources" xml:space="preserve">
+    <value>Seleccione solo un origen de diseño a la vez.</value>
+  </data>
+  <data name="Saving" xml:space="preserve">
+    <value>Guardando…</value>
+  </data>
+  <data name="SaveFailed" xml:space="preserve">
+    <value>La operación de impresión no se guardó. Se conservaron los valores introducidos.</value>
+  </data>
+  <data name="DeleteFailed" xml:space="preserve">
+    <value>La operación de impresión no se eliminó.</value>
+  </data>
+  <data name="SourceLinkFailed" xml:space="preserve">
+    <value>No se pudo vincular el archivo a la operación de impresión.</value>
+  </data>
+  <data name="PrintOperationValidationTitle" xml:space="preserve">
+    <value>No se pudo añadir la operación de impresión</value>
+  </data>
+  <data name="SaveFailedWithReason" xml:space="preserve">
+    <value>No se pudo guardar la operación de impresión: {0}</value>
+  </data>
+  <data name="SaveFailedWithReference" xml:space="preserve">
+    <value>No se pudo guardar la operación de impresión. Referencia: {0}</value>
+  </data>
+  <data name="InvalidOperationData" xml:space="preserve">
+    <value>Los datos de la operación de impresión no son válidos. Compruebe el método, la ubicación, las dimensiones y el origen del diseño.</value>
+  </data>
+  <data name="InvalidPrintMethod" xml:space="preserve">
+    <value>El método de impresión seleccionado no es válido.</value>
+  </data>
+  <data name="InvalidLocation" xml:space="preserve">
+    <value>El código de ubicación de impresión seleccionado no es válido.</value>
+  </data>
+  <data name="InvalidArtworkSource" xml:space="preserve">
+    <value>El diseño seleccionado no es válido para esta empresa.</value>
+  </data>
+  <data name="InvalidFileSource" xml:space="preserve">
+    <value>El archivo seleccionado no es válido para esta empresa.</value>
+  </data>
+  <data name="PrintItemNotOwned" xml:space="preserve">
+    <value>La línea del pedido no es válida o no pertenece a este pedido y empresa.</value>
+  </data>
+  <data name="DuplicateOperation" xml:space="preserve">
+    <value>Ya existe una operación de impresión para esta línea.</value>
+  </data>
+</root>

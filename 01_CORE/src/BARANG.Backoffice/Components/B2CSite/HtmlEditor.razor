@@ -34,7 +34,7 @@
     private string Label(string fa, string en, string ar)
     {
         string c = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-        return c switch { "en" => en, "ar" => ar, _ => fa };
+        return c switch { "en" => en,"es"=>en, "ar" => ar, _ => fa };
     }
 
     // بارگذاری تضمینی کتابخانه ویرایشگر و اسکن پس از هر رندر (تعویض تب) — idempotent.

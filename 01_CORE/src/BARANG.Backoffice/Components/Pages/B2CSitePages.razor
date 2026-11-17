@@ -179,7 +179,7 @@ else
         return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
     }
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
-    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en, "ar" => ar, _ => fa };
+    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>en, "ar" => ar, _ => fa };
 
     private sealed record Row(Guid Id, string Title, string Slug, string Placement, int? Column, bool Published);
     private sealed class EditModel
