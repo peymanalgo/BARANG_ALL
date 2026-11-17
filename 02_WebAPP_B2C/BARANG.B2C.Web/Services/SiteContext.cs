@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace BARANG.B2C.Web.Services;
 
 // محتوای CMS سایت (منو/فوتر/تنظیمات/وبلاگ) از ERP/Core می‌آید — B2C دیتابیس ندارد.
-// پاسخ‌ها ۶۰ ثانیه در حافظه کش می‌شوند و در نبود API به‌آرامی به حالت خالی برمی‌گردند.
+// پاسخ‌ها ۲۰ ثانیه در حافظه کش می‌شوند و در نبود API به‌آرامی به حالت خالی برمی‌گردند.
 public sealed class SiteContext(CoreApiClient core)
 {
     private static readonly SemaphoreSlim Gate = new(1, 1);
@@ -18,7 +18,9 @@ public sealed class SiteContext(CoreApiClient core)
 
     public string Culture => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
 
-    private static bool Fresh(CacheBox? box) => box is not null && box.LoadedAt > DateTimeOffset.UtcNow.AddSeconds(-60);
+    // کش ۲۰ ثانیه‌ای + کش ۱۰ ثانیه‌ای سمت Core ⇒ تغییرات CMS حداکثر ~۳۰ ثانیه بعد روی سایت دیده می‌شود
+    // (قبلاً ۶۰+۶۰ ثانیه بود و کاربر فکر می‌کرد ویرایش منو/فوتر اصلاً اعمال نمی‌شود).
+    private static bool Fresh(CacheBox? box) => box is not null && box.LoadedAt > DateTimeOffset.UtcNow.AddSeconds(-20);
 
     public async Task<CacheBox> LoadAsync(bool force = false)
     {

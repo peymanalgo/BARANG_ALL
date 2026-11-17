@@ -56,6 +56,9 @@
             if (el.dataset.ready) return;
             el.dataset.ready = '1';
             el.classList.add('site-ed');
+            // تضمین ویرایش‌پذیری حتی اگر attribute از Blazor نیامده باشد
+            if (!el.hasAttribute('contenteditable')) el.setAttribute('contenteditable', 'true');
+            if (!el.hasAttribute('spellcheck')) el.setAttribute('spellcheck', 'false');
             var bar = document.createElement('div');
             bar.className = 'site-ed-bar';
 
@@ -126,8 +129,55 @@
             btn(bar, 'LTR', 'چپ به راست', function () { run('formatBlock', 'div'); var n = window.getSelection().anchorNode; var d = n && (n.nodeName === 'DIV' ? n : n.parentElement && n.parentElement.closest('div')); if (d) { d.setAttribute('dir', 'ltr'); d.setAttribute('style', 'text-align:left'); api.sync(el.id); } });
 
             el.parentNode.insertBefore(bar, el);
-            el.addEventListener('input', function () { api.sync(el.id); });
+            el.addEventListener('input', function () { el.__lastEdit = Date.now(); api.sync(el.id); });
+            el.addEventListener('blur', function () { api.sync(el.id); });
             if (!el.innerHTML || el.innerHTML === '<br>') el.innerHTML = '<p><br></p>';
+            api.__registry.push(el);
+        });
+        api.bindImageDelete();
+        api.bindHeal();
+    };
+
+    // ترمیم خودکار: اگر ویرایشگر خالی ماند ولی hidden محتوا داشت (رندر Blazor بدون
+    // OnAfterRenderAsync بعدی — مثل بازگشایی پس از ذخیره یا اتصال مجدد)، محتوا برمی‌گردد.
+    // فقط ویرایشگر «خالی» را پر می‌کند؛ تایپ کاربر هرگز کاملاً خالی نیست، پس اثری از دست نمی‌رود.
+    api.__registry = [];
+    api.bindHeal = function () {
+        if (api.__heal) return;
+        api.__heal = setInterval(function () {
+            api.__registry = api.__registry.filter(function (el) { return el.isConnected; });
+            api.__registry.forEach(function (el) {
+                if (document.activeElement === el) return;
+                if (Date.now() - (el.__lastEdit || 0) < 1500) return;
+                var hidden = el.dataset.target ? document.getElementById(el.dataset.target) : null;
+                if (!hidden) return;
+                var hv = hidden.value || '', iv = el.innerHTML || '';
+                if ((!iv.trim() || iv === '<br>' || iv === '<p><br></p>') && hv.trim() && hv !== iv) {
+                    el.innerHTML = hv;
+                    el.__lastEdit = 0;
+                    api.sync(el.id);
+                }
+            });
+        }, 400);
+    };
+
+    // حذف تصویر با کلیک — delegate یک‌بار روی document (idempotent برای هر scan)
+    api.bindImageDelete = function () {
+        if (document.body.dataset.siteEdImgDel) return;
+        document.body.dataset.siteEdImgDel = '1';
+        document.addEventListener('click', function (e) {
+            var img = e.target;
+            if (!img || img.tagName !== 'IMG') return;
+            var ed = img.closest ? img.closest('[data-site-editor]') : null;
+            if (!ed) return;
+            e.preventDefault();
+            if (window.confirm('حذف تصویر؟')) {
+                img.remove();
+                api.sync(ed.id);
+                // خبر دادن Blazor: بدون این، رندر بعدی تصویر حذف‌شده را زنده می‌کند
+                var hidden = ed.dataset.target ? document.getElementById(ed.dataset.target) : null;
+                if (hidden) hidden.dispatchEvent(new Event('input', { bubbles: true }));
+            }
         });
     };
 
@@ -146,10 +196,16 @@
     };
     api.insertImage = function (id, url) {
         var el = document.getElementById(id);
-        if (!el) return;
+        if (!el) return false;
         el.focus();
-        document.execCommand('insertImage', false, url);
+        var ok = false;
+        try { ok = document.execCommand('insertImage', false, url); } catch (err) { ok = false; }
+        if (!ok) {
+            var safe = String(url).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+            try { ok = document.execCommand('insertHTML', false, '<img src="' + safe + '" alt="">'); } catch (err2) { ok = false; }
+        }
         api.sync(id);
+        return !!ok;
     };
     api.focus = function (id) { var el = document.getElementById(id); if (el) el.focus(); };
 

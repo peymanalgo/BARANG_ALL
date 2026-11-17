@@ -4,77 +4,196 @@
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
 
+<PageTitle>@L("تنظیمات فوتر سایت", "Footer settings", "إعدادات التذييل") · BARANG</PageTitle>
+
 <h2>@L("تنظیمات فوتر سایت", "Footer settings", "إعدادات التذييل")</h2>
-<p class="muted">@L("چهار ستون فوتر؛ در هر ستون می‌توانید صفحه، لینک، متن، HTML یا تصویر بندانگشتی اضافه/حذف کنید.", "Four footer columns; add/remove pages, links, text, HTML or thumbnails in each column.", "أربعة أعمدة؛ أضف/احذف صفحات أو روابط أو نصًا أو HTML أو صورًا.")</p>
+<p class="muted">@L("چهار ستون فوتر؛ در هر ستون می‌توانید صفحه، لینک منو، متن، HTML یا تصویر اضافه، ویرایش یا حذف کنید.", "Four footer columns; add, edit or delete pages, links, text, HTML or images in each column.", "أربعة أعمدة؛ أضف أو حرّر أو احذف صفحات أو روابط أو نصًا أو HTML أو صورًا في كل عمود.")</p>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="fw-msg @(MessageIsError ? "fw-msg-err" : "fw-msg-ok")" role="status">@Message</div>
+}
 
 <div class="b2c-col-cards">
     @for (int col = 1; col <= 4; col++)
     {
         int c = col;
-        <div class="form-section">
-            <h3>@L("ستون ", "Column ", "العمود ") @("۱۲۳۴"[c - 1])</h3>
-            @foreach (var w in Widgets.Where(x => x.Column == c).OrderBy(x => x.Order))
+        <div class="form-section" data-col="@c">
+            <h3>@L("ستون ", "Column ", "العمود ")@("۱۲۳۴"[c - 1])</h3>
+            @{
+                var columnWidgets = Widgets.Where(x => x.Column == c).OrderBy(x => x.Order).ThenBy(x => x.Title).ToList();
+            }
+            @if (columnWidgets.Count == 0)
             {
-                <div class="b2c-widget">
-                    <div>
-                        <b>@w.Label</b> <span class="muted" style="font-size:.7rem">@TypeText(w.Type)</span>
-                        @if (w.ImageUrl is not null) { <img src="@w.ImageUrl" alt="" /> }
+                <p class="muted" style="font-size:.78rem">@L("آیتمی نیست.", "No items yet.", "لا عناصر.")</p>
+            }
+            @foreach (var w in columnWidgets)
+            {
+                <div class="b2c-widget" data-wid="@w.Id" data-wtype="@w.Type">
+                    <div class="fw-widget-body">
+                        @switch (w.Type)
+                        {
+                            case "page":
+                                <span class="fw-type-ic" title="@TypeText("page")">📄</span>
+                                <span class="fw-widget-text"><b>@(string.IsNullOrWhiteSpace(w.PageTitle) ? "—" : w.PageTitle)</b>
+                                    <small class="muted">@TypeText("page")</small></span>
+                                break;
+                            case "menu":
+                                <span class="fw-type-ic" title="@TypeText("menu")">🔗</span>
+                                <span class="fw-widget-text"><b>@(string.IsNullOrWhiteSpace(w.Title) ? "—" : w.Title)</b>
+                                    <small class="muted" dir="ltr">@w.Url</small></span>
+                                break;
+                            case "text":
+                                <span class="fw-type-ic" title="@TypeText("text")">📝</span>
+                                <span class="fw-widget-text"><span>@Excerpt(w.Text)</span>
+                                    <small class="muted">@TypeText("text")</small></span>
+                                break;
+                            case "html":
+                                <span class="fw-type-ic" title="HTML">&lt;/&gt;</span>
+                                <span class="fw-widget-text"><span class="fw-html-badge">HTML</span> <span dir="ltr">@HtmlExcerpt(w.Html)</span></span>
+                                break;
+                            case "image":
+                                <span class="fw-type-ic" title="@TypeText("image")">🖼</span>
+                                <img class="fw-thumb" src="@(w.ImageUrl ?? w.Url)" alt="@(w.Title ?? "")" />
+                                <span class="fw-widget-text"><b>@(string.IsNullOrWhiteSpace(w.Title) ? L("تصویر", "Image", "صورة") : w.Title)</b>
+                                    <small class="muted">@TypeText("image")</small></span>
+                                break;
+                            default:
+                                <span class="fw-widget-text"><b>@(w.Title ?? "—")</b></span>
+                                break;
+                        }
                     </div>
-                    <button class="btn btn-sm" @onclick="() => Delete(w)" title="@L("حذف", "Delete", "حذف")">🗑</button>
+                    <div class="fw-actions">
+                        <span class="muted fw-order" title="@L("ترتیب", "Order", "الترتيب")">@w.Order</span>
+                        <button type="button" class="btn btn-sm btn-secondary" data-act="edit" @onclick="() => OpenEdit(w)" title="@L("ویرایش", "Edit", "تحرير")">✏️</button>
+                        @if (ConfirmDeleteId == w.Id)
+                        {
+                            <button type="button" class="btn btn-sm btn-primary" data-act="delete-confirm" @onclick="() => Delete(w)">@L("حذف؟", "Delete?", "حذف؟")</button>
+                            <button type="button" class="btn btn-sm btn-secondary" data-act="delete-cancel" @onclick="() => ConfirmDeleteId = null">✖</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-secondary" data-act="delete" @onclick="() => ConfirmDeleteId = w.Id" title="@L("حذف", "Delete", "حذف")">🗑</button>
+                        }
+                    </div>
                 </div>
             }
-            <details>
-                <summary style="cursor:pointer;font-size:.85rem">+ @L("افزودن آیتم", "Add item", "إضافة عنصر")</summary>
-                <div class="form-grid" style="margin-top:8px">
-                    <label><span>@L("نوع", "Type", "النوع")</span>
-                        <select @bind="Draft.Type">
-                            <option value="page">@L("صفحه", "Page", "صفحة")</option>
-                            <option value="menu">@L("لینک منو", "Menu link", "رابط")</option>
-                            <option value="text">@L("متن عادی", "Plain text", "نص")</option>
-                            <option value="html">HTML</option>
-                            <option value="image">@L("تصویر بندانگشتی", "Thumbnail", "صورة")</option>
-                        </select>
-                    </label>
-                    @if (Draft.Type == "page")
-                    {
-                        <label><span>@L("صفحه", "Page", "صفحة")</span>
-                            <select @bind="Draft.PageId"><option value="">—</option>@foreach (var p in Pages) { <option value="@p.Id">@p.Title (@p.Slug)</option> }</select>
-                        </label>
-                    }
-                    @if (Draft.Type == "menu")
-                    {
-                        <label><span>@L("عنوان", "Title", "العنوان")</span><input @bind="Draft.Title" /></label>
-                        <label><span>URL</span><input @bind="Draft.Url" dir="ltr" /></label>
-                    }
-                    @if (Draft.Type == "text")
-                    {
-                        <label><span>@L("متن", "Text", "النص")</span><textarea @bind="Draft.Text" rows="3"></textarea></label>
-                    }
-                    @if (Draft.Type == "html")
-                    {
-                        <label><span>HTML</span><textarea @bind="Draft.Html" rows="4" dir="ltr"></textarea></label>
-                    }
-                    @if (Draft.Type == "image")
-                    {
-                        <label><span>@L("تصویر", "Image", "صورة")</span>
-                            @if (Draft.ImageUrl is not null) { <img src="@Draft.ImageUrl" style="width:44px;height:44px;border-radius:8px" /> }
-                            <label class="btn btn-sm" style="cursor:pointer">@L("بارگذاری", "Upload", "تحميل")<InputFile OnChange="PickImage" hidden accept="image/*" /></label>
-                        </label>
-                    }
-                    <label><span>@L("ترتیب", "Order", "الترتيب")</span><input type="number" @bind="Draft.Order" /></label>
-                </div>
-                <button class="btn btn-sm btn-primary" style="margin-top:6px" @onclick="() => Add(c)">@L("افزودن به این ستون", "Add to this column", "أضف إلى هذا العمود")</button>
-            </details>
+            <button type="button" class="btn btn-sm btn-primary fw-add-btn" data-act="add" @onclick="() => OpenAdd(c)">➕ @L("افزودن آیتم", "Add item", "إضافة عنصر")</button>
         </div>
     }
 </div>
-@if (!string.IsNullOrEmpty(Message)) { <p class="muted">@Message</p> }
+
+@if (Dialog is not null)
+{
+    <div class="dialog-backdrop" data-dialog="@(Dialog.EditId is null ? "add" : "edit")">
+        <div class="crud-dialog" role="dialog" aria-modal="true">
+            <header>
+                <h2>@(Dialog.EditId is null ? L("افزودن آیتم به ستون ", "Add item to column ", "إضافة عنصر إلى العمود ") + "۱۲۳۴"[Dialog.Column - 1] : L("ویرایش آیتم فوتر", "Edit footer item", "تحرير عنصر التذييل"))</h2>
+                <button type="button" class="dialog-close" data-act="close" @onclick="CloseDialog" aria-label="@L("بستن", "Close", "إغلاق")">✕</button>
+            </header>
+            <div class="form-grid">
+                <label><span>@L("نوع", "Type", "النوع")</span>
+                    <select @bind="Dialog.Type" disabled="@(Dialog.EditId is not null)">
+                        <option value="page">@L("صفحه", "Page", "صفحة")</option>
+                        <option value="menu">@L("لینک منو", "Menu link", "رابط")</option>
+                        <option value="text">@L("متن عادی", "Plain text", "نص")</option>
+                        <option value="html">HTML</option>
+                        <option value="image">@L("تصویر", "Image", "صورة")</option>
+                    </select>
+                </label>
+                <label><span>@L("ترتیب نمایش", "Display order", "الترتيب")</span><input type="number" @bind="Dialog.Order" /></label>
+                @if (Dialog.Type == "page")
+                {
+                    <label class="span-2"><span>@L("صفحه", "Page", "صفحة")</span>
+                        <select @bind="Dialog.PageId">
+                            <option value="">— @L("انتخاب کنید", "select", "اختر") —</option>
+                            @foreach (var p in Pages)
+                            {
+                                <option value="@p.Id">@p.Title (@p.Slug)</option>
+                            }
+                        </select>
+                    </label>
+                }
+                @if (Dialog.Type is "menu" or "image")
+                {
+                    <label><span>@L("عنوان", "Title", "العنوان")</span><input @bind="Dialog.Title" /></label>
+                }
+                @if (Dialog.Type is "menu" or "image")
+                {
+                    <label><span>URL</span><input @bind="Dialog.Url" dir="ltr" placeholder="@UrlPlaceholder()" /></label>
+                }
+                @if (Dialog.Type == "text")
+                {
+                    <label class="span-2"><span>@L("متن", "Text", "النص")</span><textarea @bind="Dialog.Text" rows="4"></textarea></label>
+                }
+                @if (Dialog.Type == "html")
+                {
+                    <label class="span-2"><span>HTML</span><textarea @bind="Dialog.Html" rows="6" dir="ltr"></textarea></label>
+                }
+                @if (Dialog.Type == "image")
+                {
+                    <div class="span-2 fw-image-row">
+                        <span>@L("تصویر", "Image", "صورة")</span>
+                        <div class="fw-image-tools">
+                            @if (!string.IsNullOrWhiteSpace(Dialog.ImagePreviewUrl))
+                            {
+                                <img class="fw-thumb fw-thumb-lg" src="@Dialog.ImagePreviewUrl" alt="@L("پیش‌نمایش تصویر", "Image preview", "معاينة الصورة")" />
+                            }
+                            else
+                            {
+                                <span class="muted" style="font-size:.78rem">@L("تصویری انتخاب نشده", "No image selected", "لا صورة")</span>
+                            }
+                            <label class="btn btn-sm btn-secondary" style="cursor:pointer">@L("بارگذاری تصویر", "Upload image", "تحميل صورة")<InputFile OnChange="PickImage" hidden accept="image/*" /></label>
+                            @if (!string.IsNullOrWhiteSpace(Dialog.ImagePreviewUrl) || !string.IsNullOrWhiteSpace(Dialog.ImageKey))
+                            {
+                                <button type="button" class="btn btn-sm btn-secondary" data-act="remove-image" @onclick="RemoveImage">🗑 @L("حذف تصویر", "Remove image", "حذف الصورة")</button>
+                            }
+                        </div>
+                    </div>
+                    <p class="muted span-2" style="font-size:.72rem;margin:0">@L("برای تصویر آپلودی نیازی به URL نیست؛ فیلد URL فقط برای تصویر با آدرس مستقیم (مثل svg ایستای فروشگاه) است.", "For an uploaded image the URL field is not needed; it is only for direct-address images (like a static store svg).", "للصورة المرفوعة لا حاجة إلى URL؛ الحقل فقط للصور ذات العنوان المباشر.")</p>
+                }
+            </div>
+            @if (!string.IsNullOrEmpty(DialogError))
+            {
+                <div class="fw-msg fw-msg-err" role="alert">@DialogError</div>
+            }
+            <footer>
+                <button type="button" class="btn btn-secondary" data-act="cancel" @onclick="CloseDialog">@L("انصراف", "Cancel", "إلغاء")</button>
+                <button type="button" class="btn btn-primary" data-act="save" disabled="@Dialog.SaveDisabled" @onclick="Save">@L("ذخیره", "Save", "حفظ")</button>
+            </footer>
+        </div>
+    </div>
+}
+
+<style>
+    .fw-widget-body { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .fw-widget-text { display: flex; flex-direction: column; min-width: 0; }
+    .fw-widget-text small { font-size: .68rem; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fw-widget-text > span { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fw-type-ic { font-size: 1rem; flex-shrink: 0; }
+    .fw-actions { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .fw-order { font-size: .68rem; border: 1px solid var(--border); border-radius: 99px; padding: 1px 7px; }
+    .fw-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 9px; border: 1px solid var(--border); flex-shrink: 0; background: #fff; }
+    .fw-thumb-lg { width: 72px; height: 72px; }
+    .fw-html-badge { display: inline-block; font-size: .64rem; font-weight: 700; color: #315b4e; background: #edf5f1; border: 1px solid #cfe0d8; border-radius: 6px; padding: 1px 6px; direction: ltr; }
+    .fw-add-btn { margin-top: 4px; }
+    .fw-msg { margin: 10px 0; padding: 10px 13px; border-radius: 10px; font-size: .85rem; }
+    .fw-msg-ok { color: #1d6a4c; background: #e8f6ee; border: 1px solid #bfe3d2; }
+    .fw-msg-err { color: #8d2f28; background: #fff0ee; border: 1px solid #f0cfc9; }
+    .fw-image-row { display: flex; flex-direction: column; gap: 7px; }
+    .fw-image-row > span { color: #5f6c66; font-size: 12px; font-weight: 650; }
+    .fw-image-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+</style>
 
 @code {
     private List<WidgetRow> Widgets = new();
     private List<PageRef> Pages = new();
     private string Message = "";
-    private DraftModel Draft = new();
+    private bool MessageIsError;
+    private Guid? ConfirmDeleteId;
+    private DialogModel? Dialog;
+    private string DialogError = "";
+    private bool Busy;
 
     protected override async Task OnInitializedAsync() => await Load();
 
@@ -91,8 +210,9 @@
                     x.TryGetProperty("columnIndex", out var ci) ? ci.GetInt32() : 1,
                     Text(x, "widgetType"),
                     x.TryGetProperty("pageId", out var pi) && pi.ValueKind == JsonValueKind.String && Guid.TryParse(pi.GetString(), out var pid) ? pid : null,
-                    Text(x, "pageTitleFa"), Text(x, "titleFa"), Text(x, "url"), Text(x, "imageUrl"),
-                    x.TryGetProperty("displayOrder", out var o) ? o.GetInt32() : 0));
+                    Text(x, "pageTitleFa"), Text(x, "titleFa"), Text(x, "titleEn"), Text(x, "titleAr"), Text(x, "url"), Text(x, "imageUrl"), Text(x, "imageStorageKey"), Text(x, "text"), Text(x, "html"),
+                    x.TryGetProperty("displayOrder", out var o) ? o.GetInt32() : 0,
+                    x.TryGetProperty("version", out var v) ? v.GetInt64() : 1));
         var pf = await Core.GetAsync("api/v1/site/pages", s.Value.Token, s.Value.Company, default);
         Pages.Clear();
         if (pf.IsSuccess && pf.Value.ValueKind == JsonValueKind.Array)
@@ -100,33 +220,109 @@
                 Pages.Add(new PageRef(x.TryGetProperty("id", out var i) ? i.GetGuid() : Guid.Empty, Text(x, "titleFa"), Text(x, "slug")));
     }
 
-    private async Task Add(int column)
+    // ── افزودن ──
+    private void OpenAdd(int column)
     {
-        var s = await Session();
-        if (s is null) return;
-        Guid? pageId = Draft.Type == "page" && Guid.TryParse(Draft.PageId, out var g) ? g : null;
-        var r = await Core.SendAsync(HttpMethod.Post, "api/v1/site/footer", new
-        {
-            columnIndex = column, widgetType = Draft.Type, pageId,
-            titleFa = Draft.Title, titleEn = Draft.Title, titleAr = Draft.Title,
-            text = Draft.Text, html = Draft.Html, imageStorageKey = Draft.ImageKey, url = Draft.Url,
-            displayOrder = Draft.Order, version = 0
-        }, s.Value.Token, s.Value.Company, default);
-        Message = r.IsSuccess ? L("افزوده شد ✓", "Added ✓", "تمت الإضافة ✓") : L("خطا", "Error", "خطأ");
-        Draft = new DraftModel();
-        await Load();
+        ConfirmDeleteId = null;
+        DialogError = "";
+        int next = Widgets.Where(x => x.Column == column).Select(x => x.Order).DefaultIfEmpty(0).Max() + 1;
+        Dialog = new DialogModel { Column = column, Type = "menu", Order = next };
     }
 
+    // ── ویرایش ──
+    private void OpenEdit(WidgetRow w)
+    {
+        ConfirmDeleteId = null;
+        DialogError = "";
+        Dialog = new DialogModel
+        {
+            EditId = w.Id,
+            Version = w.Version,
+            Column = w.Column,
+            Type = w.Type,
+            PageId = w.PageId?.ToString() ?? "",
+            Title = w.Title ?? "",
+            TitleEn = w.TitleEn ?? "", // بدون فیلد ویرایش — برای حفظ عنوان انگلیسی موجود هنگام ذخیره
+            TitleAr = w.TitleAr ?? "",
+            Url = w.Url ?? "",
+            Text = w.Text ?? "",
+            Html = w.Html ?? "",
+            ImageKey = w.ImageKey,
+            ImagePreviewUrl = w.ImageUrl ?? w.Url,
+            Order = w.Order,
+        };
+    }
+
+    private void CloseDialog()
+    {
+        Dialog = null;
+        DialogError = "";
+    }
+
+    private void RemoveImage()
+    {
+        if (Dialog is null) return;
+        Dialog.ImageKey = null;
+        Dialog.ImagePreviewUrl = null;
+    }
+
+    // ── ذخیره (ایجاد/ویرایش) ──
+    private async Task Save()
+    {
+        if (Dialog is null || Busy) return;
+        var s = await Session();
+        if (s is null) return;
+        var d = Dialog;
+        Guid? pageId = d.Type == "page" && Guid.TryParse(d.PageId, out var g) ? g : null;
+        string? url = d.Type is "menu" or "image" ? d.Url?.Trim() : null;
+        Busy = true;
+        var body = new
+        {
+            columnIndex = d.Column, widgetType = d.Type, pageId,
+            titleFa = d.Title,
+            titleEn = d.EditId is null ? d.Title : (string.IsNullOrEmpty(d.TitleEn) ? d.Title : d.TitleEn), // در ویرایش، عنوان‌های دیگر زبان‌ها حفظ می‌شوند
+            titleAr = d.EditId is null ? d.Title : (string.IsNullOrEmpty(d.TitleAr) ? d.Title : d.TitleAr),
+            text = d.Text, html = d.Html, imageStorageKey = d.ImageKey, url,
+            displayOrder = d.Order, version = d.Version
+        };
+        var r = d.EditId is Guid id
+            ? await Core.SendAsync(HttpMethod.Put, $"api/v1/site/footer/{id}", body, s.Value.Token, s.Value.Company, default)
+            : await Core.SendAsync(HttpMethod.Post, "api/v1/site/footer", body, s.Value.Token, s.Value.Company, default);
+        Busy = false;
+        if (r.IsSuccess)
+        {
+            Message = d.EditId is null
+                ? L("آیتم افزوده شد ✓", "Item added ✓", "تمت الإضافة ✓")
+                : L("تغییرات ذخیره شد ✓", "Changes saved ✓", "تم الحفظ ✓");
+            MessageIsError = false;
+            Dialog = null;
+            DialogError = "";
+            await Load();
+        }
+        else
+        {
+            DialogError = r.Failure == ApiFailure.Unauthorized
+                ? L("نشست شما منقضی شده است — دوباره وارد شوید.", "Your session has expired — sign in again.", "انتهت جلستك — سجّل الدخول مجددًا.")
+                : L("ذخیره نشد", "Save failed", "فشل الحفظ") + (string.IsNullOrEmpty(r.ProblemCode) ? "" : $" ({r.ProblemCode})");
+        }
+    }
+
+    // ── حذف ──
     private async Task Delete(WidgetRow w)
     {
+        ConfirmDeleteId = null;
         var s = await Session();
         if (s is null) return;
-        await Core.SendAsync(HttpMethod.Delete, $"api/v1/site/footer/{w.Id}", null, s.Value.Token, s.Value.Company, default);
+        var r = await Core.SendAsync(HttpMethod.Delete, $"api/v1/site/footer/{w.Id}", null, s.Value.Token, s.Value.Company, default);
+        Message = r.IsSuccess ? L("آیتم حذف شد ✓", "Item deleted ✓", "تم الحذف ✓") : L("حذف نشد", "Delete failed", "فشل الحذف");
+        MessageIsError = !r.IsSuccess;
         await Load();
     }
 
+    // ── آپلود تصویر ویجت تصویری (پیش‌نمایش زنده قبل از ذخیره) ──
     private async Task PickImage(InputFileChangeEventArgs e)
     {
+        if (Dialog is null) return;
         var s = await Session();
         if (s is null) return;
         var f = e.File;
@@ -137,16 +333,34 @@
         var r = await Core.UploadAsync("api/v1/site/images", f.Name, f.ContentType, memory, f.Size, s.Value.Token, s.Value.Company, default);
         if (r.IsSuccess)
         {
-            Draft.ImageUrl = r.Value.TryGetProperty("url", out var u) ? u.GetString() : null;
-            Draft.ImageKey = r.Value.TryGetProperty("storageKey", out var k) ? k.GetString() : null;
+            Dialog.ImageKey = r.Value.TryGetProperty("storageKey", out var k) ? k.GetString() : null;
+            Dialog.ImagePreviewUrl = r.Value.TryGetProperty("url", out var u) ? u.GetString() : null;
+        }
+        else
+        {
+            DialogError = L("بارگذاری تصویر نشد", "Image upload failed", "فشل تحميل الصورة") + (string.IsNullOrEmpty(r.ProblemCode) ? "" : $" ({r.ProblemCode})");
         }
     }
 
     private string TypeText(string t) => t switch
     {
-        "page" => L("صفحه", "page", "صفحة"), "menu" => L("لینک", "link", "رابط"),
-        "html" => "HTML", "image" => L("تصویر", "image", "صورة"), _ => L("متن", "text", "نص")
+        "page" => L("صفحه", "page", "صفحة"),
+        "menu" => L("لینک منو", "link", "رابط"),
+        "html" => "HTML",
+        "image" => L("تصویر", "image", "صورة"),
+        _ => L("متن", "text", "نص")
     };
+    private string UrlPlaceholder() => Dialog?.Type == "image" ? "/images/example.svg" : "/catalog";
+    private static string Excerpt(string? text)
+    {
+        string firstLine = (text ?? "").Split('\n')[0].Trim();
+        return firstLine.Length > 70 ? firstLine[..70] + "…" : firstLine;
+    }
+    private static string HtmlExcerpt(string? html)
+    {
+        string t = (html ?? "").Trim();
+        return t.Length > 40 ? t[..40] + "…" : t;
+    }
 
     private async Task<(string Token, Guid Company)?> Session()
     {
@@ -156,14 +370,16 @@
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
     private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en, "ar" => ar, _ => fa };
 
-    private sealed record WidgetRow(Guid Id, int Column, string Type, Guid? PageId, string? PageTitle, string? Title, string? Url, string? ImageUrl, int Order)
-    {
-        public string Label => Type switch { "page" => PageTitle ?? "—", "menu" => Title ?? Url ?? "—", "text" => "متن", "html" => "HTML", "image" => Title ?? "تصویر", _ => "—" };
-    }
+    private sealed record WidgetRow(Guid Id, int Column, string Type, Guid? PageId, string? PageTitle, string? Title, string? TitleEn, string? TitleAr, string? Url, string? ImageUrl, string? ImageKey, string? Text, string? Html, int Order, long Version);
     private sealed record PageRef(Guid Id, string Title, string Slug);
-    private sealed class DraftModel
+    private sealed class DialogModel
     {
-        public string Type = "menu"; public string PageId = ""; public string Title = ""; public string Url = "";
-        public string Text = ""; public string Html = ""; public string? ImageKey; public string? ImageUrl; public int Order = 10;
+        public Guid? EditId; public long Version; public int Column;
+        public string Type = "menu"; public string PageId = "";
+        public string Title = ""; public string TitleEn = ""; public string TitleAr = ""; public string Url = ""; public string Text = ""; public string Html = "";
+        public string? ImageKey;          // کلید MinIO تصویر (موجود یا تازه آپلودشده)
+        public string? ImagePreviewUrl;   // پیش‌نمایش زنده تصویر
+        public int Order = 10;
+        public bool SaveDisabled => Type == "image" && string.IsNullOrWhiteSpace(ImageKey) && string.IsNullOrWhiteSpace(Url);
     }
 }

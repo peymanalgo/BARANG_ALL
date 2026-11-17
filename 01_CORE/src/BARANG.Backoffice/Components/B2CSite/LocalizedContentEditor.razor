@@ -5,7 +5,7 @@
 <div class="lang-tabs" role="tablist">
     @foreach (var t in Tabs)
     {
-        <button type="button" class="lang-tab @(Active == t.Id ? "on" : "")" @onclick="() => Active = t.Id">@t.Label</button>
+        <button type="button" class="lang-tab @(Active == t.Id ? "on" : "")" @onclick="() => SwitchTab(t.Id)">@t.Label</button>
     }
 </div>
 
@@ -22,7 +22,7 @@
                 }
             </div>
             <h4 style="margin:10px 0 4px">@t.BodyLabel</h4>
-            <HtmlEditor @ref=EditorRef Value="@BodyFor(t.Id)" ValueChanged="v => SetBody(t.Id, v)" DomIdSuffix="@($"lc-{Id}-{t.Id}")" ShowImageUpload="true" />
+            <HtmlEditor @ref=EditorRef Value="@BodyFor(t.Id)" ValueChanged="v => SetBody(t.Id, v)" DomIdSuffix="@($"lc-{Id}-{t.Id}")" Dir="@(t.Id == "en" ? "ltr" : "rtl")" ShowImageUpload="true" />
             <details class="seo-box" style="margin-top:10px">
                 <summary style="cursor:pointer;font-weight:600">🔎 @SEOText("سئو (SEO)", "SEO", "SEO")</summary>
                 <div class="form-grid" style="margin-top:8px">
@@ -79,7 +79,7 @@
     [Parameter] public string KeywordsEn { get; set; } = ""; [Parameter] public EventCallback<string> KeywordsEnChanged { get; set; }
     [Parameter] public string KeywordsAr { get; set; } = ""; [Parameter] public EventCallback<string> KeywordsArChanged { get; set; }
     [Parameter] public string? ThumbnailKey { get; set; } = ""; [Parameter] public EventCallback<string?> ThumbnailKeyChanged { get; set; }
-    [Parameter] public string? ThumbnailUrl { get; set; }
+    [Parameter] public string? ThumbnailUrl { get; set; } [Parameter] public EventCallback<string?> ThumbnailUrlChanged { get; set; }
     [Parameter] public bool ShowThumbnail { get; set; } = true;
     [Parameter] public bool ShowExcerpt { get; set; } = false;
     [Parameter] public string? ThumbTitle { get; set; }
@@ -109,6 +109,13 @@
 
     public Task SyncFromDom() => EditorRef != null ? EditorRef.SyncFromDom() : Task.CompletedTask;
 
+    // پیش از تعویض تب، محتوای تایپ‌شدهٔ تب فعلی از DOM به Blazor منتقل می‌شود تا اثری از دست نرود
+    private async Task SwitchTab(string id)
+    {
+        if (Active != id && EditorRef != null) await EditorRef.SyncFromDom();
+        Active = id;
+    }
+
     private async Task PickThumb(InputFileChangeEventArgs e)
     {
         var s = await Session();
@@ -122,10 +129,16 @@
         if (r.IsSuccess)
         {
             string? key = r.Value.TryGetProperty("storageKey", out var k) ? k.GetString() : null;
+            string? url = r.Value.TryGetProperty("url", out var u) ? u.GetString() : null;
             await ThumbnailKeyChanged.InvokeAsync(key);
+            await ThumbnailUrlChanged.InvokeAsync(url); // پیش‌نمایش بلافاصله بعد از آپلود
         }
     }
-    private Task ClearThumb() => ThumbnailKeyChanged.InvokeAsync(null);
+    private async Task ClearThumb()
+    {
+        await ThumbnailKeyChanged.InvokeAsync(null);
+        await ThumbnailUrlChanged.InvokeAsync(null);
+    }
 
     private async Task<(string Token, Guid Company)?> Session()
     {

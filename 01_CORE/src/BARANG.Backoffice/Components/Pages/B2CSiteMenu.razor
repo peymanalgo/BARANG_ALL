@@ -10,7 +10,7 @@
 <table class="table">
     <thead><tr><th>#</th><th>@L("عنوان", "Title", "العنوان")</th><th>@L("نوع", "Type", "النوع")</th><th>URL</th><th></th></tr></thead>
     <tbody>
-        @foreach (var m in Items.OrderBy(x => x.Order))
+        @foreach (var m in Items.OrderBy(x => x.Pinned).ThenBy(x => x.Order))
         {
             <tr>
                 <td>@m.Order</td>
@@ -69,7 +69,7 @@
                     x.TryGetProperty("id", out var i) ? i.GetGuid() : Guid.Empty,
                     Text(x, "itemType"),
                     x.TryGetProperty("pageId", out var pi) && pi.ValueKind == JsonValueKind.String && Guid.TryParse(pi.GetString(), out var pid) ? pid : null,
-                    Text(x, "pageSlug"), Text(x, "titleFa"), Text(x, "url"),
+                    Text(x, "pageSlug"), Text(x, "pageTitleFa"), Text(x, "titleFa"), Text(x, "url"),
                     x.TryGetProperty("isPinned", out var pn) && pn.GetBoolean(),
                     x.TryGetProperty("displayOrder", out var o) ? o.GetInt32() : 0));
         var pf = await Core.GetAsync("api/v1/site/pages", s.Value.Token, s.Value.Company, default);
@@ -91,7 +91,9 @@
         {
             itemType = Draft.Type, pageId, titleFa = Draft.Title, titleEn = Draft.Title, titleAr = Draft.Title, url = Draft.Url, displayOrder = Draft.Order
         }, s.Value.Token, s.Value.Company, default);
-        Message = r.IsSuccess ? L("افزوده شد ✓", "Added ✓", "تم ✓") : L("خطا", "Error", "خطأ");
+        Message = r.IsSuccess ? L("افزوده شد ✓", "Added ✓", "تم ✓") : r.Failure == ApiFailure.Unauthorized
+            ? L("نشست شما منقضی شده است — دوباره وارد شوید.", "Your session has expired — sign in again.", "انتهت جلستك — سجّل الدخول مجددًا.")
+            : L("خطا", "Error", "خطأ") + (string.IsNullOrEmpty(r.ProblemCode) ? "" : $" ({r.ProblemCode})");
         Draft = new DraftModel();
         await Load();
     }
@@ -101,7 +103,9 @@
         var s = await Session();
         if (s is null) return;
         var r = await Core.SendAsync(HttpMethod.Delete, $"api/v1/site/menu/{m.Id}", null, s.Value.Token, s.Value.Company, default);
-        Message = r.IsSuccess ? "" : L("حذف امکان‌پذیر نیست", "Cannot delete", "لا يمكن الحذف");
+        Message = r.IsSuccess ? L("حذف شد ✓", "Deleted ✓", "تم الحذف ✓") : r.Failure == ApiFailure.Unauthorized
+            ? L("نشست شما منقضی شده است — دوباره وارد شوید.", "Your session has expired — sign in again.", "انتهت جلستك — سجّل الدخول مجددًا.")
+            : L("حذف امکان‌پذیر نیست", "Cannot delete", "لا يمكن الحذف") + (string.IsNullOrEmpty(r.ProblemCode) ? "" : $" ({r.ProblemCode})");
         await Load();
     }
 
@@ -113,9 +117,10 @@
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
     private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en, "ar" => ar, _ => fa };
 
-    private sealed record MenuRow(Guid Id, string Type, Guid? PageId, string PageSlug, string TitleFa, string Url, bool Pinned, int Order)
+    private sealed record MenuRow(Guid Id, string Type, Guid? PageId, string PageSlug, string PageTitleFa, string TitleFa, string Url, bool Pinned, int Order)
     {
-        public string Label => Type == "blog" ? "وبلاگ" : TitleFa;
+        // آیتم صفحه‌محور عنوان خودش را ندارد؛ عنوان صفحه نمایش داده می‌شود
+        public string Label => Type == "blog" ? "وبلاگ" : !string.IsNullOrWhiteSpace(TitleFa) ? TitleFa : PageTitleFa;
     }
     private sealed record PageRef(Guid Id, string Title, string Slug);
     private sealed class DraftModel { public string Type = "page"; public string PageId = ""; public string Title = ""; public string Url = ""; public int Order = 10; }

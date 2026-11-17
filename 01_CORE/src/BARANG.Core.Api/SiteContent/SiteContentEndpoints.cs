@@ -52,7 +52,9 @@ public static class SiteContentEndpoints
         });
 
         // ── عمومی: ناشناس + کش — مصرف مستقیم توسط B2C ──
-        RouteGroupBuilder pub = endpoints.MapGroup("/api/v1/public/site").RequireRateLimiting("client-read").CacheOutput("public-catalog");
+        // کش کوتاه ۱۰ ثانیه‌ای (public-site): تغییرات CMS حداکثر با ۱۰ ثانیه تأخیر در API عمومی دیده می‌شود
+        // (کش ۶۰ ثانیه‌ای قبلی + کش ۶۰ ثانیه‌ای B2C باعث می‌شد ویرایش منو/فوتر تا ~۲ دقیقه اعمال نشود).
+        RouteGroupBuilder pub = endpoints.MapGroup("/api/v1/public/site").RequireRateLimiting("client-read").CacheOutput("public-site");
         pub.MapGet("/settings", async (string? culture, IConfiguration configuration, CompanyContext companies, ISiteContentAdministration s, CancellationToken ct)
             => await PublicAsync(companies, configuration, s, (admin, token) => admin.GetSettingsAsync(token), ct));
         pub.MapGet("/footer", async (string? culture, IConfiguration configuration, CompanyContext companies, ISiteContentAdministration s, CancellationToken ct)

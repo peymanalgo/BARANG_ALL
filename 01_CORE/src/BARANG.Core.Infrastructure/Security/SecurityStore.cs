@@ -122,7 +122,21 @@ public sealed class SecurityStore(CoreDbContext db, ICompanyContext company, Tim
     public Task<RolePermission?> FindRolePermissionAsync(Guid roleId, Guid permissionId, CancellationToken ct) => db.RolePermissions.SingleOrDefaultAsync(x => x.RoleId == roleId && x.PermissionId == permissionId, ct);
     public Task<bool> UserHasPermissionAsync(Guid userId, Guid companyId, string permission, DateTimeOffset now, CancellationToken ct) => EffectivePermissionCodes(userId, companyId, now).AnyAsync(x => x == permission, ct);
 
-    public Task<AuthenticationSession?> FindSessionAsync(string tokenHash, DateTimeOffset now, CancellationToken ct) => db.AuthenticationSessions.SingleOrDefaultAsync(x => x.TokenHash == tokenHash && x.RevokedAtUtc == null && x.ExpiresAtUtc > now, ct);
+    // انقضای لغزنده: تا وقتی کاربر فعال است (هر درخواست احراز هویت‌شده) نشسته تمدید می‌شود؛
+    // فقط وقتی کمتر از نصف پنجره باقی مانده تمدید انجام می‌شود تا روی هر درخواست نوشتن DB نیفتد.
+    // ریشه‌ی باگ «خطا» هنگام ذخیره‌ی ویرایش صفحات CMS همین بود: توکن ۳۰ دقیقه‌ای مطلق بود و وسط کار می‌مُرد.
+    public async Task<AuthenticationSession?> FindSessionAsync(string tokenHash, DateTimeOffset now, CancellationToken ct)
+    {
+        AuthenticationSession? session = await db.AuthenticationSessions.SingleOrDefaultAsync(x => x.TokenHash == tokenHash && x.RevokedAtUtc == null && x.ExpiresAtUtc > now, ct);
+        if (session is not null && session.ExpiresAtUtc - now < SessionSlideThreshold)
+        {
+            session.Extend(now, SessionWindow);
+            await db.SaveChangesAsync(ct);
+        }
+        return session;
+    }
+    private static readonly TimeSpan SessionWindow = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan SessionSlideThreshold = TimeSpan.FromMinutes(15);
     public async Task<IReadOnlyList<AuthenticationSession>> ListActiveSessionsAsync(Guid userId, DateTimeOffset now, CancellationToken ct) => await db.AuthenticationSessions.Where(x => x.UserId == userId && x.RevokedAtUtc == null && x.ExpiresAtUtc > now).ToListAsync(ct);
     public Task<bool> AnyUsersAsync(CancellationToken ct) => db.ApplicationUsers.AnyAsync(ct);
     public async Task<IReadOnlyList<MyCompanyView>> ListEffectiveCompaniesAsync(Guid userId, DateTimeOffset now, CancellationToken ct) =>

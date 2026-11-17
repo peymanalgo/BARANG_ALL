@@ -1,9 +1,12 @@
 @page
 @model IndexModel
+@inject BARANG.B2C.Web.Services.SiteContext Site
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar) => culture switch { "en" => en, "ar" => ar, _ => fa };
     ViewData["Title"] = T("خانه", "Home", "الرئيسية");
+    // شعار از CMS (تنظیمات سایت در ERP)؛ در نبودش متن پیش‌فرض
+    var cmsSlogan = Site.LoadAsync().GetAwaiter().GetResult().Settings?.Slogan;
 }
 @* ---------- HERO: عکس تیشرت‌ها (۷۵٪) + جستجوی شیشه‌ای تمام‌عرض ---------- *@
 <section class="hero2">
@@ -105,7 +108,7 @@
     <img class="mascot-img" src="~/images/pirang-khan.jpg" asp-append-version="true" alt="@T("پی‌رنگ خان", "Peyrang Khan", "پی‌رنگ خان")" />
     <div class="mascot-bubble">
         <strong>@T("پی‌رنگ‌خان می‌گه:", "Peyrang Khan says:", "پی‌رنگ‌خان يقول:")</strong>
-        <p class="mascot-slogan">@T("پی‌رنگ خان، نقشه‌ها داره برات!", "Peyrang Khan has the designs for you!", "پی‌رنگ خان لديه التصاميم من أجلك!")</p>
+        <p class="mascot-slogan">@(string.IsNullOrWhiteSpace(cmsSlogan) ? T("پی‌رنگ خان، نقشه‌ها داره برات!", "Peyrang Khan has the designs for you!", "پی‌رنگ خان لديه التصاميم من أجلك!") : cmsSlogan)</p>
         <a class="btn btn-primary btn-lg btn-shine mascot-cta" href="/order/wizard">@T("شروع طراحی تیشرت ←", "Start designing ←", "ابدأ التصميم ←")</a>
         <p>@T("هر طرحی پسندیدی، بگو تا با چند کلیک برات چاپش کنیم!", "Pick any design and we'll print it in a few clicks!", "أي تصميم يعجبك نطبعه بضغوطات!")</p>
     </div>

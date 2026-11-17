@@ -8,17 +8,46 @@
 @inject NavigationManager Navigation
 
 <div class="notification-bell" @onkeydown="KeyDown">
+    @if (SessionExpired)
+    {
+        <div class="session-expired-banner" role="alert">
+            <span>@T("نشست شما منقضی شده است — تغییرات ذخیره نمی‌شود. متن لازم را کپی کنید و دوباره وارد شوید.","Your session has expired — changes are not saved. Copy any text you need and sign in again.","انتهت جلستك — لن تُحفظ التغييرات. انسخ النص المطلوب وسجّل الدخول مجددًا.")</span>
+            <button type="button" class="btn btn-sm btn-primary" @onclick="ReLogin">@T("ورود مجدد","Sign in again","تسجيل الدخول مجددًا")</button>
+        </div>
+    }
+    else if (MinutesLeft is > 0 and <= 5)
+    {
+        <div class="session-expired-banner session-warn-banner" role="status">
+            <span>@T($"نشست تا {MinutesLeft} دقیقه دیگر منقضی می‌شود — تغییرات را ذخیره کنید.",$"Session expires in {MinutesLeft} minutes — save your changes.",$"تنتهي الجلسة خلال {MinutesLeft} دقيقة — احفظ تغييراتك.")</span>
+        </div>
+    }
     <button type="button" class="notification-bell-trigger" aria-label="@T("اعلان‌ها","Notifications","الإشعارات")" aria-expanded="@IsOpen" @onclick="Toggle">
         <BarangIcon Name="bell" />@if(Unread>0){<span class="notification-bell-badge" aria-label="@T($"{Unread} اعلان خوانده‌نشده",$"{Unread} unread notifications",$"{Unread} إشعار غير مقروء")">@(Unread>99?"99+":Unread)</span>}
     </button>
     @if(IsOpen){<button type="button" class="notification-bell-backdrop" aria-label="@T("بستن اعلان‌ها","Close notifications","إغلاق الإشعارات")" @onclick="Close"></button><section class="notification-bell-popover" role="dialog" aria-label="@T("اعلان‌های اخیر","Recent notifications","الإشعارات الأخيرة")" @onclick:stopPropagation><header><div><strong>@T("اعلان‌های اخیر","Recent notifications","الإشعارات الأخيرة")</strong><small>@T($"{Unread} خوانده‌نشده",$"{Unread} unread",$"{Unread} غير مقروء")</small></div><button type="button" class="notification-bell-close" aria-label="@T("بستن","Close","إغلاق")" @onclick="Close">×</button></header>@if(Loading){<p class="notification-bell-message">@T("در حال بارگذاری…","Loading…","جار التحميل…")</p>}else if(Rows.Count==0){<p class="notification-bell-message">@T("اعلان جدیدی نیست.","No new notifications.","لا توجد إشعارات جديدة.")</p>}else{<div class="notification-bell-list">@foreach(Row row in Rows){<button type="button" class="notification-bell-item @(row.ReadAt is null?"is-unread":"")" @onclick="()=>OpenRow(row)"><span class="notification-bell-item-icon"><BarangIcon Name="bell" /></span><span><strong>@Title(row.TemplateCode)</strong><small>@Relative(row.CreatedAt)</small></span></button>}</div>}<footer><a href="/workspace/notifications" @onclick="Close">@T("مشاهده همه اعلان‌ها","View all notifications","عرض كل الإشعارات")</a></footer></section>}
 </div>
 
+<style>
+    .session-expired-banner { position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); z-index:60; display:flex; align-items:center; gap:10px; max-width:min(430px,80vw); padding:10px 14px; border-radius:11px; font-size:.78rem; font-weight:600; color:#8d2f28; background:#fff0ee; border:1px solid #f0cfc9; box-shadow:0 10px 26px rgba(90,30,25,.16); white-space:normal; }
+    .session-warn-banner { color:#7a5410; background:#fff7e3; border-color:#ecd9a0; box-shadow:0 10px 26px rgba(122,84,16,.14); }
+    .notification-bell { position:relative; }
+</style>
+
 @code {
-    private bool IsOpen, Loading; private long Unread; private List<Row> Rows=[]; private CancellationTokenSource? Stop;
+    private bool IsOpen, Loading, SessionExpired; private long Unread; private int MinutesLeft = int.MaxValue; private List<Row> Rows=[]; private CancellationTokenSource? Stop;
     protected override async Task OnInitializedAsync(){await Refresh();Stop=new();_ = RefreshLoop(Stop.Token);}
     private async Task RefreshLoop(CancellationToken ct){using PeriodicTimer timer=new(TimeSpan.FromSeconds(45));try{while(await timer.WaitForNextTickAsync(ct)){await Refresh();await InvokeAsync(StateHasChanged);}}catch(OperationCanceledException){}}
-    private async Task Refresh(){var s=await Session();if(s is null)return;Loading=true;var r=await Core.GetAsync("api/v1/notifications/mine?unread=true&page=1&pageSize=5",s.Value.Token,s.Value.Company,default);if(r.IsSuccess){Unread=Long(r.Value,"total");Rows=Parse(r.Value);}Loading=false;}
+    private async Task Refresh(){
+        var s=await Session();if(s is null)return;
+        MinutesLeft=await ExpiryMinutesLeftAsync();
+        Loading=true;
+        var r=await Core.GetAsync("api/v1/notifications/mine?unread=true&page=1&pageSize=5",s.Value.Token,s.Value.Company,default);
+        if(r.IsSuccess){Unread=Long(r.Value,"total");Rows=Parse(r.Value);}
+        else if(r.Failure==ApiFailure.Unauthorized){SessionExpired=true;Stop?.Cancel();} // توکن مرده: نشست باید دوباره ساخته شود
+        Loading=false;}
+    // زمان باقی‌مانده نشست از کلیم انقضا — برای هشدار پیش از انقضا
+    private async Task<int> ExpiryMinutesLeftAsync(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return u.FindFirst(System.Security.Claims.ClaimTypes.Expiration)?.Value is string raw&&long.TryParse(raw,out var sec)?(int)DateTimeOffset.FromUnixTimeSeconds(sec).Subtract(DateTimeOffset.UtcNow).TotalMinutes:int.MaxValue;}
+    private void ReLogin(){var path=new Uri(Navigation.Uri).PathAndQuery;Navigation.NavigateTo("/auth/expire?returnUrl="+Uri.EscapeDataString(path),true);}
     private async Task Toggle(){IsOpen=!IsOpen;if(IsOpen)await Refresh();}private void Close()=>IsOpen=false;private async Task OpenRow(Row row){if(row.ReadAt is null){var s=await Session();if(s is not null)await Core.SendAsync(HttpMethod.Post,$"api/v1/notifications/{row.Id}/read",new{version=row.Version},s.Value.Token,s.Value.Company,default);}if(row.Route is not null)Navigation.NavigateTo(row.Route);Close();}
     private async Task KeyDown(KeyboardEventArgs e){if(e.Key=="Escape")Close();}
     private async Task<(string Token,Guid Company)?> Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t?(t,c):null;}

@@ -17,6 +17,7 @@ else if (Loaded)
             <label><span>@L("نام سایت (عربی)", "Site name (ar)", "اسم الموقع (عربي)")</span><input @bind="NameAr" dir="rtl" /></label>
             <label><span>@L("شعار (فارسی)", "Slogan (fa)", "الشعار (فا)")</span><input @bind="SloganFa" /></label>
             <label><span>@L("شعار (انگلیسی)", "Slogan (en)", "الشعار (إنجليزي)")</span><input @bind="SloganEn" dir="ltr" /></label>
+            <label><span>@L("شعار (عربی)", "Slogan (ar)", "الشعار (عربي)")</span><input @bind="SloganAr" dir="rtl" /></label>
             <label><span>@L("ایمیل تماس", "Contact email", "بريد التواصل")</span><input @bind="Email" dir="ltr" /></label>
             <label><span>@L("تلفن تماس", "Contact phone", "هاتف التواصل")</span><input @bind="Phone" dir="ltr" /></label>
         </div>
@@ -53,7 +54,7 @@ else if (Loaded)
     private bool Loaded => !Loading;
     private bool Busy;
     private string Message = "";
-    private string NameFa = "", NameEn = "", NameAr = "", SloganFa = "", SloganEn = "", Email = "", Phone = "";
+    private string NameFa = "", NameEn = "", NameAr = "", SloganFa = "", SloganEn = "", SloganAr = "", Email = "", Phone = "";
     private string? LogoKey, LogoUrl, FaviconKey, FaviconUrl;
     private long Version;
 
@@ -66,7 +67,7 @@ else if (Loaded)
         {
             JsonElement x = r.Value;
             NameFa = Text(x, "siteNameFa"); NameEn = Text(x, "siteNameEn"); NameAr = Text(x, "siteNameAr");
-            SloganFa = Text(x, "sloganFa"); Email = Text(x, "contactEmail") ?? "salam@pirang.ir"; Phone = Text(x, "contactPhone") ?? "02100000000";
+            SloganFa = Text(x, "sloganFa"); SloganEn = Text(x, "sloganEn"); SloganAr = Text(x, "sloganAr"); Email = Text(x, "contactEmail") ?? "salam@pirang.ir"; Phone = Text(x, "contactPhone") ?? "02100000000";
             LogoKey = NullText(x, "logoStorageKey"); LogoUrl = NullText(x, "logoUrl");
             FaviconKey = NullText(x, "faviconStorageKey"); FaviconUrl = NullText(x, "faviconUrl");
             Version = x.TryGetProperty("version", out var v) ? v.GetInt64() : 1;
@@ -100,11 +101,14 @@ else if (Loaded)
         {
             siteNameFa = NameFa, siteNameEn = NameEn, siteNameAr = NameAr,
             logoStorageKey = LogoKey, faviconStorageKey = FaviconKey,
-            sloganFa = SloganFa, sloganEn = "", sloganAr = "",
+            sloganFa = SloganFa, sloganEn = SloganEn, sloganAr = SloganAr,
             contactEmail = Email, contactPhone = Phone, version = Version
         }, s.Value.Token, s.Value.Company, default);
         Busy = false;
-        Message = r.IsSuccess ? L("ذخیره شد ✓", "Saved ✓", "تم الحفظ ✓") : L("خطا در ذخیره", "Save failed", "فشل الحفظ");
+        Message = r.IsSuccess ? L("ذخیره شد ✓", "Saved ✓", "تم الحفظ ✓")
+            : r.Failure == ApiFailure.Unauthorized ? L("نشست شما منقضی شده است — دوباره وارد شوید.", "Your session has expired — sign in again.", "انتهت جلستك — سجّل الدخول مجددًا.")
+            : r.Failure == ApiFailure.Conflict ? L("خطای همزمانی — تنظیمات در تب دیگری تغییر کرده؛ صفحه را تازه کنید.", "Concurrency conflict — settings changed in another tab; refresh.", "تعارض تزامن — تغيّرت الإعدادات في تب آخر؛ حدّث الصفحة.")
+            : L("خطا در ذخیره", "Save failed", "فشل الحفظ");
         if (r.IsSuccess) Version = r.Value.TryGetProperty("version", out var v) ? v.GetInt64() : Version;
     }
 

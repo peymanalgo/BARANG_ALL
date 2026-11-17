@@ -13,10 +13,19 @@ public static class BackofficeAuthEndpoints
     public static IEndpointRouteBuilder MapBackofficeAuthEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/auth/login", LoginAsync).AllowAnonymous();
+        endpoints.MapGet("/auth/expire", (HttpContext http, string? returnUrl) => ExpireAsync(http, returnUrl)).AllowAnonymous();
         endpoints.MapPost("/auth/company", SelectCompanyAsync).RequireAuthorization();
         endpoints.MapPost("/auth/logout", LogoutAsync).RequireAuthorization();
         endpoints.MapGet("/culture", SetCulture).AllowAnonymous();
         return endpoints;
+    }
+
+    // خروج اجباری از نشست منقضی‌شده — از داخل circuit بلیزور (توکن ۳۰ دقیقه‌ای مرده ولی circuit زنده است)
+    private static async Task<IResult> ExpireAsync(HttpContext http, string? returnUrl)
+    {
+        await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        string safe = SafeReturnUrl(returnUrl);
+        return Results.LocalRedirect("/login?message=expired" + (safe == "/" ? "" : "&returnUrl=" + Uri.EscapeDataString(safe)));
     }
 
     private static async Task<IResult> LoginAsync([FromForm] LoginForm form, HttpContext http, ICoreApiClient core, CancellationToken ct)
@@ -105,8 +114,13 @@ public static class BackofficeAuthEndpoints
             claims.AddRange(company.EffectivePermissionCodes.Select(permission=>new Claim(AuthClaimTypes.Permission,permission)));
         }
         ClaimsPrincipal principal = new(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+        // طول عمر تیکت کوکی = سقف روزانه‌ی کار (۸ ساعت)؛ اعتبارسنجی واقعی سمت API است:
+        // هر ناوبری محافظت‌شده از طریق SessionValidationMiddleware با /auth/me چک می‌شود و
+        // نشست API با فعالیت کاربر تمدید لغزنده می‌شود (سقف ۳۰ دقیقه بی‌فعالیت).
+        // قبلاً تیکت دقیقاً با انقضای توکن (۳۰ دقیقه) می‌مُرد و کاربرِ فعال وسط کار بیرون می‌افتاد.
+        DateTimeOffset ticketExpiry = DateTimeOffset.UtcNow.AddHours(8);
         await http.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
-            new AuthenticationProperties { IsPersistent = false, ExpiresUtc = login.ExpiresAtUtc, AllowRefresh = false });
+            new AuthenticationProperties { IsPersistent = false, ExpiresUtc = ticketExpiry, AllowRefresh = false });
     }
 
     private static DateTimeOffset GetExpiry(ClaimsPrincipal user) => DateTimeOffset.FromUnixTimeSeconds(long.Parse(user.FindFirstValue(ClaimTypes.Expiration)!));

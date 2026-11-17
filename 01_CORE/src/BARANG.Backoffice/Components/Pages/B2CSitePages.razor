@@ -9,7 +9,10 @@
 
 @if (Editing is null)
 {
-    <button class="btn btn-primary" @onclick="NewPage">+ @L("صفحه جدید", "New page", "صفحة جديدة")</button>
+    <div class="flex gap-8 items-center" style="margin-bottom:8px">
+        <button class="btn btn-primary" @onclick="NewPage">+ @L("صفحه جدید", "New page", "صفحة جديدة")</button>
+        @if (!string.IsNullOrEmpty(Message)) { <span class="muted">@Message</span> }
+    </div>
     <table class="table" style="margin-top:10px">
         <thead><tr><th>@L("عنوان", "Title", "العنوان")</th><th>Slug</th><th>@L("محل نمایش", "Placement", "الموضع")</th><th>@L("وضعیت", "Status", "الحالة")</th><th></th></tr></thead>
         <tbody>
@@ -58,19 +61,20 @@ else
         </div>
     </div>
     <LocalizedContentEditor @ref="_editor"
-        TitleFa="Editing.TitleFa" TitleFaChanged="v => Editing.TitleFa = v"
-        TitleEn="Editing.TitleEn" TitleEnChanged="v => Editing.TitleEn = v"
-        TitleAr="Editing.TitleAr" TitleArChanged="v => Editing.TitleAr = v"
-        BodyFa="Editing.BodyFa" BodyFaChanged="v => Editing.BodyFa = v"
-        BodyEn="Editing.BodyEn" BodyEnChanged="v => Editing.BodyEn = v"
-        BodyAr="Editing.BodyAr" BodyArChanged="v => Editing.BodyAr = v"
-        SeoFa="Editing.SeoFa" SeoFaChanged="v => Editing.SeoFa = v"
-        SeoEn="Editing.SeoEn" SeoEnChanged="v => Editing.SeoEn = v"
-        SeoAr="Editing.SeoAr" SeoArChanged="v => Editing.SeoAr = v"
-        KeywordsFa="Editing.KeywordsFa" KeywordsFaChanged="v => Editing.KeywordsFa = v"
-        KeywordsEn="Editing.KeywordsEn" KeywordsEnChanged="v => Editing.KeywordsEn = v"
-        KeywordsAr="Editing.KeywordsAr" KeywordsArChanged="v => Editing.KeywordsAr = v"
-        ThumbnailKey="Editing.CoverKey" ThumbnailKeyChanged="v => { Editing.CoverKey = v; Editing.CoverPreviewUrl = v is null ? null : Editing.CoverPreviewUrl; }"
+        TitleFa="@Editing.TitleFa" TitleFaChanged="v => Editing.TitleFa = v"
+        TitleEn="@Editing.TitleEn" TitleEnChanged="v => Editing.TitleEn = v"
+        TitleAr="@Editing.TitleAr" TitleArChanged="v => Editing.TitleAr = v"
+        BodyFa="@Editing.BodyFa" BodyFaChanged="v => Editing.BodyFa = v"
+        BodyEn="@Editing.BodyEn" BodyEnChanged="v => Editing.BodyEn = v"
+        BodyAr="@Editing.BodyAr" BodyArChanged="v => Editing.BodyAr = v"
+        SeoFa="@Editing.SeoFa" SeoFaChanged="v => Editing.SeoFa = v"
+        SeoEn="@Editing.SeoEn" SeoEnChanged="v => Editing.SeoEn = v"
+        SeoAr="@Editing.SeoAr" SeoArChanged="v => Editing.SeoAr = v"
+        KeywordsFa="@Editing.KeywordsFa" KeywordsFaChanged="v => Editing.KeywordsFa = v"
+        KeywordsEn="@Editing.KeywordsEn" KeywordsEnChanged="v => Editing.KeywordsEn = v"
+        KeywordsAr="@Editing.KeywordsAr" KeywordsArChanged="v => Editing.KeywordsAr = v"
+        ThumbnailKey="@Editing.CoverKey" ThumbnailKeyChanged="v => Editing.CoverKey = v"
+        ThumbnailUrlChanged="v => Editing.CoverPreviewUrl = v"
         ThumbnailUrl="@Editing.CoverPreviewUrl"
         ShowThumbnail="true"
         ThumbTitle="@L("تصویر ابتدای صفحه (کاور)", "Page cover image", "صورة الغلاف")"
@@ -121,6 +125,8 @@ else
             Editing.SeoFa = Text(r.Value, "seoDescriptionFa"); Editing.SeoEn = Text(r.Value, "seoDescriptionEn"); Editing.SeoAr = Text(r.Value, "seoDescriptionAr");
             Editing.KeywordsFa = Text(r.Value, "seoKeywordsFa"); Editing.KeywordsEn = Text(r.Value, "seoKeywordsEn"); Editing.KeywordsAr = Text(r.Value, "seoKeywordsAr");
             Editing.CoverPreviewUrl = Text(r.Value, "coverUrl");
+            // ترتیب نمایش فعلی صفحه حفظ می‌شود (قبلاً با ۱۰ هاردکد در هر ذخیره بازنویسی می‌شد)
+            Editing.DisplayOrder = r.Value.TryGetProperty("displayOrder", out var d) && d.ValueKind == JsonValueKind.Number ? d.GetInt32() : 10;
             Editing.Version = r.Value.TryGetProperty("version", out var v) ? v.GetInt64() : 1;
         }
     }
@@ -136,18 +142,21 @@ else
             slug = Editing.Slug,
             titleFa = Editing.TitleFa, titleEn = Editing.TitleEn, titleAr = Editing.TitleAr,
             bodyFa = Editing.BodyFa, bodyEn = Editing.BodyEn, bodyAr = Editing.BodyAr,
-            coverStorageKey = Editing.CoverPreviewUrl is null ? Editing.CoverKey : Editing.CoverKey,
+            coverStorageKey = Editing.CoverKey,
             seoDescriptionFa = Editing.SeoFa, seoDescriptionEn = Editing.SeoEn, seoDescriptionAr = Editing.SeoAr,
             seoKeywordsFa = Editing.KeywordsFa, seoKeywordsEn = Editing.KeywordsEn, seoKeywordsAr = Editing.KeywordsAr,
             placement = Editing.Placement, footerColumn = Editing.Placement == "footer" ? Editing.Column : (int?)null,
-            isPublished = Editing.Published, displayOrder = 10, version = Editing.Version
+            isPublished = Editing.Published, displayOrder = Editing.DisplayOrder, version = Editing.Version
         };
         var r = Editing.Id is Guid id
             ? await Core.SendAsync(HttpMethod.Put, $"api/v1/site/pages/{id}", body, s.Value.Token, s.Value.Company, default)
             : await Core.SendAsync(HttpMethod.Post, "api/v1/site/pages", body, s.Value.Token, s.Value.Company, default);
         Busy = false;
         if (r.IsSuccess) { Message = L("ذخیره شد ✓", "Saved ✓", "تم ✓"); Editing = null; await Load(); }
-        else Message = L("خطا", "Error", "خطأ");
+        else Message = r.Failure == ApiFailure.Unauthorized
+            ? L("نشست شما منقضی شده است — متن لازم را کپی کنید و دوباره وارد شوید.", "Your session has expired — copy any text you need and sign in again.", "انتهت جلستك — انسخ النص المطلوب وسجّل الدخول مجددًا.")
+            : r.Failure == ApiFailure.Conflict ? L("خطای همزمانی — صفحه در تب دیگری تغییر کرده؛ دوباره باز کنید.", "Concurrency conflict — the page changed in another tab; reopen it.", "تعارض تزامن — تغيّرت الصفحة في تب آخر؛ أعد فتحها.") + (string.IsNullOrEmpty(r.ProblemCode) ? "" : $" ({r.ProblemCode})")
+            : L("خطا در ذخیره", "Save failed", "فشل الحفظ") + (string.IsNullOrEmpty(r.ProblemCode) ? "" : $" ({r.ProblemCode})");
     }
 
     private async Task Delete(Row p)
@@ -179,6 +188,6 @@ else
         public string BodyFa = "", BodyEn = "", BodyAr = "";
         public string SeoFa = "", SeoEn = "", SeoAr = "", KeywordsFa = "", KeywordsEn = "", KeywordsAr = "";
         public string? CoverKey; public string? CoverPreviewUrl;
-        public string Placement = "none"; public int Column = 1; public bool Published = true; public long Version;
+        public string Placement = "none"; public int Column = 1; public bool Published = true; public int DisplayOrder = 10; public long Version;
     }
 }

@@ -14,7 +14,9 @@
         }
         <span class="muted" style="font-size:.75rem">@Hint</span>
     </div>
-    <div id="@DomId" data-site-editor data-target="@HiddenId" dir="auto">@((MarkupString)SafeHtml)</div>
+    @* محتوا از سمت Blazor رندر نمی‌شود تا مالکیت DOM با JS باشد؛
+       درج اولیه/به‌روزرسانی فقط با setHtml از OnAfterRenderAsync (پایداری circuit). *@
+    <div id="@DomId" data-site-editor data-target="@HiddenId" dir="@Dir" contenteditable="true" spellcheck="false"></div>
     <input type="hidden" id="@HiddenId" @bind-value="Value" @bind-value:event="oninput" />
 </div>
 
@@ -24,9 +26,10 @@
     [Parameter] public string? DomIdSuffix { get; set; }
     [Parameter] public bool ShowImageUpload { get; set; } = true;
     [Parameter] public string? Hint { get; set; }
+    [Parameter] public string Dir { get; set; } = "auto";
     private string DomId => $"site-ed-{DomIdSuffix ?? Guid.NewGuid().ToString("N")[..8]}";
     private string HiddenId => DomId + "-hidden";
-    private MarkupString SafeHtml => (MarkupString)(Value ?? "");
+    private string? _lastPushed; // آخرین HTMLای که به DOM فرستاده شده — برای جلوگیری از echo
 
     private string Label(string fa, string en, string ar)
     {
@@ -34,10 +37,12 @@
         return c switch { "en" => en, "ar" => ar, _ => fa };
     }
 
-    // بارگذاری تضمینی کتابخانه ویرایشگر و اسکن پس از هر رندر (تعویض تب) — idempotent
+    // بارگذاری تضمینی کتابخانه ویرایشگر و اسکن پس از هر رندر (تعویض تب) — idempotent.
+    // محتوای pending بعد از آماده شدن کتابخانه flush می‌شود تا بار اول هم محتوا برسد.
     private const string BootScript = """
         (function(){
-          var scan=function(){ window.barangSiteEditor && window.barangSiteEditor.scan(document); };
+          var flush=function(){ var p=window.__siteEdPending||{}; Object.keys(p).forEach(function(k){ window.barangSiteEditor && window.barangSiteEditor.setHtml(k, p[k]); delete p[k]; }); };
+          var scan=function(){ window.barangSiteEditor && window.barangSiteEditor.scan(document); flush(); };
           if(window.barangSiteEditor){ scan(); return; }
           if(window.__siteEdLoading){ window.__siteEdQueue=(window.__siteEdQueue||[]).concat([scan]); return; }
           window.__siteEdLoading=1; window.__siteEdQueue=[scan];
@@ -50,6 +55,29 @@
     protected override async Task OnAfterRenderAsync(bool first)
     {
         await JS.InvokeVoidAsync("eval", BootScript);
+        string idLit = System.Text.Json.JsonSerializer.Serialize(DomId);
+        string htmlLit = System.Text.Json.JsonSerializer.Serialize(Value ?? "");
+        if (Value != _lastPushed)
+        {
+            // فقط وقتی Value از سمت Blazor عوض شده محتوا را به DOM می‌فرستیم (نه هنگام تایپ کاربر)
+            await JS.InvokeVoidAsync("eval", $$"""
+                (function(){ var id={{idLit}}, html={{htmlLit}};
+                  window.__siteEdPending=window.__siteEdPending||{}; window.__siteEdPending[id]=html;
+                  if(window.barangSiteEditor){ window.barangSiteEditor.setHtml(id, html); delete window.__siteEdPending[id]; }
+                })();
+                """);
+            _lastPushed = Value;
+        }
+        else
+        {
+            // ترمیم پس از اتصال مجدد SignalR: Blazor صفحه را از نو می‌سازد و DIV خالی می‌شود؛
+            // اگر DOM خالی بود ولی Value محتوا داشت، دوباره push می‌کنیم (تایپ کاربر هرگز کاملاً خالی نیست)
+            await JS.InvokeVoidAsync("eval", $$"""
+                (function(){ var el=document.getElementById({{idLit}});
+                  if(el && !el.innerHTML.trim() && window.barangSiteEditor){ window.barangSiteEditor.setHtml({{idLit}}, {{htmlLit}}); }
+                })();
+                """);
+        }
     }
 
     private async Task PickImage(InputFileChangeEventArgs e)
@@ -67,15 +95,20 @@
         string? url = result.Value.TryGetProperty("url", out var u) ? u.GetString() : null;
         if (!string.IsNullOrWhiteSpace(url))
         {
-            await JS.InvokeVoidAsync("eval", $"window.barangSiteEditor && window.barangSiteEditor.insertImage('{DomId}', '{url.Replace("'", "\\'")}')");
+            string idLit = System.Text.Json.JsonSerializer.Serialize(DomId);
+            string urlLit = System.Text.Json.JsonSerializer.Serialize(url);
+            await JS.InvokeVoidAsync("eval", $"window.barangSiteEditor ? window.barangSiteEditor.insertImage({idLit}, {urlLit}) : 0");
             await SyncFromDom();
         }
     }
 
     public async Task SyncFromDom()
     {
-        string html = await JS.InvokeAsync<string>("eval", $"window.barangSiteEditor ? window.barangSiteEditor.getHtml('{DomId}') : ''");
+        // null ⇒ کتابخانه هنوز بارگذاری نشده؛ مقدار قبلی حفظ می‌شود (از دست رفتن محتوا ممنوع)
+        string? html = await JS.InvokeAsync<string?>("eval", $"window.barangSiteEditor ? window.barangSiteEditor.getHtml('{DomId}') : null");
+        if (html is null) return;
         Value = html;
+        _lastPushed = html; // DOM همین را دارد؛ echo فرستاده نشود
         await ValueChanged.InvokeAsync(html);
     }
 

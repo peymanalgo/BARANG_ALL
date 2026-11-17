@@ -23,6 +23,45 @@ internal static class SiteSeedData
             "none", null, 4),
     ];
 
+    // نشان‌های مجوز نمونه — همان SVGهای ایستای فروشگاه؛ هنگام سیدر/تعمیر داخل MinIO بارگذاری می‌شوند
+    // تا تصویر بندانگشتی فوتر در ERP و B2C هر دو از یک URL عمومی واقعی بیاید.
+    // کلید = مسیر ایستای قبلی (که در دیتابیس‌های قدیمی داخل imageStorageKey مانده)؛ مقدار = محتوای SVG.
+    internal static readonly IReadOnlyDictionary<string, string> LicenseBadgeSvgs = new Dictionary<string, string>
+    {
+        ["/images/license-badge-1.svg"] = """
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+              <rect x="4" y="4" width="112" height="112" rx="14" fill="#0f2b46" stroke="#f6b23c" stroke-width="2.5"/>
+              <circle cx="60" cy="48" r="22" fill="none" stroke="#f6b23c" stroke-width="3"/>
+              <path d="M49 48l8 8 15-16" fill="none" stroke="#f6b23c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="60" y="92" text-anchor="middle" font-family="Tahoma" font-size="13" fill="#f6b23c">مجوز نمونه ۱</text>
+            </svg>
+            """,
+        ["/images/license-badge-2.svg"] = """
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+              <rect x="4" y="4" width="112" height="112" rx="14" fill="#123524" stroke="#8ff0c4" stroke-width="2.5"/>
+              <circle cx="60" cy="48" r="22" fill="none" stroke="#8ff0c4" stroke-width="3"/>
+              <path d="M49 48l8 8 15-16" fill="none" stroke="#8ff0c4" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="60" y="92" text-anchor="middle" font-family="Tahoma" font-size="13" fill="#8ff0c4">مجوز نمونه ۲</text>
+            </svg>
+            """,
+        ["/images/license-badge-3.svg"] = """
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+              <rect x="4" y="4" width="112" height="112" rx="14" fill="#33130f" stroke="#f09a7a" stroke-width="2.5"/>
+              <circle cx="60" cy="48" r="22" fill="none" stroke="#f09a7a" stroke-width="3"/>
+              <path d="M49 48l8 8 15-16" fill="none" stroke="#f09a7a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="60" y="92" text-anchor="middle" font-family="Tahoma" font-size="13" fill="#f09a7a">مجوز نمونه ۳</text>
+            </svg>
+            """,
+        ["/images/license-badge-4.svg"] = """
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+              <rect x="4" y="4" width="112" height="112" rx="14" fill="#221336" stroke="#c4a5ff" stroke-width="2.5"/>
+              <circle cx="60" cy="48" r="22" fill="none" stroke="#c4a5ff" stroke-width="3"/>
+              <path d="M49 48l8 8 15-16" fill="none" stroke="#c4a5ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="60" y="92" text-anchor="middle" font-family="Tahoma" font-size="13" fill="#c4a5ff">مجوز نمونه ۴</text>
+            </svg>
+            """,
+    };
+
     // نوع، صفحه ارجاعی، عنوان fa/en/ar، متن، url، کلید تصویر، ستون، ترتیب
     internal static readonly (string Type, string? PageSlug, string? TitleFa, string? TitleEn, string? TitleAr, string? Text, string? Url, string? ImageKey, int Column, int Order)[] FooterWidgets =
     [
