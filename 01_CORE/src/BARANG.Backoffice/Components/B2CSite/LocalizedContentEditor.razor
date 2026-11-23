@@ -1,4 +1,4 @@
-@* محتوای سه‌زبانه با تب — عنوان + ویرایشگر حرفه‌ای + سئو برای هر زبان + تصویر بندانگشتی/کاور *@
+@* محتوای چهارجانبه با تب — عنوان + ویرایشگر حرفه‌ای + سئو برای هر زبان + تصویر بندانگشتی/کاور *@
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
 
@@ -22,7 +22,7 @@
                 }
             </div>
             <h4 style="margin:10px 0 4px">@t.BodyLabel</h4>
-            <HtmlEditor @ref=EditorRef Value="@BodyFor(t.Id)" ValueChanged="v => SetBody(t.Id, v)" DomIdSuffix="@($"lc-{Id}-{t.Id}")" Dir="@(t.Id == "en" ? "ltr" : "rtl")" ShowImageUpload="true" />
+            <HtmlEditor @ref=EditorRef Value="@BodyFor(t.Id)" ValueChanged="v => SetBody(t.Id, v)" DomIdSuffix="@($"lc-{Id}-{t.Id}")" Dir="@(t.Id == "fa" || t.Id == "ar" ? "rtl" : "ltr")" ShowImageUpload="true" />
             <details class="seo-box" style="margin-top:10px">
                 <summary style="cursor:pointer;font-weight:600">🔎 @SEOText("سئو (SEO)", "SEO", "SEO")</summary>
                 <div class="form-grid" style="margin-top:8px">
@@ -67,17 +67,23 @@
     [Parameter] public string TitleFa { get; set; } = ""; [Parameter] public EventCallback<string> TitleFaChanged { get; set; }
     [Parameter] public string TitleEn { get; set; } = ""; [Parameter] public EventCallback<string> TitleEnChanged { get; set; }
     [Parameter] public string TitleAr { get; set; } = ""; [Parameter] public EventCallback<string> TitleArChanged { get; set; }
+    [Parameter] public string TitleEs { get; set; } = ""; [Parameter] public EventCallback<string> TitleEsChanged { get; set; }
     [Parameter] public string BodyFa { get; set; } = ""; [Parameter] public EventCallback<string> BodyFaChanged { get; set; }
     [Parameter] public string BodyEn { get; set; } = ""; [Parameter] public EventCallback<string> BodyEnChanged { get; set; }
     [Parameter] public string BodyAr { get; set; } = ""; [Parameter] public EventCallback<string> BodyArChanged { get; set; }
+    [Parameter] public string BodyEs { get; set; } = ""; [Parameter] public EventCallback<string> BodyEsChanged { get; set; }
     [Parameter] public string ExcerptFa { get; set; } = ""; [Parameter] public EventCallback<string> ExcerptFaChanged { get; set; }
     [Parameter] public string ExcerptEn { get; set; } = ""; [Parameter] public EventCallback<string> ExcerptEnChanged { get; set; }
+    [Parameter] public string ExcerptAr { get; set; } = ""; [Parameter] public EventCallback<string> ExcerptArChanged { get; set; }
+    [Parameter] public string ExcerptEs { get; set; } = ""; [Parameter] public EventCallback<string> ExcerptEsChanged { get; set; }
     [Parameter] public string SeoFa { get; set; } = ""; [Parameter] public EventCallback<string> SeoFaChanged { get; set; }
     [Parameter] public string SeoEn { get; set; } = ""; [Parameter] public EventCallback<string> SeoEnChanged { get; set; }
     [Parameter] public string SeoAr { get; set; } = ""; [Parameter] public EventCallback<string> SeoArChanged { get; set; }
+    [Parameter] public string SeoEs { get; set; } = ""; [Parameter] public EventCallback<string> SeoEsChanged { get; set; }
     [Parameter] public string KeywordsFa { get; set; } = ""; [Parameter] public EventCallback<string> KeywordsFaChanged { get; set; }
     [Parameter] public string KeywordsEn { get; set; } = ""; [Parameter] public EventCallback<string> KeywordsEnChanged { get; set; }
     [Parameter] public string KeywordsAr { get; set; } = ""; [Parameter] public EventCallback<string> KeywordsArChanged { get; set; }
+    [Parameter] public string KeywordsEs { get; set; } = ""; [Parameter] public EventCallback<string> KeywordsEsChanged { get; set; }
     [Parameter] public string? ThumbnailKey { get; set; } = ""; [Parameter] public EventCallback<string?> ThumbnailKeyChanged { get; set; }
     [Parameter] public string? ThumbnailUrl { get; set; } [Parameter] public EventCallback<string?> ThumbnailUrlChanged { get; set; }
     [Parameter] public bool ShowThumbnail { get; set; } = true;
@@ -93,19 +99,20 @@
         ("fa", "🇮🇷 محتوای فارسی", "عنوان (فارسی)", "متن محتوا (فارسی)", "خلاصه (فارسی)"),
         ("en", "🇬🇧 English content", "Title (English)", "Body (English)", "Excerpt (English)"),
         ("ar", "🇸🇦 المحتوى العربي", "العنوان (عربي)", "النص (عربي)", "المقتطف (عربي)"),
+        ("es", "🇪🇸 Contenido español", "Título (español)", "Cuerpo (español)", "Resumen (español)"),
     ];
 
-    private string TitleFor(string c) => c == "fa" ? TitleFa : c == "en" ? TitleEn : TitleAr;
-    private string BodyFor(string c) => c == "fa" ? BodyFa : c == "en" ? BodyEn : BodyAr;
-    private string ExcerptFor(string c) => c == "fa" ? ExcerptFa : c == "en" ? ExcerptEn : "";
-    private string SeoFor(string c) => c == "fa" ? SeoFa : c == "en" ? SeoEn : SeoAr;
-    private string KeywordsFor(string c) => c == "fa" ? KeywordsFa : c == "en" ? KeywordsEn : KeywordsAr;
+    private string TitleFor(string c) => c == "fa" ? TitleFa : c == "en" ? TitleEn : c == "ar" ? TitleAr : TitleEs;
+    private string BodyFor(string c) => c == "fa" ? BodyFa : c == "en" ? BodyEn : c == "ar" ? BodyAr : BodyEs;
+    private string ExcerptFor(string c) => c == "fa" ? ExcerptFa : c == "en" ? ExcerptEn : c == "ar" ? ExcerptAr : ExcerptEs;
+    private string SeoFor(string c) => c == "fa" ? SeoFa : c == "en" ? SeoEn : c == "ar" ? SeoAr : SeoEs;
+    private string KeywordsFor(string c) => c == "fa" ? KeywordsFa : c == "en" ? KeywordsEn : c == "ar" ? KeywordsAr : KeywordsEs;
 
-    private Task SetTitle(string c, string? v) => c == "fa" ? TitleFaChanged.InvokeAsync(v ?? "") : c == "en" ? TitleEnChanged.InvokeAsync(v ?? "") : TitleArChanged.InvokeAsync(v ?? "");
-    private Task SetBody(string c, string? v) => c == "fa" ? BodyFaChanged.InvokeAsync(v ?? "") : c == "en" ? BodyEnChanged.InvokeAsync(v ?? "") : BodyArChanged.InvokeAsync(v ?? "");
-    private Task SetExcerpt(string c, string? v) => c == "fa" ? ExcerptFaChanged.InvokeAsync(v ?? "") : ExcerptEnChanged.InvokeAsync(v ?? "");
-    private Task SetSeo(string c, string? v) => c == "fa" ? SeoFaChanged.InvokeAsync(v ?? "") : c == "en" ? SeoEnChanged.InvokeAsync(v ?? "") : SeoArChanged.InvokeAsync(v ?? "");
-    private Task SetKeywords(string c, string? v) => c == "fa" ? KeywordsFaChanged.InvokeAsync(v ?? "") : c == "en" ? KeywordsEnChanged.InvokeAsync(v ?? "") : KeywordsArChanged.InvokeAsync(v ?? "");
+    private Task SetTitle(string c, string? v) => c == "fa" ? TitleFaChanged.InvokeAsync(v ?? "") : c == "en" ? TitleEnChanged.InvokeAsync(v ?? "") : c == "ar" ? TitleArChanged.InvokeAsync(v ?? "") : TitleEsChanged.InvokeAsync(v ?? "");
+    private Task SetBody(string c, string? v) => c == "fa" ? BodyFaChanged.InvokeAsync(v ?? "") : c == "en" ? BodyEnChanged.InvokeAsync(v ?? "") : c == "ar" ? BodyArChanged.InvokeAsync(v ?? "") : BodyEsChanged.InvokeAsync(v ?? "");
+    private Task SetExcerpt(string c, string? v) => c == "fa" ? ExcerptFaChanged.InvokeAsync(v ?? "") : c == "en" ? ExcerptEnChanged.InvokeAsync(v ?? "") : c == "ar" ? ExcerptArChanged.InvokeAsync(v ?? "") : ExcerptEsChanged.InvokeAsync(v ?? "");
+    private Task SetSeo(string c, string? v) => c == "fa" ? SeoFaChanged.InvokeAsync(v ?? "") : c == "en" ? SeoEnChanged.InvokeAsync(v ?? "") : c == "ar" ? SeoArChanged.InvokeAsync(v ?? "") : SeoEsChanged.InvokeAsync(v ?? "");
+    private Task SetKeywords(string c, string? v) => c == "fa" ? KeywordsFaChanged.InvokeAsync(v ?? "") : c == "en" ? KeywordsEnChanged.InvokeAsync(v ?? "") : c == "ar" ? KeywordsArChanged.InvokeAsync(v ?? "") : KeywordsEsChanged.InvokeAsync(v ?? "");
 
     public Task SyncFromDom() => EditorRef != null ? EditorRef.SyncFromDom() : Task.CompletedTask;
 
@@ -145,5 +152,5 @@
         var user = (await AuthState.GetAuthenticationStateAsync()).User;
         return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
     }
-    private string SEOText(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>en, "ar" => ar, _ => fa };
+    private string SEOText(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>EsGlossary.Tr(en), "ar" => ar, _ => fa };
 }

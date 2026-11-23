@@ -45,7 +45,7 @@
                                 break;
                             case "text":
                                 <span class="fw-type-ic" title="@TypeText("text")">📝</span>
-                                <span class="fw-widget-text"><span>@Excerpt(w.Text)</span>
+                                <span class="fw-widget-text"><span>@Excerpt(TextFor(w))</span>
                                     <small class="muted">@TypeText("text")</small></span>
                                 break;
                             case "html":
@@ -116,7 +116,11 @@
                 }
                 @if (Dialog.Type is "menu" or "image")
                 {
-                    <label><span>@L("عنوان", "Title", "العنوان")</span><input @bind="Dialog.Title" /></label>
+                    <label><span>@L("عنوان (فارسی)", "Title (fa)", "العنوان")</span><input @bind="Dialog.Title" /></label>
+                }
+                @if (Dialog.Type is "menu" or "image")
+                {
+                    <label><span>@L("عنوان (اسپانیایی)", "Title (es)", "العنوان (إسباني)")</span><input @bind="Dialog.TitleEs" dir="ltr" /></label>
                 }
                 @if (Dialog.Type is "menu" or "image")
                 {
@@ -124,7 +128,10 @@
                 }
                 @if (Dialog.Type == "text")
                 {
-                    <label class="span-2"><span>@L("متن", "Text", "النص")</span><textarea @bind="Dialog.Text" rows="4"></textarea></label>
+                    <label class="span-2"><span>@L("متن (فارسی)", "Text (fa)", "النص (فا)")</span><textarea @bind="Dialog.TextFa" rows="3"></textarea></label>
+                    <label class="span-2"><span dir="ltr">@L("متن (انگلیسی)", "Text (en)", "النص (إنجليزي)")</span><textarea @bind="Dialog.TextEn" rows="3" dir="ltr"></textarea></label>
+                    <label class="span-2"><span>@L("متن (عربی)", "Text (ar)", "النص (عربي)")</span><textarea @bind="Dialog.TextAr" rows="3" dir="rtl"></textarea></label>
+                    <label class="span-2"><span dir="ltr">@L("متن (اسپانیایی)", "Text (es)", "النص (إسباني)")</span><textarea @bind="Dialog.TextEs" rows="3" dir="ltr"></textarea></label>
                 }
                 @if (Dialog.Type == "html")
                 {
@@ -210,7 +217,7 @@
                     x.TryGetProperty("columnIndex", out var ci) ? ci.GetInt32() : 1,
                     Text(x, "widgetType"),
                     x.TryGetProperty("pageId", out var pi) && pi.ValueKind == JsonValueKind.String && Guid.TryParse(pi.GetString(), out var pid) ? pid : null,
-                    Text(x, "pageTitleFa"), Text(x, "titleFa"), Text(x, "titleEn"), Text(x, "titleAr"), Text(x, "url"), Text(x, "imageUrl"), Text(x, "imageStorageKey"), Text(x, "text"), Text(x, "html"),
+                    Text(x, "pageTitleFa"), Text(x, "titleFa"), Text(x, "titleEn"), Text(x, "titleAr"), Text(x, "titleEs"), Text(x, "url"), Text(x, "imageUrl"), Text(x, "imageStorageKey"), Text(x, "text"), Text(x, "textFa"), Text(x, "textEn"), Text(x, "textAr"), Text(x, "textEs"), Text(x, "html"),
                     x.TryGetProperty("displayOrder", out var o) ? o.GetInt32() : 0,
                     x.TryGetProperty("version", out var v) ? v.GetInt64() : 1));
         var pf = await Core.GetAsync("api/v1/site/pages", s.Value.Token, s.Value.Company, default);
@@ -244,8 +251,13 @@
             Title = w.Title ?? "",
             TitleEn = w.TitleEn ?? "", // بدون فیلد ویرایش — برای حفظ عنوان انگلیسی موجود هنگام ذخیره
             TitleAr = w.TitleAr ?? "",
+            TitleEs = w.TitleEs ?? "",
             Url = w.Url ?? "",
             Text = w.Text ?? "",
+            TextFa = w.TextFa ?? "",
+            TextEn = w.TextEn ?? "",
+            TextAr = w.TextAr ?? "",
+            TextEs = w.TextEs ?? "",
             Html = w.Html ?? "",
             ImageKey = w.ImageKey,
             ImagePreviewUrl = w.ImageUrl ?? w.Url,
@@ -282,7 +294,8 @@
             titleFa = d.Title,
             titleEn = d.EditId is null ? d.Title : (string.IsNullOrEmpty(d.TitleEn) ? d.Title : d.TitleEn), // در ویرایش، عنوان‌های دیگر زبان‌ها حفظ می‌شوند
             titleAr = d.EditId is null ? d.Title : (string.IsNullOrEmpty(d.TitleAr) ? d.Title : d.TitleAr),
-            text = d.Text, html = d.Html, imageStorageKey = d.ImageKey, url,
+            titleEs = d.EditId is null ? (string.IsNullOrEmpty(d.TitleEs) ? null : d.TitleEs) : (string.IsNullOrEmpty(d.TitleEs) ? null : d.TitleEs),
+            textFa = d.TextFa, textEn = d.TextEn, textAr = d.TextAr, textEs = d.TextEs, html = d.Html, imageStorageKey = d.ImageKey, url,
             displayOrder = d.Order, version = d.Version
         };
         var r = d.EditId is Guid id
@@ -342,6 +355,17 @@
         }
     }
 
+    private static string TextFor(WidgetRow w)
+    {
+        string culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        return culture switch
+        {
+            "en" => w.TextEn is { Length: > 0 } ? w.TextEn : w.Text ?? "",
+            "ar" => w.TextAr is { Length: > 0 } ? w.TextAr : w.Text ?? "",
+            "es" => w.TextEs is { Length: > 0 } ? w.TextEs : (w.TextEn is { Length: > 0 } ? w.TextEn : w.Text ?? ""),
+            _ => w.Text is { Length: > 0 } ? w.Text : (w.TextFa ?? ""),
+        };
+    }
     private string TypeText(string t) => t switch
     {
         "page" => L("صفحه", "page", "صفحة"),
@@ -368,15 +392,15 @@
         return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
     }
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
-    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>en, "ar" => ar, _ => fa };
+    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>EsGlossary.Tr(en), "ar" => ar, _ => fa };
 
-    private sealed record WidgetRow(Guid Id, int Column, string Type, Guid? PageId, string? PageTitle, string? Title, string? TitleEn, string? TitleAr, string? Url, string? ImageUrl, string? ImageKey, string? Text, string? Html, int Order, long Version);
+    private sealed record WidgetRow(Guid Id, int Column, string Type, Guid? PageId, string? PageTitle, string? Title, string? TitleEn, string? TitleAr, string? TitleEs, string? Url, string? ImageUrl, string? ImageKey, string? Text, string? TextFa, string? TextEn, string? TextAr, string? TextEs, string? Html, int Order, long Version);
     private sealed record PageRef(Guid Id, string Title, string Slug);
     private sealed class DialogModel
     {
         public Guid? EditId; public long Version; public int Column;
         public string Type = "menu"; public string PageId = "";
-        public string Title = ""; public string TitleEn = ""; public string TitleAr = ""; public string Url = ""; public string Text = ""; public string Html = "";
+        public string Title = ""; public string TitleEn = ""; public string TitleAr = ""; public string TitleEs = ""; public string Url = ""; public string Text = ""; public string TextFa = ""; public string TextEn = ""; public string TextAr = ""; public string TextEs = ""; public string Html = "";
         public string? ImageKey;          // کلید MinIO تصویر (موجود یا تازه آپلودشده)
         public string? ImagePreviewUrl;   // پیش‌نمایش زنده تصویر
         public int Order = 10;

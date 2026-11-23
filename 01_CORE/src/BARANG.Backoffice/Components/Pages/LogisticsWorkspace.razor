@@ -162,7 +162,7 @@
  private string? Token; private Guid Company;
  private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","es"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
  protected override async Task OnInitializedAsync(){var u=(await AuthState.GetAuthenticationStateAsync()).User;Token=u.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await Load();}
- private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>en,"ar"=>ar,_=>fa};
+ private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>EsGlossary.Tr(en),"ar"=>ar,_=>fa};
  private string PkSt(string s)=>s switch{"Draft"=>T("در بسته‌بندی","Packaging","في التغليف"),"Completed"=>T("بسته‌بندی‌شده","Packaged","معبأ"),"AtShippingWarehouse"=>T("انبار ارسال","At shipping wh.","مستودع الشحن"),"ReleasedToShipment"=>T("آزاد برای ارسال","Released","مفرج للشحن"),_=>s};
  private string ShSt(string s)=>s switch{"Ready"=>T("آماده ارسال","Ready to ship","جاهز للشحن"),"Shipped"=>T("ارسال‌شده","Shipped","مشحون"),"InTransit"=>T("در حال حمل","In transit","في الطريق"),"Delivered"=>T("تحویل‌شده","Delivered","تم التسليم"),"FailedDelivery"=>T("ارسال ناموفق","Failed delivery","فشل التسليم"),"Returned"=>T("برگشتی","Returned","مرتجع"),_=>s};
  private string CarrierLabel(string code)=>code.Length==0?"—":char.ToUpperInvariant(code[0])+code[1..];

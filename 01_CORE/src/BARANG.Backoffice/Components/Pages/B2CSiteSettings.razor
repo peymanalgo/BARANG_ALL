@@ -15,9 +15,11 @@ else if (Loaded)
             <label><span>@L("نام سایت (فارسی)", "Site name (fa)", "اسم الموقع (فا)") *</span><input @bind="NameFa" /></label>
             <label><span>@L("نام سایت (انگلیسی)", "Site name (en)", "اسم الموقع (إنجليزي)")</span><input @bind="NameEn" dir="ltr" /></label>
             <label><span>@L("نام سایت (عربی)", "Site name (ar)", "اسم الموقع (عربي)")</span><input @bind="NameAr" dir="rtl" /></label>
+            <label><span>@L("نام سایت (اسپانیایی)", "Site name (es)", "اسم الموقع (إسباني)")</span><input @bind="NameEs" dir="ltr" /></label>
             <label><span>@L("شعار (فارسی)", "Slogan (fa)", "الشعار (فا)")</span><input @bind="SloganFa" /></label>
             <label><span>@L("شعار (انگلیسی)", "Slogan (en)", "الشعار (إنجليزي)")</span><input @bind="SloganEn" dir="ltr" /></label>
             <label><span>@L("شعار (عربی)", "Slogan (ar)", "الشعار (عربي)")</span><input @bind="SloganAr" dir="rtl" /></label>
+            <label><span>@L("شعار (اسپانیایی)", "Slogan (es)", "الشعار (إسباني)")</span><input @bind="SloganEs" dir="ltr" /></label>
             <label><span>@L("ایمیل تماس", "Contact email", "بريد التواصل")</span><input @bind="Email" dir="ltr" /></label>
             <label><span>@L("تلفن تماس", "Contact phone", "هاتف التواصل")</span><input @bind="Phone" dir="ltr" /></label>
         </div>
@@ -54,7 +56,7 @@ else if (Loaded)
     private bool Loaded => !Loading;
     private bool Busy;
     private string Message = "";
-    private string NameFa = "", NameEn = "", NameAr = "", SloganFa = "", SloganEn = "", SloganAr = "", Email = "", Phone = "";
+    private string NameFa = "", NameEn = "", NameAr = "", NameEs = "", SloganFa = "", SloganEn = "", SloganAr = "", SloganEs = "", Email = "", Phone = "";
     private string? LogoKey, LogoUrl, FaviconKey, FaviconUrl;
     private long Version;
 
@@ -66,8 +68,8 @@ else if (Loaded)
         if (r.IsSuccess)
         {
             JsonElement x = r.Value;
-            NameFa = Text(x, "siteNameFa"); NameEn = Text(x, "siteNameEn"); NameAr = Text(x, "siteNameAr");
-            SloganFa = Text(x, "sloganFa"); SloganEn = Text(x, "sloganEn"); SloganAr = Text(x, "sloganAr"); Email = Text(x, "contactEmail") ?? "salam@pirang.ir"; Phone = Text(x, "contactPhone") ?? "02100000000";
+            NameFa = Text(x, "siteNameFa"); NameEn = Text(x, "siteNameEn"); NameAr = Text(x, "siteNameAr"); NameEs = Text(x, "siteNameEs");
+            SloganFa = Text(x, "sloganFa"); SloganEn = Text(x, "sloganEn"); SloganAr = Text(x, "sloganAr"); SloganEs = Text(x, "sloganEs"); Email = Text(x, "contactEmail") ?? "salam@pirang.ir"; Phone = Text(x, "contactPhone") ?? "02100000000";
             LogoKey = NullText(x, "logoStorageKey"); LogoUrl = NullText(x, "logoUrl");
             FaviconKey = NullText(x, "faviconStorageKey"); FaviconUrl = NullText(x, "faviconUrl");
             Version = x.TryGetProperty("version", out var v) ? v.GetInt64() : 1;
@@ -99,9 +101,9 @@ else if (Loaded)
         Busy = true;
         var r = await Core.SendAsync(HttpMethod.Put, "api/v1/site/settings", new
         {
-            siteNameFa = NameFa, siteNameEn = NameEn, siteNameAr = NameAr,
+            siteNameFa = NameFa, siteNameEn = NameEn, siteNameAr = NameAr, siteNameEs = NameEs,
             logoStorageKey = LogoKey, faviconStorageKey = FaviconKey,
-            sloganFa = SloganFa, sloganEn = SloganEn, sloganAr = SloganAr,
+            sloganFa = SloganFa, sloganEn = SloganEn, sloganAr = SloganAr, sloganEs = SloganEs,
             contactEmail = Email, contactPhone = Phone, version = Version
         }, s.Value.Token, s.Value.Company, default);
         Busy = false;
@@ -119,5 +121,5 @@ else if (Loaded)
     }
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
     private static string? NullText(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
-    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>en, "ar" => ar, _ => fa };
+    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>EsGlossary.Tr(en), "ar" => ar, _ => fa };
 }

@@ -32,7 +32,7 @@
 @code {
  private bool Busy,Dialog,Viewing,Saving; private string? Error; private string Code="",Title="",Start="08:00",End="16:00"; private Guid? EditingId; private long Version;
  private List<ShiftRow> Rows=[];
- private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>en,"ar"=>ar,_=>fa};
+ private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>EsGlossary.Tr(en),"ar"=>ar,_=>fa};
  protected override async Task OnInitializedAsync()=>await Load();
  private async Task<(string Token,Guid Company)?> Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Guid c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t?(t,c):null;}
  private async Task Load(){if(await Session() is not (string token,Guid company))return;Busy=true;await InvokeAsync(StateHasChanged);try{Rows.Clear();var r=await Core.GetAsync("api/v1/production/shifts?includeInactive=true",token,company,default);if(r.IsSuccess&&r.Value.ValueKind==JsonValueKind.Array)foreach(var x in r.Value.EnumerateArray())Rows.Add(new ShiftRow(x.GetProperty("id").GetGuid(),Text(x,"code"),Text(x,"title"),Text(x,"startTime")[..5],Text(x,"endTime")[..5],x.TryGetProperty("isActive",out var a)&&a.GetBoolean(),x.GetProperty("version").GetInt64()));}finally{Busy=false;await InvokeAsync(StateHasChanged);}}

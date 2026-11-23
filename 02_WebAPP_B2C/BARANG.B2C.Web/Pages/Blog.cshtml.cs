@@ -24,19 +24,19 @@ public sealed class BlogModel(SiteContext site) : PageModel
         if (r.TryGetProperty("items", out JsonElement items) && items.ValueKind == JsonValueKind.Array)
             foreach (JsonElement x in items.EnumerateArray())
             {
-                // culture-first pick with fa fallback (matches Core's Pick policy)
+                // culture-first pick with fa fallback (matches Core's Pick policy) — es: es→en→fa
                 string title = culture switch
                 {
                     "en" => Text(x, "titleEn") is { Length: > 0 } e ? e : Text(x, "titleFa"),
                     "ar" => Text(x, "titleAr") is { Length: > 0 } a ? a : Text(x, "titleFa"),
-                    "es" => Text(x, "titleEn") is { Length: > 0 } e ? e : Text(x, "titleFa"),
+                    "es" => Text(x, "titleEs") is { Length: > 0 } s ? s : Text(x, "titleEn") is { Length: > 0 } e ? e : Text(x, "titleFa"),
                     _ => Text(x, "titleFa"),
                 };
                 string rawExcerpt = culture switch
                 {
                     "en" => Text(x, "excerptEn") is { Length: > 0 } e ? e : Text(x, "excerptFa"),
                     "ar" => Text(x, "excerptAr") is { Length: > 0 } a ? a : Text(x, "excerptFa"),
-                    "es" => Text(x, "excerptEn") is { Length: > 0 } e ? e : Text(x, "excerptFa"),
+                    "es" => Text(x, "excerptEs") is { Length: > 0 } s ? s : Text(x, "excerptEn") is { Length: > 0 } e ? e : Text(x, "excerptFa"),
                     _ => Text(x, "excerptFa"),
                 };
                 if (rawExcerpt.Length == 0) rawExcerpt = Text(x, "excerptEn");

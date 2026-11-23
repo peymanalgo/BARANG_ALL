@@ -39,7 +39,7 @@
 
 @code {
     [SupplyParameterFromQuery(Name = "section")] public string? WorkspaceSection { get; set; }
-    private sealed record MenuItem(string Key, string Fa, string Ar, string En) { public string Label(string lang)=>lang switch { "fa"=>Fa,"ar"=>Ar,_=>En}; }
+    private sealed record MenuItem(string Key, string Fa, string Ar, string En) { public string Label(string lang)=>lang switch { "fa"=>Fa,"ar"=>Ar,"es"=>EsGlossary.Tr(En),_=>En}; }
     private static readonly MenuItem[] Menu=[new("warehouses","انبارها","المستودعات","Warehouses"),new("stock","موجودی","المخزون","Inventory / Stock"),new("reservations","رزرو موجودی","حجوزات المخزون","Inventory Reservations"),new("shortages","کمبود موجودی","نواقص المخزون","Stock Shortages"),new("returns","برگشت انبار","إرجاع المستودع","Warehouse Returns"),new("transfers","انتقال بین انبارها","التحويلات","Transfers"),new("adjustments","اصلاح موجودی","التسويات","Adjustments"),new("requests","درخواست‌های خرید","طلبات الشراء","Purchase Requests"),new("orders","سفارش‌های خرید","أوامر الشراء","Purchase Orders"),new("approvals","تأییدهای خرید","اعتمادات الشراء","Purchasing Approvals"),new("receipts","رسید کالا","إيصالات الاستلام","Goods Receipts"),new("history","تاریخچه خرید","سجل المشتريات","Purchasing History")];
     private string Section="stock", Search="", Warehouse="", Variant="", Destination="", Entity="", Supplier="", PurchaseId="", Code="", Name="", WarehouseType="RawMaterials", Reference="INV-"+Guid.NewGuid().ToString("N")[..8], Reason=""; private decimal Quantity=1,UnitPrice; private long Version; private int Page=1; private const int PageSize=25; private bool Loading,Dialog,ReadOnly,Success; private string? Message; private (string Fa,string Ar,string En)? Error; private List<Dictionary<string,string>> Rows=[]; private string[] Columns=[]; private string Lang=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName; private CancellationTokenSource? SearchCancellation; private readonly List<OrderLineDraft> OrderLines=[];
     private sealed record OrderLineDraft(string Variant,decimal Quantity,decimal UnitPrice); private sealed record ReceiptLine(string Variant,decimal Ordered,decimal Received); private readonly List<ReceiptLine> ReceiptLines=[];
@@ -47,7 +47,7 @@
     protected override async Task OnInitializedAsync(){ApplyWorkspaceQuery();await Load();}
     protected override async Task OnParametersSetAsync(){if(ApplyWorkspaceQuery())await Load();}
     private bool ApplyWorkspaceQuery(){if(string.IsNullOrWhiteSpace(WorkspaceSection)||!Menu.Any(x=>x.Key==WorkspaceSection)||Section==WorkspaceSection)return false;ClearTransient();Section=WorkspaceSection;Page=1;OrderLines.Clear();ReceiptLines.Clear();Entity=PurchaseId="";return true;}
-    private string T(string fa,string ar,string en)=>Lang switch{"fa"=>fa,"ar"=>ar,_=>en};
+    private string T(string fa,string ar,string en)=>Lang switch{"fa"=>fa,"ar"=>ar,"es"=>EsGlossary.Tr(en),_=>en};
     private async Task Select(string key){if(Section==key)return;ClearTransient();Section=key;Page=1;OrderLines.Clear();ReceiptLines.Clear();Entity=PurchaseId="";await Load();}
     private void ClearTransient(){Message=null;Error=null;Success=false;}
     private async Task Load(){

@@ -64,15 +64,19 @@ else
         TitleFa="@Editing.TitleFa" TitleFaChanged="v => Editing.TitleFa = v"
         TitleEn="@Editing.TitleEn" TitleEnChanged="v => Editing.TitleEn = v"
         TitleAr="@Editing.TitleAr" TitleArChanged="v => Editing.TitleAr = v"
+        TitleEs="@Editing.TitleEs" TitleEsChanged="v => Editing.TitleEs = v"
         BodyFa="@Editing.BodyFa" BodyFaChanged="v => Editing.BodyFa = v"
         BodyEn="@Editing.BodyEn" BodyEnChanged="v => Editing.BodyEn = v"
         BodyAr="@Editing.BodyAr" BodyArChanged="v => Editing.BodyAr = v"
+        BodyEs="@Editing.BodyEs" BodyEsChanged="v => Editing.BodyEs = v"
         SeoFa="@Editing.SeoFa" SeoFaChanged="v => Editing.SeoFa = v"
         SeoEn="@Editing.SeoEn" SeoEnChanged="v => Editing.SeoEn = v"
         SeoAr="@Editing.SeoAr" SeoArChanged="v => Editing.SeoAr = v"
+        SeoEs="@Editing.SeoEs" SeoEsChanged="v => Editing.SeoEs = v"
         KeywordsFa="@Editing.KeywordsFa" KeywordsFaChanged="v => Editing.KeywordsFa = v"
         KeywordsEn="@Editing.KeywordsEn" KeywordsEnChanged="v => Editing.KeywordsEn = v"
         KeywordsAr="@Editing.KeywordsAr" KeywordsArChanged="v => Editing.KeywordsAr = v"
+        KeywordsEs="@Editing.KeywordsEs" KeywordsEsChanged="v => Editing.KeywordsEs = v"
         ThumbnailKey="@Editing.CoverKey" ThumbnailKeyChanged="v => Editing.CoverKey = v"
         ThumbnailUrlChanged="v => Editing.CoverPreviewUrl = v"
         ThumbnailUrl="@Editing.CoverPreviewUrl"
@@ -120,10 +124,10 @@ else
         var r = await Core.GetAsync($"api/v1/site/pages/{p.Id}", s.Value.Token, s.Value.Company, default);
         if (r.IsSuccess)
         {
-            Editing.TitleFa = Text(r.Value, "titleFa"); Editing.TitleEn = Text(r.Value, "titleEn"); Editing.TitleAr = Text(r.Value, "titleAr");
-            Editing.BodyFa = Text(r.Value, "bodyFa"); Editing.BodyEn = Text(r.Value, "bodyEn"); Editing.BodyAr = Text(r.Value, "bodyAr");
-            Editing.SeoFa = Text(r.Value, "seoDescriptionFa"); Editing.SeoEn = Text(r.Value, "seoDescriptionEn"); Editing.SeoAr = Text(r.Value, "seoDescriptionAr");
-            Editing.KeywordsFa = Text(r.Value, "seoKeywordsFa"); Editing.KeywordsEn = Text(r.Value, "seoKeywordsEn"); Editing.KeywordsAr = Text(r.Value, "seoKeywordsAr");
+            Editing.TitleFa = Text(r.Value, "titleFa"); Editing.TitleEn = Text(r.Value, "titleEn"); Editing.TitleAr = Text(r.Value, "titleAr"); Editing.TitleEs = Text(r.Value, "titleEs");
+            Editing.BodyFa = Text(r.Value, "bodyFa"); Editing.BodyEn = Text(r.Value, "bodyEn"); Editing.BodyAr = Text(r.Value, "bodyAr"); Editing.BodyEs = Text(r.Value, "bodyEs");
+            Editing.SeoFa = Text(r.Value, "seoDescriptionFa"); Editing.SeoEn = Text(r.Value, "seoDescriptionEn"); Editing.SeoAr = Text(r.Value, "seoDescriptionAr"); Editing.SeoEs = Text(r.Value, "seoDescriptionEs");
+            Editing.KeywordsFa = Text(r.Value, "seoKeywordsFa"); Editing.KeywordsEn = Text(r.Value, "seoKeywordsEn"); Editing.KeywordsAr = Text(r.Value, "seoKeywordsAr"); Editing.KeywordsEs = Text(r.Value, "seoKeywordsEs");
             Editing.CoverPreviewUrl = Text(r.Value, "coverUrl");
             // ترتیب نمایش فعلی صفحه حفظ می‌شود (قبلاً با ۱۰ هاردکد در هر ذخیره بازنویسی می‌شد)
             Editing.DisplayOrder = r.Value.TryGetProperty("displayOrder", out var d) && d.ValueKind == JsonValueKind.Number ? d.GetInt32() : 10;
@@ -140,11 +144,11 @@ else
         var body = new
         {
             slug = Editing.Slug,
-            titleFa = Editing.TitleFa, titleEn = Editing.TitleEn, titleAr = Editing.TitleAr,
-            bodyFa = Editing.BodyFa, bodyEn = Editing.BodyEn, bodyAr = Editing.BodyAr,
+            titleFa = Editing.TitleFa, titleEn = Editing.TitleEn, titleAr = Editing.TitleAr, titleEs = Editing.TitleEs,
+            bodyFa = Editing.BodyFa, bodyEn = Editing.BodyEn, bodyAr = Editing.BodyAr, bodyEs = Editing.BodyEs,
             coverStorageKey = Editing.CoverKey,
-            seoDescriptionFa = Editing.SeoFa, seoDescriptionEn = Editing.SeoEn, seoDescriptionAr = Editing.SeoAr,
-            seoKeywordsFa = Editing.KeywordsFa, seoKeywordsEn = Editing.KeywordsEn, seoKeywordsAr = Editing.KeywordsAr,
+            seoDescriptionFa = Editing.SeoFa, seoDescriptionEn = Editing.SeoEn, seoDescriptionAr = Editing.SeoAr, seoDescriptionEs = Editing.SeoEs,
+            seoKeywordsFa = Editing.KeywordsFa, seoKeywordsEn = Editing.KeywordsEn, seoKeywordsAr = Editing.KeywordsAr, seoKeywordsEs = Editing.KeywordsEs,
             placement = Editing.Placement, footerColumn = Editing.Placement == "footer" ? Editing.Column : (int?)null,
             isPublished = Editing.Published, displayOrder = Editing.DisplayOrder, version = Editing.Version
         };
@@ -179,14 +183,14 @@ else
         return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
     }
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
-    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>en, "ar" => ar, _ => fa };
+    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>EsGlossary.Tr(en), "ar" => ar, _ => fa };
 
     private sealed record Row(Guid Id, string Title, string Slug, string Placement, int? Column, bool Published);
     private sealed class EditModel
     {
-        public Guid? Id; public string Slug = ""; public string TitleFa = "", TitleEn = "", TitleAr = "";
-        public string BodyFa = "", BodyEn = "", BodyAr = "";
-        public string SeoFa = "", SeoEn = "", SeoAr = "", KeywordsFa = "", KeywordsEn = "", KeywordsAr = "";
+        public Guid? Id; public string Slug = ""; public string TitleFa = "", TitleEn = "", TitleAr = "", TitleEs = "";
+        public string BodyFa = "", BodyEn = "", BodyAr = "", BodyEs = "";
+        public string SeoFa = "", SeoEn = "", SeoAr = "", SeoEs = "", KeywordsFa = "", KeywordsEn = "", KeywordsAr = "", KeywordsEs = "";
         public string? CoverKey; public string? CoverPreviewUrl;
         public string Placement = "none"; public int Column = 1; public bool Published = true; public int DisplayOrder = 10; public long Version;
     }

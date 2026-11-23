@@ -42,8 +42,8 @@ public sealed class SiteContext(CoreApiClient core)
                     string? url = TextOrNull(x, "url");
                     string? pageSlug = TextOrNull(x, "pageSlug");
                     string href = type == "blog" ? "/blog" : url is { Length: > 0 } ? url : pageSlug is { Length: > 0 } ? $"/page/{pageSlug}" : "/";
-                    string title = Pick(x, "titleFa", "titleEn", "titleAr", c);
-                    if (title.Length == 0) title = Pick(x, "pageTitleFa", "pageTitleEn", "pageTitleAr", c);
+                    string title = Pick(x, "titleFa", "titleEn", "titleAr", "titleEs", c);
+                    if (title.Length == 0) title = Pick(x, "pageTitleFa", "pageTitleEn", "pageTitleAr", "pageTitleEs", c);
                     if (title.Length == 0 && pageSlug is { Length: > 0 }) title = pageSlug;
                     bool cta = href == "/order/wizard";
                     menuLinks.Add(new MenuLink(href, title, cta, x.TryGetProperty("isPinned", out JsonElement p) && p.GetBoolean()));
@@ -63,12 +63,12 @@ public sealed class SiteContext(CoreApiClient core)
                     widgets.Add(new FooterWidgetLink(
                         x.TryGetProperty("columnIndex", out JsonElement ci) ? ci.GetInt32() : 1,
                         type,
-                        type == "page" && pageSlug is { Length: > 0 } ? null : PickOrNull(x, "titleFa", "titleEn", "titleAr", c),
-                        TextOrNull(x, "text"), TextOrNull(x, "html"), TextOrNull(x, "imageUrl"), href, pageSlug));
+                        type == "page" && pageSlug is { Length: > 0 } ? null : PickOrNull(x, "titleFa", "titleEn", "titleAr", "titleEs", c),
+                        PickTextOrNull(x, c), TextOrNull(x, "html"), TextOrNull(x, "imageUrl"), href, pageSlug));
                 }
             SiteSettingsBox? box = null;
             if (s is JsonElement sa && sa.ValueKind == JsonValueKind.Object)
-                box = new SiteSettingsBox(PickOrNull(sa, "siteNameFa", "siteNameEn", "siteNameAr", c), TextOrNull(sa, "logoUrl"), TextOrNull(sa, "faviconUrl"), PickOrNull(sa, "sloganFa", "sloganEn", "sloganAr", c), TextOrNull(sa, "contactEmail"), TextOrNull(sa, "contactPhone"));
+                box = new SiteSettingsBox(PickOrNull(sa, "siteNameFa", "siteNameEn", "siteNameAr", "siteNameEs", c), TextOrNull(sa, "logoUrl"), TextOrNull(sa, "faviconUrl"), PickOrNull(sa, "sloganFa", "sloganEn", "sloganAr", "sloganEs", c), TextOrNull(sa, "contactEmail"), TextOrNull(sa, "contactPhone"));
             _caches[c] = new CacheBox(menuLinks, widgets, box, DateTimeOffset.UtcNow);
         }
         catch { /* در نبود Core، حالت قبلی/خالی */ }
@@ -101,6 +101,29 @@ public sealed class SiteContext(CoreApiClient core)
 
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out JsonElement v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
     private static string? TextOrNull(JsonElement x, string p) { string v = Text(x, p); return v.Length == 0 ? null : v; }
-    private static string Pick(JsonElement x, string fa, string en, string ar, string culture) => culture switch { "en" => Text(x, en) is { Length: > 0 } e ? e : Text(x, fa), "ar" => Text(x, ar) is { Length: > 0 } a ? a : Text(x, fa), "es" => Text(x, en) is { Length: > 0 } e ? e : Text(x, fa), _ => Text(x, fa) };
-    private static string? PickOrNull(JsonElement x, string fa, string en, string ar, string culture) { string v = Pick(x, fa, en, ar, culture); return v.Length == 0 ? null : v; }
+    private static string Pick(JsonElement x, string fa, string en, string ar, string es, string culture)
+        => culture switch
+        {
+            "en" => Text(x, en) is { Length: > 0 } e ? e : Text(x, fa),
+            "ar" => Text(x, ar) is { Length: > 0 } a ? a : Text(x, fa),
+            "es" => Text(x, es) is { Length: > 0 } s ? s : Text(x, en) is { Length: > 0 } e ? e : Text(x, fa),
+            _ => Text(x, fa),
+        };
+    private static string? PickOrNull(JsonElement x, string fa, string en, string ar, string es, string culture) { string v = Pick(x, fa, en, ar, es, culture); return v.Length == 0 ? null : v; }
+
+    // متن ویجت متنی فوتر: ستون‌های چهارزبانه text_fa/en/ar/es؛ es → en → ستون legacy «text» → fa
+    private static string? PickTextOrNull(JsonElement x, string culture)
+    {
+        string legacy = Text(x, "text");
+        string Pick(string fa, string en, string ar, string es) => culture switch
+        {
+            "en" => NonEmpty(en) ?? NonEmpty(fa) ?? legacy,
+            "ar" => NonEmpty(ar) ?? NonEmpty(fa) ?? legacy,
+            "es" => NonEmpty(es) ?? NonEmpty(en) ?? NonEmpty(fa) ?? legacy,
+            _ => NonEmpty(fa) ?? legacy,
+        };
+        string? v = Pick(Text(x, "textFa"), Text(x, "textEn"), Text(x, "textAr"), Text(x, "textEs"));
+        return v is { Length: > 0 } ? v : null;
+    }
+    private static string? NonEmpty(string v) => v.Length == 0 ? null : v;
 }

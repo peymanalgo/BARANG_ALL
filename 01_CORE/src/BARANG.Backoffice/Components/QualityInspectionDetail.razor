@@ -108,7 +108,7 @@
  private Guid CriterionPending; private Guid TemplateId; private long Version; private bool Loaded;
  private string Pass=""; private string ValueText="";
  private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","es"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
- private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>en,"ar"=>ar,_=>fa};
+ private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>EsGlossary.Tr(en),"ar"=>ar,_=>fa};
  private string St(string s)=>s switch{"InProgress"=>T("در جریان بازرسی","In progress","قيد الفحص"),"Suspended"=>T("معلق","Suspended","معلق"),"ManagementReview"=>T("بررسی مدیریت","Management review","مراجعة الإدارة"),"Approved"=>T("تأییدشده","Approved","معتمد"),"Rejected"=>T("مردود","Rejected","مرفوض"),_=>s};
  private string Jt(string t)=>t switch{"DesignPreparation"=>T("آماده‌سازی طرح","Design preparation","تجهيز التصميم"),"Print"=>T("چاپ","Print","طباعة"),"HeatPress"=>T("پرس حرارتی","Heat press","كبس حراري"),_=>t};
  private string Ct(string t)=>t switch{"PassFail"=>T("قبول/رد","Pass/Fail","نجاح/فشل"),"Numeric"=>T("عددی","Numeric","رقمي"),"Text"=>T("متنی","Text","نصي"),"Choice"=>T("انتخابی","Choice","اختيار"),_=>t};

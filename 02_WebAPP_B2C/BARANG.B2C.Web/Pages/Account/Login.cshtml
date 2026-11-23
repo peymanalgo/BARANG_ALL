@@ -27,7 +27,7 @@
         }
         else
         {
-            <div class="alert alert-ok" role="status">@T($"کد ورود به {Model.MaskedTarget} ارسال شد.", $"A sign-in code was sent to {Model.MaskedTarget}.", $"تم إرسال رمز الدخول إلى {Model.MaskedTarget}.")</div>
+            <div class="alert alert-ok" role="status">@T($"کد ورود به {Model.MaskedTarget} ارسال شد.", $"A sign-in code was sent to {Model.MaskedTarget}.", $"تم إرسال رمز الدخول إلى {Model.MaskedTarget}.", $"Se envió un código de acceso a {Model.MaskedTarget}.")</div>
             <form method="post" asp-page-handler="Verify" class="auth-form">
                 <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
                 <input type="hidden" asp-for="Target" />

@@ -129,7 +129,7 @@ else
 <form method="post" asp-page-handler="PayWallet" class="inline-form">
                             <input type="hidden" name="id" value="@Model.Id" />
                             <button type="submit" class="btn btn-primary" disabled="@(wp.WalletBalance < wp.Remaining)">
-                                @T($"پرداخت {wp.Remaining:N0} تومانی از کیف پول", $"Pay {wp.Remaining:N0} Toman from wallet", $"دفع {wp.Remaining:N0} تومان من المحفظة")
+                                @T($"پرداخت {wp.Remaining:N0} تومانی از کیف پول", $"Pay {wp.Remaining:N0} Toman from wallet", $"دفع {wp.Remaining:N0} تومان من المحفظة", $"Pagar {wp.Remaining:N0} tomans desde el monedero")
                             </button>
                             @if (wp.WalletBalance < wp.Remaining)
                             {
@@ -138,7 +138,7 @@ else
                                     <form method="post" asp-page="/Account/Wallet" asp-page-handler="Charge" class="inline-form" style="display:flex;gap:6px;margin-top:4px">
                                         <input type="hidden" name="amount" value="@(wp.Remaining - wp.WalletBalance)" />
                                         <input type="hidden" name="returnToken" value="1" />
-                                        <button type="submit" class="btn btn-primary btn-sm">@T($"شارژ {(wp.Remaining - wp.WalletBalance).ToString("N0")} تومان", $"Top up {(wp.Remaining - wp.WalletBalance).ToString("N0")} Toman", $"شحن {(wp.Remaining - wp.WalletBalance).ToString("N0")} تومان")</button>
+                                        <button type="submit" class="btn btn-primary btn-sm">@T($"شارژ {(wp.Remaining - wp.WalletBalance).ToString("N0")} تومان", $"Top up {(wp.Remaining - wp.WalletBalance).ToString("N0")} Toman", $"شحن {(wp.Remaining - wp.WalletBalance).ToString("N0")} تومان", $"Recargar {(wp.Remaining - wp.WalletBalance).ToString("N0")} tomans")</button>
                                     </form>
                                 </div>
                             }

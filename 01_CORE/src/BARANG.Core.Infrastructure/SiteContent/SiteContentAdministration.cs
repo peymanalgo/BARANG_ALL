@@ -27,7 +27,7 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
     public Task<Result<SiteSettingsView>> UpdateSettingsAsync(SiteSettingsCommand command, CancellationToken ct) => tx.ExecuteAsync(async t =>
     {
         SiteSettings settings = await EnsureSettingsAsync(t, ct);
-        Result changed = settings.Update(command.SiteNameFa, command.SiteNameEn, command.SiteNameAr, command.LogoStorageKey, command.FaviconStorageKey, command.SloganFa, command.SloganEn, command.SloganAr, command.ContactEmail, command.ContactPhone, command.Version, Now);
+        Result changed = settings.Update(command.SiteNameFa, command.SiteNameEn, command.SiteNameAr, command.SiteNameEs, command.LogoStorageKey, command.FaviconStorageKey, command.SloganFa, command.SloganEn, command.SloganAr, command.SloganEs, command.ContactEmail, command.ContactPhone, command.Version, Now);
         return changed.IsFailure ? Result.Failure<SiteSettingsView>(changed.Error) : Result.Success(View(settings));
     }, ct);
 
@@ -43,7 +43,7 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
     {
         string normalizedSlug = command.Slug.Trim().ToLowerInvariant();
         if (await db.SitePages.AnyAsync(x => x.CompanyId == Company && x.Slug == normalizedSlug, ct)) return Result.Failure<SitePageView>(SiteContentErrors.PageDuplicateSlug);
-        Result<SitePage> made = SitePage.Create(Guid.NewGuid(), Company, command.Slug, command.TitleFa, command.TitleEn, command.TitleAr, command.BodyFa, command.BodyEn, command.BodyAr, command.CoverStorageKey, command.SeoDescriptionFa, command.SeoDescriptionEn, command.SeoDescriptionAr, command.SeoKeywordsFa, command.SeoKeywordsEn, command.SeoKeywordsAr, NormalizePlacement(command.Placement), command.FooterColumn, command.DisplayOrder, Now);
+        Result<SitePage> made = SitePage.Create(Guid.NewGuid(), Company, command.Slug, command.TitleFa, command.TitleEn, command.TitleAr, command.TitleEs, command.BodyFa, command.BodyEn, command.BodyAr, command.BodyEs, command.CoverStorageKey, command.SeoDescriptionFa, command.SeoDescriptionEn, command.SeoDescriptionAr, command.SeoDescriptionEs, command.SeoKeywordsFa, command.SeoKeywordsEn, command.SeoKeywordsAr, command.SeoKeywordsEs, NormalizePlacement(command.Placement), command.FooterColumn, command.DisplayOrder, Now);
         if (made.IsFailure) return Result.Failure<SitePageView>(made.Error);
         db.SitePages.Add(made.Value);
         await db.SaveChangesAsync(ct);
@@ -61,7 +61,7 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
         // قبلاً هر ذخیره‌ی محتوا آیتم‌های منوی صفحه را پاک می‌کرد (ریشه‌ی «تغییرات منو اعمال نمی‌شود»):
         // کاربر از «منوهای اصلی» آیتم می‌ساخت، بعد متن صفحه را ویرایش می‌کرد و آیتم بی‌صدا حذف می‌شد.
         string placementBefore = p.Placement; int? columnBefore = p.FooterColumn; bool publishedBefore = p.IsPublished;
-        Result changed = p.Update(command.TitleFa, command.TitleEn, command.TitleAr, command.BodyFa, command.BodyEn, command.BodyAr, command.CoverStorageKey, command.SeoDescriptionFa, command.SeoDescriptionEn, command.SeoDescriptionAr, command.SeoKeywordsFa, command.SeoKeywordsEn, command.SeoKeywordsAr, NormalizePlacement(command.Placement), command.FooterColumn, command.IsPublished, command.DisplayOrder, command.Version, Now);
+        Result changed = p.Update(command.TitleFa, command.TitleEn, command.TitleAr, command.TitleEs, command.BodyFa, command.BodyEn, command.BodyAr, command.BodyEs, command.CoverStorageKey, command.SeoDescriptionFa, command.SeoDescriptionEn, command.SeoDescriptionAr, command.SeoDescriptionEs, command.SeoKeywordsFa, command.SeoKeywordsEn, command.SeoKeywordsAr, command.SeoKeywordsEs, NormalizePlacement(command.Placement), command.FooterColumn, command.IsPublished, command.DisplayOrder, command.Version, Now);
         if (changed.IsFailure) return Result.Failure<SitePageView>(changed.Error);
         await db.SaveChangesAsync(ct);
         if (p.Placement != placementBefore || p.FooterColumn != columnBefore || p.IsPublished != publishedBefore)
@@ -98,15 +98,15 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
         {
             db.FooterWidgets.RemoveRange(widgets); // جای‌گذاری به منوی اصلی منتقل شد
             if (menuItems.Count == 0)
-                db.MainMenuItems.Add(MainMenuItem.Create(Guid.NewGuid(), Company, "page", page.Id, null, null, null, null, page.DisplayOrder, Now).Value);
+                db.MainMenuItems.Add(MainMenuItem.Create(Guid.NewGuid(), Company, "page", page.Id, null, null, null, null, null, page.DisplayOrder, Now).Value);
         }
         else if (page.Placement == "footer" && page.FooterColumn is int col)
         {
             db.MainMenuItems.RemoveRange(menuItems); // جای‌گذاری به فوتر منتقل شد
             foreach (FooterWidget w in widgets)
-                w.Update(col, w.WidgetType, w.PageId, w.TitleFa, w.TitleEn, w.TitleAr, w.Text, w.Html, w.ImageStorageKey, w.Url, w.DisplayOrder, w.Version, Now);
+                w.Update(col, w.WidgetType, w.PageId, w.TitleFa, w.TitleEn, w.TitleAr, w.TitleEs, w.TextFa, w.TextEn, w.TextAr, w.TextEs, w.Html, w.ImageStorageKey, w.Url, w.DisplayOrder, w.Version, Now);
             if (widgets.Count == 0)
-                db.FooterWidgets.Add(FooterWidget.Create(Guid.NewGuid(), Company, col, "page", page.Id, null, null, null, null, null, null, null, page.DisplayOrder, Now).Value);
+                db.FooterWidgets.Add(FooterWidget.Create(Guid.NewGuid(), Company, col, "page", page.Id, null, null, null, null, null, null, null, null, null, null, null, page.DisplayOrder, Now).Value);
         }
         else
         {
@@ -127,7 +127,7 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
 
     public Task<Result<FooterWidgetView>> CreateWidgetAsync(FooterWidgetCommand command, CancellationToken ct) => tx.ExecuteAsync(async t =>
     {
-        Result<FooterWidget> made = FooterWidget.Create(Guid.NewGuid(), Company, command.ColumnIndex, command.WidgetType, command.PageId, command.TitleFa, command.TitleEn, command.TitleAr, command.Text, command.Html, command.ImageStorageKey, command.Url, command.DisplayOrder, Now);
+        Result<FooterWidget> made = FooterWidget.Create(Guid.NewGuid(), Company, command.ColumnIndex, command.WidgetType, command.PageId, command.TitleFa, command.TitleEn, command.TitleAr, command.TitleEs, command.TextFa, command.TextEn, command.TextAr, command.TextEs, command.Html, command.ImageStorageKey, command.Url, command.DisplayOrder, Now);
         if (made.IsFailure) return Result.Failure<FooterWidgetView>(made.Error);
         db.FooterWidgets.Add(made.Value);
         await db.SaveChangesAsync(ct);
@@ -139,7 +139,7 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
     {
         FooterWidget? w = await db.FooterWidgets.SingleOrDefaultAsync(x => x.Id == id && x.CompanyId == Company, ct);
         if (w is null) return Result.Failure<FooterWidgetView>(SiteContentErrors.PageNotFound);
-        Result changed = w.Update(command.ColumnIndex, command.WidgetType, command.PageId, command.TitleFa, command.TitleEn, command.TitleAr, command.Text, command.Html, command.ImageStorageKey, command.Url, command.DisplayOrder, command.Version, Now);
+        Result changed = w.Update(command.ColumnIndex, command.WidgetType, command.PageId, command.TitleFa, command.TitleEn, command.TitleAr, command.TitleEs, command.TextFa, command.TextEn, command.TextAr, command.TextEs, command.Html, command.ImageStorageKey, command.Url, command.DisplayOrder, command.Version, Now);
         if (changed.IsFailure) return Result.Failure<FooterWidgetView>(changed.Error);
         await db.SaveChangesAsync(ct);
         SitePage? page = command.PageId is Guid pid ? await db.SitePages.AsNoTracking().SingleOrDefaultAsync(x => x.Id == pid, ct) : null;
@@ -166,7 +166,7 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
 
     public Task<Result<MainMenuItemView>> CreateMenuItemAsync(MainMenuItemCommand command, CancellationToken ct) => tx.ExecuteAsync(async t =>
     {
-        Result<MainMenuItem> made = MainMenuItem.Create(Guid.NewGuid(), Company, command.ItemType, command.PageId, command.TitleFa, command.TitleEn, command.TitleAr, command.Url, command.DisplayOrder, Now);
+        Result<MainMenuItem> made = MainMenuItem.Create(Guid.NewGuid(), Company, command.ItemType, command.PageId, command.TitleFa, command.TitleEn, command.TitleAr, command.TitleEs, command.Url, command.DisplayOrder, Now);
         if (made.IsFailure) return Result.Failure<MainMenuItemView>(made.Error);
         db.MainMenuItems.Add(made.Value);
         await db.SaveChangesAsync(ct);
@@ -203,9 +203,9 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
     {
         string slug = command.Slug.Trim().ToLowerInvariant();
         if (await db.BlogPosts.AnyAsync(x => x.CompanyId == Company && x.Slug == slug, ct)) return Result.Failure<BlogPostView>(SiteContentErrors.PostDuplicateSlug);
-        Result<BlogPost> made = BlogPost.Create(Guid.NewGuid(), Company, slug, command.TitleFa, command.TitleEn, command.TitleAr, command.ExcerptFa, command.ExcerptEn, command.ExcerptAr, command.BodyFa, command.BodyEn, command.BodyAr, command.ThumbnailStorageKey, command.SeoDescriptionFa, command.SeoDescriptionEn, command.SeoDescriptionAr, command.SeoKeywordsFa, command.SeoKeywordsEn, command.SeoKeywordsAr, Now);
+        Result<BlogPost> made = BlogPost.Create(Guid.NewGuid(), Company, slug, command.TitleFa, command.TitleEn, command.TitleAr, command.TitleEs, command.ExcerptFa, command.ExcerptEn, command.ExcerptAr, command.ExcerptEs, command.BodyFa, command.BodyEn, command.BodyAr, command.BodyEs, command.ThumbnailStorageKey, command.SeoDescriptionFa, command.SeoDescriptionEn, command.SeoDescriptionAr, command.SeoDescriptionEs, command.SeoKeywordsFa, command.SeoKeywordsEn, command.SeoKeywordsAr, command.SeoKeywordsEs, Now);
         if (made.IsFailure) return Result.Failure<BlogPostView>(made.Error);
-        if (command.IsPublished) { Result published = made.Value.Update(command.TitleFa, command.TitleEn, command.TitleAr, command.ExcerptFa, command.ExcerptEn, command.ExcerptAr, command.BodyFa, command.BodyEn, command.BodyAr, command.ThumbnailStorageKey, command.SeoDescriptionFa, command.SeoDescriptionEn, command.SeoDescriptionAr, command.SeoKeywordsFa, command.SeoKeywordsEn, command.SeoKeywordsAr, true, 1, Now); if (published.IsFailure) return Result.Failure<BlogPostView>(published.Error); }
+        if (command.IsPublished) { Result published = made.Value.Update(command.TitleFa, command.TitleEn, command.TitleAr, command.TitleEs, command.ExcerptFa, command.ExcerptEn, command.ExcerptAr, command.ExcerptEs, command.BodyFa, command.BodyEn, command.BodyAr, command.BodyEs, command.ThumbnailStorageKey, command.SeoDescriptionFa, command.SeoDescriptionEn, command.SeoDescriptionAr, command.SeoDescriptionEs, command.SeoKeywordsFa, command.SeoKeywordsEn, command.SeoKeywordsAr, command.SeoKeywordsEs, true, 1, Now); if (published.IsFailure) return Result.Failure<BlogPostView>(published.Error); }
         db.BlogPosts.Add(made.Value);
         await db.SaveChangesAsync(ct);
         return Result.Success(View(made.Value));
@@ -217,7 +217,7 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
         if (p is null) return Result.Failure<BlogPostView>(SiteContentErrors.PostNotFound);
         string slug = command.Slug.Trim().ToLowerInvariant();
         if (slug != p.Slug && await db.BlogPosts.AnyAsync(x => x.CompanyId == Company && x.Slug == slug, ct)) return Result.Failure<BlogPostView>(SiteContentErrors.PostDuplicateSlug);
-        Result changed = p.Update(command.TitleFa, command.TitleEn, command.TitleAr, command.ExcerptFa, command.ExcerptEn, command.ExcerptAr, command.BodyFa, command.BodyEn, command.BodyAr, command.ThumbnailStorageKey, command.SeoDescriptionFa, command.SeoDescriptionEn, command.SeoDescriptionAr, command.SeoKeywordsFa, command.SeoKeywordsEn, command.SeoKeywordsAr, command.IsPublished, command.Version, Now);
+        Result changed = p.Update(command.TitleFa, command.TitleEn, command.TitleAr, command.TitleEs, command.ExcerptFa, command.ExcerptEn, command.ExcerptAr, command.ExcerptEs, command.BodyFa, command.BodyEn, command.BodyAr, command.BodyEs, command.ThumbnailStorageKey, command.SeoDescriptionFa, command.SeoDescriptionEn, command.SeoDescriptionAr, command.SeoDescriptionEs, command.SeoKeywordsFa, command.SeoKeywordsEn, command.SeoKeywordsAr, command.SeoKeywordsEs, command.IsPublished, command.Version, Now);
         return changed.IsFailure ? Result.Failure<BlogPostView>(changed.Error) : Result.Success(View(p));
     }, ct);
 
@@ -255,19 +255,19 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
             string path = w.ImageStorageKey!;
             string? realKey = await UploadSeedImageAsync(path, ct);
             Result changed = realKey is null
-                ? w.Update(w.ColumnIndex, "image", w.PageId, w.TitleFa, w.TitleEn, w.TitleAr, w.Text, w.Html, null, path, w.DisplayOrder, w.Version, Now) // SVG تعبیه‌شده نبود؛ مسیر به url منتقل شود تا fallback نمایش کار کند
-                : w.Update(w.ColumnIndex, "image", w.PageId, w.TitleFa, w.TitleEn, w.TitleAr, w.Text, w.Html, realKey, w.Url, w.DisplayOrder, w.Version, Now);
+                ? w.Update(w.ColumnIndex, "image", w.PageId, w.TitleFa, w.TitleEn, w.TitleAr, w.TitleEs, w.TextFa, w.TextEn, w.TextAr, w.TextEs, w.Html, null, path, w.DisplayOrder, w.Version, Now) // SVG تعبیه‌شده نبود؛ مسیر به url منتقل شود تا fallback نمایش کار کند
+                : w.Update(w.ColumnIndex, "image", w.PageId, w.TitleFa, w.TitleEn, w.TitleAr, w.TitleEs, w.TextFa, w.TextEn, w.TextAr, w.TextEs, w.Html, realKey, w.Url, w.DisplayOrder, w.Version, Now);
             if (changed.IsSuccess) await db.SaveChangesAsync(ct);
         }
         if (await db.MainMenuItems.AnyAsync(x => x.CompanyId == Company, ct)) return Result.Success();
-        foreach ((string slug, string fa, string en, string ar, string bodyFa, string bodyEn, string bodyAr, string placement, int? footerColumn, int order) in SiteSeedData.Pages)
+        foreach ((string slug, string fa, string en, string ar, string es, string bodyFa, string bodyEn, string bodyAr, string bodyEs, string placement, int? footerColumn, int order) in SiteSeedData.Pages)
         {
             if (await db.SitePages.AnyAsync(x => x.CompanyId == Company && x.Slug == slug, ct)) continue;
-            Result<SitePage> page = SitePage.Create(Guid.NewGuid(), Company, slug, fa, en, ar, bodyFa, bodyEn, bodyAr, null, null, null, null, null, null, null, placement, footerColumn, order, Now);
+            Result<SitePage> page = SitePage.Create(Guid.NewGuid(), Company, slug, fa, en, ar, es, bodyFa, bodyEn, bodyAr, bodyEs, null, null, null, null, null, null, null, null, null, placement, footerColumn, order, Now);
             if (page.IsSuccess) db.SitePages.Add(page.Value);
         }
         await db.SaveChangesAsync(ct);
-        foreach (var (type, pageSlug, titleFa, titleEn, titleAr, text, url, imageKey, column, order) in SiteSeedData.FooterWidgets)
+        foreach (var (type, pageSlug, titleFa, titleEn, titleAr, titleEs, textFa, textEn, textAr, textEs, url, imageKey, column, order) in SiteSeedData.FooterWidgets)
         {
             Guid? pageId = pageSlug is null ? null : await db.SitePages.Where(x => x.CompanyId == Company && x.Slug == pageSlug).Select(x => (Guid?)x.Id).SingleOrDefaultAsync(ct);
             // تصویر سیدر: مسیر ایستا → بارگذاری SVG در MinIO و استفاده از کلید واقعی (تا در ERP و B2C هر دو نمایش داده شود)
@@ -277,14 +277,14 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
                 seedKey = await UploadSeedImageAsync(seedKey, ct);
                 if (seedKey is null) { seedUrl = imageKey; } // آپلود ممکن نشد؛ مسیر در url می‌ماند تا fallback نمایش بدهد
             }
-            Result<FooterWidget> w = FooterWidget.Create(Guid.NewGuid(), Company, column, type, pageId, titleFa, titleEn, titleAr, text, null, seedKey, seedUrl, order, Now);
+            Result<FooterWidget> w = FooterWidget.Create(Guid.NewGuid(), Company, column, type, pageId, titleFa, titleEn, titleAr, titleEs, textFa, textEn, textAr, textEs, null, seedKey, seedUrl, order, Now);
             if (w.IsSuccess) db.FooterWidgets.Add(w.Value);
         }
         int menuOrder = 1;
-        foreach (var (type, pageSlug, url, titleFa, titleEn, titleAr, pinned) in SiteSeedData.MenuItems)
+        foreach (var (type, pageSlug, url, titleFa, titleEn, titleAr, titleEs, pinned) in SiteSeedData.MenuItems)
         {
             Guid? pageId = pageSlug is null ? null : await db.SitePages.Where(x => x.CompanyId == Company && x.Slug == pageSlug).Select(x => (Guid?)x.Id).SingleOrDefaultAsync(ct);
-            Result<MainMenuItem> item = MainMenuItem.Create(Guid.NewGuid(), Company, type, pageId, titleFa, titleEn, titleAr, url, menuOrder++, Now, pinned);
+            Result<MainMenuItem> item = MainMenuItem.Create(Guid.NewGuid(), Company, type, pageId, titleFa, titleEn, titleAr, titleEs, url, menuOrder++, Now, pinned);
             if (item.IsSuccess) db.MainMenuItems.Add(item.Value);
         }
         await db.SaveChangesAsync(ct);
@@ -306,7 +306,7 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
         if (settings is not null) return settings;
         Result<SiteSettings> made = SiteSettings.Create(Guid.NewGuid(), Company, Now);
         if (made.IsFailure) throw new InvalidOperationException("site settings invalid");
-        made.Value.Update("پی‌رنگ", "Peyrang", "بي‌رنگ", null, null, "پی‌رنگ خان، نقشه‌ها داره برات!", "Peyrang Khan has the designs for you!", "پی‌رنگ خان لديه التصاميم من أجلك!", "salam@pirang.ir", "02100000000", 1, Now);
+        made.Value.Update("پی‌رنگ", "Peyrang", "بي‌رنگ", "Peyrang", null, null, "پی‌رنگ خان، نقشه‌ها داره برات!", "Peyrang Khan has the designs for you!", "پی‌رنگ خان لديه التصاميم من أجلك!", "¡Peyrang Khan tiene los diseños para ti!", "salam@pirang.ir", "02100000000", 1, Now);
         db.SiteSettings.Add(made.Value);
         await db.SaveChangesAsync(ct);
         return made.Value;
@@ -314,10 +314,10 @@ public sealed class SiteContentAdministration(CoreDbContext db, ITransactionExec
     private static string NormalizePlacement(string placement) => placement is "main" or "footer" or "none" ? placement : "none";
 
     private string? Url(string? key) => string.IsNullOrWhiteSpace(key) ? null : storage.GetPublicObjectUrl(key);
-    private SiteSettingsView View(SiteSettings s) => new(s.Id, s.SiteNameFa, s.SiteNameEn, s.SiteNameAr, Url(s.LogoStorageKey), Url(s.FaviconStorageKey), s.LogoStorageKey, s.FaviconStorageKey, s.SloganFa, s.SloganEn, s.SloganAr, s.ContactEmail, s.ContactPhone, s.Version);
-    private SitePageView View(SitePage p) => new(p.Id, p.Slug, p.TitleFa, p.TitleEn, p.TitleAr, p.BodyFa, p.BodyEn, p.BodyAr, Url(p.CoverStorageKey), p.SeoDescriptionFa, p.SeoDescriptionEn, p.SeoDescriptionAr, p.SeoKeywordsFa, p.SeoKeywordsEn, p.SeoKeywordsAr, p.Placement, p.FooterColumn, p.IsPublished, p.DisplayOrder, p.UpdatedAtUtc, p.Version);
+    private SiteSettingsView View(SiteSettings s) => new(s.Id, s.SiteNameFa, s.SiteNameEn, s.SiteNameAr, s.SiteNameEs, Url(s.LogoStorageKey), Url(s.FaviconStorageKey), s.LogoStorageKey, s.FaviconStorageKey, s.SloganFa, s.SloganEn, s.SloganAr, s.SloganEs, s.ContactEmail, s.ContactPhone, s.Version);
+    private SitePageView View(SitePage p) => new(p.Id, p.Slug, p.TitleFa, p.TitleEn, p.TitleAr, p.TitleEs, p.BodyFa, p.BodyEn, p.BodyAr, p.BodyEs, Url(p.CoverStorageKey), p.SeoDescriptionFa, p.SeoDescriptionEn, p.SeoDescriptionAr, p.SeoDescriptionEs, p.SeoKeywordsFa, p.SeoKeywordsEn, p.SeoKeywordsAr, p.SeoKeywordsEs, p.Placement, p.FooterColumn, p.IsPublished, p.DisplayOrder, p.UpdatedAtUtc, p.Version);
     // برای ویجت تصویری: اول URL عمومی MinIO از کلید؛ اگر کلید نبود، url مستقیم (مثل مسیر ایستای فروشگاه)
-    private FooterWidgetView View(FooterWidget w, SitePage? page) => new(w.Id, w.ColumnIndex, w.WidgetType, w.PageId, page?.Slug, page?.TitleFa, w.TitleFa, w.TitleEn, w.TitleAr, w.Text, w.Html, w.WidgetType == "image" ? Url(w.ImageStorageKey) ?? w.Url : Url(w.ImageStorageKey), w.ImageStorageKey, w.Url, w.DisplayOrder, w.Version);
-    private static MainMenuItemView View(MainMenuItem i, SitePage? page) => new(i.Id, i.ItemType, i.PageId, page?.Slug, page?.TitleFa, page?.TitleEn, page?.TitleAr, i.TitleFa, i.TitleEn, i.TitleAr, i.Url, i.IsPinned, i.DisplayOrder, i.Version);
-    private BlogPostView View(BlogPost p) => new(p.Id, p.Slug, p.TitleFa, p.TitleEn, p.TitleAr, p.ExcerptFa, p.ExcerptEn, p.ExcerptAr, p.BodyFa, p.BodyEn, p.BodyAr, Url(p.ThumbnailStorageKey), p.ThumbnailStorageKey, p.SeoDescriptionFa, p.SeoDescriptionEn, p.SeoDescriptionAr, p.SeoKeywordsFa, p.SeoKeywordsEn, p.SeoKeywordsAr, p.IsPublished, p.PublishedAtUtc, p.UpdatedAtUtc, p.Version);
+    private FooterWidgetView View(FooterWidget w, SitePage? page) => new(w.Id, w.ColumnIndex, w.WidgetType, w.PageId, page?.Slug, page?.TitleFa, w.TitleFa, w.TitleEn, w.TitleAr, w.TitleEs, w.TextFa, w.TextEn, w.TextAr, w.TextEs, w.Html, w.WidgetType == "image" ? Url(w.ImageStorageKey) ?? w.Url : Url(w.ImageStorageKey), w.ImageStorageKey, w.Url, w.DisplayOrder, w.Version);
+    private static MainMenuItemView View(MainMenuItem i, SitePage? page) => new(i.Id, i.ItemType, i.PageId, page?.Slug, page?.TitleFa, page?.TitleEn, page?.TitleAr, page?.TitleEs, i.TitleFa, i.TitleEn, i.TitleAr, i.TitleEs, i.Url, i.IsPinned, i.DisplayOrder, i.Version);
+    private BlogPostView View(BlogPost p) => new(p.Id, p.Slug, p.TitleFa, p.TitleEn, p.TitleAr, p.TitleEs, p.ExcerptFa, p.ExcerptEn, p.ExcerptAr, p.ExcerptEs, p.BodyFa, p.BodyEn, p.BodyAr, p.BodyEs, Url(p.ThumbnailStorageKey), p.ThumbnailStorageKey, p.SeoDescriptionFa, p.SeoDescriptionEn, p.SeoDescriptionAr, p.SeoDescriptionEs, p.SeoKeywordsFa, p.SeoKeywordsEn, p.SeoKeywordsAr, p.SeoKeywordsEs, p.IsPublished, p.PublishedAtUtc, p.UpdatedAtUtc, p.Version);
 }

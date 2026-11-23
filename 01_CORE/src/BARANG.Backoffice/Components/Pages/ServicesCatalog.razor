@@ -118,9 +118,9 @@
     private string GroupFilter = "";
     private ServiceInfo? Selected;
 
-    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() is var c && c is "en" or "ar" ? c : "fa";
-    private string Dir => CultureCode == "en" ? "ltr" : "rtl";
-    private string T(string fa, string en, string ar) => CultureCode switch { "en" => en,"es"=>en, "ar" => ar, _ => fa };
+    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() is var c && c is "en" or "ar" or "es" ? c : "fa";
+    private string Dir => CultureCode is "en" or "es" ? "ltr" : "rtl";
+    private string T(string fa, string en, string ar) => CultureCode switch { "en" => en,"es"=>EsGlossary.Tr(en), "ar" => ar, _ => fa };
 
     private IReadOnlyList<ServiceGroup> Groups => ServicesCatalogData.Groups;
     private IEnumerable<ServiceInfo> Filtered

@@ -39,7 +39,7 @@
         }
         else
         {
-            <div class="alert alert-ok" role="status">@T($"کد تأیید به {Model.MaskedTarget} ارسال شد.", $"A verification code was sent to {Model.MaskedTarget}.", $"تم إرسال رمز التحقق إلى {Model.MaskedTarget}.")</div>
+            <div class="alert alert-ok" role="status">@T($"کد تأیید به {Model.MaskedTarget} ارسال شد.", $"A verification code was sent to {Model.MaskedTarget}.", $"تم إرسال رمز التحقق إلى {Model.MaskedTarget}.", $"Se envió un código de verificación a {Model.MaskedTarget}.")</div>
             <form method="post" asp-page-handler="Verify" class="auth-form">
                 <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
                 <input type="hidden" asp-for="FirstName" />

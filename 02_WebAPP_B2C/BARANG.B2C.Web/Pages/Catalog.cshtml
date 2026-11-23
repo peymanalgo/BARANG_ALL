@@ -10,11 +10,11 @@
         <h1>@T("کاتالوگ طرح‌ها", "Design catalog", "كتالوج التصاميم", "Catálogo de diseños")</h1>
         @if (Model.ConceptActive)
         {
-            <p class="muted">@T($"{Model.ConceptResults.Count} نتیجه مفهومی", $"{Model.ConceptResults.Count} concept matches", $"{Model.ConceptResults.Count} نتيجة مفاهيمية")</p>
+            <p class="muted">@T($"{Model.ConceptResults.Count} نتیجه مفهومی", $"{Model.ConceptResults.Count} concept matches", $"{Model.ConceptResults.Count} نتيجة مفاهيمية", $"{Model.ConceptResults.Count} coincidencias conceptuales")</p>
         }
         else
         {
-            <p class="muted">@T($"{Model.Total} طرح آماده چاپ", $"{Model.Total} print-ready designs", $"{Model.Total} تصميم جاهز للطباعة")</p>
+            <p class="muted">@T($"{Model.Total} طرح آماده چاپ", $"{Model.Total} print-ready designs", $"{Model.Total} تصميم جاهز للطباعة", $"{Model.Total} diseños listos para imprimir")</p>
         }
     </header>
 

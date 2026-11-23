@@ -10200,6 +10200,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("body_en");
 
+                    b.Property<string>("BodyEs")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("body_es");
+
                     b.Property<string>("BodyFa")
                         .IsRequired()
                         .HasColumnType("text")
@@ -10225,6 +10230,12 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(600)")
                         .HasColumnName("excerpt_en");
 
+                    b.Property<string>("ExcerptEs")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasColumnName("excerpt_es");
+
                     b.Property<string>("ExcerptFa")
                         .IsRequired()
                         .HasMaxLength(600)
@@ -10249,6 +10260,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(600)")
                         .HasColumnName("seo_description_en");
 
+                    b.Property<string>("SeoDescriptionEs")
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasColumnName("seo_description_es");
+
                     b.Property<string>("SeoDescriptionFa")
                         .HasMaxLength(600)
                         .HasColumnType("character varying(600)")
@@ -10263,6 +10279,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(400)
                         .HasColumnType("character varying(400)")
                         .HasColumnName("seo_keywords_en");
+
+                    b.Property<string>("SeoKeywordsEs")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)")
+                        .HasColumnName("seo_keywords_es");
 
                     b.Property<string>("SeoKeywordsFa")
                         .HasMaxLength(400)
@@ -10291,6 +10312,12 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)")
                         .HasColumnName("title_en");
+
+                    b.Property<string>("TitleEs")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
+                        .HasColumnName("title_es");
 
                     b.Property<string>("TitleFa")
                         .IsRequired()
@@ -10357,6 +10384,26 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("text");
 
+                    b.Property<string>("TextAr")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("text_ar");
+
+                    b.Property<string>("TextEn")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("text_en");
+
+                    b.Property<string>("TextEs")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("text_es");
+
+                    b.Property<string>("TextFa")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("text_fa");
+
                     b.Property<string>("TitleAr")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
@@ -10366,6 +10413,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("title_en");
+
+                    b.Property<string>("TitleEs")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title_es");
 
                     b.Property<string>("TitleFa")
                         .HasMaxLength(200)
@@ -10443,6 +10495,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(120)")
                         .HasColumnName("title_en");
 
+                    b.Property<string>("TitleEs")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("title_es");
+
                     b.Property<string>("TitleFa")
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)")
@@ -10486,6 +10543,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("body_en");
+
+                    b.Property<string>("BodyEs")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("body_es");
 
                     b.Property<string>("BodyFa")
                         .IsRequired()
@@ -10533,6 +10595,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(600)")
                         .HasColumnName("seo_description_en");
 
+                    b.Property<string>("SeoDescriptionEs")
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasColumnName("seo_description_es");
+
                     b.Property<string>("SeoDescriptionFa")
                         .HasMaxLength(600)
                         .HasColumnType("character varying(600)")
@@ -10547,6 +10614,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(400)
                         .HasColumnType("character varying(400)")
                         .HasColumnName("seo_keywords_en");
+
+                    b.Property<string>("SeoKeywordsEs")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)")
+                        .HasColumnName("seo_keywords_es");
 
                     b.Property<string>("SeoKeywordsFa")
                         .HasMaxLength(400)
@@ -10570,6 +10642,12 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("title_en");
+
+                    b.Property<string>("TitleEs")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title_es");
 
                     b.Property<string>("TitleFa")
                         .IsRequired()
@@ -10642,6 +10720,12 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(120)")
                         .HasColumnName("site_name_en");
 
+                    b.Property<string>("SiteNameEs")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("site_name_es");
+
                     b.Property<string>("SiteNameFa")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -10657,6 +10741,11 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)")
                         .HasColumnName("slogan_en");
+
+                    b.Property<string>("SloganEs")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("slogan_es");
 
                     b.Property<string>("SloganFa")
                         .HasMaxLength(300)

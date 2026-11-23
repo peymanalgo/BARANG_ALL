@@ -72,7 +72,7 @@ public static class SiteContentEndpoints
             Result<List<Domain.SiteContent.SitePage>> pageQuery = await tx.ExecuteAsync(async t => Result.Success(await db.SitePages.AsNoTracking()
                 .Where(x => x.CompanyId == companyId && x.Slug == normalizedSlug && x.IsPublished).ToListAsync(ct)), ct);
             Domain.SiteContent.SitePage? page = pageQuery.IsSuccess ? pageQuery.Value.FirstOrDefault() : null;
-            return page is null ? Results.NotFound() : Results.Json(new PublicPageView(page.Slug, Pick(page.TitleFa, page.TitleEn, page.TitleAr, culture), Pick(page.BodyFa, page.BodyEn, page.BodyAr, culture), string.IsNullOrWhiteSpace(page.CoverStorageKey) ? null : storage.GetPublicObjectUrl(page.CoverStorageKey), PickNull(page.SeoDescriptionFa, page.SeoDescriptionEn, page.SeoDescriptionAr, culture), JoinKeywords(page, culture), page.UpdatedAtUtc));
+            return page is null ? Results.NotFound() : Results.Json(new PublicPageView(page.Slug, Pick(page.TitleFa, page.TitleEn, page.TitleAr, page.TitleEs, culture), Pick(page.BodyFa, page.BodyEn, page.BodyAr, page.BodyEs, culture), string.IsNullOrWhiteSpace(page.CoverStorageKey) ? null : storage.GetPublicObjectUrl(page.CoverStorageKey), PickNull(page.SeoDescriptionFa, page.SeoDescriptionEn, page.SeoDescriptionAr, page.SeoDescriptionEs, culture), JoinKeywords(page, culture), page.UpdatedAtUtc));
         });
         pub.MapGet("/blog", async (int? page, int? pageSize, string? culture, IConfiguration configuration, CompanyContext companies, ISiteContentAdministration s, CancellationToken ct)
             => await PublicAsync(companies, configuration, s, (admin, token) => admin.ListBlogAsync(page ?? 1, Math.Min(pageSize ?? 12, 24), false, token), ct));
@@ -87,7 +87,7 @@ public static class SiteContentEndpoints
                 .Where(x => x.CompanyId == companyId && x.Slug == normalizedSlug && x.IsPublished).ToListAsync(ct)), ct);
             Domain.SiteContent.BlogPost? post = postQuery.IsSuccess ? postQuery.Value.FirstOrDefault() : null;
             if (post is null) return Results.NotFound();
-            return Results.Json(new PublicPostView(post.Id, post.Slug, Pick(post.TitleFa, post.TitleEn, post.TitleAr, culture), Pick(post.ExcerptFa, post.ExcerptEn, post.ExcerptAr, culture), Pick(post.BodyFa, post.BodyEn, post.BodyAr, culture), string.IsNullOrWhiteSpace(post.ThumbnailStorageKey) ? null : storage.GetPublicObjectUrl(post.ThumbnailStorageKey), PickNull(post.SeoDescriptionFa, post.SeoDescriptionEn, post.SeoDescriptionAr, culture), JoinKeywords(post, culture), post.PublishedAtUtc));
+            return Results.Json(new PublicPostView(post.Id, post.Slug, Pick(post.TitleFa, post.TitleEn, post.TitleAr, post.TitleEs, culture), Pick(post.ExcerptFa, post.ExcerptEn, post.ExcerptAr, post.ExcerptEs, culture), Pick(post.BodyFa, post.BodyEn, post.BodyAr, post.BodyEs, culture), string.IsNullOrWhiteSpace(post.ThumbnailStorageKey) ? null : storage.GetPublicObjectUrl(post.ThumbnailStorageKey), PickNull(post.SeoDescriptionFa, post.SeoDescriptionEn, post.SeoDescriptionAr, post.SeoDescriptionEs, culture), JoinKeywords(post, culture), post.PublishedAtUtc));
         });
         return endpoints;
     }
@@ -103,10 +103,10 @@ public static class SiteContentEndpoints
     }
     private static Guid? ResolvePublicCompany(IConfiguration configuration)
         => configuration.GetValue<string?>("Catalog:PublicCompanyId") is { } raw && Guid.TryParse(raw, out Guid id) && id != Guid.Empty ? id : null;
-    private static string? PickNull(string? fa, string? en, string? ar, string? culture) => (culture ?? "fa") switch { "en" => string.IsNullOrWhiteSpace(en) ? fa : en, "ar" => string.IsNullOrWhiteSpace(ar) ? (string.IsNullOrWhiteSpace(en) ? fa : ar) : ar, "es" => string.IsNullOrWhiteSpace(en) ? fa : en, _ => fa };
-    private static string? JoinKeywords(BARANG.Core.Domain.SiteContent.SitePage p, string? culture) => PickNull(p.SeoKeywordsFa, p.SeoKeywordsEn, p.SeoKeywordsAr, culture);
-    private static string? JoinKeywords(BARANG.Core.Domain.SiteContent.BlogPost p, string? culture) => PickNull(p.SeoKeywordsFa, p.SeoKeywordsEn, p.SeoKeywordsAr, culture);
-    private static string Pick(string fa, string en, string ar, string? culture) => (culture ?? "fa") switch { "en" => string.IsNullOrWhiteSpace(en) ? fa : en, "ar" => string.IsNullOrWhiteSpace(ar) ? string.IsNullOrWhiteSpace(en) ? fa : ar : ar, "es" => string.IsNullOrWhiteSpace(en) ? fa : en, _ => fa };
+    private static string? PickNull(string? fa, string? en, string? ar, string? es, string? culture) => (culture ?? "fa") switch { "en" => string.IsNullOrWhiteSpace(en) ? fa : en, "ar" => string.IsNullOrWhiteSpace(ar) ? (string.IsNullOrWhiteSpace(en) ? fa : ar) : ar, "es" => !string.IsNullOrWhiteSpace(es) ? es : string.IsNullOrWhiteSpace(en) ? fa : en, _ => fa };
+    private static string? JoinKeywords(BARANG.Core.Domain.SiteContent.SitePage p, string? culture) => PickNull(p.SeoKeywordsFa, p.SeoKeywordsEn, p.SeoKeywordsAr, p.SeoKeywordsEs, culture);
+    private static string? JoinKeywords(BARANG.Core.Domain.SiteContent.BlogPost p, string? culture) => PickNull(p.SeoKeywordsFa, p.SeoKeywordsEn, p.SeoKeywordsAr, p.SeoKeywordsEs, culture);
+    private static string Pick(string fa, string en, string ar, string es, string? culture) => (culture ?? "fa") switch { "en" => string.IsNullOrWhiteSpace(en) ? fa : en, "ar" => string.IsNullOrWhiteSpace(ar) ? string.IsNullOrWhiteSpace(en) ? fa : ar : ar, "es" => !string.IsNullOrWhiteSpace(es) ? es : string.IsNullOrWhiteSpace(en) ? fa : en, _ => fa };
     private sealed record PublicPageView(string Slug, string Title, string Body, string? CoverUrl, string? SeoDescription, string? SeoKeywords, DateTimeOffset UpdatedAtUtc);
     private sealed record PublicPostView(Guid Id, string Slug, string Title, string Excerpt, string Body, string? ThumbnailUrl, string? SeoDescription, string? SeoKeywords, DateTimeOffset? PublishedAtUtc);
     private static SiteResult<T> Map<T>(Result<T> result, bool created = false) => new(result, created);

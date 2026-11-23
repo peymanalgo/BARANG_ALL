@@ -41,6 +41,7 @@
         else
         {
             <label><span>@L("عنوان (فارسی)", "Title (fa)", "العنوان")</span><input @bind="Draft.Title" /></label>
+            <label><span>@L("عنوان (اسپانیایی)", "Title (es)", "العنوان (إسباني)")</span><input @bind="Draft.TitleEs" dir="ltr" /></label>
             <label><span>URL</span><input @bind="Draft.Url" dir="ltr" /></label>
         }
         <label><span>@L("ترتیب", "Order", "الترتيب")</span><input type="number" @bind="Draft.Order" /></label>
@@ -69,7 +70,7 @@
                     x.TryGetProperty("id", out var i) ? i.GetGuid() : Guid.Empty,
                     Text(x, "itemType"),
                     x.TryGetProperty("pageId", out var pi) && pi.ValueKind == JsonValueKind.String && Guid.TryParse(pi.GetString(), out var pid) ? pid : null,
-                    Text(x, "pageSlug"), Text(x, "pageTitleFa"), Text(x, "titleFa"), Text(x, "url"),
+                    Text(x, "pageSlug"), Text(x, "pageTitleFa"), Text(x, "pageTitleEn"), Text(x, "pageTitleAr"), Text(x, "titleFa"), Text(x, "titleEn"), Text(x, "titleAr"), Text(x, "titleEs"), Text(x, "url"),
                     x.TryGetProperty("isPinned", out var pn) && pn.GetBoolean(),
                     x.TryGetProperty("displayOrder", out var o) ? o.GetInt32() : 0));
         var pf = await Core.GetAsync("api/v1/site/pages", s.Value.Token, s.Value.Company, default);
@@ -89,7 +90,7 @@
         Guid? pageId = Draft.Type == "page" && Guid.TryParse(Draft.PageId, out var g) ? g : null;
         var r = await Core.SendAsync(HttpMethod.Post, "api/v1/site/menu", new
         {
-            itemType = Draft.Type, pageId, titleFa = Draft.Title, titleEn = Draft.Title, titleAr = Draft.Title, url = Draft.Url, displayOrder = Draft.Order
+            itemType = Draft.Type, pageId, titleFa = Draft.Title, titleEn = Draft.Title, titleAr = Draft.Title, titleEs = string.IsNullOrWhiteSpace(Draft.TitleEs) ? Draft.Title : Draft.TitleEs, url = Draft.Url, displayOrder = Draft.Order
         }, s.Value.Token, s.Value.Company, default);
         Message = r.IsSuccess ? L("افزوده شد ✓", "Added ✓", "تم ✓") : r.Failure == ApiFailure.Unauthorized
             ? L("نشست شما منقضی شده است — دوباره وارد شوید.", "Your session has expired — sign in again.", "انتهت جلستك — سجّل الدخول مجددًا.")
@@ -115,13 +116,22 @@
         return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
     }
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
-    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>en, "ar" => ar, _ => fa };
+    private string L(string fa, string en, string ar) => System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => en,"es"=>EsGlossary.Tr(en), "ar" => ar, _ => fa };
 
-    private sealed record MenuRow(Guid Id, string Type, Guid? PageId, string PageSlug, string PageTitleFa, string TitleFa, string Url, bool Pinned, int Order)
+    private sealed record MenuRow(Guid Id, string Type, Guid? PageId, string PageSlug, string PageTitleFa, string PageTitleEn, string PageTitleAr, string TitleFa, string TitleEn, string TitleAr, string TitleEs, string Url, bool Pinned, int Order)
     {
-        // آیتم صفحه‌محور عنوان خودش را ندارد؛ عنوان صفحه نمایش داده می‌شود
-        public string Label => Type == "blog" ? "وبلاگ" : !string.IsNullOrWhiteSpace(TitleFa) ? TitleFa : PageTitleFa;
+        // آیتم صفحه‌محور عنوان خودش را ندارد؛ عنوان صفحه (به زبان کاربر) نمایش داده می‌شود
+        public string Label
+        {
+            get
+            {
+                string culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+                string Pick(string fa, string en, string ar, string es) => culture == "en" ? (string.IsNullOrWhiteSpace(en) ? fa : en) : culture == "ar" ? (string.IsNullOrWhiteSpace(ar) ? fa : ar) : culture == "es" ? (!string.IsNullOrWhiteSpace(es) ? es : (string.IsNullOrWhiteSpace(en) ? fa : en)) : fa;
+                bool self = !string.IsNullOrWhiteSpace(TitleFa);
+                return Type == "blog" ? Pick("وبلاگ", "Blog", "المدونة", "Blog") : Pick(self ? TitleFa : PageTitleFa, self ? TitleEn : PageTitleEn, self ? TitleAr : PageTitleAr, self ? TitleEs : "");
+            }
+        }
     }
     private sealed record PageRef(Guid Id, string Title, string Slug);
-    private sealed class DraftModel { public string Type = "page"; public string PageId = ""; public string Title = ""; public string Url = ""; public int Order = 10; }
+    private sealed class DraftModel { public string Type = "page"; public string PageId = ""; public string Title = ""; public string TitleEs = ""; public string Url = ""; public int Order = 10; }
 }

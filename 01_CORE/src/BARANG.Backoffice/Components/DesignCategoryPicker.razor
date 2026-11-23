@@ -55,7 +55,7 @@
     private ElementReference SearchInput;
     private bool FocusSearchPending;
     private readonly string PopoverId = $"design-category-picker-{Guid.NewGuid():N}";
-    private string ClearCategoryLabel => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "ar" => "مسح الفئة", "en" => "Clear category","es"=> "Clear category", _ => "پاک کردن دسته‌بندی" };
+    private string ClearCategoryLabel => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "ar" => "مسح الفئة", "en" => "Clear category","es"=> "Quitar categoría", _ => "پاک کردن دسته‌بندی" };
     private string SelectedCaption => SelectedId is Guid id && Items.FirstOrDefault(x => x.Id == id) is Node selected ? PathFor(selected) : Items.FirstOrDefault(x => x.Code.Equals(Value, StringComparison.OrdinalIgnoreCase)) is Node byCode ? PathFor(byCode) : Placeholder ?? D["Category"];
     private IEnumerable<Node> VisibleRoots => Items.Where(x => x.ParentId is null && (string.IsNullOrWhiteSpace(Search) || Items.Any(m => Matches(m) && IsInBranch(m, x.Id))));
     private bool Matches(Node node) => node.Caption.Contains(Search, StringComparison.CurrentCultureIgnoreCase) || node.Code.Contains(Search, StringComparison.OrdinalIgnoreCase);
