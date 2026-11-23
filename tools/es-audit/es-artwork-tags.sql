@@ -1,0 +1,12 @@
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "جديد", "en": "New", "es": "Novedad", "fa": "جدید"}' WHERE id = 'f8fcb322-5723-4d0a-b1ef-e57ca49e882f';
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "مميّز", "en": "Featured", "es": "Destacado", "fa": "پیشنهاد ویژه"}' WHERE id = 'faa20b57-370f-47a0-8e5f-dc6a6fdd66a9';
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "الأكثر مبيعاً", "en": "Bestseller", "es": "Superventas", "fa": "پرفروش"}' WHERE id = 'ddd6bd2b-0445-4c9d-b8c5-d1b92a0dc4ec';
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "رائج", "en": "Trending", "es": "Tendencia", "fa": "ترند"}' WHERE id = 'f27252ab-c0ee-433d-b3fa-263942bf8c82';
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "كلاسيكي", "en": "Classic", "es": "Clásico", "fa": "کلاسیک"}' WHERE id = '64bf9b34-20cb-4f85-b4e3-52644c26a6ec';
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "فكرة هدية", "en": "Gift Idea", "es": "Idea de regalo", "fa": "مناسب هدیه"}' WHERE id = '6b98aee8-808e-46d0-934a-0df5e732177e';
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "مناسب للطباعة بالجملة", "en": "Batch-Friendly", "es": "Apto para tiradas", "fa": "مناسب چاپ تیراژ"}' WHERE id = 'e75acea8-bd78-4408-a415-1209c65fbc62';
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "بسيط", "en": "Minimal", "es": "Minimalista", "fa": "مینیمال"}' WHERE id = '1e3f26ea-489e-423b-b16f-00e5d3518572';
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "ملوّن", "en": "Colorful", "es": "Colorido", "fa": "رنگارنگ"}' WHERE id = 'a0c48b16-6b79-48da-9016-8839f62a40df';
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "شائع", "en": "Popular", "es": "Popular", "fa": "محبوب"}' WHERE id = '56a9a42a-c854-4327-9b9c-cc9b12da14a5';
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "أحادي اللون", "en": "Monochrome", "es": "Monocromo", "fa": "تک‌رنگ"}' WHERE id = 'b573d416-dc14-48e7-894b-2f07e80eb0af';
+UPDATE barang.artwork_tags SET reference_names = '{"ar": "نادر", "en": "Rare", "es": "Raro", "fa": "کم‌یاب"}' WHERE id = '356e0095-7441-40c8-a843-ec8cc0aafe1c';

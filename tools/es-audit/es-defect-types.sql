@@ -1,0 +1,16 @@
+UPDATE barang.defect_types SET reference_names = '{"es": "Defecto del lote 3"}' WHERE id = 'd1c56fc5-8cff-4caa-9f11-cb43debdf09a';
+UPDATE barang.defect_types SET reference_names = '{"es": "Defecto de impresión bloqueante"}' WHERE id = '9b4de34e-611e-4a02-8db2-6db0d10dfc10';
+UPDATE barang.defect_types SET reference_names = '{"ar": "عربي Reference 34963453513544bcb65f94880b1ca397", "en": "Reference 34963453513544bcb65f94880b1ca397", "es": "Referencia 34963453513544bcb65f94880b1ca397", "fa": "فارسی Reference 34963453513544bcb65f94880b1ca397"}' WHERE id = '518b303f-331e-45d4-99c0-78c923926e66';
+UPDATE barang.defect_types SET reference_names = '{"ar": "عربي Reference a9ee705cc93d406eabd1198a0c821c2c", "en": "Reference a9ee705cc93d406eabd1198a0c821c2c Updated", "es": "Referencia a9ee705cc93d406eabd1198a0c821c2c", "fa": "فارسی Reference a9ee705cc93d406eabd1198a0c821c2c"}' WHERE id = 'b288121a-c18d-428c-8ffc-179a2aa97697';
+UPDATE barang.defect_types SET reference_names = '{"es": "Adhesión incompleta del diseño"}' WHERE id = '914eb165-4519-4945-aa65-b423ad1d76ac';
+UPDATE barang.defect_types SET reference_names = '{"es": "Diferencia de color con el diseño"}' WHERE id = 'ab9b5191-5b50-4686-ab4b-0f941eec901c';
+UPDATE barang.defect_types SET reference_names = '{"es": "Grietas en la impresión"}' WHERE id = '299c4826-d08f-4e3c-bd77-dfcfae769c52';
+UPDATE barang.defect_types SET reference_names = '{"es": "Agujero en la tela"}' WHERE id = '80d8eaac-8bad-4749-9ff9-d2a015c0b7de';
+UPDATE barang.defect_types SET reference_names = '{"es": "Desplazamiento de la zona de impresión"}' WHERE id = 'f5b1f062-9f5e-4c50-a06e-23fd32f2089c';
+UPDATE barang.defect_types SET reference_names = '{"es": "Mancha de tinta o sustancias"}' WHERE id = 'ee9780d2-4160-42c6-bcfd-ab3131b70f94';
+UPDATE barang.defect_types SET reference_names = '{"es": "Desgarro de la tela"}' WHERE id = 'ef73568b-8eca-4c76-8551-8cd954928c2a';
+UPDATE barang.defect_types SET reference_names = '{"es": "Arrugas y dobleces"}' WHERE id = '14039fff-d324-4588-82a6-3d5a5d380253';
+UPDATE barang.defect_types SET reference_names = '{"ar": "عربي Reference 22e423aae08948db83601648369993d9", "en": "Reference 22e423aae08948db83601648369993d9", "es": "Referencia 22e423aae08948db83601648369993d9", "fa": "فارسی Reference 22e423aae08948db83601648369993d9"}' WHERE id = '2cd7f740-acfa-42ee-9d64-746ac971a0bd';
+UPDATE barang.defect_types SET reference_names = '{"ar": "عربي Reference 3a00de4006504d1788ef87cd14e01407", "en": "Reference 3a00de4006504d1788ef87cd14e01407", "es": "Referencia 3a00de4006504d1788ef87cd14e01407", "fa": "فارسی Reference 3a00de4006504d1788ef87cd14e01407"}' WHERE id = 'dc2eaf83-517a-4ed3-a0ec-71cd8cea871a';
+UPDATE barang.defect_types SET reference_names = '{"ar": "عربي Reference d7b9cdb1535045a690f914deadbff928", "en": "Reference d7b9cdb1535045a690f914deadbff928", "es": "Referencia d7b9cdb1535045a690f914deadbff928", "fa": "فارسی Reference d7b9cdb1535045a690f914deadbff928"}' WHERE id = 'e0c59e99-3579-4630-afc9-92f54f65e991';
+UPDATE barang.defect_types SET reference_names = '{"ar": "عربي Reference deb52fb85b3241ff93ef530b392d0af7", "en": "Reference deb52fb85b3241ff93ef530b392d0af7", "es": "Referencia deb52fb85b3241ff93ef530b392d0af7", "fa": "فارسی Reference deb52fb85b3241ff93ef530b392d0af7"}' WHERE id = 'afe4acfa-1fd7-4e68-98fb-95f6015c8fb0';
