@@ -138,3 +138,6 @@
   .ai-panel { bottom: calc(74px + 68px); height: min(520px, calc(100vh - 220px)); }
   .ai-panel.ai-max { width: calc(100vw - 20px); height: calc(100vh - 210px); bottom: calc(74px + 68px); }
 }
+
+/* اتریبیوت hidden باید بر قواعد display غلبه کند — بدون این، پنل همیشه باز رندر می‌شد */
+.ai-panel[hidden], .ai-login[hidden], [data-ai-login][hidden] { display: none !important; }
