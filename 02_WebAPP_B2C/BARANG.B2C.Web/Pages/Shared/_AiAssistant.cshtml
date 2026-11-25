@@ -75,6 +75,28 @@
             </div>
         </div>
 
+        @if (!authed || !hasProfile)
+        {
+            @* کاربر وارد نشده یا پروفایل مشتری ندارد: فقط پیام ورود/تکمیل پروفایل — چیپ و کادر پیام رندر نمی‌شود *@
+            <div class="ai-login" data-ai-login>
+                <p>@(!authed
+                    ? T("برای گفتگو با دستیار، اول وارد حساب کاربری‌ات شوید.", "Please sign in to your account to chat with the assistant.", "سجّل الدخول إلى حسابك للتحدث مع المساعد.", "Inicia sesión en tu cuenta para chatear con el asistente.")
+                    : T("برای استفاده از دستیار، ابتدا اطلاعات حساب خود را تکمیل کنید.", "Complete your profile first to use the assistant.", "أكمل ملفك الشخصي أولاً لاستخدام المساعد."))</p>
+                <a class="ai-login-btn" href="@(!authed ? loginLink : "/account/complete-profile")">@T("ورود / ثبت‌نام", "Sign in", "تسجيل الدخول", "Iniciar sesión")</a>
+            </div>
+        }
+        @if (!authed || !hasProfile)
+        {
+            @* کاربر وارد نشده یا پروفایل مشتری ندارد: فقط پیام ورود/تکمیل پروفایل — چیپ و کادر پیام اصلاً رندر نمی‌شود *@
+            <div class="ai-login" data-ai-login>
+                <p>@(!authed
+                    ? T("برای گفتگو با دستیار، اول وارد حساب کاربری‌ات شوید.", "Please sign in to your account to chat with the assistant.", "سجّل الدخول إلى حسابك للتحدث مع المساعد.", "Inicia sesión en tu cuenta para chatear con el asistente.")
+                    : T("برای استفاده از دستیار، ابتدا اطلاعات حساب خود را تکمیل کنید.", "Complete your profile first to use the assistant.", "أكمل ملفك الشخصي أولاً لاستخدام المساعد."))</p>
+                <a class="ai-login-btn" href="@(!authed ? loginLink : "/account/complete-profile")">@T("ورود / ثبت‌نام", "Sign in", "تسجيل الدخول", "Iniciar sesión")</a>
+            </div>
+        }
+        else
+        {
         <div class="ai-chips" data-ai-chips>
             <button type="button" class="ai-chip" data-ai-chip-q="@T("سفارش‌های من چی هستن؟", "What are my orders?", "ما هي طلباتي؟", "¿Cuáles son mis pedidos?")">@T("سفارش‌های من", "My orders", "طلباتي", "Mis pedidos")</button>
             <button type="button" class="ai-chip" data-ai-chip-q="@T("وضعیت آخرین سفارش من چیه؟", "What is the status of my latest order?", "ما حالة آخر طلب لي؟", "¿Cuál es el estado de mi último pedido?")">@T("وضعیت آخرین سفارش من", "My latest order status", "حالة آخر طلب", "Estado de mi último pedido")</button>
@@ -93,6 +115,7 @@
                 <svg viewBox="0 0 24 24"><path d="M3.4 20.6 21 12 3.4 3.4l3 8.6-3 8.6Z" fill="currentColor" /></svg>
             </button>
         </form>
+        }
     </section>
 </div>
 
@@ -182,9 +205,9 @@
 
     function showLogin(on) {
         login.hidden = !on;
-        form.style.display = on ? 'none' : '';
-        chips.style.display = on ? 'none' : '';
-        hero.style.display = on ? 'none' : '';
+        if (form) form.style.display = on ? 'none' : '';
+        if (chips) chips.style.display = on ? 'none' : '';
+        if (hero) hero.style.display = on ? 'none' : '';
     }
 
     function loadHistory() {
@@ -264,10 +287,10 @@
             .then(function (d) { if (d && d.ok) setQuota(d.quotaUsed || 0, d.quotaLimit || quotaLimit); })
             .catch(function () { });
     });
-    chips.addEventListener('click', function (e) {
+    if (chips) chips.addEventListener('click', function (e) {
         var chip = e.target.closest('[data-ai-chip-q]');
         if (chip) ask(chip.getAttribute('data-ai-chip-q'));
     });
-    form.addEventListener('submit', function (e) { e.preventDefault(); ask(input.value); });
+    if (form) form.addEventListener('submit', function (e) { e.preventDefault(); ask(input.value); });
 })();
 </script>
