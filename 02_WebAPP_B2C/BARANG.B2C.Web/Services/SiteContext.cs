@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace BARANG.B2C.Web.Services;
@@ -9,7 +10,7 @@ public sealed class SiteContext(CoreApiClient core)
     private static readonly SemaphoreSlim Gate = new(1, 1);
     // کش به تفکیک فرهنگ: منو/فوتر/تنظیمات هر زبان جدا کش می‌شوند تا درخواست fa
     // کشِ en را بازنویسی نکند (کش تک‌نمونه‌ای قبلی منوی فارسی را در en نشان می‌داد).
-    private static readonly Dictionary<string, CacheBox> _caches = new();
+    private static readonly ConcurrentDictionary<string, CacheBox> _caches = new();
     public sealed record CacheBox(List<MenuLink> Menu, List<FooterWidgetLink> Footer, SiteSettingsBox? Settings, DateTimeOffset LoadedAt);
 
     public sealed record MenuLink(string Href, string Title, bool Cta, bool Pinned);
@@ -100,7 +101,7 @@ public sealed class SiteContext(CoreApiClient core)
     }
 
     // ── فیچرهای سیستم: پرچم‌های «فیچرهای پی‌رنگ» از endpoint عمومی Core با کش کوتاه — خطا = روشن (fail-open) ──
-    private static readonly Dictionary<string, (bool Enabled, DateTimeOffset LoadedAt)> _featureCache = new();
+    private static readonly ConcurrentDictionary<string, (bool Enabled, DateTimeOffset LoadedAt)> _featureCache = new();
     private static readonly TimeSpan FeatureTtl = TimeSpan.FromSeconds(15);
 
     public async Task<bool> FeatureEnabledAsync(string featureCode, string scope = "store")

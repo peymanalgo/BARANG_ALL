@@ -182,6 +182,23 @@ public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExec
     }
     public Task<Result<StoredFileView>> GetFileAsync(Guid id, CancellationToken ct) => tx.ExecuteAsync(async t => { StoredFile? f = await db.StoredFiles.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, t); if (f is null) return Result.Failure<StoredFileView>(FileErrors.NotFound); return Result.Success(F(f, await db.FileVersions.AsNoTracking().Where(x => x.FileId == id).OrderBy(x => x.VersionNumber).ToListAsync(t))); }, ct);
     public Task<Result<DownloadFile>> DownloadAsync(Guid fileId, Guid versionId, CancellationToken ct) => tx.ExecuteAsync(async t => { FileVersion? v = await db.FileVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == versionId && x.FileId == fileId, t); if (v is null) return Result.Failure<DownloadFile>(FileErrors.NotFound); Stream? stream = await storage.OpenReadAsync(v.StorageKey, t); if (stream is null) return Result.Failure<DownloadFile>(FileErrors.NotFound); Log("file.downloaded", "file_version", versionId); return Result.Success(new DownloadFile(v.OriginalFileName, v.MediaType, v.SizeBytes, stream)); }, ct);
+    public Task<Result<DownloadFile>> GetFileVersionThumbnailAsync(Guid fileId, Guid versionId, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        FileVersion? v = await db.FileVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == versionId && x.FileId == fileId, t);
+        if (v is null || v.IsArchived) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        FileDerivative? derivative = await db.FileDerivatives.AsNoTracking().SingleOrDefaultAsync(x => x.SourceFileVersionId == versionId && x.DerivativeType == FileDerivativeType.Thumbnail, t);
+        if (derivative is not null)
+        {
+            Stream? thumb = await storage.OpenReadAsync(derivative.StorageKey, t, string.IsNullOrWhiteSpace(options.Value.PublicBucket) ? null : options.Value.PublicBucket);
+            if (thumb is not null) return Result.Success(new DownloadFile(ThumbnailName(v.OriginalFileName, ".png"), derivative.MediaType, derivative.SizeBytes, thumb, derivative.Sha256Hash));
+        }
+        if (!v.MediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        Stream? stream = await storage.OpenReadAsync(v.StorageKey, t);
+        if (stream is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        Log("file.thumbnail_downloaded", "file_version", versionId);
+        return Result.Success(new DownloadFile(ThumbnailName(v.OriginalFileName, Path.GetExtension(v.OriginalFileName)), v.MediaType, v.SizeBytes, stream));
+    }, ct);
+    private static string ThumbnailName(string originalFileName, string extension) => Path.ChangeExtension(Path.GetFileName(originalFileName), extension) is { Length: > 1 } name ? $"thumb-{name}" : "thumb";
     public Task<Result<StoredFileView>> ArchiveFileAsync(Guid id, long version, CancellationToken ct) => tx.ExecuteAsync(async t => { StoredFile? f = await db.StoredFiles.SingleOrDefaultAsync(x => x.Id == id, t); if (f is null) return Result.Failure<StoredFileView>(FileErrors.NotFound); if (f.Version != version) return Result.Failure<StoredFileView>(FileErrors.Concurrency); f.Archive(Now); Log("file.archived", "file", id); return Result.Success(F(f, await db.FileVersions.AsNoTracking().Where(x => x.FileId == id).ToListAsync(t))); }, ct);
     private static readonly HashSet<string> SignatureKnownMediaTypes = new(StringComparer.OrdinalIgnoreCase) { "image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/tiff", "application/pdf" };
     private static readonly HashSet<string> AllowedUploadMediaTypes = new(StringComparer.OrdinalIgnoreCase) { "image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/tiff", "application/pdf" };

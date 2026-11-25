@@ -365,6 +365,10 @@
         b.addEventListener("click", () => { $("w-q").value = c; runSearch(); });
         $("w-chips").appendChild(b);
     });
+
+    const bankTextInput = $("w-banktext");
+    if (bankTextInput) bankTextInput.addEventListener("input", function () { W.bankText = bankTextInput.value; save(); });
+
     async function runSearch() {
         const q = ($("w-q").value || "").trim();
         $("w-pulse").hidden = false;
@@ -689,16 +693,60 @@
             gift,
         };
     }
+    function bankTextCompositeFile() {
+        return new Promise(function (resolve) {
+            const c = document.createElement("canvas");
+            c.width = 1240; c.height = 1754;
+            const ctx = c.getContext("2d");
+            ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = function () {
+                const maxW = c.width * 0.78, maxH = c.height * 0.52;
+                const sc = Math.min(maxW / img.width, maxH / img.height);
+                const dw = img.width * sc, dh = img.height * sc;
+                ctx.drawImage(img, (c.width - dw) / 2, c.height * 0.06, dw, dh);
+                const sizePx = Math.max(64, Math.round(c.width * 0.1));
+                ctx.fillStyle = W.textColor || "#1c1917"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.font = "700 " + sizePx + "px Vazirmatn, Tahoma, sans-serif";
+                ctx.fillText((W.bankText || "").trim(), c.width / 2, c.height * 0.78);
+                c.toBlob(function (b) { resolve(b ? new File([b], "bank-text-design.png", { type: "image/png" }) : null); }, "image/png");
+            };
+            img.onerror = function () { resolve(null); };
+            img.src = W.bank.preview || "";
+        });
+    }
+
+    function textDesignFile() {
+        return new Promise(function (resolve) {
+            const c = document.createElement("canvas");
+            c.width = 1240; c.height = 1754; // A4 150dpi
+            const ctx = c.getContext("2d");
+            ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+            const sizePx = Math.max(48, Math.round(W.textSize / 100 * c.width * 0.14));
+            ctx.fillStyle = W.textColor; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.font = (W.font === 3 ? "italic " : W.font === 2 ? "500 " : "700 ") + sizePx + "px Vazirmatn, Tahoma, sans-serif";
+            const words = String(W.text).split(/s+/); const lines = []; let line = "";
+            words.forEach(function (w) { const t = line ? line + " " + w : w; if (ctx.measureText(t).width > c.width * 0.82 && line) { lines.push(line); line = w; } else line = t; });
+            lines.push(line);
+            const lh = sizePx * 1.45; const y0 = c.height / 2 - (lines.length - 1) * lh / 2;
+            lines.forEach(function (l, i) { ctx.fillText(l, c.width / 2, y0 + i * lh); });
+            c.toBlob(function (b) { resolve(b ? new File([b], "text-design.png", { type: "image/png" }) : null); }, "image/png");
+        });
+    }
+
     async function checkout() {
         const list = $("w-revlist"), lines = $("w-pricelines"), totalEl = $("w-total");
         list.innerHTML = '<p class="status">' + T("loading") + "</p>"; lines.innerHTML = ""; totalEl.textContent = "—";
         $("w-confirm").disabled = true;
         try {
             let r;
-            if (W.mode === "upload" && W.file) {
+            if ((W.mode === "upload" && W.file) || (W.mode === "text" && W.text) || (W.mode === "bank" && W.bank && (W.bankText || "").trim())) {
+                // فایل چاپ: آپلود مشتری یا رندر متن به PNG (فایل واقعی برای مرحله چاپ)
+                const file = W.mode === "text" ? await textDesignFile() : W.mode === "bank" ? await bankTextCompositeFile() : W.file;
                 const fd = new FormData();
                 fd.append("state", JSON.stringify(checkoutState()));
-                fd.append("file", W.file, W.file.name);
+                fd.append("file", file, file.name || "text-design.png");
                 fd.append("__RequestVerificationToken", AF);
                 r = await fetch("/order/wizard?handler=Checkout", { method: "POST", body: fd });
             } else {

@@ -57,6 +57,49 @@ public static class Order360Endpoints
         var workflow = await db.WorkflowInstances.AsNoTracking().Where(x => x.OrderId == orderId)
             .OrderByDescending(x => x.StartedAtUtc).Select(x => new { x.Id, x.CurrentStage, x.Status, x.StartedAtUtc, x.SuspendedAtUtc, x.Version }).FirstOrDefaultAsync(ct);
 
+        // Print-stage file resolution: file_version_id when the customer uploaded a file, otherwise
+        // the artwork version's file version (bank design). Exposed as artworkGallery for Order 360 / cartable print stage.
+        var printOps = await db.OrderPrintOperations.AsNoTracking().Where(x => x.OrderId == orderId && x.IsActive)
+            .OrderBy(x => x.OrderItemId).ThenBy(x => x.Sequence)
+            .Select(x => new { x.Id, x.OrderItemId, x.PrintPositionCode, x.ArtworkVersionId, x.FileVersionId }).ToListAsync(ct);
+        List<Guid> artworkVersionIds = printOps.Where(x => x.ArtworkVersionId is not null).Select(x => x.ArtworkVersionId!.Value).Distinct().ToList();
+        Dictionary<Guid, (Guid ArtworkId, Guid FileVersionId)> artworkFiles = await db.ArtworkVersions.AsNoTracking()
+            .Where(x => artworkVersionIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, x => (x.ArtworkId, x.FileVersionId), ct);
+        List<Guid> artworkIds = artworkFiles.Values.Select(x => x.ArtworkId).Distinct().ToList();
+        Dictionary<Guid, (string? Code, string? Title)> artworkTitles = await db.Artworks.AsNoTracking()
+            .Where(x => artworkIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, x => ((string?)x.Code, (string?)x.Title), ct);
+        List<Guid> fileVersionIds = printOps.Select(x => x.FileVersionId ?? artworkFiles.GetValueOrDefault(x.ArtworkVersionId ?? Guid.Empty).FileVersionId)
+            .Where(x => x != Guid.Empty).Distinct().ToList();
+        Dictionary<Guid, (Guid FileId, int VersionNumber, string FileName, string MediaType, long SizeBytes)> fileVersions = await db.FileVersions.AsNoTracking()
+            .Where(x => fileVersionIds.Contains(x.Id) && !x.IsArchived)
+            .ToDictionaryAsync(x => x.Id, x => (x.FileId, x.VersionNumber, x.OriginalFileName, x.MediaType, x.SizeBytes), ct);
+        var artworkGallery = printOps
+            .Select(op =>
+            {
+                Guid resolvedFileVersion = op.FileVersionId ?? (op.ArtworkVersionId is Guid av && artworkFiles.TryGetValue(av, out var af) ? af.FileVersionId : Guid.Empty);
+                (Guid FileId, int VersionNumber, string FileName, string MediaType, long SizeBytes) file = resolvedFileVersion == Guid.Empty ? default : fileVersions.GetValueOrDefault(resolvedFileVersion);
+                (Guid ArtworkId, Guid _) artworkSource = op.ArtworkVersionId is Guid artworkVersionId ? (artworkFiles.TryGetValue(artworkVersionId, out var src) ? src.ArtworkId : Guid.Empty, Guid.Empty) : (Guid.Empty, Guid.Empty);
+                (string? Code, string? Title) artwork = artworkSource.ArtworkId == Guid.Empty ? (null, null) : artworkTitles.GetValueOrDefault(artworkSource.ArtworkId);
+                return file == default ? null : new
+                {
+                    printOperationId = op.Id,
+                    orderItemId = op.OrderItemId,
+                    printPositionCode = op.PrintPositionCode,
+                    sourceType = op.FileVersionId is not null ? "UploadedFile" : op.ArtworkVersionId is not null ? "DesignBank" : "None",
+                    artworkId = artworkSource.ArtworkId == Guid.Empty ? (Guid?)null : artworkSource.ArtworkId,
+                    artworkCode = artwork.Code,
+                    artworkTitle = artwork.Title,
+                    fileId = file.FileId,
+                    fileVersionId = resolvedFileVersion,
+                    fileVersion = (int?)file.VersionNumber,
+                    fileName = file.FileName,
+                    mediaType = file.MediaType,
+                    sizeBytes = (long?)file.SizeBytes
+                };
+            }).Where(x => x is not null).Select(x => x!).ToArray();
+
         return Result.Success<IResult>(Results.Ok(new
         {
             summary = new { order.Id, order.OrderNumber, order.Status, order.Source, order.ExternalReference, order.OrderDate, order.RequestedDeliveryDate, order.SubmittedAtUtc, order.CancelledAtUtc, order.CancellationReasonCode, order.CancellationReasonText, order.Version },
@@ -70,6 +113,7 @@ public static class Order360Endpoints
                 .Select(x => new { x.Id, x.LineNumber, x.ProductId, x.ProductVariantId, x.Quantity, x.Notes, x.IsActive, x.SnapshotProductCode, x.SnapshotProductName, x.SnapshotVariantSku, x.SnapshotVariantDisplayName, x.SnapshotSizeCode, x.SnapshotColorCode, x.SnapshotUomCode, x.Version }).ToListAsync(ct),
             printOperations = await db.OrderPrintOperations.AsNoTracking().Where(x => x.OrderId == orderId).OrderBy(x => x.OrderItemId).ThenBy(x => x.Sequence)
                 .Select(x => new { x.Id, x.OrderItemId, x.Sequence, x.PrintPositionCode, x.PrintMethodCode, x.Width, x.Height, x.ArtworkVersionId, x.FileVersionId, x.Notes, x.IsActive, x.Version }).ToListAsync(ct),
+            artworkGallery,
             printTechnicalProfiles = await db.PrintTechnicalProfiles.AsNoTracking().Where(x => db.OrderPrintOperations.Where(p => p.OrderId == orderId).Select(p => p.Id).Contains(x.OrderPrintOperationId))
                 .Select(x => new { x.OrderPrintOperationId, x.DirectionCode, x.PrintSizeCode, x.PrintCount, x.PrinterEquipmentId, x.HeatPressEquipmentId, x.Specifications, x.Version }).ToListAsync(ct),
             productTechnicalProfiles = await db.ProductTechnicalProfiles.AsNoTracking().Where(x => db.OrderItems.Where(i => i.OrderId == orderId).Select(i => i.ProductId).Contains(x.ProductId))

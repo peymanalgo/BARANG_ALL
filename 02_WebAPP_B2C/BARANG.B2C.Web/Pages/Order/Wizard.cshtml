@@ -21,6 +21,8 @@
         ["tabText"] = T("متن و تایپوگرافی", "Text & typography", "نص وخط", "Texto y tipografía"),
         ["tabTextHint"] = T("فونت و رنگ", "font & color", "خط ولون", "fuente y color"),
         ["searchPlaceholder"] = T("دنبال چی هستی؟ مثلاً: گربه فضایی، شیر اسطوره‌ای…", "What are you looking for? e.g. space cat, mythical lion…", "عمّ تبحث؟ مثلاً: قطة فضائية، أسطوري…", "¿Qué buscas? P. ej. gato espacial, león mitológico…"),
+        ["bankTextOptional"] = T("متن دلخواه روی طرح (اختیاری)", "Optional text on the design", "نص اختياري على التصميم", "Texto opcional en el diseño"),
+        ["bankTextPlaceholder"] = T("مثلاً: peyman", "e.g.: peyman", "مثال: peyman", "ej.: peyman"),
         ["searchReady"] = T("موتور مفهومی آماده است", "Concept engine ready", "المحرك المفهومي جاهز", "Motor de conceptos listo"),
         ["searchOf"] = T("طرح", "designs", "تصميم", "diseños"),
         ["searching"] = T("در حال جستجو…", "Searching…", "جارٍ البحث…", "Buscando…"),
@@ -188,6 +190,8 @@
           <div class="chips" id="w-chips"></div>
           <p class="status" id="w-status" aria-live="polite">@i18n["searchReady"]</p>
           <div class="gridcards" id="w-grid"></div>
+          <label class="lbl" for="w-banktext" style="margin-top:10px">@i18n["bankTextOptional"]</label>
+          <input class="fin" type="text" id="w-banktext" dir="auto" maxlength="60" placeholder="@i18n["bankTextPlaceholder"]">
         </div>
 
         <div class="pan" id="w-pan-upload" hidden>

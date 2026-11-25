@@ -1315,4 +1315,4 @@
   <data name="OrderNumber" xml:space="preserve">
     <value>Número de pedido</value>
   </data>
-</root>
+<data name="Download"><value>Descargar</value></data></root>

@@ -152,7 +152,7 @@ public sealed class WizardModel(CoreApiClient core, CustomerContext customers, S
 
         // ۱) فایل طرح شخصی (اگر مسیر آپلود است) — پیش از هر چیز آپلود می‌شود
         string? fileVersionId = null;
-        if (mode == "upload" && Request.HasFormContentType)
+        if (Request.HasFormContentType)
         {
             IFormFile? file = Request.Form.Files.GetFiles("file").FirstOrDefault();
             if (file is { Length: > 0 })
