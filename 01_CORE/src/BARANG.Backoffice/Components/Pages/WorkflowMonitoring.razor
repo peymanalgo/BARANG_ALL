@@ -1,0 +1,98 @@
+@page "/workspace/workflow/monitoring"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Auth
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+@inject ILocaleDateService Dates
+
+<PageTitle>@T("پایش گردش کار","Workflow monitoring","مراقبة سير العمل") · BARANG</PageTitle>
+<main class="page-shell bpms-page" aria-labelledby="bpms-mon-heading">
+  <header><h1 id="bpms-mon-heading">@T("پایش فرایندها","Process monitoring","مراقبة العمليات")</h1>
+    <p>@T("وضعیت لحظه‌ای نمونه‌ها، زمان چرخه و گلوگاه‌های فرایند سفارش","Live instance status, cycle time and process bottlenecks","حالة المثيلات وزمن الدورة وعُرقَات العملية")</p></header>
+  @if (Loading) { <section class="panel"><span class="dashboard-spinner" aria-hidden="true"></span><p>@T("در حال بارگذاری…","Loading…","جار التحميل…")</p></section> }
+  else if (Error is not null) { <section class="panel inline-error" role="alert">@Error <button type="button" class="btn btn-secondary" @onclick="Load">@T("تلاش دوباره","Retry","إعادة المحاولة")</button></section> }
+  else if (M is not null)
+  {
+    <section class="bpms-kpis">
+      <div class="bpms-kpi running"><span class="k">@T("در حال اجرا","Running","قيد التنفيذ")</span><span class="v">@M.Instances.Running</span><span class="s">@T("نمونه فعال","active instances","مثيلات نشطة")</span></div>
+      <div class="bpms-kpi good"><span class="k">@T("تکمیل‌شده","Completed","مكتملة")</span><span class="v">@M.Instances.Completed</span><span class="s">@T("میانگین چرخه","avg cycle","متوسط الدورة"): @M.Instances.AvgCycleHours @T("ساعت","h","س")</span></div>
+      <div class="bpms-kpi"><span class="k">@T("معلق","Suspended","معلّقة")</span><span class="v">@M.Instances.Suspended</span></div>
+      <div class="bpms-kpi"><span class="k">@T("لغوشده","Cancelled","ملغاة")</span><span class="v">@M.Instances.Cancelled</span></div>
+      <div class="bpms-kpi bad"><span class="k">@T("ناموفق","Failed","فاشلة")</span><span class="v">@M.Instances.Failed</span></div>
+      <div class="bpms-kpi"><span class="k">@T("وظایف باز","Open tasks","مهام مفتوحة")</span><span class="v">@(M.Tasks.Open + M.Tasks.Claimed)</span><span class="s">@M.Tasks.Open @T("باز","open","مفتوحة") · @M.Tasks.Claimed @T("در اختیار","claimed","محجوزة")</span></div>
+      <div class="bpms-kpi warn"><span class="k">@T("نیازمند توجه","Needs attention","تحتاج انتباهاً")</span><span class="v">@M.Tasks.Attention</span><span class="s">@T("بیش از ۸ ساعت","older than 8h","أقدم من ٨ س")</span></div>
+      <div class="bpms-kpi bad"><span class="k">@T("معوق (>۲۴س)","Overdue (>24h)","متأخرة (>٢٤س)")</span><span class="v">@M.Tasks.Overdue</span><span class="s">@T("زمان انتظار طولانی","long waiting","انتظار طويل")</span></div>
+    </section>
+    <section class="panel bpms-section">
+      <h2>@T("عملکرد نسخه‌های تعریف","Definition version performance","أداء نسخ التعريف")</h2>
+      <table class="bpms-table"><thead><tr><th>@T("نسخه","Version","النسخة")</th><th>@T("وضعیت","Status","الحالة")</th><th>@T("تاریخ انتشار","Published","تاريخ النشر")</th><th>@T("در حال اجرا","Running","قيد التنفيذ")</th><th>@T("تکمیل‌شده","Completed","مكتملة")</th><th>@T("میانگین چرخه (ساعت)","Avg cycle (h)","متوسط الدورة (س)")</th></tr></thead>
+      <tbody>@foreach (VersionStat v in M.Versions) { <tr><td>@v.Number</td><td><span class="bpms-badge @v.Status.ToLowerInvariant()">@v.Status</span></td><td>@Date(v.CreatedAtUtc)</td><td>@v.Running</td><td>@v.Completed</td><td>@v.AvgCycleHours</td></tr> }</tbody></table>
+    </section>
+    <div class="bpms-diff">
+      <section class="panel bpms-section">
+        <h2>@T("گلوگاه بر اساس زمان توقف (تکمیل‌شده)","Bottleneck by dwell time (completed)","العُقدة الأبطأ بحسب زمن التوقف (مكتمل)")</h2>
+        @if (M.Dwell.Count == 0) { <p class="bpms-empty">@T("داده‌ای نیست","No data","لا بيانات")</p> }
+        else { <div class="bpms-bars">@foreach (NodeStat n in M.Dwell) { <div class="bpms-bar-row"><span class="t" title="@n.NodeKey">@n.Title</span><span class="track"><span class="fill" style="width:@Bar(M.Dwell, n.AvgHours)%"></span></span><span class="h">@n.AvgHours @T("ساعت","h","س") · @n.Count×</span></div> }</div> }
+      </section>
+      <section class="panel bpms-section">
+        <h2>@T("انتظار فعلی بر اساس گام","Current waiting by step","الانتظار الحالي بحسب الخطوة")</h2>
+        @if (M.Waiting.Count == 0) { <p class="bpms-empty">@T("وظیفه بازی وجود ندارد","No open tasks","لا مهام مفتوحة")</p> }
+        else { <div class="bpms-bars">@foreach (NodeStat n in M.Waiting) { <div class="bpms-bar-row waiting"><span class="t" title="@n.NodeKey">@n.Title</span><span class="track"><span class="fill" style="width:@Bar(M.Waiting, n.AvgHours)%"></span></span><span class="h">@n.AvgHours @T("ساعت","h","س") · @n.Count×</span></div> }</div> }
+      </section>
+    </div>
+    <nav class="bpms-actions bpms-noprint">
+      <a class="btn btn-secondary" href="/workspace/workflow/instances">@T("نمونه‌های فرایند","Process instances","مثيلات العملية") →</a>
+      <a class="btn btn-secondary" href="/workspace/workflow/versions">@T("مدیریت نسخه‌ها","Version management","إدارة النسخ") →</a>
+      <a class="btn btn-secondary" href="/workspace/workflow">@T("طراح گردش کار","Workflow designer","مصمم سير العمل") →</a>
+    </nav>
+  }
+</main>
+
+@code {
+  private bool Loading = true; private string? Error; private MonitorModel? M;
+  protected override async Task OnInitializedAsync() => await Load();
+  private async Task Load()
+  {
+    Loading = true; Error = null;
+    try
+    {
+      var s = await Session(); if (s is null) { Error = T("نشست معتبر نیست.","Session is not valid.","الجلسة غير صالحة."); return; }
+      var r = await Core.GetAsync("api/v1/workflows/monitoring/summary", s.Value.Token, s.Value.Company, default);
+      if (!r.IsSuccess) { Error = r.ProblemDescription ?? T("داده پایش در دسترس نیست.","Monitoring data unavailable.","بيانات المراقبة غير متاحة."); return; }
+      M = MonitorModel.Parse(r.Value);
+    }
+    catch (Exception ex) { Error = ex.Message; }
+    finally { Loading = false; }
+  }
+  private string Bar(List<NodeStat> list, decimal v) { decimal max = list.Count == 0 ? 1 : list.Max(x => x.AvgHours); return Math.Clamp((int)(v * 100 / Math.Max(1, max)), 4, 100).ToString(CultureInfo.InvariantCulture); }
+  private string Date(DateTimeOffset v) => Dates.Format(v, Culture);
+  private string Culture => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+  private string T(string fa, string en, string ar) => Culture switch { "en" => en, "es" => EsGlossary.Tr(en), "ar" => ar, _ => fa };
+  private async Task<(string Token, Guid Company)?> Session() { var u = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null; }
+  private sealed record InstanceKpis(long Running, long Completed, long Suspended, long Cancelled, long Failed, decimal AvgCycleHours);
+  private sealed record TaskKpis(long Open, long Claimed, long Attention, long Overdue);
+  private sealed record VersionStat(Guid Id, int Number, string Status, DateTimeOffset CreatedAtUtc, long Running, long Completed, decimal AvgCycleHours);
+  private sealed record NodeStat(string NodeKey, string Title, long Count, decimal AvgHours);
+  private sealed class MonitorModel
+  {
+    public InstanceKpis Instances = new(0, 0, 0, 0, 0, 0); public TaskKpis Tasks = new(0, 0, 0, 0);
+    public List<VersionStat> Versions = []; public List<NodeStat> Dwell = []; public List<NodeStat> Waiting = [];
+    public static MonitorModel Parse(JsonElement x)
+    {
+      MonitorModel m = new();
+      JsonElement i = x.GetProperty("instances");
+      m.Instances = new InstanceKpis(i.GetProperty("running").GetInt64(), i.GetProperty("completed").GetInt64(), i.GetProperty("suspended").GetInt64(), i.GetProperty("cancelled").GetInt64(), i.GetProperty("failed").GetInt64(), Dec(i, "avgCycleHours"));
+      JsonElement t = x.GetProperty("tasks");
+      m.Tasks = new TaskKpis(t.GetProperty("open").GetInt64(), t.GetProperty("claimed").GetInt64(), t.GetProperty("attention").GetInt64(), t.GetProperty("overdue").GetInt64());
+      foreach (JsonElement v in x.GetProperty("versions").EnumerateArray()) m.Versions.Add(new VersionStat(v.GetProperty("id").GetGuid(), v.GetProperty("number").GetInt32(), v.GetProperty("status").GetString() ?? "", v.GetProperty("createdAtUtc").GetDateTimeOffset(), v.GetProperty("running").GetInt64(), v.GetProperty("completed").GetInt64(), Dec(v, "avgCycleHours")));
+      foreach (JsonElement n in x.GetProperty("bottleneckDwell").EnumerateArray()) m.Dwell.Add(new NodeStat(n.GetProperty("nodeKey").GetString() ?? "", n.GetProperty("title").GetString() ?? "", n.GetProperty("count").GetInt64(), Dec(n, "avgHours")));
+      foreach (JsonElement n in x.GetProperty("bottleneckWaiting").EnumerateArray()) m.Waiting.Add(new NodeStat(n.GetProperty("nodeKey").GetString() ?? "", n.GetProperty("title").GetString() ?? "", n.GetProperty("count").GetInt64(), Dec(n, "avgHours")));
+      return m;
+    }
+    private static decimal Dec(JsonElement o, string n) => o.TryGetProperty(n, out JsonElement v) && v.ValueKind == JsonValueKind.Number ? v.GetDecimal() : 0m;
+  }
+}

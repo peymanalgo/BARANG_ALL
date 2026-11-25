@@ -5,7 +5,7 @@ public enum QCCriterionType{PassFail,Numeric,Text,Choice}
 public enum QCInspectionStatus{Draft,InProgress,Suspended,ManagementReview,Approved,Rejected}
 public enum QCOutcome{Pending,Approved,Rejected}
 public enum DefectSeverity{Minor,Major,Critical}
-public enum ReproductionStage{DesignPreparation,Print,HeatPress,FullItem}
+public enum ReproductionStage{DesignPreparation,Print,HeatPress,Ironing,FullItem}
 public enum ReproductionStatus{Requested,JobsCreated,Completed,Cancelled}
 public static class QualityErrors{public static Error Invalid=>Error.Validation("qc.invalid_data");public static Error NotFound=>Error.NotFound("qc.resource.not_found");public static Error Concurrency=>Error.Concurrency("qc.concurrency_conflict");public static Error InvalidTransition=>Error.BusinessRule("qc.invalid_transition");public static Error ReasonRequired=>Error.Validation("qc.reason_required");public static Error CriteriaIncomplete=>Error.BusinessRule("qc.criteria_incomplete");public static Error TypeMismatch=>Error.Validation("qc.result_type_mismatch");public static Error BlockingDefect=>Error.BusinessRule("qc.blocking_defect");public static Error ReproductionNotAllowed=>Error.BusinessRule("qc.reproduction_not_allowed");}
 public static class QualityText{public static string? Code(string?x,int max=80){if(string.IsNullOrWhiteSpace(x))return null;string s=x.Trim().ToUpperInvariant();return s.Length<=max&&s.All(c=>char.IsAsciiLetterOrDigit(c)||c is '_' or '-' or '.')?s:null;}public static string? Text(string?x,int max,bool optional=false){if(string.IsNullOrWhiteSpace(x))return optional?null:null;string s=x.Trim();return s.Length<=max?s:null;}}

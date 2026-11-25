@@ -3,7 +3,7 @@ using BARANG.Core.Domain.Common;
 namespace BARANG.Core.Domain.Workflow;
 
 public enum WorkflowInstanceStatus { Running, Suspended, Completed, Cancelled, Failed }
-public enum WorkflowStage { AdministrativeReview, FinancialApproval, ProductionPlanning, DesignPreparation, InventoryReservation, Printing, HeatPress, QualityControl, Packaging, Shipping, Delivery, Completed }
+public enum WorkflowStage { AdministrativeReview, FinancialApproval, ProductionPlanning, DesignPreparation, InventoryReservation, Printing, HeatPress, QualityControl, Packaging, Shipping, Delivery, Completed, Ironing }
 public enum HumanTaskStatus { Open, Claimed, Completed, Cancelled }
 public enum WorkflowTaskOutcome { Approved, Rejected, Completed, ReproductionRequested }
 public enum ReconciliationStatus { Open, Resolved }

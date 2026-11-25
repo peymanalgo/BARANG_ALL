@@ -1,0 +1,126 @@
+@page "/workspace/workflow/instances/{Id:guid}"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Auth
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+@inject ILocaleDateService Dates
+@inject IJSRuntime JS
+
+<PageTitle>@T("خط زمانی نمونه","Instance timeline","الخط الزمني للمثيل") · BARANG</PageTitle>
+<main class="page-shell bpms-page" aria-labelledby="bpms-tl-heading">
+  @if (Loading) { <section class="panel"><span class="dashboard-spinner" aria-hidden="true"></span><p>@T("در حال بارگذاری…","Loading…","جار التحميل…")</p></section> }
+  else if (Error is not null) { <section class="panel inline-error" role="alert">@Error <a class="btn btn-secondary" href="/workspace/workflow/instances">← @T("بازگشت","Back","رجوع")</a></section> }
+  else if (M is not null)
+  {
+    <header class="bpms-toolbar">
+      <div><h1 id="bpms-tl-heading">@(M.Header.OrderNumber ?? M.Header.Id.ToString()[..8])</h1>
+        <p>@M.Header.Customer · <span class="bpms-badge @M.Header.Status.ToLowerInvariant()">@StatusFa(M.Header.Status)</span> · @T("تعریف نسخه","definition v","نسخة التعريف") @(M.Header.DefinitionVersion?.ToString() ?? "—") · @T("چرخه","cycle","الدورة"): @M.Header.CycleHours @T("ساعت","h","س")</p></div>
+      <div class="bpms-actions bpms-noprint">
+        <button type="button" class="btn btn-secondary" @onclick="ExportJson"><BarangIcon Name="save" />@T("دریافت JSON","Export JSON","تصدير JSON")</button>
+        <button type="button" class="btn btn-secondary" @onclick="Print"><BarangIcon Name="print" />@T("چاپ","Print","طباعة")</button>
+        <a class="btn btn-secondary" href="/workspace/workflow/instances">← @T("فهرست","List","القائمة")</a>
+      </div>
+    </header>
+    <section class="panel bpms-section">
+      <h2>@T("گام‌های فرایند","Process steps","خطوات العملية")</h2>
+      @if (M.Tasks.Count == 0) { <p class="bpms-empty">@T("گامی ثبت نشده است","No steps recorded","لم تُسجَّل خطوات")</p> }
+      else
+      {
+        <div class="bpms-timeline">
+          @foreach (TaskStep t in M.Tasks)
+          {
+            <article class="bpms-tl-item @(t.Status == "Completed" ? "done" : "") @(t.Overdue ? "overdue" : "")">
+              <div class="bpms-tl-head">
+                <strong>@Title(t)</strong>
+                <span><span class="bpms-badge @t.Status.ToLowerInvariant()">@TaskStatusFa(t.Status)</span> @if (t.Overdue) { <span class="bpms-badge overdue">@T("معوق","Overdue","متأخرة")</span> }</span>
+              </div>
+              <div class="bpms-tl-meta">
+                <span>@T("ایجاد","Created","أُنشئت"): @Date(t.CreatedAtUtc)</span>
+                @if (t.ClaimedAtUtc is { } ca) { <span>@T("در اختیار","Claimed","حُجزت"): @Date(ca) · @t.ClaimedBy</span> }
+                @if (t.CompletedAtUtc is { } co) { <span>@T("تکمیل","Completed","اكتملت"): @Date(co) · @t.CompletedBy</span> }
+                <span class="bpms-tl-dur">@T("مدت","Duration","المدة"): @t.DurationHours @T("ساعت","h","س")</span>
+                @if (!string.IsNullOrEmpty(t.Outcome)) { <span>@T("نتیجه","Outcome","النتيجة"): @OutcomeFa(t.Outcome)</span> }
+                @if (!string.IsNullOrEmpty(t.Position)) { <span>@T("سمت","Position","المنصب"): @t.Position</span> }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+    <section class="panel bpms-section">
+      <h2>@T("رویدادهای ثبت‌شده","Recorded events","الأحداث المسجلة")</h2>
+      @if (M.Events.Count == 0) { <p class="bpms-empty">@T("رویدادی ثبت نشده است","No events recorded","لم تُسجَّل أحداث")</p> }
+      else
+      {
+        <table class="bpms-table"><thead><tr><th>@T("زمان","Time","الوقت")</th><th>@T("رویداد","Event","الحدث")</th><th>@T("عامل","Actor","الفاعل")</th><th>@T("خلاصه","Summary","الملخص")</th></tr></thead>
+        <tbody>@foreach (EventStep e in M.Events) { <tr><td>@Date(e.OccurredAtUtc)</td><td>@EventFa(e.EventType)</td><td>@(string.IsNullOrEmpty(e.Actor) ? "—" : e.Actor)</td><td>@(e.Summary ?? "")</td></tr> }</tbody></table>
+      }
+    </section>
+  }
+</main>
+
+@code {
+  [Parameter] public Guid Id { get; set; }
+  private bool Loading = true; private string? Error; private JsonElement Raw; private TimelineModel? M;
+  protected override async Task OnInitializedAsync()
+  {
+    Loading = true;
+    try
+    {
+      var s = await Session(); if (s is null) { Error = T("نشست معتبر نیست.","Session is not valid.","الجلسة غير صالحة."); return; }
+      var r = await Core.GetAsync($"api/v1/workflows/instances/{Id}/timeline", s.Value.Token, s.Value.Company, default);
+      if (!r.IsSuccess) { Error = r.ProblemDescription ?? T("نمونه یافت نشد.","Instance not found.","لم يُعثر على المثيل."); return; }
+      Raw = r.Value; M = TimelineModel.Parse(r.Value);
+    }
+    catch (Exception ex) { Error = ex.Message; }
+    finally { Loading = false; }
+  }
+  private Task ExportJson() => JS.InvokeVoidAsync("barangWorkflowBpms.downloadJson", $"workflow-instance-{Id:N}.json", Raw).AsTask();
+  private Task Print() => JS.InvokeVoidAsync("barangWorkflowBpms.print").AsTask();
+  private string Title(TaskStep t) => Culture == "en" ? (string.IsNullOrEmpty(t.TitleEn) ? t.NodeKey : t.TitleEn) : t.TitleFa;
+  private string StatusFa(string s) => s switch { "Running" => T("در حال اجرا","Running","قيد التنفيذ"), "Completed" => T("تکمیل‌شده","Completed","مكتملة"), "Suspended" => T("معلق","Suspended","معلّقة"), "Cancelled" => T("لغوشده","Cancelled","ملغاة"), "Failed" => T("ناموفق","Failed","فاشلة"), _ => s };
+  private string TaskStatusFa(string s) => s switch { "Open" => T("باز","Open","مفتوحة"), "Claimed" => T("در اختیار","Claimed","محجوزة"), "Completed" => T("تکمیل‌شده","Completed","مكتملة"), "Cancelled" => T("لغوشده","Cancelled","ملغاة"), _ => s };
+  private string OutcomeFa(string s) => s switch { "Approve" => T("تأیید","Approve","موافقة"), "Reject" => T("رد","Reject","رفض"), _ => s };
+  private string EventFa(string s) => s switch { "InstanceStarted" => T("شروع نمونه","Instance started","بدء المثيل"), "TaskCreated" => T("ایجاد وظیفه","Task created","إنشاء مهمة"), "TaskClaimed" => T("اخذت وظیفه","Task claimed","حجز المهمة"), "TaskReleased" => T("رها شدن وظیفه","Task released","تحرير المهمة"), "TaskCompleted" => T("تکمیل وظیفه","Task completed","اكتمال المهمة"), "TaskForwarded" => T("ارجاع وظیفه","Task forwarded","إحالة المهمة"), "InstanceCompleted" => T("پایان نمونه","Instance completed","اكتمال المثيل"), "Escalated" => T("تشدید","Escalated","تصعيد"), "Suspended" => T("تعلیق","Suspended","تعليق"), "Resumed" => T("ادامه","Resumed","استئناف"), "Cancelled" => T("لغو","Cancelled","إلغاء"), "ReconciliationIssue" => T("مغایرت","Reconciliation issue","مشكلة تسوية"), _ => s };
+  private string Date(DateTimeOffset v) => Dates.Format(v, Culture);
+  private string Culture => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+  private string T(string fa, string en, string ar) => Culture switch { "en" => en, "es" => EsGlossary.Tr(en), "ar" => ar, _ => fa };
+  private async Task<(string Token, Guid Company)?> Session() { var u = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null; }
+  private sealed record Header(Guid Id, string Status, string? OrderNumber, string Customer, int? DefinitionVersion, decimal CycleHours);
+  private sealed record TaskStep(string NodeKey, string TitleFa, string TitleEn, string Status, DateTimeOffset CreatedAtUtc, DateTimeOffset? ClaimedAtUtc, DateTimeOffset? CompletedAtUtc, string ClaimedBy, string CompletedBy, string Outcome, string Position, decimal DurationHours, bool Overdue)
+  {
+    public static TaskStep Parse(JsonElement x) => new(x.GetProperty("nodeKey").GetString() ?? "", x.GetProperty("titleFa").GetString() ?? "", x.GetProperty("titleEn").GetString() ?? "", x.GetProperty("status").GetString() ?? "",
+      x.GetProperty("createdAtUtc").GetDateTimeOffset(),
+      x.TryGetProperty("claimedAtUtc", out JsonElement c) && c.ValueKind != JsonValueKind.Null ? c.GetDateTimeOffset() : null,
+      x.TryGetProperty("completedAtUtc", out JsonElement d) && d.ValueKind != JsonValueKind.Null ? d.GetDateTimeOffset() : null,
+      x.GetProperty("claimedBy").GetString() ?? "", x.GetProperty("completedBy").GetString() ?? "", x.GetProperty("outcome").GetString() ?? "", x.GetProperty("position").GetString() ?? "",
+      x.TryGetProperty("durationHours", out JsonElement h) && h.ValueKind == JsonValueKind.Number ? h.GetDecimal() : 0m,
+      x.GetProperty("overdue").GetBoolean());
+  }
+  private sealed record EventStep(string EventType, DateTimeOffset OccurredAtUtc, string Actor, string? Summary)
+  {
+    public static EventStep Parse(JsonElement x) => new(x.GetProperty("eventType").GetString() ?? "", x.GetProperty("occurredAtUtc").GetDateTimeOffset(), x.GetProperty("actor").GetString() ?? "",
+      x.TryGetProperty("summary", out JsonElement s) && s.ValueKind == JsonValueKind.String ? s.GetString() : null);
+  }
+  private sealed class TimelineModel
+  {
+    public Header Header = new(Guid.Empty, "", null, "", null, 0m); public List<TaskStep> Tasks = []; public List<EventStep> Events = [];
+    public static TimelineModel Parse(JsonElement x)
+    {
+      TimelineModel m = new();
+      JsonElement h = x.GetProperty("instance");
+      m.Header = new Header(h.GetProperty("id").GetGuid(), h.GetProperty("status").GetString() ?? "",
+        h.TryGetProperty("orderNumber", out JsonElement o) && o.ValueKind == JsonValueKind.String ? o.GetString() : null,
+        h.GetProperty("customer").GetString() ?? "",
+        h.TryGetProperty("definitionVersion", out JsonElement v) && v.ValueKind != JsonValueKind.Null ? v.GetInt32() : null,
+        h.TryGetProperty("cycleHours", out JsonElement c) && c.ValueKind == JsonValueKind.Number ? c.GetDecimal() : 0m);
+      foreach (JsonElement t in x.GetProperty("tasks").EnumerateArray()) m.Tasks.Add(TaskStep.Parse(t));
+      foreach (JsonElement e in x.GetProperty("events").EnumerateArray()) m.Events.Add(EventStep.Parse(e));
+      return m;
+    }
+  }
+}

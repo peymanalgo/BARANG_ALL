@@ -1,0 +1,367 @@
+@implements IDisposable
+@using System.Globalization
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@using System.Text.RegularExpressions
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Auth
+@using BARANG.Backoffice.Localization
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+@inject NavigationManager Navigation
+@inject IJSRuntime Js
+@inject ILocaleDateService Dates
+@inject IStringLocalizer<AiStrings> A
+
+@* دستیار هوشمند شناور — پایین-چپ در فرهنگ‌های راست‌به‌چپ و پایین-راست در چپ‌به‌راست *@
+<div class="ai-assistant @(UiRtl ? "ai-pos-left" : "ai-pos-right")" dir="@(UiRtl ? "rtl" : "ltr")">
+    @if (Open)
+    {
+        <div class="ai-scrim" @onclick="CloseFromScim"></div>
+    }
+    <button type="button" class="ai-fab @(Open ? "is-open" : "")" aria-label="@A["AiAssistant_Open"]" aria-expanded="@Open" @onclick="Toggle">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2v2M5 8a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v5a7 7 0 0 1-7 7h-0a7 7 0 0 1-7-7V8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            <circle cx="9.2" cy="12" r="1.35" fill="currentColor" /><circle cx="14.8" cy="12" r="1.35" fill="currentColor" />
+            <path d="M9.5 15.5c.8.7 1.6 1 2.5 1s1.7-.3 2.5-1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            <path d="M7 7.5 4.6 6M17 7.5 19.4 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+        <span class="ai-fab-dot" aria-hidden="true"></span>
+    </button>
+
+    @if (Open)
+    {
+        <section class="ai-panel @(Maximized ? "ai-max" : "")" role="dialog" aria-label="@A["AiAssistant_Title"]">
+            <header class="ai-header">
+                <span class="ai-avatar" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="4" y="7" width="16" height="12" rx="4" fill="rgba(255,255,255,.22)" stroke="#fff" stroke-width="1.4" />
+                        <circle cx="9.3" cy="13" r="1.5" fill="#fff" /><circle cx="14.7" cy="13" r="1.5" fill="#fff" />
+                        <path d="M9.6 16.4c.75.6 1.5.9 2.4.9s1.65-.3 2.4-.9" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" />
+                        <path d="M12 7V4.2M12 4.2a1.4 1.4 0 1 0-.01 0Z" stroke="#fff" stroke-width="1.4" stroke-linecap="round" fill="none" />
+                        <path d="M4 11H2.4M19.6 11H22" stroke="#fff" stroke-width="1.4" stroke-linecap="round" />
+                    </svg>
+                </span>
+                <span class="ai-titles">
+                    <strong>@A["AiAssistant_Title"]</strong>
+                    <small>@A["AiAssistant_Subtitle"]</small>
+                </span>
+                <span class="ai-header-actions">
+                    <button type="button" class="ai-icon-btn" title="@(Maximized ? A["AiAssistant_Restore"] : A["AiAssistant_Maximize"])" aria-label="@(Maximized ? A["AiAssistant_Restore"] : A["AiAssistant_Maximize"])" @onclick="ToggleMax">
+                        @if (Maximized)
+                        {
+                            <svg viewBox="0 0 24 24"><path d="M9 4H4v5M15 20h5v-5M20 9V4h-5M4 15v5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        }
+                        else
+                        {
+                            <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        }
+                    </button>
+                    <button type="button" class="ai-icon-btn" title="@A["AiAssistant_Clear"]" aria-label="@A["AiAssistant_Clear"]" @onclick="ClearConversation">
+                        <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l.8 12a2 2 0 0 0 2 1.9h5.4a2 2 0 0 0 2-1.9L17.5 7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </button>
+                    <button type="button" class="ai-icon-btn" title="@A["AiAssistant_Close"]" aria-label="@A["AiAssistant_Close"]" @onclick="Close">
+                        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" /></svg>
+                    </button>
+                </span>
+            </header>
+
+            <div class="ai-messages" id="barang-ai-scroll">
+                @if (LoadingHistory)
+                {
+                    <p class="ai-empty">@A["AiAssistant_LoadingHistory"]</p>
+                }
+                else if (Messages.Count == 0)
+                {
+                    <div class="ai-hero">
+                        <p class="ai-empty">@A["AiAssistant_Welcome"]</p>
+                        <div class="ai-chips">
+                            @foreach (string chip in Chips)
+                            {
+                                <button type="button" class="ai-chip" @onclick="() => Send(chip)">@chip</button>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    foreach (ChatMessage message in Messages)
+                    {
+                        <div class="ai-row @(message.Role == "user" ? "ai-row-user" : "ai-row-bot")">
+                            <div class="ai-bubble ai-bubble-@(message.Role) @(MessageRtl(message.Content) ? "is-rtl" : "is-ltr")" dir="auto">
+                                @if (message.NotConfigured)
+                                {
+                                    <div class="ai-notconfigured">
+                                        <p>@A["AiAssistant_NotConfigured"]</p>
+                                        <button type="button" class="ai-link-btn" @onclick="GoToSettings">@A["AiAssistant_GoToSettings"] →</button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    foreach (ChatBlock block in ParseBlocks(message.Content))
+                                    {
+                                        if (block.Chart is not null)
+                                        {
+                                            <AiChart Spec="@block.Chart" Rtl="@UiRtl" />
+                                        }
+                                        else if (block.TableRows is not null)
+                                        {
+                                            <div class="ai-table-wrap" dir="@(MessageRtl(message.Content) ? "rtl" : "ltr")">
+                                                <table class="ai-table">
+                                                    <tbody>
+                                                        @for (int r = 0; r < block.TableRows.Count; r++)
+                                                        {
+                                                            <tr class="@(r == 0 ? "ai-table-head" : "")">
+                                                                @foreach (string cell in block.TableRows[r])
+                                                                {
+                                                                    if (r == 0)
+                                                                    {
+                                                                        <th>@cell</th>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <td>@cell</td>
+                                                                    }
+                                                                }
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        }
+                                        else if (block.Text.Length > 0)
+                                        {
+                                            <p class="ai-text" dir="auto">@block.Text</p>
+                                        }
+                                    }
+                                }
+                                <span class="ai-time" dir="ltr">@Dates.Format(message.At, CultureCode)</span>
+                            </div>
+                        </div>
+                    }
+                }
+                @if (Thinking)
+                {
+                    <div class="ai-row ai-row-bot">
+                        <div class="ai-bubble ai-bubble-assistant ai-typing" aria-label="@A["AiAssistant_Thinking"]">
+                            <span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <footer class="ai-input">
+                <div class="ai-input-row">
+                    <input type="text" value="@Draft" @oninput="DraftChanged"
+                           placeholder="@A["AiAssistant_Placeholder"]" disabled="@Thinking"
+                           @onkeydown="KeyDown" dir="auto" autocomplete="off" />
+                    <button type="button" class="ai-send" aria-label="@A["AiAssistant_Send"]" disabled="@(Thinking || string.IsNullOrWhiteSpace(Draft))" @onclick="() => Send(Draft)">
+                        <svg viewBox="0 0 24 24"><path d="M3.4 20.6 21 12 3.4 3.4l3 8.6-3 8.6Z" fill="currentColor" /></svg>
+                    </button>
+                </div>
+            </footer>
+        </section>
+    }
+</div>
+
+@code {
+    private static readonly Regex ChartFence = new("""```chart\s*(\{.*?\})\s*```""", RegexOptions.Singleline | RegexOptions.Compiled);
+    private static readonly Regex RtlScript = new(@"[\u0600-\u06FF]", RegexOptions.Compiled);
+
+    private bool Open, Maximized, Thinking, LoadingHistory, HistoryLoaded;
+    private string Draft = "";
+    private string Notice = "";
+    private List<ChatMessage> Messages = [];
+
+    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "en", "ar" => "ar", "es" => "es", _ => "fa" };
+    private bool UiRtl => CultureCode is "fa" or "ar";
+    private IReadOnlyList<string> Chips => [A["AiAssistant_Chip1"], A["AiAssistant_Chip2"], A["AiAssistant_Chip3"], A["AiAssistant_Chip4"]];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Open && !Thinking)
+        {
+            try { await Js.InvokeVoidAsync("barangAiScrollToEnd", "#barang-ai-scroll"); }
+            catch (JSException) { /* helper missing (cached app.js) — transcript just stays put */ }
+            catch (JSDisconnectedException) { /* circuit gone */ }
+            catch (ObjectDisposedException) { /* circuit gone */ }
+        }
+    }
+
+    private async Task Toggle()
+    {
+        Open = !Open;
+        if (Open && !HistoryLoaded) await LoadHistoryAsync();
+    }
+
+    private void Close() => Open = false;
+    private void CloseFromScim(MouseEventArgs _) => Open = false;
+    private void ToggleMax() => Maximized = !Maximized;
+    private void GoToSettings() { Open = false; Navigation.NavigateTo("/master/ai-models"); }
+
+    private async Task LoadHistoryAsync()
+    {
+        LoadingHistory = true;
+        var s = await Session();
+        if (s is null) { LoadingHistory = false; HistoryLoaded = true; return; }
+        var result = await Core.GetAsync("api/v1/ai/conversation", s.Value.Token, s.Value.Company, default);
+        if (result.IsSuccess) Messages = ParseHistory(result.Value);
+        LoadingHistory = false;
+        HistoryLoaded = true;
+    }
+
+    private async Task ClearConversation()
+    {
+        var s = await Session();
+        if (s is null) return;
+        var result = await Core.SendAsync(HttpMethod.Post, "api/v1/ai/conversation/clear", new { }, s.Value.Token, s.Value.Company, default);
+        if (result.IsSuccess || result.Failure == ApiFailure.NotFound) { Messages = []; Notice = A["AiAssistant_ClearDone"]; }
+    }
+
+    private void DraftChanged(ChangeEventArgs e) => Draft = e.Value as string ?? "";
+
+    private async Task KeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or "NumpadEnter" && !e.ShiftKey && !Thinking && !string.IsNullOrWhiteSpace(Draft)) await Send(Draft);
+    }
+
+    private async Task Send(string question)
+    {
+        string text = question.Trim();
+        if (text.Length == 0 || Thinking) return;
+        var s = await Session();
+        if (s is null) return;
+        Notice = "";
+        Draft = "";
+        Messages.Add(new ChatMessage("user", text, DateTimeOffset.UtcNow, false));
+        Thinking = true;
+        var payload = new { messages = new[] { new { role = "user", content = text } }, culture = CultureCode };
+        var result = await Core.SendAsync(HttpMethod.Post, "api/v1/ai/assistant", payload, s.Value.Token, s.Value.Company, default);
+        Thinking = false;
+        if (result.IsSuccess)
+        {
+            JsonElement x = result.Value;
+            bool notConfigured = x.TryGetProperty("notConfigured", out var nc) && nc.GetBoolean();
+            string reply = Text(x, "reply");
+            List<ChatMessage> history = ParseHistory(x);
+            if (history.Count > 0)
+            {
+                Messages = history;
+                if (notConfigured && Messages.Count > 0) Messages[^1] = Messages[^1] with { NotConfigured = true };
+            }
+            else
+            {
+                Messages.Add(new ChatMessage("assistant", reply.Length > 0 ? reply : A["AiAssistant_Error"], DateTimeOffset.UtcNow, notConfigured));
+            }
+        }
+        else
+        {
+            Messages.Add(new ChatMessage("assistant", A["AiAssistant_Error"], DateTimeOffset.UtcNow, false));
+        }
+    }
+
+    private static List<ChatMessage> ParseHistory(JsonElement x)
+    {
+        // GET /ai/conversation returns a bare array; POST /ai/assistant embeds history in the reply object.
+        JsonElement history = x.ValueKind == JsonValueKind.Array ? x
+            : x.TryGetProperty("history", out JsonElement nested) && nested.ValueKind == JsonValueKind.Array ? nested : default;
+        if (history.ValueKind != JsonValueKind.Array) return [];
+        List<ChatMessage> parsed = [];
+        foreach (JsonElement item in history.EnumerateArray())
+        {
+            string role = Text(item, "role");
+            if (role is not ("user" or "assistant")) continue;
+            parsed.Add(new ChatMessage(role, Text(item, "content"), item.TryGetProperty("createdAtUtc", out var at) && at.ValueKind == JsonValueKind.String ? at.GetDateTimeOffset() : DateTimeOffset.UtcNow, false));
+        }
+        return parsed;
+    }
+
+    internal static bool MessageRtl(string content) => RtlScript.IsMatch(content);
+
+    internal static List<ChatBlock> ParseBlocks(string content)
+    {
+        List<ChatBlock> blocks = [];
+        if (string.IsNullOrWhiteSpace(content)) return blocks;
+        int position = 0;
+        foreach (Match match in ChartFence.Matches(content))
+        {
+            AddTextBlocks(blocks, content[position..match.Index]);
+            try
+            {
+                JsonNode? node = JsonNode.Parse(match.Groups[1].Value);
+                if (node is not null) blocks.Add(ChatBlock.ChartBlock(node));
+            }
+            catch (JsonException)
+            {
+                blocks.Add(ChatBlock.TextBlock(match.Value));
+            }
+            position = match.Index + match.Length;
+        }
+        AddTextBlocks(blocks, content[position..]);
+        return blocks;
+    }
+
+    private static void AddTextBlocks(List<ChatBlock> blocks, string text)
+    {
+        List<string> paragraph = [];
+        List<List<string>> table = [];
+        foreach (string rawLine in text.Replace("\r\n", "\n").Split('\n'))
+        {
+            string line = rawLine.Trim();
+            if (line.StartsWith('|') && line.EndsWith('|') && line.Count(static c => c == '|') >= 2)
+            {
+                FlushParagraph();
+                // Skip the markdown alignment separator row (e.g. | --- | --- |).
+                if (line.Trim('|').Split('|').All(IsSeparatorCell)) continue;
+                table.Add([.. line.Trim('|').Split('|').Select(static cell => cell.Trim())]);
+            }
+            else if (line.Length > 0)
+            {
+                FlushTable();
+                paragraph.Add(line);
+            }
+        }
+        FlushParagraph();
+        FlushTable();
+        return;
+
+        void FlushParagraph()
+        {
+            if (paragraph.Count > 0)
+            {
+                blocks.Add(ChatBlock.TextBlock(string.Join('\n', paragraph)));
+                paragraph.Clear();
+            }
+        }
+
+        void FlushTable()
+        {
+            if (table.Count > 0)
+            {
+                blocks.Add(ChatBlock.TableBlock(table));
+                table = [];
+            }
+        }
+    }
+
+    private static bool IsSeparatorCell(string cell) => cell.Trim().Length > 0 && cell.Trim().All(static c => c is '-' or ':' or ' ');
+
+    internal sealed record ChatBlock(string Text, JsonNode? Chart, List<List<string>>? TableRows)
+    {
+        public static ChatBlock TextBlock(string text) => new(text, null, null);
+        public static ChatBlock TableBlock(List<List<string>> rows) => new("", null, rows);
+        public static ChatBlock ChartBlock(JsonNode spec) => new("", spec, null);
+    }
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+
+    private static string Text(JsonElement x, string name) => x.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : "";
+
+    internal sealed record ChatMessage(string Role, string Content, DateTimeOffset At, bool NotConfigured);
+
+    public void Dispose() { }
+}

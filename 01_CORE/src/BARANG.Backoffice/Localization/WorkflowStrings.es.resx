@@ -154,6 +154,9 @@
   <data name="StageHeatPress" xml:space="preserve">
     <value>Prensa térmica</value>
   </data>
+  <data name="StageIroning" xml:space="preserve">
+    <value>Planchado</value>
+  </data>
   <data name="StageQualityControl" xml:space="preserve">
     <value>Control de calidad</value>
   </data>

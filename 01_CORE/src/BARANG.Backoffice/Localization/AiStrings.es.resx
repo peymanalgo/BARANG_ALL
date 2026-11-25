@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AiSettings_Title" xml:space="preserve">
+    <value>Gestión de modelos de lenguaje</value>
+  </data>
+  <data name="AiSettings_Subtitle" xml:space="preserve">
+    <value>Conecta el asistente inteligente de BARANG a un modelo de lenguaje (Z.AI o cualquier servicio compatible con OpenAI)</value>
+  </data>
+  <data name="AiSettings_Provider" xml:space="preserve">
+    <value>Nombre del proveedor</value>
+  </data>
+  <data name="AiSettings_BaseUrl" xml:space="preserve">
+    <value>URL base</value>
+  </data>
+  <data name="AiSettings_ApiKey" xml:space="preserve">
+    <value>Clave API</value>
+  </data>
+  <data name="AiSettings_ApiKeyKept" xml:space="preserve">
+    <value>Clave guardada: {0} — escribe una nueva para reemplazarla</value>
+  </data>
+  <data name="AiSettings_ApiKeyEmpty" xml:space="preserve">
+    <value>Aún no hay clave guardada</value>
+  </data>
+  <data name="AiSettings_Model" xml:space="preserve">
+    <value>Nombre del modelo</value>
+  </data>
+  <data name="AiSettings_Temperature" xml:space="preserve">
+    <value>Temperatura</value>
+  </data>
+  <data name="AiSettings_MaxTokens" xml:space="preserve">
+    <value>Máx. tokens de respuesta</value>
+  </data>
+  <data name="AiSettings_Timeout" xml:space="preserve">
+    <value>Tiempo de espera (segundos)</value>
+  </data>
+  <data name="AiSettings_SystemPrompt" xml:space="preserve">
+    <value>Instrucción del sistema personalizada (opcional)</value>
+  </data>
+  <data name="AiSettings_SystemPromptPlaceholder" xml:space="preserve">
+    <value>p. ej.: responde siempre breve y menciona la moneda en tomans…</value>
+  </data>
+  <data name="AiSettings_ToolCalling" xml:space="preserve">
+    <value>Llamada a herramientas (function calling)</value>
+  </data>
+  <data name="AiSettings_Enabled" xml:space="preserve">
+    <value>Activar asistente</value>
+  </data>
+  <data name="AiSettings_Save" xml:space="preserve">
+    <value>Guardar ajustes</value>
+  </data>
+  <data name="AiSettings_Saved" xml:space="preserve">
+    <value>Guardado ✓</value>
+  </data>
+  <data name="AiSettings_SaveFailed" xml:space="preserve">
+    <value>Error al guardar los ajustes</value>
+  </data>
+  <data name="AiSettings_Concurrency" xml:space="preserve">
+    <value>Los ajustes cambiaron en otra pestaña; recarga la página.</value>
+  </data>
+  <data name="AiSettings_Test" xml:space="preserve">
+    <value>Probar conexión</value>
+  </data>
+  <data name="AiSettings_Testing" xml:space="preserve">
+    <value>Probando…</value>
+  </data>
+  <data name="AiSettings_TestOk" xml:space="preserve">
+    <value>Conexión correcta ✓ ({0} ms — respuesta: {1})</value>
+  </data>
+  <data name="AiSettings_TestFailed" xml:space="preserve">
+    <value>Conexión fallida ✗ ({0})</value>
+  </data>
+  <data name="AiSettings_NotConfigured" xml:space="preserve">
+    <value>Aún no hay ajustes guardados; rellena el formulario y guarda.</value>
+  </data>
+  <data name="AiSettings_AuditTitle" xml:space="preserve">
+    <value>Registro de cambios y conversaciones</value>
+  </data>
+  <data name="AiSettings_AuditActor" xml:space="preserve">
+    <value>Usuario</value>
+  </data>
+  <data name="AiSettings_AuditAction" xml:space="preserve">
+    <value>Evento</value>
+  </data>
+  <data name="AiSettings_AuditDetail" xml:space="preserve">
+    <value>Detalles</value>
+  </data>
+  <data name="AiSettings_AuditWhen" xml:space="preserve">
+    <value>Cuándo</value>
+  </data>
+  <data name="AiSettings_NoPermission" xml:space="preserve">
+    <value>No tienes acceso a la gestión de modelos de lenguaje.</value>
+  </data>
+  <data name="AiSettings_ConnectionSection" xml:space="preserve">
+    <value>Conexión</value>
+  </data>
+  <data name="AiSettings_BehaviorSection" xml:space="preserve">
+    <value>Comportamiento del modelo</value>
+  </data>
+  <data name="AiAssistant_Title" xml:space="preserve">
+    <value>Asistente inteligente BARANG</value>
+  </data>
+  <data name="AiAssistant_Subtitle" xml:space="preserve">
+    <value>Asistente de IA para datos del ERP</value>
+  </data>
+  <data name="AiAssistant_Open" xml:space="preserve">
+    <value>Abrir asistente inteligente</value>
+  </data>
+  <data name="AiAssistant_Close" xml:space="preserve">
+    <value>Cerrar</value>
+  </data>
+  <data name="AiAssistant_Maximize" xml:space="preserve">
+    <value>Maximizar</value>
+  </data>
+  <data name="AiAssistant_Restore" xml:space="preserve">
+    <value>Restaurar tamaño</value>
+  </data>
+  <data name="AiAssistant_Clear" xml:space="preserve">
+    <value>Nueva conversación</value>
+  </data>
+  <data name="AiAssistant_Placeholder" xml:space="preserve">
+    <value>Escribe tu pregunta…</value>
+  </data>
+  <data name="AiAssistant_Send" xml:space="preserve">
+    <value>Enviar</value>
+  </data>
+  <data name="AiAssistant_Thinking" xml:space="preserve">
+    <value>Pensando…</value>
+  </data>
+  <data name="AiAssistant_NotConfigured" xml:space="preserve">
+    <value>El asistente aún no está configurado. Configura el modelo de lenguaje en Gestión del sistema, Gestión de modelos de lenguaje.</value>
+  </data>
+  <data name="AiAssistant_GoToSettings" xml:space="preserve">
+    <value>Ir a los ajustes del modelo</value>
+  </data>
+  <data name="AiAssistant_Error" xml:space="preserve">
+    <value>Algo salió mal; inténtalo de nuevo.</value>
+  </data>
+  <data name="AiAssistant_Welcome" xml:space="preserve">
+    <value>¡Hola! Soy el asistente inteligente de BARANG. Pregúntame por pedidos, inventario, producción, finanzas y más.</value>
+  </data>
+  <data name="AiAssistant_Chip1" xml:space="preserve">
+    <value>¿Estado de los pedidos de hoy?</value>
+  </data>
+  <data name="AiAssistant_Chip2" xml:space="preserve">
+    <value>¿Bultos listos para envío?</value>
+  </data>
+  <data name="AiAssistant_Chip3" xml:space="preserve">
+    <value>¿Cómo está el stock del almacén?</value>
+  </data>
+  <data name="AiAssistant_Chip4" xml:space="preserve">
+    <value>¿Qué hay en mi bandeja?</value>
+  </data>
+  <data name="AiAssistant_ClearDone" xml:space="preserve">
+    <value>Conversación borrada.</value>
+  </data>
+  <data name="AiAssistant_LoadingHistory" xml:space="preserve">
+    <value>Cargando conversación…</value>
+  </data>
+</root>

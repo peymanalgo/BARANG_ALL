@@ -59,6 +59,12 @@ public static class WorkflowEndpoints
   r.MapPut("/sla",async(UpsertSlaCommand c,IWorkflowAdministration s,CancellationToken ct)=>Map(await s.UpsertSlaAsync(c,ct))).RequireAuthorization(SecurityPermissions.WorkflowManage);
   r.MapPost("/escalations/process",async(IWorkflowAdministration s,CancellationToken ct)=>Map(await s.EscalateOverdueAsync(ct))).RequireAuthorization(SecurityPermissions.WorkflowManage);
   r.MapPost("/reconcile",async(IWorkflowAdministration s,CancellationToken ct)=>Map(await s.ReconcileAsync(ct))).RequireAuthorization(SecurityPermissions.WorkflowManage);
+  // ── BPMS professionalization: monitoring, instances, timeline, version management ──
+  r.MapGet("/monitoring/summary",async(IWorkflowBpmsQueries s,CancellationToken ct)=>Map(await s.MonitoringSummaryAsync(ct))).RequireAuthorization(SecurityPermissions.WorkflowMonitor);
+  r.MapGet("/instances",async(string?status,int?page,int?pageSize,IWorkflowBpmsQueries s,CancellationToken ct)=>Map(await s.InstancesAsync(status,page??1,pageSize??20,ct))).RequireAuthorization(SecurityPermissions.WorkflowMonitor);
+  r.MapGet("/instances/{id:guid}/timeline",async(Guid id,IWorkflowBpmsQueries s,CancellationToken ct)=>Map(await s.InstanceTimelineAsync(id,ct))).RequireAuthorization(SecurityPermissions.WorkflowMonitor);
+  r.MapGet("/definition/versions/diff",async(Guid from,Guid to,IWorkflowBpmsQueries s,CancellationToken ct)=>Map(await s.VersionDiffAsync(from,to,ct))).RequireAuthorization(SecurityPermissions.WorkflowMonitor);
+  r.MapPost("/definition/versions/{versionId:guid}/restore-draft",async(Guid versionId,IWorkflowBpmsAdministration s,CancellationToken ct)=>Map(await s.RestoreVersionDraftAsync(versionId,ct))).RequireAuthorization(SecurityPermissions.WorkflowManage);
   return e;
  }
  private static IResult Map(Result r)=>r.IsSuccess?Results.NoContent():Results.Problem(ApiProblemDetailsMapper.Create(r.Error,"workflow",null));

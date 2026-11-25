@@ -35,6 +35,7 @@ public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExec
     private static bool IsDesignNode(string nodeKey) => nodeKey.Contains("DesignPreparation", StringComparison.OrdinalIgnoreCase) || nodeKey.Contains("DESIGN", StringComparison.OrdinalIgnoreCase);
     private static bool IsPrintNode(string nodeKey) => nodeKey.Contains("Printing", StringComparison.OrdinalIgnoreCase) || nodeKey.Contains("PRINT", StringComparison.OrdinalIgnoreCase);
     private static bool IsHeatPressNode(string nodeKey) => nodeKey.Contains("HeatPress", StringComparison.OrdinalIgnoreCase) || nodeKey.Contains("PRESS", StringComparison.OrdinalIgnoreCase);
+    private static bool IsIronNode(string nodeKey) => nodeKey.Contains("Iron", StringComparison.OrdinalIgnoreCase) || nodeKey.Equals("IRON", StringComparison.OrdinalIgnoreCase);
     private static bool IsQualityNode(string nodeKey) => nodeKey.Contains("Quality", StringComparison.OrdinalIgnoreCase) || nodeKey.Contains("Inspection", StringComparison.OrdinalIgnoreCase) || nodeKey.Contains("QC", StringComparison.OrdinalIgnoreCase);
 
     public Task<Result<object>> StartAsync(StartDefinitionWorkflowCommand command, CancellationToken ct) => tx.ExecuteAsync(t => StartInsideTransactionAsync(command.OrderId, t), ct);
@@ -93,6 +94,11 @@ public sealed class WorkflowDefinitionRuntime(CoreDbContext db, ITransactionExec
         else if (IsHeatPressNode(nodeKey))
         {
             Result gate = await production.ValidateWorkflowCompletionAsync(orderId, ProductionJobType.HeatPress, ct);
+            if (gate.IsFailure) return Result.Failure<object>(gate.Error);
+        }
+        else if (IsIronNode(nodeKey))
+        {
+            Result gate = await production.ValidateWorkflowCompletionAsync(orderId, ProductionJobType.Ironing, ct);
             if (gate.IsFailure) return Result.Failure<object>(gate.Error);
         }
         if (nodeKey.Contains("InventoryReservation", StringComparison.OrdinalIgnoreCase))

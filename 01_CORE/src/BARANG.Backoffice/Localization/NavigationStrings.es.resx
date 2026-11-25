@@ -196,4 +196,4 @@
   <data name="Nav_B2C_Blog" xml:space="preserve">
     <value>Blog</value>
   </data>
-</root>
+<data name="Nav_WorkflowMonitoring"><value>Monitorización de flujo</value></data><data name="Nav_WorkflowInstances"><value>Instancias de flujo</value></data><data name="Nav_WorkflowVersions"><value>Versiones de flujo</value></data><data name="Nav_AI_ModelManagement"><value>Gestión de modelos de lenguaje</value></data></root>

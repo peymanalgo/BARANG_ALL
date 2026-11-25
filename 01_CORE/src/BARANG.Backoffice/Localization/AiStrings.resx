@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AiSettings_Title" xml:space="preserve">
+    <value>مدیریت مدل‌های زبانی هوش مصنوعی</value>
+  </data>
+  <data name="AiSettings_Subtitle" xml:space="preserve">
+    <value>اتصال دستیار هوشمند برنگ به مدل زبانی (Z.AI یا هر سرویس سازگار با OpenAI)</value>
+  </data>
+  <data name="AiSettings_Provider" xml:space="preserve">
+    <value>نام سرویس‌دهنده</value>
+  </data>
+  <data name="AiSettings_BaseUrl" xml:space="preserve">
+    <value>آدرس پایه (Base URL)</value>
+  </data>
+  <data name="AiSettings_ApiKey" xml:space="preserve">
+    <value>کلید API</value>
+  </data>
+  <data name="AiSettings_ApiKeyKept" xml:space="preserve">
+    <value>کلید ذخیره‌شده: {0} — برای تغییر، کلید جدید وارد کنید</value>
+  </data>
+  <data name="AiSettings_ApiKeyEmpty" xml:space="preserve">
+    <value>کلیدی ذخیره نشده است</value>
+  </data>
+  <data name="AiSettings_Model" xml:space="preserve">
+    <value>نام مدل</value>
+  </data>
+  <data name="AiSettings_Temperature" xml:space="preserve">
+    <value>دما (Temperature)</value>
+  </data>
+  <data name="AiSettings_MaxTokens" xml:space="preserve">
+    <value>حداکثر توکن پاسخ</value>
+  </data>
+  <data name="AiSettings_Timeout" xml:space="preserve">
+    <value>مهلت پاسخ (ثانیه)</value>
+  </data>
+  <data name="AiSettings_SystemPrompt" xml:space="preserve">
+    <value>دستورالعمل سیستمی اختصاصی (اختیاری)</value>
+  </data>
+  <data name="AiSettings_SystemPromptPlaceholder" xml:space="preserve">
+    <value>مثال: همیشه خلاصه و کوتاه پاسخ بده و واحد پول را تومان ذکر کن…</value>
+  </data>
+  <data name="AiSettings_ToolCalling" xml:space="preserve">
+    <value>فراخوانی ابزار (Function calling)</value>
+  </data>
+  <data name="AiSettings_Enabled" xml:space="preserve">
+    <value>فعال‌سازی دستیار</value>
+  </data>
+  <data name="AiSettings_Save" xml:space="preserve">
+    <value>ذخیره تنظیمات</value>
+  </data>
+  <data name="AiSettings_Saved" xml:space="preserve">
+    <value>ذخیره شد ✓</value>
+  </data>
+  <data name="AiSettings_SaveFailed" xml:space="preserve">
+    <value>خطا در ذخیره تنظیمات</value>
+  </data>
+  <data name="AiSettings_Concurrency" xml:space="preserve">
+    <value>تنظیمات در تب دیگری تغییر کرده؛ صفحه را تازه کنید.</value>
+  </data>
+  <data name="AiSettings_Test" xml:space="preserve">
+    <value>تست اتصال</value>
+  </data>
+  <data name="AiSettings_Testing" xml:space="preserve">
+    <value>در حال تست…</value>
+  </data>
+  <data name="AiSettings_TestOk" xml:space="preserve">
+    <value>اتصال موفق ✓ ({0} میلی‌ثانیه — پاسخ: {1})</value>
+  </data>
+  <data name="AiSettings_TestFailed" xml:space="preserve">
+    <value>اتصال ناموفق ✗ ({0})</value>
+  </data>
+  <data name="AiSettings_NotConfigured" xml:space="preserve">
+    <value>هنوز تنظیماتی ذخیره نشده است؛ فرم را پر کنید و ذخیره کنید.</value>
+  </data>
+  <data name="AiSettings_AuditTitle" xml:space="preserve">
+    <value>تاریخچه تغییرات و گفتگوها</value>
+  </data>
+  <data name="AiSettings_AuditActor" xml:space="preserve">
+    <value>کاربر</value>
+  </data>
+  <data name="AiSettings_AuditAction" xml:space="preserve">
+    <value>رویداد</value>
+  </data>
+  <data name="AiSettings_AuditDetail" xml:space="preserve">
+    <value>جزئیات</value>
+  </data>
+  <data name="AiSettings_AuditWhen" xml:space="preserve">
+    <value>زمان</value>
+  </data>
+  <data name="AiSettings_NoPermission" xml:space="preserve">
+    <value>شما به مدیریت مدل‌های زبانی دسترسی ندارید.</value>
+  </data>
+  <data name="AiSettings_ConnectionSection" xml:space="preserve">
+    <value>اتصال</value>
+  </data>
+  <data name="AiSettings_BehaviorSection" xml:space="preserve">
+    <value>رفتار مدل</value>
+  </data>
+  <data name="AiAssistant_Title" xml:space="preserve">
+    <value>دستیار هوشمند برنگ</value>
+  </data>
+  <data name="AiAssistant_Subtitle" xml:space="preserve">
+    <value>دستیار هوش مصنوعی داده‌های ERP</value>
+  </data>
+  <data name="AiAssistant_Open" xml:space="preserve">
+    <value>باز کردن دستیار هوشمند</value>
+  </data>
+  <data name="AiAssistant_Close" xml:space="preserve">
+    <value>بستن</value>
+  </data>
+  <data name="AiAssistant_Maximize" xml:space="preserve">
+    <value>تمام‌صفحه</value>
+  </data>
+  <data name="AiAssistant_Restore" xml:space="preserve">
+    <value>بازگرداندن اندازه</value>
+  </data>
+  <data name="AiAssistant_Clear" xml:space="preserve">
+    <value>گفتگوی جدید</value>
+  </data>
+  <data name="AiAssistant_Placeholder" xml:space="preserve">
+    <value>سؤال خود را بنویسید…</value>
+  </data>
+  <data name="AiAssistant_Send" xml:space="preserve">
+    <value>ارسال</value>
+  </data>
+  <data name="AiAssistant_Thinking" xml:space="preserve">
+    <value>در حال فکر کردن…</value>
+  </data>
+  <data name="AiAssistant_NotConfigured" xml:space="preserve">
+    <value>دستیار هنوز تنظیم نشده است. لطفاً از منوی «مدیریت سیستم ← مدیریت مدل‌های زبانی هوش مصنوعی» اتصال مدل زبانی را پیکربندی کنید.</value>
+  </data>
+  <data name="AiAssistant_GoToSettings" xml:space="preserve">
+    <value>رفتن به تنظیمات مدل زبانی</value>
+  </data>
+  <data name="AiAssistant_Error" xml:space="preserve">
+    <value>خطایی رخ داد؛ دوباره تلاش کنید.</value>
+  </data>
+  <data name="AiAssistant_Welcome" xml:space="preserve">
+    <value>سلام! من دستیار هوشمند برنگ هستم. درباره سفارش‌ها، موجودی، تولید، مالی و … بپرسید.</value>
+  </data>
+  <data name="AiAssistant_Chip1" xml:space="preserve">
+    <value>وضعیت سفارش‌های امروز؟</value>
+  </data>
+  <data name="AiAssistant_Chip2" xml:space="preserve">
+    <value>چند مرسوله آماده ارسال است؟</value>
+  </data>
+  <data name="AiAssistant_Chip3" xml:space="preserve">
+    <value>موجودی انبار چطور است؟</value>
+  </data>
+  <data name="AiAssistant_Chip4" xml:space="preserve">
+    <value>کارتابل من چه کارهایی دارد؟</value>
+  </data>
+  <data name="AiAssistant_ClearDone" xml:space="preserve">
+    <value>گفتگو پاک شد.</value>
+  </data>
+  <data name="AiAssistant_LoadingHistory" xml:space="preserve">
+    <value>در حال بارگذاری گفتگو…</value>
+  </data>
+</root>

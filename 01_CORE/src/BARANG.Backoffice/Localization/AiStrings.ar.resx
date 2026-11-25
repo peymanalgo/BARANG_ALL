@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AiSettings_Title" xml:space="preserve">
+    <value>إدارة نماذج اللغة</value>
+  </data>
+  <data name="AiSettings_Subtitle" xml:space="preserve">
+    <value>ربط مساعد برنج الذكي بنموذج لغة (Z.AI أو أي خدمة متوافقة مع OpenAI)</value>
+  </data>
+  <data name="AiSettings_Provider" xml:space="preserve">
+    <value>اسم المزوّد</value>
+  </data>
+  <data name="AiSettings_BaseUrl" xml:space="preserve">
+    <value>العنوان الأساسي (Base URL)</value>
+  </data>
+  <data name="AiSettings_ApiKey" xml:space="preserve">
+    <value>مفتاح API</value>
+  </data>
+  <data name="AiSettings_ApiKeyKept" xml:space="preserve">
+    <value>المفتاح المحفوظ: {0} — أدخل مفتاحًا جديدًا لاستبداله</value>
+  </data>
+  <data name="AiSettings_ApiKeyEmpty" xml:space="preserve">
+    <value>لا يوجد مفتاح محفوظ</value>
+  </data>
+  <data name="AiSettings_Model" xml:space="preserve">
+    <value>اسم النموذج</value>
+  </data>
+  <data name="AiSettings_Temperature" xml:space="preserve">
+    <value>درجة الحرارة (Temperature)</value>
+  </data>
+  <data name="AiSettings_MaxTokens" xml:space="preserve">
+    <value>الحد الأقصى للرموز</value>
+  </data>
+  <data name="AiSettings_Timeout" xml:space="preserve">
+    <value>المهلة (ثانية)</value>
+  </data>
+  <data name="AiSettings_SystemPrompt" xml:space="preserve">
+    <value>تعليمات نظامية مخصصة (اختياري)</value>
+  </data>
+  <data name="AiSettings_SystemPromptPlaceholder" xml:space="preserve">
+    <value>مثال: أجب دائمًا بإيجاز واذكر العملة بالتومان…</value>
+  </data>
+  <data name="AiSettings_ToolCalling" xml:space="preserve">
+    <value>استدعاء الأدوات (Function calling)</value>
+  </data>
+  <data name="AiSettings_Enabled" xml:space="preserve">
+    <value>تفعيل المساعد</value>
+  </data>
+  <data name="AiSettings_Save" xml:space="preserve">
+    <value>حفظ الإعدادات</value>
+  </data>
+  <data name="AiSettings_Saved" xml:space="preserve">
+    <value>تم الحفظ ✓</value>
+  </data>
+  <data name="AiSettings_SaveFailed" xml:space="preserve">
+    <value>فشل حفظ الإعدادات</value>
+  </data>
+  <data name="AiSettings_Concurrency" xml:space="preserve">
+    <value>تغيّرت الإعدادات في تب آخر؛ حدّث الصفحة.</value>
+  </data>
+  <data name="AiSettings_Test" xml:space="preserve">
+    <value>اختبار الاتصال</value>
+  </data>
+  <data name="AiSettings_Testing" xml:space="preserve">
+    <value>جار الاختبار…</value>
+  </data>
+  <data name="AiSettings_TestOk" xml:space="preserve">
+    <value>الاتصال ناجح ✓ ({0} م‌ث — الرد: {1})</value>
+  </data>
+  <data name="AiSettings_TestFailed" xml:space="preserve">
+    <value>فشل الاتصال ✗ ({0})</value>
+  </data>
+  <data name="AiSettings_NotConfigured" xml:space="preserve">
+    <value>لم تُحفظ أي إعدادات بعد؛ املأ النموذج واحفظه.</value>
+  </data>
+  <data name="AiSettings_AuditTitle" xml:space="preserve">
+    <value>سجل التغييرات والمحادثات</value>
+  </data>
+  <data name="AiSettings_AuditActor" xml:space="preserve">
+    <value>المستخدم</value>
+  </data>
+  <data name="AiSettings_AuditAction" xml:space="preserve">
+    <value>الحدث</value>
+  </data>
+  <data name="AiSettings_AuditDetail" xml:space="preserve">
+    <value>التفاصيل</value>
+  </data>
+  <data name="AiSettings_AuditWhen" xml:space="preserve">
+    <value>الوقت</value>
+  </data>
+  <data name="AiSettings_NoPermission" xml:space="preserve">
+    <value>ليست لديك صلاحية إدارة نماذج اللغة.</value>
+  </data>
+  <data name="AiSettings_ConnectionSection" xml:space="preserve">
+    <value>الاتصال</value>
+  </data>
+  <data name="AiSettings_BehaviorSection" xml:space="preserve">
+    <value>سلوك النموذج</value>
+  </data>
+  <data name="AiAssistant_Title" xml:space="preserve">
+    <value>المساعد الذكي برنج</value>
+  </data>
+  <data name="AiAssistant_Subtitle" xml:space="preserve">
+    <value>مساعد ذكاء اصطناعي لبيانات ERP</value>
+  </data>
+  <data name="AiAssistant_Open" xml:space="preserve">
+    <value>فتح المساعد الذكي</value>
+  </data>
+  <data name="AiAssistant_Close" xml:space="preserve">
+    <value>إغلاق</value>
+  </data>
+  <data name="AiAssistant_Maximize" xml:space="preserve">
+    <value>تكبير</value>
+  </data>
+  <data name="AiAssistant_Restore" xml:space="preserve">
+    <value>استعادة الحجم</value>
+  </data>
+  <data name="AiAssistant_Clear" xml:space="preserve">
+    <value>محادثة جديدة</value>
+  </data>
+  <data name="AiAssistant_Placeholder" xml:space="preserve">
+    <value>اكتب سؤالك…</value>
+  </data>
+  <data name="AiAssistant_Send" xml:space="preserve">
+    <value>إرسال</value>
+  </data>
+  <data name="AiAssistant_Thinking" xml:space="preserve">
+    <value>جار التفكير…</value>
+  </data>
+  <data name="AiAssistant_NotConfigured" xml:space="preserve">
+    <value>لم يُهيّأ المساعد بعد. قم بتكوين نموذج اللغة من «إدارة النظام ← إدارة نماذج اللغة».</value>
+  </data>
+  <data name="AiAssistant_GoToSettings" xml:space="preserve">
+    <value>الذهاب إلى إعدادات النموذج</value>
+  </data>
+  <data name="AiAssistant_Error" xml:space="preserve">
+    <value>حدث خطأ؛ حاول مجددًا.</value>
+  </data>
+  <data name="AiAssistant_Welcome" xml:space="preserve">
+    <value>مرحبًا! أنا المساعد الذكي لبرنج. اسألني عن الطلبات والمخزون والإنتاج والمالية وغيرها.</value>
+  </data>
+  <data name="AiAssistant_Chip1" xml:space="preserve">
+    <value>ما حالة الطلبات اليوم؟</value>
+  </data>
+  <data name="AiAssistant_Chip2" xml:space="preserve">
+    <value>كم طردًا جاهزًا للشحن؟</value>
+  </data>
+  <data name="AiAssistant_Chip3" xml:space="preserve">
+    <value>ما مخزون المستودع؟</value>
+  </data>
+  <data name="AiAssistant_Chip4" xml:space="preserve">
+    <value>ما مهام صندوقي؟</value>
+  </data>
+  <data name="AiAssistant_ClearDone" xml:space="preserve">
+    <value>تم مسح المحادثة.</value>
+  </data>
+  <data name="AiAssistant_LoadingHistory" xml:space="preserve">
+    <value>جار تحميل المحادثة…</value>
+  </data>
+</root>

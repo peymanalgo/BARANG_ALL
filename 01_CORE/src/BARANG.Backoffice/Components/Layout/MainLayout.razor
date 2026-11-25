@@ -89,6 +89,10 @@
         <main class="content" id="main-content">@Body</main>
     </div>
 </div>
+@if (AssistantVisible)
+{
+    <AiAssistant />
+}
 <div id="blazor-error-ui">@L["GenericError"] <a href="." class="reload">@L["Reload"]</a></div>
 
 @code {
@@ -101,12 +105,15 @@
     private IReadOnlyList<BackofficeNavigationGroup> VisibleGroups = [];
     private string CurrentPath => "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/');
     private string Initials => string.Concat(DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => part[0])).ToUpperInvariant();
+    // دستیار هوشمند فقط برای کاربران واردشده با شرکت فعال — روی همه صفحات دیده می‌شود
+    private bool AssistantVisible;
 
     protected override async Task OnInitializedAsync()
     {
         var user = (await AuthState.GetAuthenticationStateAsync()).User;
         DisplayName = user.FindFirst(AuthClaimTypes.DisplayName)?.Value ?? user.Identity?.Name ?? "";
         CompanyName = user.FindFirst(AuthClaimTypes.CompanyName)?.Value ?? "";
+        AssistantVisible = user.Identity?.IsAuthenticated == true && Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out _);
         VisibleGroups = ModuleCatalog.Navigation
             .Where(group => ModuleCatalog.IsVisible(group, user))
             .Select(group => group.Route is null ? group with { Items = group.Items.Where(item => ModuleCatalog.IsVisible(item, user)).Select(item => item.Children is null ? item : item with { Children = item.Children.Where(child => ModuleCatalog.IsVisible(child, user)).ToArray() }).ToArray() } : group)

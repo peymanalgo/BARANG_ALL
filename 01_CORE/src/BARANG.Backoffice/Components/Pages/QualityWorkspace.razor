@@ -112,7 +112,7 @@
  protected override async Task OnInitializedAsync(){var u=(await AuthState.GetAuthenticationStateAsync()).User;Token=u.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await Load();}
  private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>EsGlossary.Tr(en),"ar"=>ar,_=>fa};
  private string St(string s)=>s switch{"InProgress"=>T("در جریان بازرسی","In progress","قيد الفحص"),"Suspended"=>T("معلق","Suspended","معلق"),"ManagementReview"=>T("بررسی مدیریت","Management review","مراجعة الإدارة"),"Approved"=>T("تأییدشده","Approved","معتمد"),"Rejected"=>T("مردود","Rejected","مرفوض"),_=>s};
- private string Jt(string t)=>t switch{"DesignPreparation"=>T("آماده‌سازی طرح","Design preparation","تجهيز التصميم"),"Print"=>T("چاپ","Print","طباعة"),"HeatPress"=>T("پرس حرارتی","Heat press","كبس حراري"),_=>t};
+ private string Jt(string t)=>t switch{"DesignPreparation"=>T("آماده‌سازی طرح","Design preparation","تجهيز التصميم"),"Print"=>T("چاپ","Print","طباعة"),"HeatPress"=>T("پرس حرارتی","Heat press","كبس حراري"),"Ironing"=>T("اتو","Ironing","كوي"),_=>t};
  private long AnalyticsInProgress=>Analytics is null?0:Math.Max(0,Analytics.Inspections-Analytics.Approved-Analytics.Rejected-Analytics.Suspended);
  private long AnalyticsApproved=>Analytics?.Approved??0;
  private long AnalyticsRejected=>Analytics?.Rejected??0;

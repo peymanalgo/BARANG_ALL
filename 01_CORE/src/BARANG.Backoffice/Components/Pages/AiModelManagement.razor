@@ -1,0 +1,225 @@
+@page "/master/ai-models"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Auth
+@using BARANG.Backoffice.Localization
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+@inject IStringLocalizer<AiStrings> A
+
+<PageTitle>@A["AiSettings_Title"] · BARANG</PageTitle>
+<main class="page-shell ai-models-page">
+    <header class="crud-header">
+        <div>
+            <span class="eyebrow">@A["AiSettings_ConnectionSection"]</span>
+            <h1>@A["AiSettings_Title"]</h1>
+            <p>@A["AiSettings_Subtitle"]</p>
+        </div>
+    </header>
+
+    @if (Denied)
+    {
+        <section class="panel"><p class="muted">@A["AiSettings_NoPermission"]</p></section>
+    }
+    else if (Loading)
+    {
+        <section class="panel"><p class="muted">…</p></section>
+    }
+    else
+    {
+        <section class="panel ai-settings-panel">
+            <div class="form-section">
+                <h3>@A["AiSettings_ConnectionSection"]</h3>
+                <div class="form-grid">
+                    <label>
+                        <span>@A["AiSettings_Provider"]</span>
+                        <select @bind="Provider">
+                            <option value="zai">Z.AI</option>
+                            <option value="openai-compatible">OpenAI-compatible</option>
+                            <option value="custom">custom</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>@A["AiSettings_BaseUrl"]</span>
+                        <input @bind="BaseUrl" dir="ltr" placeholder="https://api.z.ai/api/v1" />
+                    </label>
+                    <label>
+                        <span>@A["AiSettings_ApiKey"]</span>
+                        <input type="password" @bind="ApiKey" dir="ltr" autocomplete="off" placeholder="sk-…" />
+                        <small class="muted">@(string.IsNullOrEmpty(KeyHint) ? A["AiSettings_ApiKeyEmpty"] : string.Format(A["AiSettings_ApiKeyKept"], KeyHint))</small>
+                    </label>
+                    <label>
+                        <span>@A["AiSettings_Model"]</span>
+                        <input @bind="Model" dir="ltr" placeholder="glm-4.7" />
+                    </label>
+                </div>
+            </div>
+            <div class="form-section">
+                <h3>@A["AiSettings_BehaviorSection"]</h3>
+                <div class="form-grid">
+                    <label><span>@A["AiSettings_Temperature"]</span><input type="number" step="0.1" min="0" max="2" @bind="Temperature" dir="ltr" /></label>
+                    <label><span>@A["AiSettings_MaxTokens"]</span><input type="number" min="16" max="200000" @bind="MaxTokens" dir="ltr" /></label>
+                    <label><span>@A["AiSettings_Timeout"]</span><input type="number" min="1" max="600" @bind="TimeoutSeconds" dir="ltr" /></label>
+                    <label class="ai-check"><input type="checkbox" @bind="ToolCalling" /><span>@A["AiSettings_ToolCalling"]</span></label>
+                    <label class="ai-check ai-check-main"><input type="checkbox" @bind="Enabled" /><span>@A["AiSettings_Enabled"]</span></label>
+                </div>
+            </div>
+            <div class="form-section">
+                <h3>@A["AiSettings_SystemPrompt"]</h3>
+                <textarea class="ai-system-prompt" rows="4" @bind="SystemPrompt" placeholder="@A["AiSettings_SystemPromptPlaceholder"]"></textarea>
+            </div>
+            <div class="flex gap-8" style="margin-top:12px;flex-wrap:wrap">
+                <button class="btn btn-primary" @onclick="Save" disabled="@Busy">@A["AiSettings_Save"]</button>
+                <button class="btn" @onclick="TestConnection" disabled="@(Busy || Testing)">@(Testing ? A["AiSettings_Testing"] : A["AiSettings_Test"])</button>
+                @if (!string.IsNullOrEmpty(Message)) { <span class="muted">@Message</span> }
+            </div>
+        </section>
+
+        <section class="panel">
+            <h3>@A["AiSettings_AuditTitle"]</h3>
+            @if (Audit.Count == 0)
+            {
+                <p class="muted">—</p>
+            }
+            else
+            {
+                <div class="data-grid-wrap">
+                    <table class="data-grid">
+                        <thead>
+                            <tr>
+                                <th>@A["AiSettings_AuditWhen"]</th>
+                                <th>@A["AiSettings_AuditActor"]</th>
+                                <th>@A["AiSettings_AuditAction"]</th>
+                                <th>@A["AiSettings_AuditDetail"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (AuditRow row in Audit)
+                            {
+                                <tr>
+                                    <td class="ai-audit-time">@Dates.Format(row.OccurredAtUtc, CultureCode)</td>
+                                    <td>@row.Actor</td>
+                                    <td><span class="ai-audit-action @row.ActionClass">@row.Action</span></td>
+                                    <td class="ai-audit-detail" dir="auto">@row.Detail</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    }
+</main>
+
+@code {
+    private bool Loading = true, Denied, Busy, Testing;
+    private string Message = "";
+    private string Provider = "zai", BaseUrl = "", ApiKey = "", KeyHint = "", Model = "";
+    private decimal Temperature = 0.3m;
+    private int MaxTokens = 2048, TimeoutSeconds = 60;
+    private string SystemPrompt = "";
+    private bool ToolCalling = true, Enabled;
+    private long Version;
+    private List<AuditRow> Audit = [];
+    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "en", "ar" => "ar", "es" => "es", _ => "fa" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        if (!user.IsInRole("system.administrator") && !user.HasClaim(AuthClaimTypes.Permission, "ai.settings.read")) { Denied = true; Loading = false; return; }
+        var s = await Session();
+        if (s is null) { Loading = false; return; }
+        var settings = await Core.GetAsync("api/v1/ai/settings", s.Value.Token, s.Value.Company, default);
+        if (settings.IsSuccess)
+        {
+            JsonElement x = settings.Value;
+            Provider = Text(x, "providerName", "zai");
+            BaseUrl = Text(x, "baseUrl");
+            KeyHint = Text(x, "apiKeyHint");
+            Model = Text(x, "modelName");
+            Temperature = x.TryGetProperty("temperature", out var t) ? t.GetDecimal() : 0.3m;
+            MaxTokens = x.TryGetProperty("maxOutputTokens", out var mt) ? mt.GetInt32() : 2048;
+            TimeoutSeconds = x.TryGetProperty("timeoutSeconds", out var to) ? to.GetInt32() : 60;
+            SystemPrompt = Text(x, "systemPromptOverride");
+            ToolCalling = !x.TryGetProperty("toolCallingEnabled", out var tc) || tc.GetBoolean();
+            Enabled = x.TryGetProperty("isEnabled", out var en) && en.GetBoolean();
+            Version = x.TryGetProperty("version", out var v) ? v.GetInt64() : 0;
+        }
+        await LoadAuditAsync(s.Value);
+        Loading = false;
+    }
+
+    private async Task LoadAuditAsync((string Token, Guid Company) s)
+    {
+        var audit = await Core.GetAsync("api/v1/ai/settings/audit?take=40", s.Token, s.Company, default);
+        if (audit.IsSuccess && audit.Value.ValueKind == JsonValueKind.Array)
+        {
+            Audit = [.. audit.Value.EnumerateArray().Select(r => new AuditRow(
+                r.TryGetProperty("occurredAtUtc", out var when) ? when.GetDateTimeOffset() : DateTimeOffset.UtcNow,
+                Text(r, "actorUsername"),
+                Text(r, "action"),
+                Text(r, "detail")))];
+        }
+    }
+
+    private async Task Save()
+    {
+        var s = await Session();
+        if (s is null) return;
+        Busy = true; Message = "";
+        var result = await Core.SendAsync(HttpMethod.Put, "api/v1/ai/settings", new
+        {
+            providerName = Provider, baseUrl = BaseUrl, apiKey = string.IsNullOrWhiteSpace(ApiKey) ? null : ApiKey,
+            modelName = Model, temperature = Temperature, maxOutputTokens = MaxTokens, timeoutSeconds = TimeoutSeconds,
+            systemPromptOverride = string.IsNullOrWhiteSpace(SystemPrompt) ? null : SystemPrompt,
+            toolCallingEnabled = ToolCalling, isEnabled = Enabled, version = Version
+        }, s.Value.Token, s.Value.Company, default);
+        Busy = false;
+        if (result.IsSuccess)
+        {
+            Message = A["AiSettings_Saved"];
+            Version = result.Value.TryGetProperty("version", out var v) ? v.GetInt64() : Version;
+            KeyHint = Text(result.Value, "apiKeyHint");
+            ApiKey = "";
+            await LoadAuditAsync(s.Value);
+        }
+        else if (result.Failure == ApiFailure.Conflict) Message = A["AiSettings_Concurrency"];
+        else Message = A["AiSettings_SaveFailed"];
+    }
+
+    private async Task TestConnection()
+    {
+        var s = await Session();
+        if (s is null) return;
+        Testing = true; Message = "";
+        var result = await Core.SendAsync(HttpMethod.Post, "api/v1/ai/settings/test", new { }, s.Value.Token, s.Value.Company, default);
+        Testing = false;
+        if (result.IsSuccess)
+        {
+            JsonElement x = result.Value;
+            bool ok = x.TryGetProperty("ok", out var o) && o.GetBoolean();
+            int latency = x.TryGetProperty("latencyMs", out var l) ? l.GetInt32() : 0;
+            string reply = Text(x, "modelReply");
+            Message = ok ? string.Format(A["AiSettings_TestOk"], latency, reply) : string.Format(A["AiSettings_TestFailed"], Text(x, "error"));
+            await LoadAuditAsync(s.Value);
+        }
+        else Message = string.Format(A["AiSettings_TestFailed"], result.Failure.ToString());
+    }
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+
+    private static string Text(JsonElement x, string name, string fallback = "") => x.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? (v.GetString() ?? fallback) : fallback;
+
+    private sealed record AuditRow(DateTimeOffset OccurredAtUtc, string Actor, string Action, string Detail)
+    {
+        public string ActionClass => Action switch { "settings.saved" => "is-save", "settings.tested" => "is-test", _ => "is-chat" };
+    }
+}

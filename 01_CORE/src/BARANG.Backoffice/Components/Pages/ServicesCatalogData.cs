@@ -40,6 +40,7 @@ public static class ServicesCatalogData
         new("public", "کاتالوگ عمومی (B2C)", "Public Catalog (B2C)", "الكتالوج العام"),
         new("notifications", "اعلان‌ها", "Notifications", "الإشعارات"),
         new("auth", "احراز هویت و حساب کاربری", "Auth & Account", "المصادقة والحساب"),
+        new("ai", "دستیار هوش مصنوعی", "AI Assistant", "المساعد الذكي"),
     ];
 
     public static readonly IReadOnlyList<ServiceInfo> All =
@@ -835,6 +836,76 @@ public static class ServicesCatalogData
                 In("status", "string", "Query", false),
                 In("page", "int", "Query", false),
                 In("pageSize", "int", "Query", false)),
+            ListOut, "X-Company-ID", false),
+
+        N("ai", "65", "PUT", "/ai/settings", "AiSettingsManage", "—",
+            "ذخیره تنظیمات مدل زبانی", "Save AI model settings", "حفظ إعدادات نموذج اللغة",
+            "تنظیمات اتصال دستیار هوشمند (سرویس‌دهنده، آدرس پایه، کلید رمزنگاری‌شده، مدل، دما، سقف توکن، مهلت، پرامپت سیستمی و فعال/غیرفعال) را ذخیره می‌کند؛ کلید API رمزنگاری‌شده ذخیره و هرگز خام برگردانده نمی‌شود.",
+            "Saves the smart-assistant connection settings (provider, base URL, encrypted key, model, temperature, token cap, timeout, system prompt, enable toggle); the API key is stored encrypted and never returned in clear.",
+            "يحفظ إعدادات اتصال المساعد الذكي (المزوّد والعنوان والمفتاح المشفّر والنموذج ودرجة الحرارة وسقف الرموز والمهلة والتعليمات والتشغيل)؛ يُخزَّن مفتاح API مشفرًا ولا يُعاد أبدًا صريحًا.",
+            Inputs(
+                In("providerName", "string", "Body", true),
+                In("baseUrl", "string", "Body", true),
+                In("apiKey", "string", "Body", false),
+                In("modelName", "string", "Body", true),
+                In("temperature", "number", "Body", true),
+                In("maxOutputTokens", "int", "Body", true),
+                In("timeoutSeconds", "int", "Body", true),
+                In("systemPromptOverride", "string", "Body", false),
+                In("toolCallingEnabled", "bool", "Body", true),
+                In("isEnabled", "bool", "Body", true),
+                In("version", "long", "Body", true)),
+            JsonOut, "X-Company-ID", false),
+
+        N("ai", "66", "GET", "/ai/settings", "AiSettingsRead", "—",
+            "خواندن تنظیمات مدل زبانی", "Read AI model settings", "قراءة إعدادات نموذج اللغة",
+            "تنظیمات ذخیره‌شده را با کلید ماسک‌شده (فقط چهار رقم آخر) برمی‌گرداند؛ برای فرم «مدیریت مدل‌های زبانی هوش مصنوعی».",
+            "Returns the stored settings with a masked key (last four characters only); feeds the AI language model management form.",
+            "يعيد الإعدادات المحفوظة مع مفتاح مقنّع (آخر أربعة أحرف فقط)؛ لنموذج إدارة نماذج اللغة.",
+            Inputs(),
+            JsonOut, "X-Company-ID", false),
+
+        N("ai", "67", "POST", "/ai/settings/test", "AiSettingsManage", "—",
+            "تست اتصال مدل زبانی", "Test AI model connection", "اختبار اتصال نموذج اللغة",
+            "با یک پرامپت کوچک مدل را پینگ می‌کند و موفقیت/تأخیر/خطا را گزارش می‌کند و در لاگ ممیزی ثبت می‌شود.",
+            "Pings the model with a tiny prompt and reports ok/latency/error; the attempt is recorded in the audit log.",
+            "يتصل بالنموذج بموجّه صغير ويعيد النتيجة/التأخير/الخطأ ويُسجَّل في سجل التدقيق.",
+            Inputs(),
+            "JSON: ok, latencyMs, error, modelReply", "X-Company-ID", false),
+
+        N("ai", "68", "POST", "/ai/assistant", "هر کاربر احراز هویت‌شده", "ai-chat",
+            "گفتگو با دستیار هوشمند", "Chat with the smart assistant", "المحادثة مع المساعد الذكي",
+            "پیام کاربر را به مدل زبانی می‌دهد؛ حلقه فراخوانی ابزار (خلاصه سفارش امروز، مراحل گردش کار، موجودی انبار، مالی، تولید، کیفی و …) با کنترل مجوزهای واقعی کاربر اجرا می‌شود و پاسخ نهایی + تاریخچه برگردانده می‌شود.",
+            "Sends the user's message to the language model; runs the tool-calling loop (today's order summary, workflow stages, warehouse stock, finance, production, quality, ...) enforcing the user's real permissions, and returns the final answer plus history.",
+            "يرسل رسالة المستخدم إلى نموذج اللغة؛ ينفّذ حلقة استدعاء الأدوات (ملخص الطلبات ومراحل سير العمل والمخزون والمالية والإنتاج والجودة…) مع فرض صلاحيات المستخدم الفعلية ويعيد الإجابة النهائية مع السجل.",
+            Inputs(
+                In("messages", "array", "Body", true),
+                In("culture", "string", "Body", false),
+                In("resetConversation", "bool", "Body", false)),
+            "JSON: reply, notConfigured, toolsUsed, history", "X-Company-ID", false),
+
+        N("ai", "69", "GET", "/ai/conversation", "هر کاربر احراز هویت‌شده", "ai-chat",
+            "تاریخچه گفتگوی دستیار", "Assistant conversation history", "سجل محادثة المساعد",
+            "رشته گفتگوی ذخیره‌شده کاربر جاری را برمی‌گرداند تا با باز شدن دوباره پنجره دستیار، گفتگوی اخیر نمایش داده شود.",
+            "Returns the current user's persisted chat thread so reopening the assistant shows the recent conversation.",
+            "يعيد سجل محادثة المستخدم المحفوظ ليُعرض الحوار الأخير عند إعادة فتح المساعد.",
+            Inputs(),
+            "JSON: آرایه پیام‌ها", "X-Company-ID", false),
+
+        N("ai", "70", "POST", "/ai/conversation/clear", "هر کاربر احراز هویت‌شده", "ai-chat",
+            "پاک کردن گفتگو", "Clear conversation", "مسح المحادثة",
+            "رشته گفتگوی کاربر جاری را حذف می‌کند (گفتگوی جدید).",
+            "Deletes the current user's chat thread (new chat).",
+            "يحذف سجل محادثة المستخدم الحالي (محادثة جديدة).",
+            Inputs(),
+            NoContent, "X-Company-ID", false),
+
+        N("ai", "71", "GET", "/ai/settings/audit", "AiSettingsRead", "—",
+            "لاگ تغییرات و گفتگوهای دستیار", "AI change & conversation log", "سجل تغييرات ومحادثات المساعد",
+            "رویدادهای اخیر (ذخیره/تست تنظیمات، پرسش‌وپاسخ‌ها با ابزارهای استفاده‌شده و توکن‌ها) را برای بررسی مدیر برمی‌گرداند.",
+            "Returns recent events (settings saved/tested, Q&A turns with tools used and token counts) for admin visibility.",
+            "يعيد الأحداث الأخيرة (حفظ/اختبار الإعدادات والأسئلة والأجوبة مع الأدوات والرموز) لمراجعة الإدارة.",
+            Inputs(In("take", "int", "Query", false)),
             ListOut, "X-Company-ID", false)
     ];
 

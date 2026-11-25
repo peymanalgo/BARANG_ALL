@@ -81,7 +81,7 @@
 
 <BarangModal Open="@ReproOpen" Title="@T("درخواست بازتولید","Request reproduction","طلب إعادة إنتاج")" Size="small" ShowCloseButton="true" CloseRequested="()=>ReproOpen=false">
  <ChildContent><div class="form-grid single">
-  <label><span>@T("مرحله بازتولید","Reproduction stage","مرحلة إعادة الإنتاج")</span><select @bind="FormReproStage"><option value="Print">@T("چاپ","Print","طباعة")</option><option value="HeatPress">@T("پرس حرارتی","Heat press","كبس حراري")</option><option value="DesignPreparation">@T("آماده‌سازی طرح","Design preparation","تجهيز التصميم")</option><option value="FullItem">@T("کل آیتم","Full item","الصنف كاملاً")</option></select></label>
+  <label><span>@T("مرحله بازتولید","Reproduction stage","مرحلة إعادة الإنتاج")</span><select @bind="FormReproStage"><option value="Print">@T("چاپ","Print","طباعة")</option><option value="HeatPress">@T("پرس حرارتی","Heat press","كبس حراري")</option><option value="Ironing">@T("اتو","Ironing","كوي")</option><option value="DesignPreparation">@T("آماده‌سازی طرح","Design preparation","تجهيز التصميم")</option><option value="FullItem">@T("کل آیتم","Full item","الصنف كاملاً")</option></select></label>
   <label><span>@T("مقدار","Quantity","الكمية")</span><input type="number" step="0.01" min="0.01" @bind="FormReproQty" /></label>
   <label><span>@T("دلیل","Reason","السبب")</span><input @bind="FormReason" /></label>
   @if(!string.IsNullOrWhiteSpace(ActionError)){<div class="inline-error" role="alert">@ActionError</div>}
@@ -110,7 +110,7 @@
  private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","es"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
  private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>EsGlossary.Tr(en),"ar"=>ar,_=>fa};
  private string St(string s)=>s switch{"InProgress"=>T("در جریان بازرسی","In progress","قيد الفحص"),"Suspended"=>T("معلق","Suspended","معلق"),"ManagementReview"=>T("بررسی مدیریت","Management review","مراجعة الإدارة"),"Approved"=>T("تأییدشده","Approved","معتمد"),"Rejected"=>T("مردود","Rejected","مرفوض"),_=>s};
- private string Jt(string t)=>t switch{"DesignPreparation"=>T("آماده‌سازی طرح","Design preparation","تجهيز التصميم"),"Print"=>T("چاپ","Print","طباعة"),"HeatPress"=>T("پرس حرارتی","Heat press","كبس حراري"),_=>t};
+ private string Jt(string t)=>t switch{"DesignPreparation"=>T("آماده‌سازی طرح","Design preparation","تجهيز التصميم"),"Print"=>T("چاپ","Print","طباعة"),"HeatPress"=>T("پرس حرارتی","Heat press","كبس حراري"),"Ironing"=>T("اتو","Ironing","كوي"),_=>t};
  private string Ct(string t)=>t switch{"PassFail"=>T("قبول/رد","Pass/Fail","نجاح/فشل"),"Numeric"=>T("عددی","Numeric","رقمي"),"Text"=>T("متنی","Text","نصي"),"Choice"=>T("انتخابی","Choice","اختيار"),_=>t};
  private string OutLabel(string o)=>o switch{"Approved"=>T("تأیید کیفی","Approved","معتمد"),"Rejected"=>T("مردود کیفی","Rejected","مرفوض"),_=>T("در انتظار تصمیم","Pending decision","قرار معلق")};
  private string Hint=>CriterionPending==Guid.Empty?"":(Criteria.FirstOrDefault(c=>c.CriterionId==CriterionPending)?.Type=="Numeric"?"عدد":"مقدار");

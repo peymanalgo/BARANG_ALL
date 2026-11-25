@@ -1,0 +1,199 @@
+@using System.Globalization
+@using System.Text.Json.Nodes
+
+@* رندر دستی نمودار SVG از بلوک ```chart مدل — بدون هیچ وابستگی خارجی. بار/خط/دایره‌ای؛ RTL-aware. *@
+<div class="ai-chart @(Rtl ? "ai-chart-rtl" : "ai-chart-ltr")" dir="@(Rtl ? "rtl" : "ltr")">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <div class="ai-chart-title" dir="auto">@Title</div>
+    }
+    <div class="ai-chart-body">@((MarkupString)Svg)</div>
+    @if (Legend.Count > 1)
+    {
+        <div class="ai-chart-legend">
+            @foreach ((string Name, string Color) item in Legend)
+            {
+                <span class="ai-chart-legend-item"><i style="background:@item.Color"></i><span dir="auto">@item.Name</span></span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public JsonNode? Spec { get; set; }
+    [Parameter] public bool Rtl { get; set; }
+
+    private static readonly string[] Palette = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#06b6d4", "#a855f7", "#84cc16", "#f97316"];
+
+    private string Title { get; set; } = "";
+    private string Svg { get; set; } = "";
+    private List<(string Name, string Color)> Legend { get; set; } = [];
+
+    protected override void OnParametersSet()
+    {
+        Title = Spec?["title"]?.GetValue<string>() ?? "";
+        Legend = [];
+        Svg = (Spec?["type"]?.GetValue<string>() ?? "bar") switch
+        {
+            "pie" => Pie(),
+            "line" => Line(),
+            _ => Bar(),
+        };
+    }
+
+    private List<string> Labels() => Spec?["labels"] as JsonArray is { } labels ? [.. labels.Select(l => l?.GetValue<string>() ?? "")] : [];
+    private List<double> SeriesData(int index) => (Spec?["series"] as JsonArray)?[index]?["data"] as JsonArray is { } data ? [.. data.Select(d => d?.GetValue<double>() ?? 0)] : [];
+    private string SeriesName(int index) => (Spec?["series"] as JsonArray)?[index]?["name"]?.GetValue<string>() ?? $"#{index + 1}";
+    private int SeriesCount => (Spec?["series"] as JsonArray)?.Count ?? 0;
+
+    private string Bar()
+    {
+        const double width = 420, height = 240, padL = 46, padB = 40, padT = 16;
+        List<string> labels = Labels();
+        int series = Math.Max(1, SeriesCount);
+        double plotW = width - padL - 12, plotH = height - padT - padB;
+        double max = 1;
+        for (int s = 0; s < series; s++) foreach (double v in SeriesData(s)) max = Math.Max(max, v);
+        double niceMax = NiceCeiling(max);
+        System.Text.StringBuilder svg = new();
+        svg.Append(CultureInfo.InvariantCulture, $"<svg viewBox=\"0 0 {width} {height}\" class=\"ai-chart-svg\" role=\"img\" aria-label=\"{Escape(Title)}\">");
+        for (int g = 0; g <= 4; g++)
+        {
+            double y = padT + plotH * g / 4;
+            double val = niceMax * (1 - (double)g / 4);
+            svg.Append(CultureInfo.InvariantCulture, $"<line x1=\"{padL}\" y1=\"{y}\" x2=\"{width - 12}\" y2=\"{y}\" stroke=\"#e2e8f0\" stroke-width=\"1\"/>");
+            svg.Append(CultureInfo.InvariantCulture, $"<text x=\"{padL - 6}\" y=\"{y + 3}\" text-anchor=\"end\" class=\"ai-chart-tick\">{FormatShort(val)}</text>");
+        }
+        int groups = Math.Max(1, labels.Count);
+        double groupW = plotW / groups;
+        double barW = Math.Min(34, groupW * 0.7 / series);
+        for (int i = 0; i < groups; i++)
+        {
+            // RTL: mirror the group order so the first category sits on the right
+            int gi = Rtl ? groups - 1 - i : i;
+            double groupCenter = padL + groupW * i + groupW / 2;
+            for (int s = 0; s < series; s++)
+            {
+                List<double> data = SeriesData(s);
+                double value = gi < data.Count ? data[gi] : 0;
+                double h = niceMax <= 0 ? 0 : plotH * value / niceMax;
+                double x = groupCenter - (series * barW) / 2 + s * barW;
+                string color = Palette[s % Palette.Length];
+                svg.Append(CultureInfo.InvariantCulture, $"<rect x=\"{x + 1}\" y=\"{padT + plotH - h}\" width=\"{Math.Max(1, barW - 2)}\" height=\"{Math.Max(0, h)}\" rx=\"3\" fill=\"{color}\" opacity=\"0.92\"><title>{Escape(labels.Count > gi ? labels[gi] : "")}: {FormatShort(value)}</title></rect>");
+                if (s == 0 && labels.Count > gi)
+                {
+                    svg.Append(CultureInfo.InvariantCulture, $"<text x=\"{groupCenter}\" y=\"{height - 12}\" text-anchor=\"middle\" class=\"ai-chart-label\" direction=\"{(Rtl ? "rtl" : "ltr")}\">{Escape(Short(labels[gi], 12))}</text>");
+                }
+                if (s == 0 && value > 0 && series == 1)
+                {
+                    svg.Append(CultureInfo.InvariantCulture, $"<text x=\"{groupCenter}\" y=\"{padT + plotH - h - 4}\" text-anchor=\"middle\" class=\"ai-chart-value\">{FormatShort(value)}</text>");
+                }
+            }
+        }
+        svg.Append("</svg>");
+        for (int s = 0; s < series; s++) Legend.Add((SeriesName(s), Palette[s % Palette.Length]));
+        return svg.ToString();
+    }
+
+    private string Line()
+    {
+        const double width = 420, height = 240, padL = 46, padB = 40, padT = 16;
+        List<string> labels = Labels();
+        int series = Math.Max(1, SeriesCount);
+        double plotW = width - padL - 12, plotH = height - padT - padB;
+        double max = 1;
+        for (int s = 0; s < series; s++) foreach (double v in SeriesData(s)) max = Math.Max(max, v);
+        double niceMax = NiceCeiling(max);
+        int points = Math.Max(2, labels.Count);
+        System.Text.StringBuilder svg = new();
+        svg.Append(CultureInfo.InvariantCulture, $"<svg viewBox=\"0 0 {width} {height}\" class=\"ai-chart-svg\" role=\"img\" aria-label=\"{Escape(Title)}\">");
+        for (int g = 0; g <= 4; g++)
+        {
+            double y = padT + plotH * g / 4;
+            double val = niceMax * (1 - (double)g / 4);
+            svg.Append(CultureInfo.InvariantCulture, $"<line x1=\"{padL}\" y1=\"{y}\" x2=\"{width - 12}\" y2=\"{y}\" stroke=\"#e2e8f0\" stroke-width=\"1\"/>");
+            svg.Append(CultureInfo.InvariantCulture, $"<text x=\"{padL - 6}\" y=\"{y + 3}\" text-anchor=\"end\" class=\"ai-chart-tick\">{FormatShort(val)}</text>");
+        }
+        for (int s = 0; s < series; s++)
+        {
+            List<double> data = SeriesData(s);
+            if (data.Count == 0) continue;
+            string color = Palette[s % Palette.Length];
+            List<string> pts = [];
+            for (int i = 0; i < data.Count; i++)
+            {
+                int di = Rtl ? data.Count - 1 - i : i;
+                double x = padL + plotW * (data.Count == 1 ? 0.5 : (double)i / (data.Count - 1));
+                double y = padT + plotH * (1 - (niceMax <= 0 ? 0 : data[di] / niceMax));
+                pts.Add(FormattableString.Invariant($"{x:0.#},{y:0.#}"));
+                svg.Append(CultureInfo.InvariantCulture, $"<circle cx=\"{x:0.#}\" cy=\"{y:0.#}\" r=\"3.2\" fill=\"{color}\"><title>{Escape(labels.Count > di ? labels[di] : i.ToString())}: {FormatShort(data[di])}</title></circle>");
+            }
+            svg.Append($"<polyline points=\"{string.Join(" ", pts)}\" fill=\"none\" stroke=\"{color}\" stroke-width=\"2.2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>");
+            Legend.Add((SeriesName(s), color));
+        }
+        for (int i = 0; i < labels.Count; i++)
+        {
+            int di = Rtl ? labels.Count - 1 - i : i;
+            double x = padL + plotW * (labels.Count == 1 ? 0.5 : (double)i / (labels.Count - 1));
+            svg.Append(CultureInfo.InvariantCulture, $"<text x=\"{x:0.#}\" y=\"{height - 12}\" text-anchor=\"middle\" class=\"ai-chart-label\">{Escape(Short(labels[di], 12))}</text>");
+        }
+        svg.Append("</svg>");
+        return svg.ToString();
+    }
+
+    private string Pie()
+    {
+        const double size = 220, cx = size / 2, cy = size / 2, r = 82;
+        List<string> labels = Labels();
+        List<double> data = SeriesData(0);
+        double total = data.Sum();
+        System.Text.StringBuilder svg = new();
+        svg.Append(CultureInfo.InvariantCulture, $"<svg viewBox=\"0 0 {size} {size}\" class=\"ai-chart-svg ai-chart-pie\" role=\"img\" aria-label=\"{Escape(Title)}\">");
+        if (total <= 0)
+        {
+            svg.Append(CultureInfo.InvariantCulture, $"<circle cx=\"{cx}\" cy=\"{cy}\" r=\"{r}\" fill=\"#e2e8f0\"/>");
+        }
+        else
+        {
+            double angle = -Math.PI / 2;
+            for (int i = 0; i < data.Count; i++)
+            {
+                double share = data[i] / total;
+                if (share <= 0) continue;
+                double sweep = share * 2 * Math.PI;
+                double r0 = Math.Min(sweep, Math.PI);
+                double large = sweep > Math.PI ? 1 : 0;
+                double mid = angle + sweep / 2;
+                double explode = 3;
+                double ecx = cx + Math.Cos(mid) * explode;
+                double ecy = cy + Math.Sin(mid) * explode;
+                double x1 = ecx + Math.Cos(angle) * r, y1 = ecy + Math.Sin(angle) * r;
+                double x2 = ecx + Math.Cos(angle + sweep) * r, y2 = ecy + Math.Sin(angle + sweep) * r;
+                string color = Palette[i % Palette.Length];
+                svg.Append(CultureInfo.InvariantCulture, $"<path d=\"M {ecx:0.##} {ecy:0.##} L {x1:0.##} {y1:0.##} A {r} {r} 0 {large} 1 {x2:0.##} {y2:0.##} Z\" fill=\"{color}\" stroke=\"#fff\" stroke-width=\"1.5\"><title>{Escape(labels.Count > i ? labels[i] : "")}: {FormatShort(data[i])} ({share:P0})</title></path>");
+                double lx = cx + Math.Cos(mid) * (r * 0.62), ly = cy + Math.Sin(mid) * (r * 0.62);
+                if (share >= 0.06) svg.Append(CultureInfo.InvariantCulture, $"<text x=\"{lx:0.##}\" y=\"{ly:0.##}\" text-anchor=\"middle\" class=\"ai-chart-value ai-chart-value-pie\">{share:P0}</text>");
+                Legend.Add((labels.Count > i ? labels[i] : $"#{i + 1}", color));
+                angle += sweep;
+                _ = r0;
+            }
+        }
+        svg.Append("</svg>");
+        return svg.ToString();
+    }
+
+    private static double NiceCeiling(double max)
+    {
+        if (max <= 0) return 1;
+        double magnitude = Math.Pow(10, Math.Floor(Math.Log10(max)));
+        double normalized = max / magnitude;
+        double nice = normalized switch { <= 1 => 1, <= 2 => 2, <= 5 => 5, _ => 10 };
+        return nice * magnitude;
+    }
+
+    private static string FormatShort(double value) => value >= 1000 ? value.ToString("#,##0", CultureInfo.InvariantCulture) : value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static string Short(string value, int max) => value.Length <= max ? value : value[..(max - 1)] + "…";
+
+    private static string Escape(string value) => value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
+}

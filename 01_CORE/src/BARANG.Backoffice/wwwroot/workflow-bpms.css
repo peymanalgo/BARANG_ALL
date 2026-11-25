@@ -1,0 +1,62 @@
+/* ── BPMS pages: monitoring dashboard, instances, timeline, versions ─────── */
+.bpms-page{display:flex;flex-direction:column;gap:16px;min-width:0}
+.bpms-page h1{margin:0}
+.bpms-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.bpms-kpi{background:#fff;border:1px solid #e3e8ee;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.bpms-kpi .k{font-size:11px;font-weight:700;color:#64756d}
+.bpms-kpi .v{font-size:22px;font-weight:800;color:#1f2d27;font-variant-numeric:tabular-nums}
+.bpms-kpi .s{font-size:10.5px;color:#8c9791}
+.bpms-kpi.warn .v{color:#b3541e}
+.bpms-kpi.bad .v{color:#b3373f}
+.bpms-kpi.good .v{color:#1f7a5c}
+.bpms-section h2{margin:0 0 10px;font-size:14px}
+.bpms-table{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border:1px solid #e3e8ee;border-radius:10px;overflow:hidden}
+.bpms-table th{background:#f2f5f3;text-align:start;padding:8px 10px;font-size:11px;color:#51625a;border-bottom:1px solid #e3e8ee;white-space:nowrap}
+.bpms-table td{padding:8px 10px;border-bottom:1px solid #eef1ef;vertical-align:top}
+.bpms-table tbody tr:last-child td{border-bottom:0}
+.bpms-table a{color:#1b4b40;font-weight:700;text-decoration:none}
+.bpms-table a:hover{text-decoration:underline}
+.bpms-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:750;white-space:nowrap}
+.bpms-badge.running{background:#e8f0fe;color:#1a4f9c}
+.bpms-badge.completed{background:#e3f4ec;color:#1f7a5c}
+.bpms-badge.suspended{background:#fdf3e0;color:#a06a12}
+.bpms-badge.cancelled{background:#f1f2f4;color:#5d6772}
+.bpms-badge.failed{background:#fdeaea;color:#b3373f}
+.bpms-badge.open{background:#e8f0fe;color:#1a4f9c}
+.bpms-badge.claimed{background:#f0eafd;color:#5f3dc4}
+.bpms-badge.overdue{background:#fdeaea;color:#b3373f}
+.bpms-bars{display:flex;flex-direction:column;gap:6px}
+.bpms-bar-row{display:grid;grid-template-columns:minmax(120px,220px) 1fr 110px;gap:10px;align-items:center;font-size:12px}
+.bpms-bar-row .t{font-weight:700;color:#2c3b34;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bpms-bar-row .track{height:14px;background:#eef1ef;border-radius:7px;overflow:hidden}
+.bpms-bar-row .fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#2d6856,#4d9b7f)}
+.bpms-bar-row.waiting .fill{background:linear-gradient(90deg,#b3541e,#e0912a)}
+.bpms-bar-row .h{color:#51625a;font-variant-numeric:tabular-nums;text-align:end;white-space:nowrap}
+.bpms-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bpms-toolbar select,.bpms-toolbar button{min-height:34px}
+.bpms-filter{border:1px solid #dce3df;border-radius:9px;padding:0 8px;background:#fff;font-size:12px}
+.bpms-actions{display:flex;gap:8px}
+.bpms-pager{display:flex;gap:8px;align-items:center;font-size:12px;color:#51625a}
+.bpms-timeline{display:flex;flex-direction:column;position:relative;margin-inline-start:10px;padding-inline-start:22px;border-inline-start:2px solid #d9e2dc}
+.bpms-tl-item{position:relative;padding:10px 12px;margin-bottom:10px;background:#fff;border:1px solid #e3e8ee;border-radius:11px}
+.bpms-tl-item::before{content:"";position:absolute;inset-inline-start:-29px;top:16px;width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid #2d6856}
+.bpms-tl-item.done::before{border-color:#8fb8a7}
+.bpms-tl-item.overdue::before{border-color:#b3373f}
+.bpms-tl-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.bpms-tl-head strong{font-size:13px}
+.bpms-tl-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#51625a}
+.bpms-tl-dur{font-variant-numeric:tabular-nums;font-weight:700;color:#2d6856}
+.bpms-tl-item.overdue .bpms-tl-dur{color:#b3373f}
+.bpms-empty{color:#8c9791;padding:18px;text-align:center}
+.bpms-diff{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.bpms-diff ul{margin:0;padding-inline-start:18px;font-size:12px}
+.bpms-diff li{margin-bottom:3px}
+.bpms-diff .add{color:#1f7a5c}
+.bpms-diff .del{color:#b3373f}
+.bpms-diff .chg{color:#a06a12}
+.bpms-version-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center}
+@media print{
+  .bpms-noprint{display:none!important}
+  body{background:#fff}
+  .bpms-page{gap:8px}
+}

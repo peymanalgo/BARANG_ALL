@@ -1,0 +1,153 @@
+@page "/workspace/workflow/versions"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Auth
+@inject ICoreApiClient Core
+@inject AuthenticationStateProvider AuthState
+@inject ILocaleDateService Dates
+
+<PageTitle>@T("نسخه‌های گردش کار","Workflow versions","نسخ سير العمل") · BARANG</PageTitle>
+<main class="page-shell bpms-page" aria-labelledby="bpms-ver-heading">
+  <header><h1 id="bpms-ver-heading">@T("مدیریت نسخه‌های تعریف","Definition version management","إدارة نسخ التعريف")</h1>
+    <p>@T("مقایسه نسخه‌ها و بازگردانی نسخه‌های پیشین به صورت پیش‌نویس برای انتشار مجدد","Compare versions and restore older ones as a draft for re-publishing","مقارنة النسخ واستعادة النسخ القديمة كمسودة لإعادة النشر")</p></header>
+  @if (Loading) { <section class="panel"><span class="dashboard-spinner" aria-hidden="true"></span><p>@T("در حال بارگذاری…","Loading…","جار التحميل…")</p></section> }
+  else if (Error is not null) { <section class="panel inline-error" role="alert">@Error</section> }
+  else
+  {
+    <section class="panel bpms-section">
+      <h2>@T("نسخه‌ها","Versions","النسخ")</h2>
+      <table class="bpms-table"><thead><tr><th>@T("نسخه","Version","النسخة")</th><th>@T("وضعیت","Status","الحالة")</th><th>@T("تاریخ ایجاد","Created","تاريخ الإنشاء")</th><th>@T("مقایسه","Compare","مقارنة")</th><th></th></tr></thead>
+      <tbody>@foreach (VersionRow v in Versions)
+      {
+        <tr class="@(DiffFrom == v.Id ? "selected" : null)">
+          <td>@v.Number</td>
+          <td><span class="bpms-badge @v.Status.ToLowerInvariant()">@VersionStatusFa(v.Status)</span></td>
+          <td>@Date(v.CreatedAtUtc)</td>
+          <td class="bpms-noprint">
+            <div class="bpms-version-row">
+              <button type="button" class="btn btn-secondary" disabled="@(DiffFrom == v.Id)" @onclick="() => SetFrom(v.Id)">A</button>
+              <button type="button" class="btn btn-secondary" disabled="@(DiffFrom == Guid.Empty || DiffFrom == v.Id)" @onclick="() => SetTo(v.Id)">B</button>
+            </div>
+          </td>
+          <td class="bpms-noprint">
+            @if (v.Status != "Draft")
+            {
+              <button type="button" class="btn btn-secondary" disabled="@Busy" @onclick="() => Restore(v.Id)"><BarangIcon Name="restore" />@T("بازگردانی به پیش‌نویس","Restore as draft","استعادة كمسودة")</button>
+            }
+            else { <a class="btn btn-secondary" href="/workspace/workflow">@T("ویرایش در طراح","Edit in designer","تحرير في المصمم")</a> }
+          </td>
+        </tr>
+      }</tbody></table>
+    </section>
+    @if (Diff is not null)
+    {
+      <section class="panel bpms-section">
+        <h2>@T("تفاوت نسخه‌ها","Version diff","فرق النسختين") @Diff.FromNumber → @Diff.ToNumber</h2>
+        <div class="bpms-diff">
+          <div>
+            <h3>@T("گره‌ها","Nodes","العقد") (@Diff.NodesFrom → @Diff.NodesTo)</h3>
+            @if (Diff.Added.Count == 0 && Diff.Removed.Count == 0 && Diff.Changed.Count == 0) { <p class="bpms-empty">@T("بدون تغییر","No changes","لا تغييرات")</p> }
+            else
+            {
+              <ul>
+                @foreach (string k in Diff.Added) { <li class="add">+ @k</li> }
+                @foreach (string k in Diff.Removed) { <li class="del">− @k</li> }
+                @foreach (Change c in Diff.Changed) { <li class="chg">~ @c.Key (@string.Join(", ", c.Changes))</li> }
+              </ul>
+            }
+          </div>
+          <div>
+            <h3>@T("اتصال‌ها","Edges","الوصلات") (@Diff.EdgesFrom → @Diff.EdgesTo)</h3>
+            @if (Diff.EdgesAdded.Count == 0 && Diff.EdgesRemoved.Count == 0) { <p class="bpms-empty">@T("بدون تغییر","No changes","لا تغييرات")</p> }
+            else
+            {
+              <ul>
+                @foreach (string k in Diff.EdgesAdded) { <li class="add">+ @k</li> }
+                @foreach (string k in Diff.EdgesRemoved) { <li class="del">− @k</li> }
+              </ul>
+            }
+          </div>
+        </div>
+      </section>
+    }
+    @if (!string.IsNullOrEmpty(Message)) { <section class="panel @(MessageOk ? "inline-success" : "inline-error")" role="status">@Message</section> }
+  }
+</main>
+
+@code {
+  private bool Loading = true; private bool Busy; private string? Error; private string? Message; private bool MessageOk;
+  private List<VersionRow> Versions = []; private Guid DiffFrom; private Guid DiffTo; private DiffModel? Diff;
+  protected override async Task OnInitializedAsync() => await Load();
+  private async Task Load()
+  {
+    Loading = true; Error = null;
+    try
+    {
+      var s = await Session(); if (s is null) { Error = T("نشست معتبر نیست.","Session is not valid.","الجلسة غير صالحة."); return; }
+      var r = await Core.GetAsync("api/v1/workflows/definition", s.Value.Token, s.Value.Company, default);
+      if (!r.IsSuccess) { Error = r.ProblemDescription ?? T("تعریف در دسترس نیست.","Definition unavailable.","التعريف غير متاح."); return; }
+      Versions = r.Value.GetProperty("history").EnumerateArray().Select(VersionRow.Parse).ToList();
+    }
+    catch (Exception ex) { Error = ex.Message; }
+    finally { Loading = false; }
+  }
+  private async Task SetFrom(Guid id) { DiffFrom = id; if (DiffTo == Guid.Empty || DiffTo == id) DiffTo = Versions.FirstOrDefault(v => v.Id != id)?.Id ?? Guid.Empty; if (DiffTo != Guid.Empty) await LoadDiff(); }
+  private async Task SetTo(Guid id) { DiffTo = id; await LoadDiff(); }
+  private async Task LoadDiff()
+  {
+    Diff = null; Message = null;
+    var s = await Session(); if (s is null) return;
+    var r = await Core.GetAsync($"api/v1/workflows/definition/versions/diff?from={DiffFrom}&to={DiffTo}", s.Value.Token, s.Value.Company, default);
+    if (r.IsSuccess) Diff = DiffModel.Parse(r.Value);
+    else Message = r.ProblemDescription ?? T("مقایسه ناموفق بود.","Diff failed.","فشلت المقارنة.");
+  }
+  private async Task Restore(Guid id)
+  {
+    Busy = true; Message = null;
+    try
+    {
+      var s = await Session(); if (s is null) return;
+      var r = await Core.SendAsync(HttpMethod.Post, $"api/v1/workflows/definition/versions/{id}/restore-draft", null, s.Value.Token, s.Value.Company, default);
+      if (r.IsSuccess)
+      {
+        int number = r.Value.TryGetProperty("number", out JsonElement n) ? n.GetInt32() : 0;
+        MessageOk = true; Message = T($"پیش‌نویس جدید نسخه {number} ساخته شد؛ در طراح بررسی و منتشر کنید.", $"New draft version {number} created; review and publish it in the designer.", $"أُنشئت مسودة النسخة {number}; راجعها وانشرها في المصمم.");
+        await Load();
+      }
+      else { MessageOk = false; Message = r.ProblemDescription ?? T("بازگردانی ناموفق بود.","Restore failed.","فشلت الاستعادة."); }
+    }
+    finally { Busy = false; }
+  }
+  private string VersionStatusFa(string s) => s switch { "Draft" => T("پیش‌نویس","Draft","مسودة"), "Active" => T("فعال","Active","نشطة"), "Superseded" => T("جانشین‌شده","Superseded","مُستبدلة"), _ => s };
+  private string Date(DateTimeOffset v) => Dates.Format(v, Culture);
+  private string Culture => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+  private string T(string fa, string en, string ar) => Culture switch { "en" => en, "es" => EsGlossary.Tr(en), "ar" => ar, _ => fa };
+  private async Task<(string Token, Guid Company)?> Session() { var u = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null; }
+  private sealed record VersionRow(Guid Id, int Number, string Status, DateTimeOffset CreatedAtUtc)
+  {
+    public static VersionRow Parse(JsonElement x) => new(x.GetProperty("id").GetGuid(), x.GetProperty("number").GetInt32(), x.GetProperty("status").GetString() ?? "", x.GetProperty("createdAtUtc").GetDateTimeOffset());
+  }
+  private sealed record Change(string Key, List<string> Changes);
+  private sealed class DiffModel
+  {
+    public int FromNumber; public int ToNumber; public int NodesFrom; public int NodesTo; public int EdgesFrom; public int EdgesTo;
+    public List<string> Added = []; public List<string> Removed = []; public List<Change> Changed = []; public List<string> EdgesAdded = []; public List<string> EdgesRemoved = [];
+    public static DiffModel Parse(JsonElement x)
+    {
+      DiffModel d = new() { FromNumber = x.GetProperty("from").GetProperty("number").GetInt32(), ToNumber = x.GetProperty("to").GetProperty("number").GetInt32() };
+      JsonElement nodes = x.GetProperty("nodes");
+      d.NodesFrom = nodes.GetProperty("fromCount").GetInt32(); d.NodesTo = nodes.GetProperty("toCount").GetInt32();
+      d.Added = nodes.GetProperty("added").EnumerateArray().Select(n => n.GetProperty("key").GetString() ?? "").ToList();
+      d.Removed = nodes.GetProperty("removed").EnumerateArray().Select(n => n.GetProperty("key").GetString() ?? "").ToList();
+      d.Changed = nodes.GetProperty("changed").EnumerateArray().Select(n => new Change(n.GetProperty("key").GetString() ?? "", n.GetProperty("changes").EnumerateArray().Select(c => c.GetString() ?? "").ToList())).ToList();
+      JsonElement edges = x.GetProperty("edges");
+      d.EdgesFrom = edges.GetProperty("fromCount").GetInt32(); d.EdgesTo = edges.GetProperty("toCount").GetInt32();
+      d.EdgesAdded = edges.GetProperty("added").EnumerateArray().Select(e => e.GetString() ?? "").ToList();
+      d.EdgesRemoved = edges.GetProperty("removed").EnumerateArray().Select(e => e.GetString() ?? "").ToList();
+      return d;
+    }
+  }
+}

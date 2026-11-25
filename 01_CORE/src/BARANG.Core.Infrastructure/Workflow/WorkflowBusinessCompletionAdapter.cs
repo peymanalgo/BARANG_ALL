@@ -41,6 +41,7 @@ public sealed class WorkflowBusinessCompletionAdapter(CoreDbContext db, IFinance
             WorkflowStage.InventoryReservation=>await inventory.HasCompleteReservationEvidenceAsync(orderId,token),
             WorkflowStage.Printing=>(await production.ValidateWorkflowCompletionAsync(orderId,Domain.Production.ProductionJobType.Print,token)).IsSuccess,
             WorkflowStage.HeatPress=>(await production.ValidateWorkflowCompletionAsync(orderId,Domain.Production.ProductionJobType.HeatPress,token)).IsSuccess,
+            WorkflowStage.Ironing=>(await production.ValidateWorkflowCompletionAsync(orderId,Domain.Production.ProductionJobType.Ironing,token)).IsSuccess,
             WorkflowStage.QualityControl=>(await quality.ValidateWorkflowCompletionAsync(orderId,outcome==WorkflowTaskOutcome.Approved?"Approve":"Reject",token)).IsSuccess,
             WorkflowStage.Packaging=>await PackagingEvidenceAsync(orderId,token),
             WorkflowStage.Shipping=>await db.Shipments.AnyAsync(x=>x.OrderId==orderId&&(x.Status==Domain.Logistics.ShipmentStatus.Shipped||x.Status==Domain.Logistics.ShipmentStatus.InTransit||x.Status==Domain.Logistics.ShipmentStatus.Delivered),token),

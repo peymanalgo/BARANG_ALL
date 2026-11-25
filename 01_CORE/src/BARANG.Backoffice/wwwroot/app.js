@@ -217,3 +217,9 @@ window.barangPortalMove = (...elements) => {
         if (el instanceof Element && el.parentNode !== document.body) document.body.appendChild(el);
     }
 };
+
+// AI assistant: keep the transcript pinned to the latest message
+window.barangAiScrollToEnd = selector => requestAnimationFrame(() => {
+    const el = document.querySelector(selector);
+    if (el) el.scrollTop = el.scrollHeight;
+});
