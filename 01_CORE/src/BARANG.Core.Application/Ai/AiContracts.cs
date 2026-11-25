@@ -23,7 +23,8 @@ public sealed record AiToolContext(
     Guid UserId,
     string Username,
     string Culture,
-    Func<string, CancellationToken, Task<bool>> HasAnyPermission)
+    Func<string, CancellationToken, Task<bool>> HasAnyPermission,
+    Guid? CustomerId = null)
 {
     /// <summary>کنترل مجوز با هر یک از کدهای داده‌شده کافی است.</summary>
     public Task<bool> CanUseAsync(string permissionCode, CancellationToken ct) => HasAnyPermission(permissionCode, ct);
@@ -35,6 +36,9 @@ public interface IAiToolRegistry
     IReadOnlyList<IAiTool> Tools { get; }
     IAiTool? Find(string name);
 }
+
+/// <summary>ابزار دستیار مشتری B2C: فقط داده‌های خود مشتری (customerId از سرور)، بدون هیچ ابزار کارکنان.</summary>
+public interface IAiCustomerTool : IAiTool { }
 
 public sealed record AiAssistantTurnMessage(string Role, string Content, string? Direction = null, DateTimeOffset? CreatedAtUtc = null, string? ToolsUsed = null);
 
@@ -99,4 +103,27 @@ public interface IAiAssistantService
     Task<Result<AiAssistantReply>> ChatAsync(AiAssistantRequest request, CancellationToken ct);
     Task<Result<IReadOnlyList<AiAssistantTurnMessage>>> GetHistoryAsync(CancellationToken ct);
     Task<Result> ClearConversationAsync(CancellationToken ct);
+}
+
+// ─── دستیار مشتری فروشگاه B2C ───
+public sealed record AiCustomerAssistantRequest(string Message, string Culture, bool ResetConversation = false);
+
+public sealed record AiCustomerAssistantReply(
+    string Reply,
+    bool NotConfigured,
+    string? Error,
+    IReadOnlyList<string> ToolsUsed,
+    int QuotaUsed,
+    int QuotaLimit,
+    IReadOnlyList<AiAssistantTurnMessage> History)
+{
+    public static AiCustomerAssistantReply NotConfiguredReply(int quotaUsed, int quotaLimit, IReadOnlyList<AiAssistantTurnMessage> history) =>
+        new("", true, null, [], quotaUsed, quotaLimit, history);
+}
+
+public interface IAiCustomerAssistantService
+{
+    Task<Result<AiCustomerAssistantReply>> ChatAsync(AiCustomerAssistantRequest request, CancellationToken ct);
+    Task<Result<AiCustomerAssistantReply>> GetHistoryAsync(CancellationToken ct);
+    Task<Result<AiCustomerAssistantReply>> ClearConversationAsync(CancellationToken ct);
 }

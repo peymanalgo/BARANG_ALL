@@ -220,6 +220,8 @@
 <script src="~/js/store.js" asp-append-version="true" defer></script>
 <script src="~/js/design-preview.js" asp-append-version="true" defer></script>
 
+<partial name="_AiAssistant" />
+
 @* ---------- نوار تب پایین (تجربه اپ موبایلی) ---------- *@
 <nav class="mobile-tabbar" aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية", "Menú principal")">
     <a href="/" class="@(route.Length == 0 ? "active" : null)">

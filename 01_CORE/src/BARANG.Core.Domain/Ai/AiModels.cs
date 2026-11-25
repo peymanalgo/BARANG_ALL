@@ -100,16 +100,25 @@ public sealed class AiModelSettings
     }
 }
 
-/// <summary>گفتگوی هر کاربر با دستیار — یک رشته فعال per user/company.</summary>
+/// <summary>کانال گفتگو: پرسش‌وپاسخ پرسنل بک‌آفیس یا مشتری فروشگاه B2C —
+/// جدا شدن صف مشتریان از پرسنل برای سهمیه و آمار.</summary>
+public static class AiChannels
+{
+    public const string Staff = "staff";
+    public const string Customer = "customer";
+}
+
+/// <summary>گفتگوی هر کاربر با دستیار — یک رشته فعال per user/company/channel.</summary>
 public sealed class AiConversation
 {
     private AiConversation() { }
     public Guid Id { get; private set; }
     public Guid CompanyId { get; private set; }
     public Guid UserId { get; private set; }
+    public string Channel { get; private set; } = AiChannels.Staff;
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset UpdatedAtUtc { get; private set; }
-    public static AiConversation Create(Guid id, Guid companyId, Guid userId, DateTimeOffset now) => new() { Id = id, CompanyId = companyId, UserId = userId, CreatedAtUtc = now, UpdatedAtUtc = now };
+    public static AiConversation Create(Guid id, Guid companyId, Guid userId, string channel, DateTimeOffset now) => new() { Id = id, CompanyId = companyId, UserId = userId, Channel = channel is AiChannels.Customer ? AiChannels.Customer : AiChannels.Staff, CreatedAtUtc = now, UpdatedAtUtc = now };
     public void Touch(DateTimeOffset now) => UpdatedAtUtc = now;
 }
 
@@ -121,6 +130,7 @@ public sealed class AiChatMessage
     public Guid ConversationId { get; private set; }
     public Guid CompanyId { get; private set; }
     public Guid UserId { get; private set; }
+    public string Channel { get; private set; } = AiChannels.Staff;
     public string Role { get; private set; } = "";
     public string Content { get; private set; } = "";
     public string? ToolsUsed { get; private set; }
@@ -128,12 +138,13 @@ public sealed class AiChatMessage
     public int? CompletionTokens { get; private set; }
     public string Culture { get; private set; } = "fa";
     public DateTimeOffset CreatedAtUtc { get; private set; }
-    public static AiChatMessage Create(Guid id, Guid conversationId, Guid companyId, Guid userId, string role, string content, string? toolsUsed, int? promptTokens, int? completionTokens, string culture, DateTimeOffset now) => new()
+    public static AiChatMessage Create(Guid id, Guid conversationId, Guid companyId, Guid userId, string channel, string role, string content, string? toolsUsed, int? promptTokens, int? completionTokens, string culture, DateTimeOffset now) => new()
     {
         Id = id,
         ConversationId = conversationId,
         CompanyId = companyId,
         UserId = userId,
+        Channel = channel is AiChannels.Customer ? AiChannels.Customer : AiChannels.Staff,
         Role = role.Length is < 1 or > 20 ? "user" : role,
         Content = content.Length > 20000 ? content[..20000] : content,
         ToolsUsed = toolsUsed,

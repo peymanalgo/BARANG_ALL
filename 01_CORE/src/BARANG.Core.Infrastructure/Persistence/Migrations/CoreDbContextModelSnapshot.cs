@@ -75,6 +75,14 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("staff")
+                        .HasColumnName("channel");
+
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("company_id");
@@ -129,6 +137,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.HasIndex("CompanyId", "UserId", "CreatedAtUtc")
                         .HasDatabaseName("ix_ai_chat_messages_company_user_created");
 
+                    b.HasIndex("CompanyId", "UserId", "Channel", "CreatedAtUtc")
+                        .HasDatabaseName("ix_ai_chat_messages_company_user_channel_created");
+
                     b.ToTable("ai_chat_messages", "barang");
                 });
 
@@ -138,6 +149,14 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("staff")
+                        .HasColumnName("channel");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -158,9 +177,9 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_ai_conversations");
 
-                    b.HasIndex("CompanyId", "UserId")
+                    b.HasIndex("CompanyId", "UserId", "Channel")
                         .IsUnique()
-                        .HasDatabaseName("uq_ai_conversations_company_id_user_id");
+                        .HasDatabaseName("uq_ai_conversations_company_user_channel");
 
                     b.ToTable("ai_conversations", "barang");
                 });

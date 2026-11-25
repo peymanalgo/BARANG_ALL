@@ -39,9 +39,10 @@ internal sealed class AiConversationConfiguration : IEntityTypeConfiguration<AiC
         b.Property(x => x.Id).HasColumnName("id");
         b.Property(x => x.CompanyId).HasColumnName("company_id");
         b.Property(x => x.UserId).HasColumnName("user_id");
+        b.Property(x => x.Channel).HasColumnName("channel").HasMaxLength(20).IsRequired().HasDefaultValue(AiChannels.Staff);
         b.Property(x => x.CreatedAtUtc).HasColumnName("created_at_utc");
         b.Property(x => x.UpdatedAtUtc).HasColumnName("updated_at_utc");
-        b.HasIndex(x => new { x.CompanyId, x.UserId }).IsUnique().HasDatabaseName("uq_ai_conversations_company_id_user_id");
+        b.HasIndex(x => new { x.CompanyId, x.UserId, x.Channel }).IsUnique().HasDatabaseName("uq_ai_conversations_company_user_channel");
     }
 }
 
@@ -55,6 +56,7 @@ internal sealed class AiChatMessageConfiguration : IEntityTypeConfiguration<AiCh
         b.Property(x => x.ConversationId).HasColumnName("conversation_id");
         b.Property(x => x.CompanyId).HasColumnName("company_id");
         b.Property(x => x.UserId).HasColumnName("user_id");
+        b.Property(x => x.Channel).HasColumnName("channel").HasMaxLength(20).IsRequired().HasDefaultValue(AiChannels.Staff);
         b.Property(x => x.Role).HasColumnName("role").HasMaxLength(20);
         b.Property(x => x.Content).HasColumnName("content");
         b.Property(x => x.ToolsUsed).HasColumnName("tools_used");
@@ -64,6 +66,7 @@ internal sealed class AiChatMessageConfiguration : IEntityTypeConfiguration<AiCh
         b.Property(x => x.CreatedAtUtc).HasColumnName("created_at_utc");
         b.HasIndex(x => x.ConversationId).HasDatabaseName("ix_ai_chat_messages_conversation_id");
         b.HasIndex(x => new { x.CompanyId, x.UserId, x.CreatedAtUtc }).HasDatabaseName("ix_ai_chat_messages_company_user_created");
+        b.HasIndex(x => new { x.CompanyId, x.UserId, x.Channel, x.CreatedAtUtc }).HasDatabaseName("ix_ai_chat_messages_company_user_channel_created");
     }
 }
 

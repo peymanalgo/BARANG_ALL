@@ -101,14 +101,14 @@ public sealed class AiAssistantService(
     public async Task<Result<IReadOnlyList<AiAssistantTurnMessage>>> GetHistoryAsync(CancellationToken ct)
     {
         if (!Guid.TryParse(actor.Actor.UserId, out Guid userId)) return Result.Failure<IReadOnlyList<AiAssistantTurnMessage>>(AiErrors.AccessDenied);
-        AiConversation? conversation = await db.AiConversations.FirstOrDefaultAsync(c => c.UserId == userId, ct);
+        AiConversation? conversation = await db.AiConversations.FirstOrDefaultAsync(c => c.UserId == userId && c.Channel == AiChannels.Staff, ct);
         return Result.Success(conversation is null ? [] : await ReadHistoryAsync(conversation.Id, ct));
     }
 
     public async Task<Result> ClearConversationAsync(CancellationToken ct)
     {
         if (!Guid.TryParse(actor.Actor.UserId, out Guid userId)) return Result.Failure(AiErrors.AccessDenied);
-        AiConversation? conversation = await db.AiConversations.FirstOrDefaultAsync(c => c.UserId == userId, ct);
+        AiConversation? conversation = await db.AiConversations.FirstOrDefaultAsync(c => c.UserId == userId && c.Channel == AiChannels.Staff, ct);
         if (conversation is null) return Result.Success();
         await db.AiChatMessages.Where(m => m.ConversationId == conversation.Id).ExecuteDeleteAsync(ct);
         conversation.Touch(time.GetUtcNow());
@@ -118,9 +118,9 @@ public sealed class AiAssistantService(
 
     private async Task<AiConversation> EnsureConversationAsync(Guid companyId, Guid userId, DateTimeOffset now, bool reset, CancellationToken ct)
     {
-        AiConversation? conversation = await db.AiConversations.FirstOrDefaultAsync(c => c.UserId == userId, ct);
+        AiConversation? conversation = await db.AiConversations.FirstOrDefaultAsync(c => c.UserId == userId && c.Channel == AiChannels.Staff, ct);
         if (conversation is not null) return conversation;
-        conversation = AiConversation.Create(Guid.NewGuid(), companyId, userId, now);
+        conversation = AiConversation.Create(Guid.NewGuid(), companyId, userId, AiChannels.Staff, now);
         db.AiConversations.Add(conversation);
         await db.SaveChangesAsync(ct);
         return conversation;
@@ -134,7 +134,7 @@ public sealed class AiAssistantService(
             AiConversation conversation = conversationId is { } id
                 ? await db.AiConversations.FirstAsync(c => c.Id == id, ct)
                 : await EnsureConversationAsync(companyId, userId, now, reset: false, ct);
-            db.AiChatMessages.Add(AiChatMessage.Create(Guid.NewGuid(), conversation.Id, companyId, userId, "user", userMessage, null, null, null, culture, now));
+            db.AiChatMessages.Add(AiChatMessage.Create(Guid.NewGuid(), conversation.Id, companyId, userId, AiChannels.Staff, "user", userMessage, null, null, null, culture, now));
             db.AiAuditEntries.Add(AiAuditEntry.Create(Guid.NewGuid(), companyId, userId, actor.Actor.ActorUsername ?? "", "chat.blocked", Truncate(userMessage, 200), now));
             await db.SaveChangesAsync(ct);
             return await ReadHistoryAsync(conversation.Id, ct);
@@ -245,8 +245,8 @@ Rules:
 
     private async Task PersistTurnAsync(Guid companyId, Guid userId, AiConversation conversation, string culture, string userMessage, string reply, string? toolsUsed, int? promptTokens, int? completionTokens, DateTimeOffset now, CancellationToken ct)
     {
-        db.AiChatMessages.Add(AiChatMessage.Create(Guid.NewGuid(), conversation.Id, companyId, userId, "user", userMessage, null, null, null, culture, now));
-        db.AiChatMessages.Add(AiChatMessage.Create(Guid.NewGuid(), conversation.Id, companyId, userId, "assistant", reply, toolsUsed, promptTokens, completionTokens, culture, now.AddMilliseconds(1)));
+        db.AiChatMessages.Add(AiChatMessage.Create(Guid.NewGuid(), conversation.Id, companyId, userId, AiChannels.Staff, "user", userMessage, null, null, null, culture, now));
+        db.AiChatMessages.Add(AiChatMessage.Create(Guid.NewGuid(), conversation.Id, companyId, userId, AiChannels.Staff, "assistant", reply, toolsUsed, promptTokens, completionTokens, culture, now.AddMilliseconds(1)));
         db.AiAuditEntries.Add(AiAuditEntry.Create(Guid.NewGuid(), companyId, userId, actor.Actor.ActorUsername ?? "", "chat.answered", $"q={Truncate(userMessage, 300)} · tools={toolsUsed ?? "-"} · tokens={promptTokens ?? 0}+{completionTokens ?? 0}", now));
         conversation.Touch(now);
         await db.SaveChangesAsync(ct);

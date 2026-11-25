@@ -1,0 +1,273 @@
+@inject BARANG.B2C.Web.Services.CustomerContext Customers
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@* دستیار هوشمند مشتری — شناور: پایین-چپ در fa/ar (RTL) و پایین-راست در en/es (LTR)،
+   همان زبان طراحی دستیار ERP با استایل فروشگاه. استفاده از چت فقط برای مشتری واردشده؛
+   بدون ورود، کلیک روی آیکون پنل «ورود لازم است» را باز می‌کند و لینک ورود با returnUrl همین صفحه می‌دهد. *@
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+    var dir = culture is "en" or "es" ? "ltr" : "rtl";
+    string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    bool authed = User.Identity?.IsAuthenticated == true;
+    bool hasProfile = false;
+    if (authed)
+    {
+        try
+        {
+            var customer = await Customers.CurrentAsync();
+            hasProfile = customer is System.Text.Json.JsonElement c && c.ValueKind == System.Text.Json.JsonValueKind.Object && c.TryGetProperty("id", out var _);
+        }
+        catch { hasProfile = false; }
+    }
+    string returnUrl = (Context.Request.Path.HasValue ? Context.Request.Path.Value : "/") + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : "");
+    string loginLink = "/account/login?returnUrl=" + Uri.EscapeDataString(returnUrl);
+    // توکن antiforgery برای POSTهای AJAX (هدر استاندارد RequestVerificationToken — الگوی ویزارد)
+    string afToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+<link rel="stylesheet" href="~/css/ai-chat.css" asp-append-version="true" />
+<div class="ai-assistant @(dir == "rtl" ? "ai-pos-left" : "ai-pos-right")"
+     data-ai-assistant
+     data-auth="@(authed ? "1" : "0")"
+     data-profile="@(hasProfile ? "1" : "0")"
+     data-culture="@culture"
+     data-dir="@dir"
+     data-af="@afToken">
+    <button type="button" class="ai-fab" data-ai-open aria-label="@T("دستیار فروشگاه", "Store assistant", "مساعد المتجر", "Asistente de la tienda")" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2v2M5 8a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v5a7 7 0 0 1-7 7h-0a7 7 0 0 1-7-7V8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            <circle cx="9.2" cy="12" r="1.35" fill="currentColor" /><circle cx="14.8" cy="12" r="1.35" fill="currentColor" />
+            <path d="M9.5 15.5c.8.7 1.6 1 2.5 1s1.7-.3 2.5-1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            <path d="M7 7.5 4.6 6M17 7.5 19.4 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+        <span class="ai-fab-dot" aria-hidden="true"></span>
+    </button>
+
+    <section class="ai-panel" data-ai-panel role="dialog" aria-label="@T("دستیار فروشگاه", "Store assistant", "مساعد المتجر", "Asistente de la tienda")" hidden>
+        <header class="ai-header">
+            <span class="ai-avatar" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <rect x="4" y="7" width="16" height="12" rx="4" fill="rgba(255,255,255,.22)" stroke="#fff" stroke-width="1.4" />
+                    <circle cx="9.3" cy="13" r="1.5" fill="#fff" /><circle cx="14.7" cy="13" r="1.5" fill="#fff" />
+                    <path d="M9.6 16.4c.75.6 1.5.9 2.4.9s1.65-.3 2.4-.9" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" />
+                    <path d="M12 7V4.2M12 4.2a1.4 1.4 0 1 0-.01 0Z" stroke="#fff" stroke-width="1.4" stroke-linecap="round" fill="none" />
+                    <path d="M4 11H2.4M19.6 11H22" stroke="#fff" stroke-width="1.4" stroke-linecap="round" />
+                </svg>
+            </span>
+            <span class="ai-titles">
+                <strong>@T("دستیار فروشگاه", "Store assistant", "مساعد المتجر", "Asistente de la tienda")</strong>
+                <small data-ai-quota>@T("پاسخ از داده‌های خودت", "Answers from your own data", "إجابات من بياناتك", "Respuestas con tus datos")</small>
+            </span>
+            <span class="ai-header-actions">
+                <button type="button" class="ai-icon-btn" data-ai-clear title="@T("گفتگوی جدید", "New conversation", "محادثة جديدة", "Conversación nueva")" aria-label="@T("گفتگوی جدید", "New conversation", "محادثة جديدة", "Conversación nueva")">
+                    <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l.8 12a2 2 0 0 0 2 1.9h5.4a2 2 0 0 0 2-1.9L17.5 7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
+                <button type="button" class="ai-icon-btn" data-ai-max title="@T("بزرگ‌نمایی", "Maximize", "تكبير", "Maximizar")" aria-label="@T("بزرگ‌نمایی", "Maximize", "تكبير", "Maximizar")">
+                    <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
+                <button type="button" class="ai-icon-btn" data-ai-close title="@T("بستن", "Close", "إغلاق", "Cerrar")" aria-label="@T("بستن", "Close", "إغلاق", "Cerrar")">
+                    <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" /></svg>
+                </button>
+            </span>
+        </header>
+
+        <div class="ai-messages" data-ai-messages>
+            <div class="ai-hero" data-ai-hero>
+                <p class="ai-empty">@T("سلام! درباره سفارش‌ها، کیف پول، طرح‌های مورد علاقه یا پروفایلت بپرس.", "Hi! Ask about your orders, wallet, favorites or your profile.", "مرحبًا! اسأل عن طلباتك أو محفظتك أو تصاميمك المفضلة أو ملفك الشخصي.", "¡Hola! Pregunta por tus pedidos, tu monedero, tus favoritos o tu perfil.")</p>
+            </div>
+        </div>
+
+        <div class="ai-chips" data-ai-chips>
+            <button type="button" class="ai-chip" data-ai-chip-q="@T("سفارش‌های من چی هستن؟", "What are my orders?", "ما هي طلباتي؟", "¿Cuáles son mis pedidos?")">@T("سفارش‌های من", "My orders", "طلباتي", "Mis pedidos")</button>
+            <button type="button" class="ai-chip" data-ai-chip-q="@T("وضعیت آخرین سفارش من چیه؟", "What is the status of my latest order?", "ما حالة آخر طلب لي؟", "¿Cuál es el estado de mi último pedido?")">@T("وضعیت آخرین سفارش من", "My latest order status", "حالة آخر طلب", "Estado de mi último pedido")</button>
+            <button type="button" class="ai-chip" data-ai-chip-q="@T("کیف پول من چقدر موجودی داره؟", "What is my wallet balance?", "كم رصيد محفظتي؟", "¿Cuál es el saldo de mi monedero?")">@T("کیف پول من", "My wallet", "محفظتي", "Mi monedero")</button>
+            <button type="button" class="ai-chip" data-ai-chip-q="@T("اطلاعات پروفایلم رو نشون بده", "Show my profile information", "أرِني بيانات ملفي الشخصي", "Muéstrame la información de mi perfil")">@T("اطلاعات پروفایلم", "My profile", "ملفي الشخصي", "Mi perfil")</button>
+        </div>
+
+        <div class="ai-login" data-ai-login hidden>
+            <p>@T("برای گفتگو با دستیار، اول وارد حساب کاربری‌ات شوید.", "Please sign in to your account to chat with the assistant.", "سجّل الدخول إلى حسابك للتحدث مع المساعد.", "Inicia sesión en tu cuenta para chatear con el asistente.")</p>
+            <a class="ai-login-btn" href="@loginLink" data-ai-login-link>@T("ورود / ثبت‌نام", "Sign in", "تسجيل الدخول", "Iniciar sesión")</a>
+        </div>
+
+        <form class="ai-inputrow" data-ai-form>
+            <input type="text" data-ai-input placeholder="@T("پرسشت را بنویسید…", "Type your question…", "اكتب سؤالك…", "Escribe tu pregunta…")" dir="auto" autocomplete="off" maxlength="2000" />
+            <button type="submit" class="ai-send" data-ai-send aria-label="@T("ارسال", "Send", "إرسال", "Enviar")">
+                <svg viewBox="0 0 24 24"><path d="M3.4 20.6 21 12 3.4 3.4l3 8.6-3 8.6Z" fill="currentColor" /></svg>
+            </button>
+        </form>
+    </section>
+</div>
+
+<script>
+(function () {
+    var root = document.querySelector('[data-ai-assistant]');
+    if (!root || root.dataset.aiBound) return;
+    root.dataset.aiBound = '1';
+    var authed = root.dataset.auth === '1';
+    var culture = root.dataset.culture || 'fa';
+    var af = root.dataset.af || '';
+    var postHeaders = { 'Content-Type': 'application/json', 'RequestVerificationToken': af };
+    var panel = root.querySelector('[data-ai-panel]');
+    var fab = root.querySelector('[data-ai-open]');
+    var messages = root.querySelector('[data-ai-messages]');
+    var hero = root.querySelector('[data-ai-hero]');
+    var chips = root.querySelector('[data-ai-chips]');
+    var login = root.querySelector('[data-ai-login]');
+    var loginLink = root.querySelector('[data-ai-login-link]');
+    var form = root.querySelector('[data-ai-form]');
+    var input = root.querySelector('[data-ai-input]');
+    var sendBtn = root.querySelector('[data-ai-send]');
+    var quotaLabel = root.querySelector('[data-ai-quota]');
+    var quotaSub = quotaLabel.textContent;
+    var quotaUsed = 0, quotaLimit = 10, thinking = false, opened = false;
+
+    function Persian(n) {
+        var s = String(n);
+        if (culture === 'fa') {
+            var digits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+            s = s.replace(/\d/g, function (d) { return digits[+d]; });
+        } else if (culture === 'ar') {
+            var ar = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+            s = s.replace(/\d/g, function (d) { return ar[+d]; });
+        }
+        return s;
+    }
+
+    function setQuota(used, limit) {
+        quotaUsed = used; quotaLimit = limit || 10;
+        var left = Math.max(quotaLimit - quotaUsed, 0);
+        if (!quotaUsed) { quotaLabel.textContent = quotaSub; return; }
+        quotaLabel.textContent = culture === 'fa' ? Persian(left) + '/' + Persian(quotaLimit) + ' سؤال باقی مانده'
+            : culture === 'ar' ? 'يبقى ' + Persian(left) + '/' + Persian(quotaLimit) + ' سؤال'
+            : culture === 'es' ? 'quedan ' + left + '/' + quotaLimit + ' preguntas'
+            : left + '/' + quotaLimit + ' questions left';
+    }
+
+    function scrollEnd() { messages.scrollTop = messages.scrollHeight; }
+
+    function bubble(role, content, direction) {
+        var row = document.createElement('div');
+        row.className = 'ai-row ' + (role === 'user' ? 'ai-row-user' : 'ai-row-bot');
+        var b = document.createElement('div');
+        b.className = 'ai-bubble ai-bubble-' + role;
+        b.setAttribute('dir', direction || 'auto');
+        b.textContent = content;
+        row.appendChild(b);
+        messages.appendChild(row);
+        scrollEnd();
+        return b;
+    }
+
+    function typing() {
+        var row = document.createElement('div');
+        row.className = 'ai-row ai-row-bot';
+        row.setAttribute('data-ai-typing', '');
+        var b = document.createElement('div');
+        b.className = 'ai-bubble ai-bubble-assistant ai-typing';
+        b.innerHTML = '<span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>';
+        row.appendChild(b);
+        messages.appendChild(row);
+        scrollEnd();
+    }
+
+    function stopTyping() {
+        var t = messages.querySelector('[data-ai-typing]');
+        if (t) t.remove();
+    }
+
+    function busy(on) {
+        thinking = on;
+        input.disabled = on;
+        sendBtn.disabled = on;
+        chips.style.display = on ? 'none' : '';
+    }
+
+    function showLogin(on) {
+        login.hidden = !on;
+        form.style.display = on ? 'none' : '';
+        chips.style.display = on ? 'none' : '';
+        hero.style.display = on ? 'none' : '';
+    }
+
+    function loadHistory() {
+        if (!authed) return;
+        fetch('/ai-chat?handler=History', { headers: { 'X-Requested-With': 'fetch' } })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) {
+                if (!d || d.problem === 'auth') { showLogin(true); return; }
+                if (!d.ok) return;
+                setQuota(d.quotaUsed, d.quotaLimit);
+                if (d.history && d.history.length) {
+                    hero.style.display = 'none';
+                    d.history.forEach(function (m) { bubble(m.role, m.content, m.direction); });
+                }
+            })
+            .catch(function () { /* تاریخچه نگیر، گفتگو از نو شروع می‌شود */ });
+    }
+
+    function ask(text) {
+        text = (text || '').trim();
+        if (!text || thinking) return;
+        hero.style.display = 'none';
+        bubble('user', text, 'auto');
+        input.value = '';
+        busy(true);
+        typing();
+        fetch('/ai-chat?handler=Ask', {
+            method: 'POST',
+            headers: postHeaders,
+            body: JSON.stringify({ message: text, culture: culture })
+        }).then(function (r) { return r.json(); }).then(function (d) {
+            stopTyping();
+            busy(false);
+            if (!d) { bubble('assistant', culture === 'fa' ? 'خطای غیرمنتظره؛ دوباره تلاش کن.' : 'Unexpected error; please try again.', 'auto'); return; }
+            if (d.problem === 'auth') { showLogin(true); return; }
+            if (d.notConfigured) {
+                setQuota(d.quotaUsed || 0, d.quotaLimit);
+                bubble('assistant', culture === 'fa' ? 'دستیار فعلاً در دسترس نیست؛ بعداً سر بزن.'
+                    : culture === 'ar' ? 'المساعد غير متاح حاليًا؛ عد لاحقًا.'
+                    : culture === 'es' ? 'El asistente no está disponible ahora; vuelve más tarde.'
+                    : 'The assistant is currently unavailable; please check back later.', 'auto');
+                return;
+            }
+            setQuota(d.quotaUsed, d.quotaLimit);
+            bubble('assistant', d.reply || (culture === 'fa' ? 'پاسخی دریافت نشد.' : 'No reply received.'), 'auto');
+        }).catch(function () {
+            stopTyping();
+            busy(false);
+            bubble('assistant', culture === 'fa' ? 'ارتباط برقرار نشد؛ دوباره تلاش کن.' : 'Connection failed; please try again.', 'auto');
+        });
+    }
+
+    fab.addEventListener('click', function () {
+        opened = !opened;
+        panel.hidden = !opened;
+        fab.classList.toggle('is-open', opened);
+        fab.setAttribute('aria-expanded', opened ? 'true' : 'false');
+        if (!opened) return;
+        if (!authed) { showLogin(true); return; }
+        showLogin(false);
+        if (!messages.querySelector('.ai-bubble')) loadHistory();
+        scrollEnd();
+        input.focus();
+    });
+    root.querySelector('[data-ai-close]').addEventListener('click', function () {
+        opened = false; panel.hidden = true; fab.classList.remove('is-open'); fab.setAttribute('aria-expanded', 'false');
+    });
+    root.querySelector('[data-ai-max]').addEventListener('click', function () {
+        panel.classList.toggle('ai-max');
+    });
+    root.querySelector('[data-ai-clear]').addEventListener('click', function () {
+        if (!authed) return;
+        messages.querySelectorAll('.ai-row').forEach(function (r) { r.remove(); });
+        hero.style.display = '';
+        fetch('/ai-chat?handler=Clear', { method: 'POST', headers: postHeaders })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { if (d && d.ok) setQuota(d.quotaUsed || 0, d.quotaLimit || quotaLimit); })
+            .catch(function () { });
+    });
+    chips.addEventListener('click', function (e) {
+        var chip = e.target.closest('[data-ai-chip-q]');
+        if (chip) ask(chip.getAttribute('data-ai-chip-q'));
+    });
+    form.addEventListener('submit', function (e) { e.preventDefault(); ask(input.value); });
+})();
+</script>
