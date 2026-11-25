@@ -7,6 +7,7 @@
 @inject AuthenticationStateProvider AuthState
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@inject FeatureFlagsService Features
 @inject ILocaleDateService Dates
 
 <PageTitle>@Text("قیمت‌گذاری", "التسعير", "Pricing")</PageTitle>
@@ -80,7 +81,7 @@ else {
     private string BasisHeader => WorkspaceItem switch { "Print"=>Text("مبنای قیمت","أساس السعر","Price basis"), "Packaging"=>Text("مبنای دریافت","أساس التحصيل","Charge basis"), "Shipping"=>Text("مبنای دریافت","أساس التحصيل","Charge basis"), "Design"=>Text("مبنای دریافت","أساس التحصيل","Charge basis"), "AdditionalService"=>Text("محدوده/مبنا","النطاق/الأساس","Scope / basis"), _=>Text("مبنای قیمت","أساس السعر","Price basis") };
     private string BusinessBasis(Row row) => WorkspaceItem switch { "Print"=>Text("مساحت/تعداد", "المساحة/الكمية", "Area / quantity"), "Packaging"=>LogisticsBasisText(row.LogisticsBasis ?? ""), "Shipping"=>LogisticsBasisText(row.LogisticsBasis ?? ""), "Design"=>Text("مبلغ ثابت", "مبلغ ثابت", "Fixed"), "AdditionalService"=>Text($"{ScopeText(row.ServiceScope ?? "")} / {ServiceBasisText(row.ServiceBasis ?? "")}", $"{ScopeText(row.ServiceScope ?? "")} / {ServiceBasisText(row.ServiceBasis ?? "")}", $"{ScopeText(row.ServiceScope ?? "")} / {ServiceBasisText(row.ServiceBasis ?? "")}"), _=>Text("مبلغ ثابت", "مبلغ ثابت", "Fixed") };
     private string ServiceBasisText(string value) => value switch { "PerItem"=>Text("به ازای قلم", "لكل بند", "Per item"), "PerQuantity"=>Text("به ازای تعداد", "لكل كمية", "Per quantity"), _=>Text("مبلغ ثابت", "مبلغ ثابت", "Fixed") };
-    protected override async Task OnInitializedAsync()=>await Load();
+    protected override async Task OnInitializedAsync(){if(!await Features.RedirectIfDisabledAsync(Nav,"pricing"))return;await Load();}
     private async Task SelectWorkspace(string item){if(WorkspaceItem==item)return;ClearTransient();WorkspaceItem=item;Type=item switch{"Print"=>"Print","Packaging"=>"Packaging","Shipping"=>"Shipping","Design"=>"Design","AdditionalService"=>"AdditionalService",_=>""};Page=1;if(item is "Discounts" or "Taxes"){StateHasChanged();return;}await Load();}
     private void ClearTransient(){Message=null;Success=false;}
     private async Task Load(bool resetPage=false){if(resetPage)Page=1;LoadCancellation?.Cancel();LoadCancellation?.Dispose();CancellationTokenSource source=new();LoadCancellation=source;int generation=++LoadGeneration;Loading=true;StateHasChanged();try{var s=await Session();if(s is null)return;string query=$"api/v1/pricing/tariffs/?includeInactive={IncludeInactive.ToString().ToLowerInvariant()}";var r=await Core.GetAsync(query,s.Value.Token,s.Value.Company,source.Token);if(generation!=LoadGeneration)return;if(r.IsSuccess){JsonElement root=r.Value;Rows=root.ValueKind==JsonValueKind.Array?root.EnumerateArray().Select(Parse).Where(x=>x.Type is not TariffType.RawProduct).ToList():[];TotalRows=Rows.Count;}else Show(r);}catch(OperationCanceledException){}finally{if(generation==LoadGeneration){Loading=false;await InvokeAsync(StateHasChanged);}}}

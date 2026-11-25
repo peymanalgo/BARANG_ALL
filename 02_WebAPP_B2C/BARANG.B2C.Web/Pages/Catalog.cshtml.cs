@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace BARANG.B2C.Web.Pages;
 
-public sealed class CatalogModel(CoreApiClient core) : PageModel
+public sealed class CatalogModel(CoreApiClient core, SiteContext site) : PageModel
 {
     public IReadOnlyList<DesignCard> Designs { get; private set; } = [];
     public IReadOnlyList<ConceptMatch> ConceptResults { get; private set; } = [];
@@ -13,6 +13,9 @@ public sealed class CatalogModel(CoreApiClient core) : PageModel
     public long Total { get; private set; }
     public int Page { get; private set; } = 1;
     public int PageSize { get; private set; } = 24;
+    // فیچرهای store: جستجوی مفهومی/علاقه‌مندی‌ها (خطا = روشن؛ fail-open)
+    public bool ConceptEnabled { get; private set; } = true;
+    public bool FavoritesEnabled { get; private set; } = true;
     [BindProperty(SupportsGet = true)] public string? Search { get; set; }
     [BindProperty(SupportsGet = true)] public string? Category { get; set; }
     public IReadOnlyList<CategoryChip> Categories { get; private set; } = [];
@@ -21,7 +24,8 @@ public sealed class CatalogModel(CoreApiClient core) : PageModel
     public bool HasNext => Page * PageSize < Total;
     public bool HasPrev => Page > 1;
     // جستجو در کاتالوگ همیشه مفهومی است؛ حالت عادی فقط برای مرور دسته‌ها
-    public bool ConceptMode => !string.IsNullOrWhiteSpace(Search);
+    // فیچر «جستجوی مفهومی» خاموش باشد → حالت جستجو همان مسیر معمولی کاتالوگ (ILIKE) در نظر گرفته می‌شود
+    public bool ConceptMode => !string.IsNullOrWhiteSpace(Search) && ConceptEnabled;
     public bool IsAuthenticated => User.Identity?.IsAuthenticated == true;
     public HashSet<string> FavoriteIds { get; private set; } = new(StringComparer.Ordinal);
     public string CurrentUrl => "/catalog" + QueryString.Create(new Dictionary<string, string?>
@@ -38,17 +42,24 @@ public sealed class CatalogModel(CoreApiClient core) : PageModel
         string search = (Search ?? "").Trim();
         string catCulture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
         string path = $"api/v1/public/catalog?page={Page}&pageSize={PageSize}&culture={catCulture}" + (search.Length > 0 ? $"&search={Uri.EscapeDataString(search)}" : "") + (string.IsNullOrWhiteSpace(Category) ? "" : $"&categoryCode={Uri.EscapeDataString(Category.Trim())}");
+        // فیچرهای خاموش: شاخه جستجوی مفهومی کلاً حذف می‌شود و همان مسیر معمولی کاتالوگ (ILIKE) جواب می‌دهد
+        Task<bool> conceptFlagTask = site.FeatureEnabledAsync("concept.search");
+        Task<bool> favoritesFlagTask = site.FeatureEnabledAsync("favorites");
         Task<JsonElement?> catalogTask = core.GetAsync(path);
-        Task<JsonElement?> conceptTask = ConceptMode && search.Length >= 2
-            ? core.GetAsync($"api/v1/public/catalog/concept-search?limit=60&culture={culture}&q={Uri.EscapeDataString(search)}")
-            : Task.FromResult<JsonElement?>(null);
-        Task<JsonElement?> favoritesTask = IsAuthenticated
+        JsonElement? conceptTask = null;
+        Task<JsonElement?> favoritesTask;
+        await Task.WhenAll(conceptFlagTask, favoritesFlagTask, catalogTask);
+        ConceptEnabled = conceptFlagTask.Result;
+        FavoritesEnabled = favoritesFlagTask.Result;
+        if (ConceptMode && search.Length >= 2 && ConceptEnabled)
+            conceptTask = await core.GetAsync($"api/v1/public/catalog/concept-search?limit=60&culture={culture}&q={Uri.EscapeDataString(search)}");
+        favoritesTask = IsAuthenticated && FavoritesEnabled
             ? LoadFavoriteIdsAsync()
             : Task.FromResult<JsonElement?>(null);
         JsonElement? result = await catalogTask;
         (Designs, Total) = DesignCard.FromPage(result);
 
-        if (await conceptTask is JsonElement ce && ce.ValueKind == JsonValueKind.Array)
+        if (conceptTask is JsonElement ce && ce.ValueKind == JsonValueKind.Array)
         {
             ConceptActive = true;
             ConceptResults = ce.EnumerateArray().Select(x => new ConceptMatch(

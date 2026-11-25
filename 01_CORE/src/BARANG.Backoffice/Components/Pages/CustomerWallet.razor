@@ -10,6 +10,8 @@
 @inject ICoreApiClient Core
 @inject AuthenticationStateProvider AuthState
 @inject ILocaleDateService Dates
+@inject FeatureFlagsService Features
+@inject NavigationManager Nav
 
 <PageTitle>@T("کیف پول مشتریان","Customer Wallets","محافظ العملاء") · BARANG</PageTitle>
 <main class="page-shell wallet-page" aria-labelledby="wallet-heading">
@@ -197,7 +199,7 @@
         _=>code ?? "—"
     };
 
-    protected override Task OnInitializedAsync() => Load();
+    protected override async Task OnInitializedAsync() { if (!await Features.RedirectIfDisabledAsync(Nav, "customer.wallet")) return; await Load(); }
 
     private async Task SwitchTab(string tab){Tab=tab;Page=1;await Load();}
     private async Task SearchChanged(){Page=1;await Load();}

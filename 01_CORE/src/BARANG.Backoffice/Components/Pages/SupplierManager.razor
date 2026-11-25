@@ -7,6 +7,8 @@
 @inject IStringLocalizer<AppStrings> L
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
+@inject FeatureFlagsService Features
+@inject NavigationManager Nav
 
 <PageTitle>@S["Title"] | BARANG</PageTitle>
 <nav class="breadcrumbs"><span>@S["MasterData"]</span><span>/</span><span>@S["SystemManagement"]</span><span>/</span><span>@S["Title"]</span></nav>
@@ -76,6 +78,7 @@
     private List<JsonElement>Rows=[];
     private Dictionary<string,string>Captions=[];
     protected override async Task OnParametersSetAsync(){
+        if(!await Features.RedirectIfDisabledAsync(Nav,"suppliers"))return;
         var session=await Session();if(session is null){Message="Forbidden";return;}
         string key=$"{session.Value.Company}:{CultureInfo.CurrentUICulture.Name}";
         if(key==LoadedContext)return;LoadedContext=key;

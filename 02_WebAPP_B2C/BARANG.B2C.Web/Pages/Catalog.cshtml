@@ -97,7 +97,7 @@
                         </span>
                     </a>
 
-                    @if (Model.IsAuthenticated)
+                    @if (Model.IsAuthenticated && Model.FavoritesEnabled)
                     {
                         <form method="post" asp-page="/Account/Favorites" asp-page-handler="Toggle" class="fav-heart-form">
                             <input type="hidden" name="artworkId" value="@d.Id" />

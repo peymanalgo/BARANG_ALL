@@ -14,12 +14,17 @@ public sealed record AddressCard(Guid Id, string? Title, string? TypeCode, strin
 public sealed record WalletSummary(decimal Balance, string CurrencyCode);
 
 [Authorize(Policy = "LoggedIn")]
-public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : PageModel
+public sealed class IndexModel(CoreApiClient core, CustomerContext customers, SiteContext site) : PageModel
 {
     public string? DisplayName { get; private set; }
     public string? Username { get; private set; }
     public string? Error { get; private set; }
     public bool HasProfile { get; private set; }
+    // فیچرهای store داشبورد (خطا = روشن؛ fail-open)
+    public bool ReferralEnabled { get; private set; } = true;
+    public bool FavoritesEnabled { get; private set; } = true;
+    public bool NotificationsEnabled { get; private set; } = true;
+    public bool CustomDesignsEnabled { get; private set; } = true;
     public string? CustomerName { get; private set; }
     public string? CustomerCode { get; private set; }
     public long AddressCount { get; private set; }
@@ -44,9 +49,19 @@ public sealed class IndexModel(CoreApiClient core, CustomerContext customers) : 
         return RedirectToPage("/Account/Login", new { returnUrl = "/account" });
     }
 
-    public async Task<IActionResult> OnGet(string? error, [FromQuery(Name = "ref")] string? refCode) 
+    public async Task<IActionResult> OnGet(string? error, [FromQuery(Name = "ref")] string? refCode)
     {
         Error = error;
+        // وضعیت فیچرهای store: ۴ چک با یک فراخوانی endpoint عمومی (کش SiteContext) جواب می‌شوند
+        Task<bool> referralFlag = site.FeatureEnabledAsync("referral");
+        Task<bool> favoritesFlag = site.FeatureEnabledAsync("favorites");
+        Task<bool> notificationsFlag = site.FeatureEnabledAsync("notifications");
+        Task<bool> customDesignsFlag = site.FeatureEnabledAsync("custom.designs");
+        await Task.WhenAll(referralFlag, favoritesFlag, notificationsFlag, customDesignsFlag);
+        ReferralEnabled = referralFlag.Result;
+        FavoritesEnabled = favoritesFlag.Result;
+        NotificationsEnabled = notificationsFlag.Result;
+        CustomDesignsEnabled = customDesignsFlag.Result;
         if (!string.IsNullOrWhiteSpace(refCode) && refCode.Length is >= 4 and <= 20)
         {
             Response.Cookies.Append("barang.ref", refCode.Trim().ToUpperInvariant(), new CookieOptions { Expires = DateTimeOffset.UtcNow.AddDays(30), IsEssential = true });

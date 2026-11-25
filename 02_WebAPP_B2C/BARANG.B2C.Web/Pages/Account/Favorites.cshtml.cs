@@ -9,7 +9,7 @@ namespace BARANG.B2C.Web.Pages.Account;
 public sealed record FavoriteItem(Guid ArtworkId, string Title, string? ThumbnailUrl, DateTimeOffset CreatedAtUtc);
 
 [Authorize(Policy = "LoggedIn")]
-public sealed class FavoritesModel(CoreApiClient core, CustomerContext customers) : PageModel
+public sealed class FavoritesModel(CoreApiClient core, CustomerContext customers, SiteContext site) : PageModel
 {
     public IReadOnlyList<FavoriteItem> Items { get; private set; } = [];
 
@@ -21,6 +21,8 @@ public sealed class FavoritesModel(CoreApiClient core, CustomerContext customers
 
     public async Task<IActionResult> OnGet()
     {
+        // فیچر «علاقه‌مندی‌ها» خاموش باشد → ریدایرکت به داشبورد (سطح منو/ریدایرکت)
+        if (!await site.FeatureEnabledAsync("favorites")) return Redirect("/account");
         if (await customers.CurrentAsync() is not JsonElement c || !c.TryGetProperty("id", out JsonElement cid)) return Page();
         JsonElement? favs = await core.GetAsync($"api/v1/client/customers/{cid.GetString()}/favorites?culture={System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant()}");
         if (ReauthGuard() is { } r) return r;

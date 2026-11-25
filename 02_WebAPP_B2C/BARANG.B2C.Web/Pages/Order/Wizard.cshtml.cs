@@ -10,15 +10,29 @@ namespace BARANG.B2C.Web.Pages.Order;
 // فقط نقش BFF دارد: داده و قیمت و سفارش همه از Core می‌آیند، هیچ چیز اینجا
 // هاردکد نیست. شروع طراحی فقط برای مشتری واردشده ممکن است؛ در غیر این صورت
 // همان اول به ورود/ثبت‌نام هدایت می‌شود (و بعد از ورود به همان ویزارد برمی‌گردد).
-public sealed class WizardModel(CoreApiClient core, CustomerContext customers) : PageModel
+public sealed class WizardModel(CoreApiClient core, CustomerContext customers, SiteContext site) : PageModel
 {
     public Guid? EntryDesignId { get; private set; }
     public bool IsAuthenticated { get; private set; }
+    // فیچرهای store ویزارد (خطا = روشن؛ fail-open) — خاموش بودن = دکمه/بخش متناظر رندر نمی‌شود
+    public bool UploadEnabled { get; private set; } = true;
+    public bool TextEnabled { get; private set; } = true;
+    public bool GiftEnabled { get; private set; } = true;
+    public bool AiDesignEnabled { get; private set; } = true;
 
-    public IActionResult OnGet(Guid? design)
+    public async Task<IActionResult> OnGetAsync(Guid? design)
     {
         EntryDesignId = design;
         IsAuthenticated = User.Identity?.IsAuthenticated == true;
+        Task<bool> uploadFlag = site.FeatureEnabledAsync("wizard.upload");
+        Task<bool> textFlag = site.FeatureEnabledAsync("wizard.text");
+        Task<bool> giftFlag = site.FeatureEnabledAsync("wizard.gift");
+        Task<bool> aiFlag = site.FeatureEnabledAsync("ai.design");
+        await Task.WhenAll(uploadFlag, textFlag, giftFlag, aiFlag);
+        UploadEnabled = uploadFlag.Result;
+        TextEnabled = textFlag.Result;
+        GiftEnabled = giftFlag.Result;
+        AiDesignEnabled = aiFlag.Result;
         if (!IsAuthenticated)
         {
             // گیت ورود در شروع طراحی: طرح ورودی را هم در returnUrl نگه می‌داریم
@@ -246,8 +260,10 @@ public sealed class WizardModel(CoreApiClient core, CustomerContext customers) :
         };
 
         // گیرنده هدیه: نام/شماره/نشانی جایگزین ارسال و پیام روی کارت هدیه → یادداشت سفارش
+        // فیچر «بسته هدیه» خاموش باشد → gift از state بی‌اثر می‌شود (BFF strip)
+        bool giftEnabled = await site.FeatureEnabledAsync("wizard.gift");
         List<string> noteParts = [];
-        if (state.TryGetProperty("gift", out JsonElement gift) && gift.ValueKind == JsonValueKind.Object && Text(gift, "name").Length > 0)
+        if (giftEnabled && state.TryGetProperty("gift", out JsonElement gift) && gift.ValueKind == JsonValueKind.Object && Text(gift, "name").Length > 0)
         {
             string giftAddress = Text(gift, "address");
             shippingAddress = new

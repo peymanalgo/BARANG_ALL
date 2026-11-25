@@ -6,6 +6,8 @@
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
 @inject IJSRuntime JS
+@inject FeatureFlagsService Features
+@inject NavigationManager Nav
 
 <PageTitle>@T("موجودی و خرید","المخزون والمشتريات","Inventory & Purchasing")</PageTitle>
 <nav class="breadcrumbs"><a href="/workspace/inventory">@T("موجودی و خرید","المخزون والمشتريات","Inventory & Purchasing")</a></nav>
@@ -44,7 +46,7 @@
     private string Section="stock", Search="", Warehouse="", Variant="", Destination="", Entity="", Supplier="", PurchaseId="", Code="", Name="", WarehouseType="RawMaterials", Reference="INV-"+Guid.NewGuid().ToString("N")[..8], Reason=""; private decimal Quantity=1,UnitPrice; private long Version; private int Page=1; private const int PageSize=25; private bool Loading,Dialog,ReadOnly,Success; private string? Message; private (string Fa,string Ar,string En)? Error; private List<Dictionary<string,string>> Rows=[]; private string[] Columns=[]; private string Lang=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName; private CancellationTokenSource? SearchCancellation; private readonly List<OrderLineDraft> OrderLines=[];
     private sealed record OrderLineDraft(string Variant,decimal Quantity,decimal UnitPrice); private sealed record ReceiptLine(string Variant,decimal Ordered,decimal Received); private readonly List<ReceiptLine> ReceiptLines=[];
     private MenuItem Current=>Menu.First(x=>x.Key==Section); private string CurrentLabel=>Current.Label(Lang); private string CurrentDescription=>Section switch{"stock"=>T("موجودی قابل دسترس و گردش کالا","الرصيد المتاح وحركة المخزون","Balances and stock movements"),"orders"=>T("چرخه سفارش خرید و دریافت","دورة أمر الشراء والاستلام","Purchase orders and receipts"),_=>T("عملیات کنترل‌شده و قابل ردیابی","عمليات مضبوطة وقابلة للتتبع","Controlled traceable operations")};
-    protected override async Task OnInitializedAsync(){ApplyWorkspaceQuery();await Load();}
+    protected override async Task OnInitializedAsync(){if(!await Features.RedirectIfDisabledAsync(Nav,"inventory.purchasing"))return;ApplyWorkspaceQuery();await Load();}
     protected override async Task OnParametersSetAsync(){if(ApplyWorkspaceQuery())await Load();}
     private bool ApplyWorkspaceQuery(){if(string.IsNullOrWhiteSpace(WorkspaceSection)||!Menu.Any(x=>x.Key==WorkspaceSection)||Section==WorkspaceSection)return false;ClearTransient();Section=WorkspaceSection;Page=1;OrderLines.Clear();ReceiptLines.Clear();Entity=PurchaseId="";return true;}
     private string T(string fa,string ar,string en)=>Lang switch{"fa"=>fa,"ar"=>ar,"es"=>EsGlossary.Tr(en),_=>en};

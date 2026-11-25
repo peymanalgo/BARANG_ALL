@@ -7,6 +7,8 @@
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
 @inject ILocaleDateService Dates
+@inject FeatureFlagsService Features
+@inject NavigationManager Nav
 <PageTitle>@L["Module_production"]</PageTitle>
 <header class="crud-header production-hero"><div><span class="eyebrow production-hero-kicker"><span class="production-ink-dot" aria-hidden="true"></span>@L["OperationalWorkspace"]</span><h1>@L["Module_production"]</h1><p>@T("برنامه‌ریزی، صف چاپ و پرس، ظرفیت و عملکرد اپراتورها","Production planning, print & press queues, capacity and operator performance","برنامه‌ریزی تولید، صف چاپ و کوبش، ظرفیت و عملکرد اپراتورها")</p></div><div class="row-actions"><button type="button" class="btn btn-secondary" @onclick="ToggleMine">@(MineOnly?T("همه کارها","All jobs","همه کارها"):T("کارهای من","My jobs","کارهای من"))</button><button type="button" class="btn btn-secondary" @onclick="Load"><BarangIcon Name="reset" /> @L["Refresh"]</button> <button type="button" class="prod-chart-btn" title="کارهای تکمیل‌شده هر اپراتور" @onclick="@(()=>OpenChart("perf","کارهای تکمیل‌شده هر اپراتور"))"><BarangIcon Name="chart" /></button></div></header>
 
@@ -154,7 +156,7 @@
  private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","es"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
  private string ShiftSummary=>string.Join(" · ",ShiftList.Select(s=>$"{s.Title} ({s.Start:HH:mm}–{s.End:HH:mm})"));
  private readonly List<(string Title,TimeOnly Start,TimeOnly End)> ShiftList=[];
- protected override async Task OnInitializedAsync(){var u=(await AuthState.GetAuthenticationStateAsync()).User;Token=u.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await LoadShifts();await Load();}
+ protected override async Task OnInitializedAsync(){if(!await Features.RedirectIfDisabledAsync(Nav,"production"))return;var u=(await AuthState.GetAuthenticationStateAsync()).User;Token=u.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await LoadShifts();await Load();}
  private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>EsGlossary.Tr(en),"ar"=>ar,_=>fa};
  private string D2(string fa,string en,string ar)=>T(fa,en,ar);
  private string St(string s)=>s switch{"Planned"=>T("برنامه‌ریزی‌شده","Planned","مخطط"),"Ready"=>T("آماده","Ready","جاهز"),"InProgress"=>T("در جریان","In progress","قيد التنفيذ"),"Suspended"=>T("متوقف","Suspended","معلق"),"Failed"=>T("خطا","Failed","فشل"),"Completed"=>T("تکمیل‌شده","Completed","مكتمل"),_=>s};

@@ -8,6 +8,8 @@
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
 @inject ILocaleDateService Dates
+@inject FeatureFlagsService Features
+@inject NavigationManager Nav
 <PageTitle>@T("لجستیک","Logistics","اللوجستيات")</PageTitle>
 <header class="crud-header logistics-hero"><div><span class="eyebrow logistics-kicker"><span class="logistics-ink-dot" aria-hidden="true"></span>@L["OperationalWorkspace"]</span><h1>@T("لجستیک","Logistics","اللوجستيات")</h1><p>@T("بسته‌بندی، تحویل به انبار ارسال، مرسولات و پیگیری تحویل","Packaging, handoff, shipments and delivery tracking","التغليف والتسليم والشحنات وتتبع التوصيل")</p></div><div class="row-actions"><button type="button" class="btn btn-secondary" @onclick="Load"><BarangIcon Name="reset" /> @L["Refresh"]</button></div></header>
 
@@ -161,7 +163,7 @@
  private List<SearchableSelectOption> SubmittedOrderOptions=[],WarehouseOptions=[],CarrierOptions=[],ReadyPackageOptions=[];
  private string? Token; private Guid Company;
  private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","es"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
- protected override async Task OnInitializedAsync(){var u=(await AuthState.GetAuthenticationStateAsync()).User;Token=u.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await Load();}
+ protected override async Task OnInitializedAsync(){if(!await Features.RedirectIfDisabledAsync(Nav,"logistics"))return;var u=(await AuthState.GetAuthenticationStateAsync()).User;Token=u.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await Load();}
  private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>EsGlossary.Tr(en),"ar"=>ar,_=>fa};
  private string PkSt(string s)=>s switch{"Draft"=>T("در بسته‌بندی","Packaging","في التغليف"),"Completed"=>T("بسته‌بندی‌شده","Packaged","معبأ"),"AtShippingWarehouse"=>T("انبار ارسال","At shipping wh.","مستودع الشحن"),"ReleasedToShipment"=>T("آزاد برای ارسال","Released","مفرج للشحن"),_=>s};
  private string ShSt(string s)=>s switch{"Ready"=>T("آماده ارسال","Ready to ship","جاهز للشحن"),"Shipped"=>T("ارسال‌شده","Shipped","مشحون"),"InTransit"=>T("در حال حمل","In transit","في الطريق"),"Delivered"=>T("تحویل‌شده","Delivered","تم التسليم"),"FailedDelivery"=>T("ارسال ناموفق","Failed delivery","فشل التسليم"),"Returned"=>T("برگشتی","Returned","مرتجع"),_=>s};

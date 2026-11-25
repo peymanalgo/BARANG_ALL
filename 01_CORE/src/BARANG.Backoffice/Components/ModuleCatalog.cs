@@ -1,8 +1,9 @@
 namespace BARANG.Backoffice.Components;
 
 public sealed record BackofficeModule(string Code,string Icon,string Permission,string ReadPath);
-public sealed record BackofficeNavigationItem(string LabelKey,string Route,string Permission,IReadOnlyList<BackofficeNavigationItem>? Children=null);
-public sealed record BackofficeNavigationGroup(string LabelKey,string Icon,IReadOnlyList<BackofficeNavigationItem> Items,string? Route=null,string? Permission=null);
+// FeatureCode: کد فیچر سیستم (barang.system_features، اسکوپ erp) — وقتی فیچر خاموش باشد آیتم منو مخفی می‌شود (پیش‌فرض: بدون فیچر = همیشه).
+public sealed record BackofficeNavigationItem(string LabelKey,string Route,string Permission,string? FeatureCode=null,IReadOnlyList<BackofficeNavigationItem>? Children=null);
+public sealed record BackofficeNavigationGroup(string LabelKey,string Icon,IReadOnlyList<BackofficeNavigationItem> Items,string? Route=null,string? Permission=null,string? FeatureCode=null);
 public static class ModuleCatalog
 {
     public static readonly IReadOnlyList<BackofficeModule> All=
@@ -18,8 +19,13 @@ public static class ModuleCatalog
         new("reports","chart","audit.read","api/v1/audit/events?pageSize=20")
     ];
     public static bool IsVisible(BackofficeModule module,System.Security.Claims.ClaimsPrincipal user)=>user.IsInRole("system.administrator")||user.HasClaim("barang:permission",module.Permission);
-    public static bool IsVisible(BackofficeNavigationItem item,System.Security.Claims.ClaimsPrincipal user)=>item.Children is not null ? item.Children.Any(child=>IsVisible(child,user)) : user.IsInRole("system.administrator")||user.HasClaim("barang:permission",item.Permission);
-    public static bool IsVisible(BackofficeNavigationGroup group,System.Security.Claims.ClaimsPrincipal user)=>group.Permission is null||user.IsInRole("system.administrator")||user.HasClaim("barang:permission",group.Permission);
+    // featureEnabled: پیش‌بارگذاری‌شدهٔ وضعیت فیچرها (null = fail-open همه روشن) — آیتمِ دارای FeatureCode وقتی فیچرش خاموش است دیده نمی‌شود.
+    public static bool IsVisible(BackofficeNavigationItem item,System.Security.Claims.ClaimsPrincipal user,Func<string,bool>? featureEnabled=null)
+        =>(item.FeatureCode is null||featureEnabled?.Invoke(item.FeatureCode) is not false)
+        &&(item.Children is not null ? item.Children.Any(child=>IsVisible(child,user,featureEnabled)) : user.IsInRole("system.administrator")||user.HasClaim("barang:permission",item.Permission));
+    public static bool IsVisible(BackofficeNavigationGroup group,System.Security.Claims.ClaimsPrincipal user,Func<string,bool>? featureEnabled=null)
+        =>(group.FeatureCode is null||featureEnabled?.Invoke(group.FeatureCode) is not false)
+        &&(group.Permission is null||user.IsInRole("system.administrator")||user.HasClaim("barang:permission",group.Permission));
     public static readonly IReadOnlyList<BackofficeNavigationGroup> Navigation=
     [
         Group("Nav_B2CSiteManagement","globe",
@@ -44,30 +50,30 @@ public static class ModuleCatalog
         Group("Nav_SystemManagement","shield",
                 Item("Nav_OrganizationalChart","/master/organization-chart","organization.unit.manage"),
                 Item("Nav_Persons","/master/persons","organization.unit.manage"),
-                Item("Nav_Suppliers","/master/suppliers","supplier.read"),
-                Item("Nav_Equipment","/master/equipment","equipment.read"),
-                Item("Nav_Shifts","/master/shifts","organization.settings.manage"),
-                Item("Nav_Products","/manage/products","product.read"),
+                Item("Nav_Suppliers","/master/suppliers","supplier.read","suppliers"),
+                Item("Nav_Equipment","/master/equipment","equipment.read","equipment"),
+                Item("Nav_Shifts","/master/shifts","organization.settings.manage","shifts"),
+                Item("Nav_Products","/manage/products","product.read","products"),
                 Item("Nav_UserAccessManagement","/admin/user-access","security.user.read"),
                 Item("Nav_AI_ModelManagement","/master/ai-models","ai.settings.read"),
                 Item("Nav_SystemFeatures","/system/features","features.manage"),
-                Item("Nav_Workflow","/workspace/workflow","workflow.read"),
+                Item("Nav_Workflow","/workspace/workflow","workflow.read","workflow.bpms"),
                 Item("Nav_Services","/master/services","lookup.read")),
         Direct("Nav_Customers","users","/manage/customers","customer.read"),
-        Direct("Nav_CustomerFeedbacks","message","/workspace/feedbacks","customer.read"),
-        Direct("Nav_CustomerWallet","wallet","/workspace/wallet","customer.read"),
-        Direct("Nav_ArtworkBank","image","/manage/design-bank","artwork.read"),
-        Direct("Nav_Orders","orders","/workspace/orders","order.read"),
-        Direct("Nav_Cartable","inbox","/cartable","workflow.read"),
-        Direct("Nav_Pricing","finance","/workspace/pricing","pricing.read"),
-        Direct("Nav_InventoryPurchasing","warehouse","/workspace/inventory","inventory.read"),
-        Direct("Nav_Production","settings","/workspace/production","production.read"),
-        Direct("Nav_Quality","quality","/workspace/quality","qc.read"),
-        Direct("Nav_Logistics","truck","/workspace/logistics","logistics.read"),
+        Direct("Nav_CustomerFeedbacks","message","/workspace/feedbacks","customer.read","customer.feedback"),
+        Direct("Nav_CustomerWallet","wallet","/workspace/wallet","customer.read","customer.wallet"),
+        Direct("Nav_ArtworkBank","image","/manage/design-bank","artwork.read","design.bank"),
+        Direct("Nav_Orders","orders","/workspace/orders","order.read","orders"),
+        Direct("Nav_Cartable","inbox","/cartable","workflow.read","cartable"),
+        Direct("Nav_Pricing","finance","/workspace/pricing","pricing.read","pricing"),
+        Direct("Nav_InventoryPurchasing","warehouse","/workspace/inventory","inventory.read","inventory.purchasing"),
+        Direct("Nav_Production","settings","/workspace/production","production.read","production"),
+        Direct("Nav_Quality","quality","/workspace/quality","qc.read","quality"),
+        Direct("Nav_Logistics","truck","/workspace/logistics","logistics.read","logistics"),
         Direct("Nav_Notifications","bell","/workspace/notifications","notification.read"),
-        Direct("Nav_ManagementDashboard","chart","/workspace/management","audit.read"),
+        Direct("Nav_ManagementDashboard","chart","/workspace/management","audit.read","management.dashboard"),
     ];
     private static BackofficeNavigationGroup Group(string key,string icon,params BackofficeNavigationItem[] items)=>new(key,icon,items);
-    private static BackofficeNavigationGroup Direct(string key,string icon,string route,string permission)=>new(key,icon,[],route,permission);
-    private static BackofficeNavigationItem Item(string key,string route,string permission)=>new(key,route,permission);
+    private static BackofficeNavigationGroup Direct(string key,string icon,string route,string permission,string? feature=null)=>new(key,icon,[],route,permission,feature);
+    private static BackofficeNavigationItem Item(string key,string route,string permission,string? feature=null)=>new(key,route,permission,feature);
 }

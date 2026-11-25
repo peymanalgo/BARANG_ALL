@@ -13,11 +13,13 @@ public sealed class BlogModel(SiteContext site) : PageModel
     public int Page { get; private set; } = 1;
     public bool HasNext { get; private set; }
 
-    public async Task OnGet([FromQuery] int? page)
+    public async Task<IActionResult> OnGet([FromQuery] int? page)
     {
+        // فیچر «وبلاگ» خاموش باشد → ریدایرکت به خانه (سطح منو/ریدایرکت؛ fail-open)
+        if (!await site.FeatureEnabledAsync("blog")) return Redirect("/");
         Page = Math.Max(1, page ?? 1);
         JsonElement? result = await site.BlogListAsync(Page, 12);
-        if (result is not JsonElement r || r.ValueKind != JsonValueKind.Object) return;
+        if (result is not JsonElement r || r.ValueKind != JsonValueKind.Object) return Page();
         Total = r.TryGetProperty("totalCount", out JsonElement t) && t.TryGetInt64(out long n) ? n : 0;
         string culture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
         List<PostCard> posts = [];
@@ -48,6 +50,7 @@ public sealed class BlogModel(SiteContext site) : PageModel
             }
         Posts = posts;
         HasNext = Page * 12 < Total;
+        return Page();
     }
 
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out JsonElement v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";

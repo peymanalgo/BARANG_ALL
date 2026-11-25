@@ -6,6 +6,8 @@
 @inject IStringLocalizer<AppStrings> L
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
+@inject FeatureFlagsService Features
+@inject NavigationManager Nav
 <PageTitle>@L["Module_quality"]</PageTitle>
 <header class="crud-header quality-hero"><div><span class="eyebrow quality-kicker"><span class="quality-ink-dot" aria-hidden="true"></span>@L["OperationalWorkspace"]</span><h1>@L["Module_quality"]</h1><p>@T("بازرسی خروجی تولید با چک‌لیست، ثبت عیوب و تصمیم کیفی","Inspect production output with checklists, record defects and quality decisions","فحص إنتاج وفق قوائم الفحص وتسجيل العيوب والقرار النوعي")</p></div><div class="row-actions"><a class="btn btn-secondary" href="/quality/catalogs"><BarangIcon Name="database" /> @T("قالب‌ها و کاتالوگ‌ها","Templates & catalogs","القوالب والفهارس")</a><button type="button" class="btn btn-secondary" @onclick="Load"><BarangIcon Name="reset" /> @L["Refresh"]</button></div></header>
 
@@ -109,7 +111,7 @@
  private BARANG.Core.Application.Quality.QualityAnalyticsView? Analytics;
  private string? Token; private Guid Company;
  private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","es"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
- protected override async Task OnInitializedAsync(){var u=(await AuthState.GetAuthenticationStateAsync()).User;Token=u.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await Load();}
+ protected override async Task OnInitializedAsync(){if(!await Features.RedirectIfDisabledAsync(Nav,"quality"))return;var u=(await AuthState.GetAuthenticationStateAsync()).User;Token=u.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await Load();}
  private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>EsGlossary.Tr(en),"ar"=>ar,_=>fa};
  private string St(string s)=>s switch{"InProgress"=>T("در جریان بازرسی","In progress","قيد الفحص"),"Suspended"=>T("معلق","Suspended","معلق"),"ManagementReview"=>T("بررسی مدیریت","Management review","مراجعة الإدارة"),"Approved"=>T("تأییدشده","Approved","معتمد"),"Rejected"=>T("مردود","Rejected","مرفوض"),_=>s};
  private string Jt(string t)=>t switch{"DesignPreparation"=>T("آماده‌سازی طرح","Design preparation","تجهيز التصميم"),"Print"=>T("چاپ","Print","طباعة"),"HeatPress"=>T("پرس حرارتی","Heat press","كبس حراري"),"Ironing"=>T("اتو","Ironing","كوي"),_=>t};

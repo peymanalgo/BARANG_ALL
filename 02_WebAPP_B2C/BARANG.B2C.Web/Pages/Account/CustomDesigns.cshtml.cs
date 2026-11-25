@@ -9,7 +9,7 @@ namespace BARANG.B2C.Web.Pages.Account;
 public sealed record CustomDesignItem(Guid Id, string Title, string? ThumbnailUrl, string? PreviewUrl, DateTimeOffset CreatedAtUtc);
 
 [Authorize(Policy = "LoggedIn")]
-public sealed class CustomDesignsModel(CoreApiClient core, CustomerContext customers) : PageModel
+public sealed class CustomDesignsModel(CoreApiClient core, CustomerContext customers, SiteContext site) : PageModel
 {
     public IReadOnlyList<CustomDesignItem> Items { get; private set; } = [];
     public string? Error { get; private set; }
@@ -25,6 +25,8 @@ public sealed class CustomDesignsModel(CoreApiClient core, CustomerContext custo
 
     public async Task<IActionResult> OnGet(string? error)
     {
+        // فیچر «طرح‌های سفارشی» خاموش باشد → ریدایرکت به داشبورد (سطح منو/ریدایرکت)
+        if (!await site.FeatureEnabledAsync("custom.designs")) return Redirect("/account");
         Error = error;
         if (await customers.CurrentAsync() is not JsonElement c || !c.TryGetProperty("id", out JsonElement cid)) return Page();
         JsonElement? designs = await core.GetAsync($"api/v1/client/customers/{cid.GetString()}/custom-designs");

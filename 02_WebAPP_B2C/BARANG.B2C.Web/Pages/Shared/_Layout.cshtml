@@ -18,6 +18,8 @@
     var siteLogo = site.Settings?.LogoUrl;
     var cmsMenu = site.Menu;
     var cmsFooter = site.Footer;
+    // فیچر «وبلاگ» (اسکوپ store): خاموش باشد → آیتم وبلاگ از منو حذف می‌شود (خطا = روشن)
+    var blogOn = Site.FeatureEnabledAsync("blog").GetAwaiter().GetResult();
 
 }
 <!DOCTYPE html>
@@ -73,6 +75,7 @@
             {
                 foreach (var m in cmsMenu)
                 {
+                    if (!blogOn && (m.Href == "/blog" || m.Href.StartsWith("/blog/", StringComparison.OrdinalIgnoreCase))) { continue; }
                     var isActive = route.Length == 0 ? m.Href == "/" : (m.Href != "/" && route.StartsWith(m.Href.TrimStart('/'), StringComparison.OrdinalIgnoreCase));
                     <a href="@m.Href" class="@(m.Cta ? "nav-cta " : "")@(isActive ? "active" : null)">@(m.Cta ? "✨ " : "")@m.Title</a>
                 }
@@ -85,7 +88,10 @@
                 <a href="/#features">@T("چاپ و بسته‌بندی", "Printing", "الطباعة", "Impresión")</a>
                 <a href="/about" class="@(route.StartsWith("about") ? "active" : null)">@T("درباره ما", "About", "من نحن", "Acerca de")</a>
                 <a href="/contact" class="@(route.StartsWith("contact") ? "active" : null)">@T("تماس با ما", "Contact", "اتصل بنا", "Contacto")</a>
-                <a href="/blog" class="@(route.StartsWith("blog") ? "active" : null)">@T("وبلاگ", "Blog", "المدونة", "Blog")</a>
+                @if (blogOn)
+                {
+                    <a href="/blog" class="@(route.StartsWith("blog") ? "active" : null)">@T("وبلاگ", "Blog", "المدونة", "Blog")</a>
+                }
             }
         </nav>
         <nav class="header-actions" aria-label="@T("حساب کاربری", "Account", "الحساب", "Cuenta")">

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace BARANG.B2C.Web.Pages.Account;
 
 [Authorize(Policy = "LoggedIn")]
-public sealed class NotificationsModel(CoreApiClient core) : PageModel
+public sealed class NotificationsModel(CoreApiClient core, SiteContext site) : PageModel
 {
     public IReadOnlyList<NotifRow> Notifications { get; private set; } = [];
     public long Total { get; private set; }
@@ -19,8 +19,10 @@ public sealed class NotificationsModel(CoreApiClient core) : PageModel
     public bool HasPrev => Page > 1;
     [BindProperty(SupportsGet = true)] public string? Unread { get; set; }
 
-    public async Task OnGet([FromQuery] int? page)
+    public async Task<IActionResult> OnGet([FromQuery] int? page)
     {
+        // فیچر «اعلان‌ها» خاموش باشد → ریدایرکت به داشبورد (سطح منو/ریدایرکت)
+        if (!await site.FeatureEnabledAsync("notifications")) return Redirect("/account");
         Page = Math.Max(1, page ?? 1);
         bool unreadOnly = Unread == "1";
         string culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
@@ -48,6 +50,7 @@ public sealed class NotificationsModel(CoreApiClient core) : PageModel
             JsonElement? all = await core.GetAsync("api/v1/notifications/mine?unread=true&page=1&pageSize=1");
             UnreadCount = all is JsonElement u && u.TryGetProperty("total", out JsonElement ut) && ut.TryGetInt64(out long un) ? un : 0;
         }
+        return Page();
     }
 
     public async Task<IActionResult> OnPostMarkReadAsync(Guid id, long version)

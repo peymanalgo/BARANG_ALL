@@ -6,6 +6,7 @@
 @inject IStringLocalizer<NavigationStrings> N
 @inject IStringLocalizer<WorkflowStrings> W
 @inject NavigationManager Navigation
+@inject BARANG.Backoffice.Api.FeatureFlagsService Features
 
 @* مرکز گردش کار — همان الگوی «داده‌های پایه» (DomainReferenceWorkspace): فهرست بخش‌ها در ستون کناری صفحه و محتوای بخش انتخابی در ستون اصلی. *@
 <PageTitle>@SectionTitle · BARANG</PageTitle>
@@ -48,6 +49,8 @@
     [Parameter] public string? Section { get; set; }
     private WorkflowSection? Selected;
     private string SectionTitle => Selected is null ? N["Nav_Workflow"] : N[Selected.LabelKey];
+    // محافظ ارزان صفحه: فیچر «گردش کار (BPMS)» خاموش باشد → ریدایرکت به خانه
+    protected override async Task OnInitializedAsync() { if (!await Features.RedirectIfDisabledAsync(Navigation, "workflow.bpms")) return; }
     // مسیر جاری ملاک است، نه صرفاً پارامتر مسیر — تا هنگام بین‌راهه‌ی بین دو الگوی مسیرِ همین صفحه، مقدار کهنه نماند.
     protected override void OnParametersSet()
     {

@@ -77,6 +77,12 @@
         if (q.get("new") === "1" || (!q.get("design") && !location.pathname.includes("design"))) sessionStorage.removeItem("wz.state");
         else Object.assign(W, JSON.parse(sessionStorage.getItem("wz.state") || "{}"));
     } catch { /* شروع تازه */ }
+    // فیچرهای خاموش: حالت ذخیره‌شدهٔ غیرمجاز (تب آپلود/متن یا هدیه) پاک می‌شود
+    if (BOOT.flags) {
+        if (BOOT.flags.upload === false && W.mode === "upload") W.mode = null;
+        if (BOOT.flags.text === false && W.mode === "text") W.mode = null;
+        if (BOOT.flags.gift === false) W.gift = false;
+    }
     const save = () => { try { sessionStorage.setItem("wz.state", JSON.stringify(W)); } catch { /* private mode */ } };
 
     // ── تصاویر واقعی تیشرت (۴ رنگ × جلو/پشت) ──
@@ -474,7 +480,8 @@
     };
     const aiOpen = async () => { $("w-ai").hidden = false; aiMsg(null); await aiQuota(); };
     const aiClose = () => { $("w-ai").hidden = true; };
-    $("w-ai-btn").addEventListener("click", aiOpen);
+    // فیچر «طراحی با هوش مصنوعی» خاموش باشد، دکمه اصلاً رندر نمی‌شود — بایند نال‌امن است
+    const aiBtn = $("w-ai-btn"); if (aiBtn) aiBtn.addEventListener("click", aiOpen);
     $("w-ai-close").addEventListener("click", aiClose);
     $("w-ai").addEventListener("click", (e) => { if (e.target === $("w-ai")) aiClose(); });
     window.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("w-ai").hidden) aiClose(); });
@@ -582,7 +589,8 @@
         (W.position === "FRONT" ? fF : fB).wrap.style.transform = "";
         renderPreview();
     });
-    $("w-gift").addEventListener("change", (e) => { W.gift = e.target.checked; $("w-giftbox").hidden = !W.gift; save(); });
+    // فیچر «بسته هدیه» خاموش باشد، بخش هدیه رندر نمی‌شود — بایند نال‌امن است
+    const giftToggle = $("w-gift"); if (giftToggle) giftToggle.addEventListener("change", (e) => { W.gift = e.target.checked; $("w-giftbox").hidden = !W.gift; save(); });
 
     // ── فاز ۲: آدرس‌ها (ورود از قبل تضمین شده — گیت در شروع ویزارد) ──
     async function loadAddresses() {
@@ -807,7 +815,7 @@
     $("w-tsout").textContent = num(W.textSize);
     $("w-garm").classList.toggle("back", W.position === "BACK");
     document.querySelectorAll("#w-side button").forEach((b) => b.classList.toggle("on", b.dataset.side === W.position));
-    if (W.gift) { $("w-gift").checked = true; $("w-giftbox").hidden = false; }
+    if (W.gift && $("w-gift") && $("w-giftbox")) { $("w-gift").checked = true; $("w-giftbox").hidden = false; }
 
     (async () => {
         await loadConfig();

@@ -9,7 +9,7 @@ namespace BARANG.B2C.Web.Pages.Account;
 public sealed record FeedbackItem(Guid Id, string FeedbackTypeCode, string Subject, string Body, string StatusCode, DateTimeOffset CreatedAtUtc);
 
 [Authorize(Policy = "LoggedIn")]
-public sealed class FeedbackModel(CoreApiClient core, CustomerContext customers) : PageModel
+public sealed class FeedbackModel(CoreApiClient core, CustomerContext customers, SiteContext site) : PageModel
 {
     public IReadOnlyList<FeedbackItem> Items { get; private set; } = [];
     public string? Error { get; private set; }
@@ -21,6 +21,8 @@ public sealed class FeedbackModel(CoreApiClient core, CustomerContext customers)
 
     public async Task<IActionResult> OnGet(string? error, bool sent = false)
     {
+        // فیچر «دیدگاه‌ها و پیشنهادها» خاموش باشد → ریدایرکت به داشبورد (سطح منو/ریدایرکت)
+        if (!await site.FeatureEnabledAsync("feedback")) return Redirect("/account");
         Error = error;
         Sent = sent;
         if (await customers.CurrentAsync() is not JsonElement c || !c.TryGetProperty("id", out JsonElement cid)) return Page();

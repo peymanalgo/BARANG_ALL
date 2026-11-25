@@ -164,13 +164,22 @@
           <div class="lbl">@i18n["designSource"] — @i18n["sourceRule"]</div>
           <div class="modes">
             <button type="button" class="mode" data-mode="bank"><span class="ic">🗂️</span><b>@i18n["tabBank"]</b><small id="w-bankcount">@i18n["tabBankHint"]</small></button>
-            <button type="button" class="mode" data-mode="upload"><span class="ic">🖼️</span><b>@i18n["tabUpload"]</b><small>@i18n["tabUploadHint"]</small></button>
-            <button type="button" class="mode" data-mode="text"><span class="ic">✍️</span><b>@i18n["tabText"]</b><small>@i18n["tabTextHint"]</small></button>
+            @if (Model.UploadEnabled)
+            {
+                <button type="button" class="mode" data-mode="upload"><span class="ic">🖼️</span><b>@i18n["tabUpload"]</b><small>@i18n["tabUploadHint"]</small></button>
+            }
+            @if (Model.TextEnabled)
+            {
+                <button type="button" class="mode" data-mode="text"><span class="ic">✍️</span><b>@i18n["tabText"]</b><small>@i18n["tabTextHint"]</small></button>
+            }
           </div>
-          <button type="button" class="ai-btn" id="w-ai-btn" title="@i18n["aiBtnHint"]">
-            <span class="ic">✨</span>
-            <span class="t"><b>@i18n["aiBtn"]</b><small>@i18n["aiBtnHint"]</small></span>
-          </button>
+          @if (Model.AiDesignEnabled)
+          {
+              <button type="button" class="ai-btn" id="w-ai-btn" title="@i18n["aiBtnHint"]">
+                <span class="ic">✨</span>
+                <span class="t"><b>@i18n["aiBtn"]</b><small>@i18n["aiBtnHint"]</small></span>
+              </button>
+          }
         </div>
 
         <div class="pan" id="w-pan-bank" hidden>
@@ -273,16 +282,19 @@
           <input class="fin" type="text" dir="auto" placeholder="@i18n["postalCode"]" aria-label="@i18n["postalCode"]" inputmode="numeric" id="w-na-postal">
         </div>
       </div>
-      <label class="sw" style="margin-top:12px"><input type="checkbox" id="w-gift"> 🎁 @i18n["gift"]</label>
-      <div class="giftbox" id="w-giftbox" hidden>
-        <span class="lbl" style="margin:0">@i18n["giftDetails"]</span>
-        <div class="frow">
-          <input class="fin" type="text" dir="auto" placeholder="@i18n["giftName"]" aria-label="@i18n["giftName"]" id="w-g-name">
-          <input class="fin" type="text" dir="ltr" placeholder="@i18n["giftPhone"]" aria-label="@i18n["giftPhone"]" inputmode="tel" id="w-g-phone">
-        </div>
-        <input class="fin" type="text" dir="auto" placeholder="@i18n["giftAddress"]" aria-label="@i18n["giftAddress"]" id="w-g-addr">
-        <input class="fin" type="text" dir="auto" placeholder="@i18n["giftMessage"]" aria-label="@i18n["giftMessage"]" id="w-g-msg">
-      </div>
+      @if (Model.GiftEnabled)
+      {
+          <label class="sw" style="margin-top:12px"><input type="checkbox" id="w-gift"> 🎁 @i18n["gift"]</label>
+          <div class="giftbox" id="w-giftbox" hidden>
+            <span class="lbl" style="margin:0">@i18n["giftDetails"]</span>
+            <div class="frow">
+              <input class="fin" type="text" dir="auto" placeholder="@i18n["giftName"]" aria-label="@i18n["giftName"]" id="w-g-name">
+              <input class="fin" type="text" dir="ltr" placeholder="@i18n["giftPhone"]" aria-label="@i18n["giftPhone"]" inputmode="tel" id="w-g-phone">
+            </div>
+            <input class="fin" type="text" dir="auto" placeholder="@i18n["giftAddress"]" aria-label="@i18n["giftAddress"]" id="w-g-addr">
+            <input class="fin" type="text" dir="auto" placeholder="@i18n["giftMessage"]" aria-label="@i18n["giftMessage"]" id="w-g-msg">
+          </div>
+      }
     </div>
 
     <div class="navrow">
@@ -380,5 +392,5 @@
 </div>
 
 <script id="wz-i18n" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(i18n))</script>
-<script id="wz-bootstrap" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new { auth = Model.IsAuthenticated, entryDesign = Model.EntryDesignId?.ToString() ?? "" }))</script>
+<script id="wz-bootstrap" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new { auth = Model.IsAuthenticated, entryDesign = Model.EntryDesignId?.ToString() ?? "", flags = new { upload = Model.UploadEnabled, text = Model.TextEnabled, gift = Model.GiftEnabled, ai = Model.AiDesignEnabled } }))</script>
 <script src="~/js/wizard.js" asp-append-version="true" defer></script>

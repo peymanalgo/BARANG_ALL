@@ -10,6 +10,8 @@
 @inject ICoreApiClient Core
 @inject AuthenticationStateProvider AuthState
 @inject ILocaleDateService Dates
+@inject FeatureFlagsService Features
+@inject NavigationManager Nav
 
 <PageTitle>@T("دیدگاه‌های مشتریان","Customer Feedbacks","ملاحظات العملاء") · BARANG</PageTitle>
 <main class="page-shell feedbacks-page" aria-labelledby="feedbacks-heading">
@@ -120,7 +122,7 @@
         _=>code
     };
 
-    protected override Task OnInitializedAsync() => Load();
+    protected override async Task OnInitializedAsync() { if (!await Features.RedirectIfDisabledAsync(Nav, "customer.feedback")) return; await Load(); }
 
     private async Task SwitchStatus(string key) { Status = key; Page = 1; await Load(); }
     private async Task TypeChanged(ChangeEventArgs e) { Type = e.Value?.ToString() ?? ""; Page = 1; await Load(); }

@@ -21,6 +21,38 @@ public static class FeatureScopes
 public static class FeatureCodes
 {
     public const string AiAssistant = "ai.assistant";
+
+    // ── اسکوپ erp: ماژول‌های پنل مدیریت ──
+    public const string DesignBank = "design.bank";
+    public const string WorkflowBpms = "workflow.bpms";
+    public const string Cartable = "cartable";
+    public const string Orders = "orders";
+    public const string Pricing = "pricing";
+    public const string InventoryPurchasing = "inventory.purchasing";
+    public const string Production = "production";
+    public const string Quality = "quality";
+    public const string Logistics = "logistics";
+    public const string CustomerWallet = "customer.wallet";
+    public const string CustomerFeedback = "customer.feedback";
+    public const string ManagementDashboard = "management.dashboard";
+    public const string Suppliers = "suppliers";
+    public const string Equipment = "equipment";
+    public const string Shifts = "shifts";
+    public const string Products = "products";
+    public const string B2cManagement = "b2c.management";
+
+    // ── اسکوپ store: فیچرهای سایت پی‌رنگ ──
+    public const string AiDesign = "ai.design";
+    public const string Referral = "referral";
+    public const string Blog = "blog";
+    public const string ConceptSearch = "concept.search";
+    public const string WizardUpload = "wizard.upload";
+    public const string WizardText = "wizard.text";
+    public const string WizardGift = "wizard.gift";
+    public const string Favorites = "favorites";
+    public const string CustomDesigns = "custom.designs";
+    public const string Notifications = "notifications";
+    public const string Feedback = "feedback";
 }
 
 /// <summary>فیچر سیستمی شرکت — کلید خاموش/روشن هر قابلیت روی ERP یا فروشگاه B2C.

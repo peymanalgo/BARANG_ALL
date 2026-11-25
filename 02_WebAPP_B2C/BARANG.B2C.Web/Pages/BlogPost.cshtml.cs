@@ -15,10 +15,12 @@ public sealed class BlogPostModel(SiteContext site) : PageModel
     public string? SeoKeywords { get; private set; }
     public bool NotFound { get; private set; }
 
-    public async Task OnGet(string slug)
+    public async Task<IActionResult> OnGet(string slug)
     {
+        // فیچر «وبلاگ» خاموش باشد → ریدایرکت به خانه (سطح منو/ریدایرکت؛ fail-open)
+        if (!await site.FeatureEnabledAsync("blog")) return Redirect("/");
         JsonElement? result = await site.BlogPostAsync(slug ?? "");
-        if (result is not JsonElement r || r.ValueKind != JsonValueKind.Object) { NotFound = true; return; }
+        if (result is not JsonElement r || r.ValueKind != JsonValueKind.Object) { NotFound = true; return Page(); }
         Title = Text(r, "title");
         Body = Text(r, "body");
         Thumbnail = Text(r, "thumbnailUrl") is { Length: > 0 } t ? t : null;
@@ -31,6 +33,7 @@ public sealed class BlogPostModel(SiteContext site) : PageModel
             if (SeoKeywords is not null) ViewData["Keywords"] = SeoKeywords;
         }
         Date = r.TryGetProperty("publishedAtUtc", out JsonElement d) && d.ValueKind == JsonValueKind.String && DateTimeOffset.TryParse(d.GetString(), out DateTimeOffset dt) ? AppDate.Format(dt) : "";
+        return Page();
     }
 
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out JsonElement v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";

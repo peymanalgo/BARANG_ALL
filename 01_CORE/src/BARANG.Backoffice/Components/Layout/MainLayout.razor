@@ -117,9 +117,12 @@
         AssistantVisible = user.Identity?.IsAuthenticated == true && Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out _);
         // فیچرهای سیستم: اگر «دستیار هوشمند» در تب فیچرهای ERP خاموش باشد، آیکون رندر نمی‌شود (خطا = روشن)
         if (AssistantVisible) AssistantVisible = await Features.IsEnabledAsync("ai.assistant", "erp");
+        // وضعیت فیچرهای ERP یک‌بار پیش‌بارگذاری می‌شود (کش ۳۰ثانیه‌ای؛ خطا = همه روشن) و به‌صورت Func به چکِ منو داده می‌شود
+        HashSet<string>? enabledErp = await Features.EnabledCodesAsync("erp");
+        Func<string, bool> featureEnabled = code => enabledErp is null || enabledErp.Contains(code);
         VisibleGroups = ModuleCatalog.Navigation
-            .Where(group => ModuleCatalog.IsVisible(group, user))
-            .Select(group => group.Route is null ? group with { Items = group.Items.Where(item => ModuleCatalog.IsVisible(item, user)).Select(item => item.Children is null ? item : item with { Children = item.Children.Where(child => ModuleCatalog.IsVisible(child, user)).ToArray() }).ToArray() } : group)
+            .Where(group => ModuleCatalog.IsVisible(group, user, featureEnabled))
+            .Select(group => group.Route is null ? group with { Items = group.Items.Where(item => ModuleCatalog.IsVisible(item, user, featureEnabled)).Select(item => item.Children is null ? item : item with { Children = item.Children.Where(child => ModuleCatalog.IsVisible(child, user, featureEnabled)).ToArray() }).ToArray() } : group)
             .Where(group => group.Route is not null || group.Items.Count > 0)
             .ToArray();
         Navigation.LocationChanged += HandleLocationChanged;

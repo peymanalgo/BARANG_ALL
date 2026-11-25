@@ -6,6 +6,8 @@
 @inject IStringLocalizer<AppStrings> L
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
+@inject FeatureFlagsService Features
+@inject NavigationManager Nav
 <PageTitle>@T("شیفت‌های کاری","Work shifts","الورديات")</PageTitle>
 <header class="crud-header"><div><span class="eyebrow">@T("مدیریت سیستم","System management","إدارة النظام")</span><h1>@T("شیفت‌های کاری","Work shifts","الورديات")</h1><p>@T("تعریف شیفت‌های کاری شرکت برای برنامه‌ریزی تولید و محاسبه ظرفیت خطوط","Company work shifts used for production planning and line capacity","ورديات الشركة المستخدمة في تخطيط الإنتاج وحساب طاقة الخطوط")</p></div><button type="button" class="btn btn-primary" @onclick="New">@L["Action_Create"]</button></header>
 <section class="crud-card">
@@ -33,7 +35,7 @@
  private bool Busy,Dialog,Viewing,Saving; private string? Error; private string Code="",Title="",Start="08:00",End="16:00"; private Guid? EditingId; private long Version;
  private List<ShiftRow> Rows=[];
  private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>EsGlossary.Tr(en),"ar"=>ar,_=>fa};
- protected override async Task OnInitializedAsync()=>await Load();
+ protected override async Task OnInitializedAsync(){if(!await Features.RedirectIfDisabledAsync(Nav,"shifts"))return;await Load();}
  private async Task<(string Token,Guid Company)?> Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Guid c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t?(t,c):null;}
  private async Task Load(){if(await Session() is not (string token,Guid company))return;Busy=true;await InvokeAsync(StateHasChanged);try{Rows.Clear();var r=await Core.GetAsync("api/v1/production/shifts?includeInactive=true",token,company,default);if(r.IsSuccess&&r.Value.ValueKind==JsonValueKind.Array)foreach(var x in r.Value.EnumerateArray())Rows.Add(new ShiftRow(x.GetProperty("id").GetGuid(),Text(x,"code"),Text(x,"title"),Text(x,"startTime")[..5],Text(x,"endTime")[..5],x.TryGetProperty("isActive",out var a)&&a.GetBoolean(),x.GetProperty("version").GetInt64()));}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
  private static string Text(JsonElement x,string n)=>x.TryGetProperty(n,out var p)&&p.ValueKind!=JsonValueKind.Null?p.ToString():"";

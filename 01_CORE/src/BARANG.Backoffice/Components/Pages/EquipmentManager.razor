@@ -10,6 +10,8 @@
 @inject AuthenticationStateProvider AuthState
 @inject ICoreApiClient Core
 @inject ILocaleDateService Dates
+@inject FeatureFlagsService Features
+@inject NavigationManager Nav
 
 <PageTitle>@L["Master_equipment"] · BARANG</PageTitle>
 <nav class="breadcrumbs"><span>@L["Module_master-data"]</span><span>/</span><span>@L["Master_equipment"]</span></nav>
@@ -67,7 +69,7 @@
     private static long RowVersion(JsonElement x) => x.TryGetProperty("version", out var v) && v.TryGetInt64(out var n) ? n : 0;
     private readonly string[] Tabs = ["general", "technical", "assignment", "acquisition", "failures", "repairs", "maintenance", "inspection", "documents", "lifecycle"];
     private List<JsonElement> Rows = []; private Dictionary<string,string> Data = []; private string Search = "", StatusFilter = "", Tab = "general", Id = ""; private bool Loading, Dialog, Viewing; private string? Token; private Guid Company;
-    protected override async Task OnInitializedAsync() { var state = await AuthState.GetAuthenticationStateAsync(); Token = state.User.FindFirst(AuthClaimTypes.AccessToken)?.Value; Guid.TryParse(state.User.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Company); await Load(); }
+    protected override async Task OnInitializedAsync() { if (!await Features.RedirectIfDisabledAsync(Nav, "equipment")) return; var state = await AuthState.GetAuthenticationStateAsync(); Token = state.User.FindFirst(AuthClaimTypes.AccessToken)?.Value; Guid.TryParse(state.User.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Company); await Load(); }
     private async Task Load() { if (Token is null) return; Loading = true; var active = StatusFilter == "active" ? "true" : "false"; var r = await Core.GetAsync($"api/v1/equipment/?search={Uri.EscapeDataString(Search)}&activeOnly={active}&pageNumber=1&pageSize=20", Token, Company, default); Rows = r.IsSuccess ? r.Value.GetProperty("items").EnumerateArray().Where(x => StatusFilter != "inactive" || !Bool(x, "isActive")).ToList() : []; Loading = false; }
     private async Task StatusChanged(ChangeEventArgs e) { StatusFilter = e.Value?.ToString() ?? ""; await Load(); }
     private async Task SearchChanged(ChangeEventArgs e) { Search = e.Value?.ToString() ?? ""; await Load(); }
