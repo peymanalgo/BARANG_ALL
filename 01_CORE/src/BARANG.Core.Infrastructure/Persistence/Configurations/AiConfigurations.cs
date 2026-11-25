@@ -70,6 +70,25 @@ internal sealed class AiChatMessageConfiguration : IEntityTypeConfiguration<AiCh
     }
 }
 
+internal sealed class AiDesignJobConfiguration : IEntityTypeConfiguration<AiDesignJob>
+{
+    public void Configure(EntityTypeBuilder<AiDesignJob> b)
+    {
+        b.ToTable("ai_design_jobs", "barang");
+        b.HasKey(x => x.Id).HasName("pk_ai_design_jobs");
+        b.Property(x => x.Id).HasColumnName("id");
+        b.Property(x => x.CompanyId).HasColumnName("company_id");
+        b.Property(x => x.CustomerId).HasColumnName("customer_id");
+        b.Property(x => x.Prompt).HasColumnName("prompt").HasMaxLength(1000);
+        b.Property(x => x.ImageUrl).HasColumnName("image_url").HasMaxLength(600);
+        b.Property(x => x.CreatedAtUtc).HasColumnName("created_at_utc");
+        b.Property(x => x.Version).HasColumnName("version").IsConcurrencyToken();
+        // سهمیه ۵ پرامپت/۲۴ساعت per customer — شمارش روی (customer_id, created_at_utc)
+        b.HasIndex(x => new { x.CustomerId, x.CreatedAtUtc }).HasDatabaseName("ix_ai_design_jobs_customer_created");
+        b.HasIndex(x => new { x.CompanyId, x.CreatedAtUtc }).HasDatabaseName("ix_ai_design_jobs_company_created");
+    }
+}
+
 internal sealed class AiAuditEntryConfiguration : IEntityTypeConfiguration<AiAuditEntry>
 {
     public void Configure(EntityTypeBuilder<AiAuditEntry> b)

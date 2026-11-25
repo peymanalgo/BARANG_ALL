@@ -351,6 +351,35 @@ public sealed class WizardModel(CoreApiClient core, CustomerContext customers) :
         return new JsonResult(new { ok = true, orderId, pricing, designCode });
     }
 
+    // ── طراحی با هوش مصنوعی: پرامپت مشتری → تصویر (سهمیه ۵ پرامپت/۲۴ساعت در Core کنترل می‌شود) ──
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> OnPostAiDesignAsync([FromBody] JsonElement body)
+    {
+        string prompt = Text(body, "prompt").Trim();
+        if (prompt.Length == 0) return new JsonResult(new { ok = false, problem = "prompt-required" });
+        if (core.SawUnauthorized) return new JsonResult(new { ok = false, problem = "auth" });
+        (bool ok, JsonElement? value, string? problem) = await core.PostRawWithBodyAsync("api/v1/client/ai/design", new
+        {
+            prompt,
+            culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
+        });
+        if (ok && value is JsonElement reply)
+        {
+            // قرارداد Core: {ok, quotaExceeded, imageUrl, quotaUsed, quotaLimit, remaining, message, error}
+            return new JsonResult(reply);
+        }
+        if (core.SawUnauthorized) return new JsonResult(new { ok = false, problem = "auth" });
+        // خطای HTTP خام Core (403 دسترسی/400 اعتبارسنجی) — پیام چهارزبانه سمت کلاینت با problem نمایش داده می‌شود
+        return new JsonResult(new { ok = false, problem = problem ?? "ai-design-failed", problemCode = problem });
+    }
+
+    // ── سهمیه طراحی AI برای نمایش در پاپ‌آپ (بدون مصرف پرامپت) ──
+    public async Task<IActionResult> OnGetAiQuotaAsync()
+    {
+        JsonElement? quota = await core.GetAsync("api/v1/client/ai/design/quota");
+        return new JsonResult(quota is JsonElement q ? q : new { ok = false });
+    }
+
     // ── پرداخت (فاز ۴): کیف پول واقعی؛ درگاه فعلاً ماکِ همیشه‌موفق ──
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> OnPostPayAsync([FromBody] JsonElement body)

@@ -155,6 +155,31 @@ public sealed class AiChatMessage
     };
 }
 
+/// <summary>کار تولید تصویر با هوش مصنوعی (ویزارد طراحی B2C) — مبنای سهمیه ۵ پرامپت در پنجره غلتان
+/// ۲۴ ساعته برای هر مشتری و ردیابی تصاویر ساخته‌شده. تصویر در باکت عمومی MinIO نگهداری می‌شود.</summary>
+public sealed class AiDesignJob
+{
+    private AiDesignJob() { }
+    public Guid Id { get; private set; }
+    public Guid CompanyId { get; private set; }
+    public Guid CustomerId { get; private set; }
+    public string Prompt { get; private set; } = "";
+    public string ImageUrl { get; private set; } = "";
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+    public long Version { get; private set; }
+
+    public static AiDesignJob Create(Guid id, Guid companyId, Guid customerId, string prompt, string imageUrl, DateTimeOffset now) => new()
+    {
+        Id = id,
+        CompanyId = companyId,
+        CustomerId = customerId,
+        Prompt = prompt.Length > 1000 ? prompt[..1000] : prompt.Trim(),
+        ImageUrl = imageUrl.Length > 600 ? imageUrl[..600] : imageUrl,
+        CreatedAtUtc = now,
+        Version = 1,
+    };
+}
+
 /// <summary>لاگ ممیزی تغییر تنظیمات و پرسش‌وپاسخ‌های دستیار برای بررسی مدیر.</summary>
 public sealed class AiAuditEntry
 {

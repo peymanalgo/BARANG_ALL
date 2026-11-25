@@ -439,6 +439,98 @@
         });
     });
 
+    // ── فاز ۱: طراحی با هوش مصنوعی (پاپ‌آپ) — پرامپت → تصویر → استفاده روی تیشرت ──
+    let aiUrl = null;
+    const aiMsg = (text, kind) => {
+        const el = $("w-ai-msg");
+        if (!text) { el.hidden = true; el.textContent = ""; return; }
+        el.hidden = false;
+        el.className = "ai-msg" + (kind ? " " + kind : "");
+        el.textContent = text;
+    };
+    const aiQuotaLabelOf = (d) => d && d.remaining > 0
+        ? T("aiQuotaLabel").replace("{n}", num(d.remaining)).replace("{m}", num(d.quotaLimit))
+        : T("aiQuotaNone");
+    const aiQuotaRender = (d) => {
+        const q = $("w-ai-quota");
+        if (!d) return;
+        q.classList.toggle("none", !(d.remaining > 0));
+        q.textContent = aiQuotaLabelOf(d);
+    };
+    async function aiQuota() {
+        try {
+            const r = await fetch("/order/wizard?handler=AiQuota", { headers: { "Accept": "application/json" } });
+            const d = await r.json();
+            // رکورد سهمیه: {quotaUsed, quotaLimit, remaining, ...} — مرجع تشخیص، وجود quotaLimit است
+            if (d && typeof d.quotaLimit === "number") { aiQuotaRender(d); return d; }
+        } catch { /* نمایش سهمیه اختیاری است */ }
+        return null;
+    }
+    const aiBusy = (on) => {
+        const btn = $("w-ai-gen");
+        btn.disabled = on;
+        btn.querySelector(".spin").hidden = !on;
+        btn.querySelector(".glabel").textContent = on ? T("aiGenerating") : T("aiGenerate");
+    };
+    const aiOpen = async () => { $("w-ai").hidden = false; aiMsg(null); await aiQuota(); };
+    const aiClose = () => { $("w-ai").hidden = true; };
+    $("w-ai-btn").addEventListener("click", aiOpen);
+    $("w-ai-close").addEventListener("click", aiClose);
+    $("w-ai").addEventListener("click", (e) => { if (e.target === $("w-ai")) aiClose(); });
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("w-ai").hidden) aiClose(); });
+
+    async function aiGenerate() {
+        const prompt = ($("w-ai-prompt").value || "").trim();
+        if (!prompt) { aiMsg(T("aiPromptRequired"), "info"); return; }
+        $("w-ai-use").disabled = true;
+        aiBusy(true);
+        aiMsg(T("aiGenerating"), "info");
+        try {
+            const r = await postJson("/order/wizard?handler=AiDesign", { prompt });
+            const d = await r.json();
+            if (d && d.ok && d.imageUrl) {
+                aiUrl = d.imageUrl;
+                $("w-ai-img").src = d.imageUrl;
+                $("w-ai-result").hidden = false;
+                $("w-ai-use").disabled = false;
+                aiMsg(d.message || "", "ok");
+                aiQuotaRender(d);
+            } else if (d && d.quotaExceeded) {
+                aiMsg(d.message || T("aiErrorGeneric"), "");
+                aiQuotaRender(d);
+            } else if (d && d.problem === "auth") {
+                aiClose();
+                location.href = "/account/login?returnUrl=%2Forder%2Fwizard";
+                return;
+            } else if (d && d.problem === "prompt-required") {
+                aiMsg(T("aiPromptRequired"), "info");
+            } else {
+                aiMsg((d && (d.message || d.problem)) || T("aiErrorGeneric"), "");
+            }
+        } catch { aiMsg(T("aiErrorGeneric"), ""); }
+        aiBusy(false);
+    }
+    $("w-ai-gen").addEventListener("click", aiGenerate);
+
+    // اعمال طرح AI روی تیشرت: دانلود تصویر → File → همان مسیر آپلود مشتری (filePicked)
+    // تا در پرداخت، فایل مثل آپلود شخصی مشتری به سفارش برود و برای تولید ثبت شود.
+    function aiDesignApply(imageUrl) {
+        return fetch(imageUrl)
+            .then((r) => { if (!r.ok) throw new Error("image fetch failed"); return r.blob(); })
+            .then((blob) => {
+                const file = new File([blob], "ai-design.png", { type: "image/png" });
+                // میزبان نمایش طرح تولیدشده تب «طرح خودم» است (قرارداد checkout: mode=upload + file)
+                document.querySelectorAll(".mode").forEach((b) => b.classList.toggle("on", b.dataset.mode === "upload"));
+                ["bank", "upload", "text"].forEach((m) => { $("w-pan-" + m).hidden = m !== "upload"; });
+                filePicked(file);
+            });
+    }
+    $("w-ai-use").addEventListener("click", () => {
+        if (!aiUrl) return;
+        $("w-ai-use").disabled = true;
+        aiDesignApply(aiUrl).catch(() => aiMsg(T("aiErrorGeneric"), "")).finally(() => { $("w-ai-use").disabled = false; aiClose(); });
+    });
+
     // ── فاز ۱: متن ──
     TEXT_COLORS.forEach((c, i) => {
         const d = document.createElement("button");

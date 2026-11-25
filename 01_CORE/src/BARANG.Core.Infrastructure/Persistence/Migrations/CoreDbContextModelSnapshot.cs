@@ -184,6 +184,54 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                     b.ToTable("ai_conversations", "barang");
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Ai.AiDesignJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasColumnName("image_url");
+
+                    b.Property<string>("Prompt")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("prompt");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ai_design_jobs");
+
+                    b.HasIndex("CompanyId", "CreatedAtUtc")
+                        .HasDatabaseName("ix_ai_design_jobs_company_created");
+
+                    b.HasIndex("CustomerId", "CreatedAtUtc")
+                        .HasDatabaseName("ix_ai_design_jobs_customer_created");
+
+                    b.ToTable("ai_design_jobs", "barang");
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Ai.AiModelSettings", b =>
                 {
                     b.Property<Guid>("Id")

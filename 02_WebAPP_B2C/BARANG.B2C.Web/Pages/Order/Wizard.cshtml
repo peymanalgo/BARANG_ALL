@@ -131,6 +131,20 @@
         ["stockAvail"] = T("موجودی انبار", "Stock", "المخزون", "Existencias"),
         ["stockOut"] = T("ناموجود", "Out of stock", "غير متوفر", "Sin existencias"),
         ["sampleText"] = T("پی‌رنگ خان", "Peyrang Khan", "پی‌رنگ خان", "Peyrang Khan"),
+        ["aiBtn"] = T("✨ طراحی با هوش مصنوعی", "✨ AI design", "✨ صمّم بالذكاء الاصطناعي", "✨ Diseña con IA"),
+        ["aiBtnHint"] = T("پرامپت بنویس تا هوش مصنوعی طرح را بسازد", "Write a prompt and AI creates the design", "اكتب وصفاً ليُنشئ الذكاء الاصطناعي التصميم", "Escribe una idea y la IA crea el diseño"),
+        ["aiTitle"] = T("طراحی با هوش مصنوعی", "AI design", "التصميم بالذكاء الاصطناعي", "Diseño con IA"),
+        ["aiTitleHint"] = T("چی می‌خواهی روی تیشرتت چاپ شود؟", "What should be printed on your t-shirt?", "ماذا تريد طباعته على التيشرت؟", "¿Qué quieres imprimir en tu camiseta?"),
+        ["aiPromptLabel"] = T("پرامپت طرح", "Design prompt", "وصف التصميم", "Prompt del diseño"),
+        ["aiPromptPlaceholder"] = T("مثلاً: گربه فضایی با کلاه فضانوردی، سبک کمیک، پس‌زمینه شفاف…", "e.g. a space cat wearing an astronaut helmet, comic style, transparent background…", "مثلاً: قطة فضائية بخوذة فضاء، أسلوب كوميكس…", "p. ej. un gato espacial con casco de astronauta, estilo cómic…"),
+        ["aiQuotaLabel"] = T("{n} از {m} پرامپت باقی‌مانده", "{n} of {m} prompts remaining", "متبقي {n} من {m} مطالبة", "{n} de {m} prompts restantes"),
+        ["aiQuotaNone"] = T("سهمیه امروز تمام شده است", "Today's quota is used up", "انتهت حصة اليوم", "Cupo de hoy agotado"),
+        ["aiGenerate"] = T("بساز ✨", "Generate ✨", "أنشئ ✨", "Generar ✨"),
+        ["aiGenerating"] = T("در حال طراحی…", "Designing…", "جارٍ التصميم…", "Diseñando…"),
+        ["aiUseOnShirt"] = T("استفاده روی تیشرت", "Use on t-shirt", "استخدم على التيشرت", "Usar en la camiseta"),
+        ["aiPromptRequired"] = T("اول پرامپت را بنویس", "Write a prompt first", "اكتب وصفاً أولاً", "Primero escribe una idea"),
+        ["aiErrorGeneric"] = T("تولید طرح ناموفق بود؛ دوباره تلاش کن", "Design generation failed; try again", "فشل توليد التصميم؛ حاول مجدداً", "La generación falló; inténtalo de nuevo"),
+        ["aiAuthRequired"] = T("برای طراحی با هوش مصنوعی باید وارد شوی", "Sign in to use AI design", "سجّل الدخول لاستخدام التصميم بالذكاء الاصطناعي", "Inicia sesión para usar el diseño con IA"),
     };
 }
 <link rel="stylesheet" href="~/css/wizard.css" asp-append-version="true" />
@@ -153,6 +167,10 @@
             <button type="button" class="mode" data-mode="upload"><span class="ic">🖼️</span><b>@i18n["tabUpload"]</b><small>@i18n["tabUploadHint"]</small></button>
             <button type="button" class="mode" data-mode="text"><span class="ic">✍️</span><b>@i18n["tabText"]</b><small>@i18n["tabTextHint"]</small></button>
           </div>
+          <button type="button" class="ai-btn" id="w-ai-btn" title="@i18n["aiBtnHint"]">
+            <span class="ic">✨</span>
+            <span class="t"><b>@i18n["aiBtn"]</b><small>@i18n["aiBtnHint"]</small></span>
+          </button>
         </div>
 
         <div class="pan" id="w-pan-bank" hidden>
@@ -328,8 +346,26 @@
 </div>
 </section>
 
-<div class="overlay" id="w-gw" hidden>
-  <div class="gw">
+@* پاپ‌آپ طراحی با هوش مصنوعی — همان خانواده بصری پاپ‌آپ درگاه (پنل تیره، لهجه نارنجی) *@
+<div class="overlay" id="w-ai" hidden>
+  <div class="ai-pop" role="dialog" aria-modal="true" aria-labelledby="w-ai-title">
+    <div class="ai-head">
+      <div class="ai-cap"><span class="spark">✨</span><div><b id="w-ai-title">@i18n["aiTitle"]</b><small>@i18n["aiTitleHint"]</small></div></div>
+      <button type="button" class="ai-x" id="w-ai-close" aria-label="✕">✕</button>
+    </div>
+    <span class="lbl">@i18n["aiPromptLabel"]</span>
+    <textarea class="tin ai-tin" id="w-ai-prompt" rows="3" dir="auto" placeholder="@i18n["aiPromptPlaceholder"]"></textarea>
+    <div class="ai-row">
+      <span class="ai-quota" id="w-ai-quota" aria-live="polite">—</span>
+      <button type="button" class="btn btn-main ai-gen" id="w-ai-gen"><span class="spin" hidden></span><span class="glabel">@i18n["aiGenerate"]</span></button>
+    </div>
+    <p class="ai-msg" id="w-ai-msg" aria-live="polite" hidden></p>
+    <div class="ai-result" id="w-ai-result" hidden><img id="w-ai-img" alt=""></div>
+    <button type="button" class="btn btn-main btn-lg ai-use" id="w-ai-use" disabled>👕 @i18n["aiUseOnShirt"]</button>
+  </div>
+</div>
+
+<div class="overlay" id="w-gw" hidden>  <div class="gw">
     <div class="bank ltr" style="text-align:center">ZARINPAL-DEMO GATEWAY · @i18n["gwDemo"]</div>
     <div class="amt" id="w-gwamt">—</div>
     <small>@i18n["gwPayOrder"]</small>

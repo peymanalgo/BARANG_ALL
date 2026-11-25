@@ -21,12 +21,19 @@ public static class AiCustomerEndpoints
         }).RequireRateLimiting("ai-customer-chat");
         assistant.MapGet("/conversation", async (IAiCustomerAssistantService service, CancellationToken ct) => Map(await service.GetHistoryAsync(ct))).RequireRateLimiting("ai-customer-chat");
         assistant.MapPost("/conversation/clear", async (IAiCustomerAssistantService service, CancellationToken ct) => Map(await service.ClearConversationAsync(ct))).RequireRateLimiting("ai-customer-chat");
+        // طراحی تصویر با هوش مصنوعی برای ویزارد B2C — سهمیه ۵ پرامپت/۲۴ساعت سرور-side
+        assistant.MapPost("/design", async (AiDesignHttpRequest request, IAiDesignService service, CancellationToken ct) =>
+            Map(await service.DesignAsync(new(request.Prompt ?? "", request.Culture ?? "fa"), ct))).RequireRateLimiting("ai-customer-chat");
+        // سهمیه باقی‌مانده برای نمایش در پاپ‌آپ (بدون مصرف پرامپت)
+        assistant.MapGet("/design/quota", async (IAiDesignService service, CancellationToken ct) => Map(await service.QuotaAsync(ct))).RequireRateLimiting("ai-customer-chat");
         return endpoints;
     }
 
     private static AiResult<T> Map<T>(Result<T> result) => new(result);
 
     public sealed record AiCustomerAssistantHttpRequest(string? Message, string? Culture, bool ResetConversation);
+
+    public sealed record AiDesignHttpRequest(string? Prompt, string? Culture);
 
     private sealed class AiResult<T>(Result<T> result) : IResult
     {

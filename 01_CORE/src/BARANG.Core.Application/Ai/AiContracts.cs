@@ -127,3 +127,36 @@ public interface IAiCustomerAssistantService
     Task<Result<AiCustomerAssistantReply>> GetHistoryAsync(CancellationToken ct);
     Task<Result<AiCustomerAssistantReply>> ClearConversationAsync(CancellationToken ct);
 }
+
+// ─── طراحی تصویر با هوش مصنوعی (ویزارد B2C) ───
+public sealed record AiDesignRequest(string Prompt, string Culture);
+
+public sealed record AiDesignReply(
+    bool Ok,
+    bool QuotaExceeded,
+    string? ImageUrl,
+    int QuotaUsed,
+    int QuotaLimit,
+    int Remaining,
+    string? Message,
+    string? Error)
+{
+    public static AiDesignReply Exceeded(int quotaUsed, int quotaLimit, string message) =>
+        new(false, true, null, quotaUsed, quotaLimit, 0, message, "ai.design_quota_exceeded");
+    public static AiDesignReply Failed(string error, string message) =>
+        new(false, false, null, 0, AiDesignServiceDefaults.QuotaLimit, 0, message, error);
+    public static AiDesignReply Made(string imageUrl, int quotaUsed, int quotaLimit, string message) =>
+        new(true, false, imageUrl, quotaUsed, quotaLimit, Math.Max(0, quotaLimit - quotaUsed), message, null);
+}
+
+/// <summary>مقادیر مشترک سرویس طراحی AI — برای پاسخ‌های خطای ثابت در قرارداد.</summary>
+public static class AiDesignServiceDefaults
+{
+    public const int QuotaLimit = 5;
+}
+
+public interface IAiDesignService
+{
+    Task<Result<AiDesignReply>> DesignAsync(AiDesignRequest request, CancellationToken ct);
+    Task<Result<AiDesignReply>> QuotaAsync(CancellationToken ct);
+}

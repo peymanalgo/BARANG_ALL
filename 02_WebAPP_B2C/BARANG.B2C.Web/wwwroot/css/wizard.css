@@ -203,6 +203,40 @@
 #wz .success p{color:var(--sub);font-size:12.5px;line-height:2;margin:0 0 20px}
 #wz .success .btn{margin-inline:4px}
 
+/* ── طراحی با هوش مصنوعی: دکمه ورود + پاپ‌آپ ── */
+#wz .ai-btn{display:flex;align-items:center;gap:11px;width:100%;text-align:start;border:1px solid rgba(246,178,60,.45);background:linear-gradient(160deg,rgba(246,178,60,.14),rgba(139,92,246,.12));border-radius:14px;padding:10px 14px;cursor:pointer;color:var(--ink);transition:.18s}
+#wz .ai-btn:hover{transform:translateY(-2px);border-color:var(--acc);box-shadow:0 8px 22px -10px rgba(246,178,60,.5)}
+#wz .ai-btn .ic{font-size:21px}
+#wz .ai-btn .t{display:flex;flex-direction:column;gap:2px;min-width:0}
+#wz .ai-btn .t b{font-size:12.5px;color:#ffd98a}
+#wz .ai-btn .t small{color:var(--sub);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#w-ai .ai-pop{background:linear-gradient(160deg,#16233c,#0e1526);border:1px solid rgba(246,178,60,.45);border-radius:20px;padding:20px;width:min(520px,100%);box-shadow:0 40px 90px -20px rgba(0,0,0,.8);color:#eef2fa;font-family:Vazirmatn,Tahoma,'Segoe UI',sans-serif;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 40px);overflow-y:auto}
+#w-ai .ai-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+#w-ai .ai-cap{display:flex;align-items:center;gap:10px}
+#w-ai .ai-cap .spark{font-size:26px;filter:drop-shadow(0 0 12px rgba(246,178,60,.7))}
+#w-ai .ai-cap b{display:block;font-size:15.5px;color:#ffd98a}
+#w-ai .ai-cap small{display:block;color:#94a1b8;font-size:11.5px;margin-top:2px}
+#w-ai .ai-x{border:1px solid rgba(255,255,255,.12);background:#1a2436;color:#eef2fa;border-radius:10px;width:34px;height:34px;font-size:14px;cursor:pointer;flex:0 0 auto}
+#w-ai .ai-x:hover{border-color:rgba(246,178,60,.6);color:#ffd98a}
+#w-ai .lbl{font-size:11.5px;color:#94a1b8}
+#w-ai textarea.ai-tin{width:100%;background:#1a2436;border:1px solid rgba(255,255,255,.09);color:#eef2fa;border-radius:12px;padding:11px 13px;font-size:13px;outline:none;resize:vertical;font-family:inherit}
+#w-ai textarea.ai-tin:focus{border-color:rgba(246,178,60,.55);box-shadow:0 0 0 3px rgba(246,178,60,.15)}
+#w-ai .ai-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#w-ai .ai-quota{font-size:11px;color:#8ff0c4;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.35);border-radius:99px;padding:4px 12px;font-weight:700}
+#w-ai .ai-quota.none{color:#f87171;background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.35)}
+#w-ai .ai-gen{position:relative;min-width:130px}
+#w-ai .ai-gen[disabled]{filter:grayscale(.7);opacity:.55;cursor:not-allowed;transform:none}
+#w-ai .ai-gen .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(35,19,3,.35);border-top-color:#231303;border-radius:50%;animation:aispin .7s linear infinite;vertical-align:-2px;margin-inline-end:7px}
+@keyframes aispin{to{transform:rotate(360deg)}}
+#w-ai .ai-msg{margin:0;font-size:12px;line-height:1.9;color:#f87171;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:11px;padding:9px 12px}
+#w-ai .ai-msg.ok{color:#8ff0c4;background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.3)}
+#w-ai .ai-msg.info{color:#ffd98a;background:rgba(246,178,60,.08);border-color:rgba(246,178,60,.3)}
+#w-ai .ai-result{display:flex;align-items:center;justify-content:center;background:#0b1120;border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:10px;min-height:180px}
+#w-ai .ai-result img{max-width:100%;max-height:300px;border-radius:8px;object-fit:contain;animation:aimIn .5s cubic-bezier(.2,1.2,.35,1)}
+@keyframes aimIn{from{transform:scale(.85);opacity:0;filter:drop-shadow(0 0 24px rgba(246,178,60,.8))}to{transform:scale(1);opacity:1}}
+#w-ai .ai-use{width:100%}
+#w-ai .ai-use[disabled]{filter:grayscale(.8);opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+
 /* درگاه نمایشی */
 .overlay{position:fixed;inset:0;background:rgba(5,8,14,.72);display:flex;align-items:center;justify-content:center;z-index:80;padding:16px}
 .overlay[hidden]{display:none}
