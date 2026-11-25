@@ -175,4 +175,13 @@
   <data name="ReasonRequired" xml:space="preserve">
     <value>Se requiere un motivo para esta operación.</value>
   </data>
+  <data name="WorkflowCenterSubtitle" xml:space="preserve">
+    <value>Diseño de procesos, supervisión de la ejecución y gestión de instancias y versiones de flujo.</value>
+  </data>
+  <data name="WorkflowSections" xml:space="preserve">
+    <value>Secciones de flujo de trabajo</value>
+  </data>
+  <data name="WorkflowSectionNotFound" xml:space="preserve">
+    <value>No se encontró la sección de flujo solicitada.</value>
+  </data>
 </root>

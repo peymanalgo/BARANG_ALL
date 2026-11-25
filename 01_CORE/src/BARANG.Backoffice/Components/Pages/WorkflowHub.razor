@@ -1,0 +1,61 @@
+@page "/workspace/workflow"
+@page "/workspace/workflow/{Section}"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@inject IStringLocalizer<AppStrings> L
+@inject IStringLocalizer<NavigationStrings> N
+@inject IStringLocalizer<WorkflowStrings> W
+@inject NavigationManager Navigation
+
+@* مرکز گردش کار — همان الگوی «داده‌های پایه» (DomainReferenceWorkspace): فهرست بخش‌ها در ستون کناری صفحه و محتوای بخش انتخابی در ستون اصلی. *@
+<PageTitle>@SectionTitle · BARANG</PageTitle>
+<nav class="breadcrumbs"><span>@L["Module_workflow"]</span><span>/</span><span>@N["Nav_Workflow"]</span>@if (Selected is not null && Selected.Code != DesignerCode) { <span>/</span><span>@N[Selected.LabelKey]</span> }</nav>
+<header class="crud-header"><div><h1>@N["Nav_Workflow"]</h1><p>@W["WorkflowCenterSubtitle"]</p></div></header>
+<div class="reference-workspace" data-domain="workflow">
+    <details class="reference-navigation" open>
+        <summary>@W["WorkflowSections"]</summary>
+        <nav aria-label="@W["WorkflowSections"]">
+            @foreach (var section in Sections)
+            {
+                <a href="@section.Route" aria-current="@(Selected?.Code == section.Code ? "page" : null)">@N[section.LabelKey]</a>
+            }
+        </nav>
+    </details>
+    <section class="reference-content" data-workflow-section="@Selected?.Code">
+        @if (Selected is not null)
+        {
+            @switch (Selected.Code)
+            {
+                case DesignerCode: <WorkflowWorkspace /> break;
+                case "monitoring": <WorkflowMonitoring /> break;
+                case "instances": <WorkflowInstances /> break;
+                case "versions": <WorkflowVersions /> break;
+            }
+        }
+        else { <section class="crud-card"><p>@W["WorkflowSectionNotFound"]</p></section> }
+    </section>
+</div>
+@code {
+    private const string DesignerCode = "designer";
+    private const string BasePath = "/workspace/workflow";
+    private static readonly WorkflowSection[] Sections =
+    [
+        new(DesignerCode, "Nav_Workflow", BasePath),
+        new("monitoring", "Nav_WorkflowMonitoring", BasePath + "/monitoring"),
+        new("instances", "Nav_WorkflowInstances", BasePath + "/instances"),
+        new("versions", "Nav_WorkflowVersions", BasePath + "/versions"),
+    ];
+    [Parameter] public string? Section { get; set; }
+    private WorkflowSection? Selected;
+    private string SectionTitle => Selected is null ? N["Nav_Workflow"] : N[Selected.LabelKey];
+    // مسیر جاری ملاک است، نه صرفاً پارامتر مسیر — تا هنگام بین‌راهه‌ی بین دو الگوی مسیرِ همین صفحه، مقدار کهنه نماند.
+    protected override void OnParametersSet()
+    {
+        string path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/');
+        string? code = path.Equals(BasePath, StringComparison.OrdinalIgnoreCase) ? null
+            : path.StartsWith(BasePath + "/", StringComparison.OrdinalIgnoreCase) ? path[(BasePath.Length + 1)..]
+            : Section;
+        Selected = code is null ? Sections[0] : Sections.FirstOrDefault(x => x.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
+    }
+    private sealed record WorkflowSection(string Code, string LabelKey, string Route);
+}

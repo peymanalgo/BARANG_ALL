@@ -46,6 +46,7 @@ public sealed class AiAssistantService(
         if (request.ResetConversation)
             await db.AiChatMessages.Where(m => m.ConversationId == conversation.Id).ExecuteDeleteAsync(ct);
 
+
         string userMessage = request.Messages.LastOrDefault(m => m.Role == "user")?.Content?.Trim() ?? "";
         if (userMessage.Length == 0) return Result.Failure<AiAssistantReply>(AiErrors.SettingsInvalid);
 
@@ -81,7 +82,7 @@ public sealed class AiAssistantService(
                 foreach (AiLlmToolCall call in result.ToolCalls)
                 {
                     JsonObject arguments = JsonNode.Parse(string.IsNullOrWhiteSpace(call.ArgumentsJson) ? "{}" : call.ArgumentsJson) as JsonObject ?? new JsonObject();
-                    JsonObject payload = await ExecuteToolGuardedAsync(companyId, userId, culture, call.Name, arguments, ct);
+                    JsonObject payload = await ExecuteToolWithSessionAsync(companyId, userId, culture, call.Name, arguments, ct);
                     if (!payload.ContainsKey("error") || payload["error"]?.GetValue<string>() != "access_denied") toolsUsed.Add(call.Name);
                     llmMessages.Add(AiLlmChatMessage.Tool(call.Id, payload.ToJsonString(AiJson.Options), call.Name));
                 }
@@ -167,6 +168,7 @@ Rules:
   {"type":"bar","title":"<title>","labels":["A","B"],"series":[{"name":"<series>","data":[1,2]}]}
   ```
   Allowed types: bar, line, pie. One chart block maximum per answer.
+- Scope discipline: "today" tools only cover TODAY. For questions about totals/all-time (e.g. "تعداد کل سفارش‌ها", "how many orders in total"), call orders_overview (or another all-time tool) — NEVER infer totals from today-only results or claim zero orders just because today is empty.
 - If data is empty or zero, say so plainly instead of inventing numbers.
 """;
         if (!string.IsNullOrWhiteSpace(settings.SystemPromptOverride)) prompt += "\nAdditional operator instructions:\n" + settings.SystemPromptOverride + "\n";
@@ -188,6 +190,22 @@ Rules:
             catch (Exception exception) { snapshot[tool.Name] = new JsonObject { ["error"] = Truncate(exception.Message, 120) }; }
         }
         return snapshot.ToJsonString(AiJson.Options);
+    }
+
+    // ابزارها مستقیم از DbContext کوئری می‌گیرند؛ RLS جداول ERP به متغیر سشن barang.company_id وابسته است.
+    // اتصال را باز نگه می‌داریم تا متغیر سشن در تمام کوئری‌های ابزار در طول اجرا باقی بماند.
+    private async Task<JsonObject> ExecuteToolWithSessionAsync(Guid companyId, Guid userId, string culture, string toolName, JsonObject arguments, CancellationToken ct)
+    {
+        await db.Database.OpenConnectionAsync(ct);
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("SELECT set_config('barang.company_id', {0}, false), set_config('barang.user_id', {1}, false)", companyId.ToString(), userId.ToString());
+            return await ExecuteToolGuardedAsync(companyId, userId, culture, toolName, arguments, ct);
+        }
+        finally
+        {
+            await db.Database.CloseConnectionAsync();
+        }
     }
 
     private async Task<JsonObject> ExecuteToolGuardedAsync(Guid companyId, Guid userId, string culture, string toolName, JsonObject arguments, CancellationToken ct)

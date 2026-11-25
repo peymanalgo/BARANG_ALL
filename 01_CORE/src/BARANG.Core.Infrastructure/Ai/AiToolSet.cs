@@ -494,3 +494,30 @@ public sealed class ArtworkBankStatsTool(CoreDbContext db, IPermissionAuthorizat
         };
     }
 }
+
+// ─── 14) orders_overview ───
+public sealed class OrdersOverviewTool(CoreDbContext db, IPermissionAuthorizationService authorization) : AiErpTool(db, authorization)
+{
+    public override string Name => "orders_overview";
+    public override string Description => "All-time order totals: total count, counts by status, this-month count, first/last order dates. Use for \"total orders\" / \"how many orders\" questions.";
+    public override IReadOnlyList<string> AnyOfPermissions => [SecurityPermissions.OrderRead];
+    public override async Task<JsonObject> ExecuteAsync(AiToolContext context, JsonObject? arguments, CancellationToken ct)
+    {
+        DateOnly today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.UtcDateTime);
+        int total = await Db.Orders.CountAsync(ct);
+        var byStatus = await Db.Orders.GroupBy(o => o.Status).Select(g => new { Status = g.Key.ToString(), Count = g.Count() }).ToListAsync(ct);
+        int thisMonth = await Db.Orders.CountAsync(o => o.OrderDate >= new DateOnly(today.Year, today.Month, 1), ct);
+        DateOnly? first = await Db.Orders.MinAsync(o => (DateOnly?)o.OrderDate, ct);
+        DateOnly? last = await Db.Orders.MaxAsync(o => (DateOnly?)o.OrderDate, ct);
+        JsonObject status = [];
+        foreach (string st in new[] { "Draft", "Submitted", "Cancelled", "Delivered" }) status[st] = byStatus.FirstOrDefault(r => r.Status == st)?.Count ?? 0;
+        return new JsonObject
+        {
+            ["total_orders"] = total,
+            ["this_month"] = thisMonth,
+            ["by_status"] = status,
+            ["first_order"] = first is { } f ? DateFields(f, context.Culture) : null,
+            ["last_order"] = last is { } l ? DateFields(l, context.Culture) : null,
+        };
+    }
+}

@@ -6,7 +6,7 @@ public sealed class CoreApiOptions
 {
     public const string Section = "CoreApi";
     public string BaseUrl { get; init; } = "http://localhost:8080";
-    public int TimeoutSeconds { get; init; } = 15;
+    public int TimeoutSeconds { get; init; } = 120; // دستیار هوشمند: حلقه ابزارها چند فراخوانی LLM پشت‌سرهم دارد
 }
 
 public sealed record LoginRequest(string Username, string Password);
