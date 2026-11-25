@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Features_Title" xml:space="preserve">
+    <value>Funciones del sistema</value>
+  </data>
+  <data name="Features_Subtitle" xml:space="preserve">
+    <value>Activa o desactiva capacidades del panel (ERP) y de la tienda Peyrang; una función desactivada se quita del sitio/panel</value>
+  </data>
+  <data name="Features_TabErp" xml:space="preserve">
+    <value>Funciones de ERP</value>
+  </data>
+  <data name="Features_TabStore" xml:space="preserve">
+    <value>Funciones de Peyrang</value>
+  </data>
+  <data name="Features_Search" xml:space="preserve">
+    <value>Buscar nombre o descripción…</value>
+  </data>
+  <data name="Features_ColumnName" xml:space="preserve">
+    <value>Función</value>
+  </data>
+  <data name="Features_ColumnDescription" xml:space="preserve">
+    <value>Descripción</value>
+  </data>
+  <data name="Features_ColumnCode" xml:space="preserve">
+    <value>Código</value>
+  </data>
+  <data name="Features_ColumnStatus" xml:space="preserve">
+    <value>Estado</value>
+  </data>
+  <data name="Features_ScopeErp" xml:space="preserve">
+    <value>ERP</value>
+  </data>
+  <data name="Features_ScopeStore" xml:space="preserve">
+    <value>Peyrang</value>
+  </data>
+  <data name="Features_On" xml:space="preserve">
+    <value>Activada</value>
+  </data>
+  <data name="Features_Off" xml:space="preserve">
+    <value>Desactivada</value>
+  </data>
+  <data name="Features_Empty" xml:space="preserve">
+    <value>No se encontraron funciones.</value>
+  </data>
+  <data name="Features_NoPermission" xml:space="preserve">
+    <value>No tienes permiso para gestionar las funciones del sistema.</value>
+  </data>
+  <data name="Features_Count" xml:space="preserve">
+    <value>funciones</value>
+  </data>
+  <data name="Features_SaveFailed" xml:space="preserve">
+    <value>No se pudo guardar; inténtalo de nuevo.</value>
+  </data>
+  <data name="Features_Concurrency" xml:space="preserve">
+    <value>Otra persona cambió esta función; la lista se actualizó — inténtalo de nuevo.</value>
+  </data>
+</root>

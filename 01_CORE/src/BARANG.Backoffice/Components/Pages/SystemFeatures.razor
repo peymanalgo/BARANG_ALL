@@ -1,0 +1,226 @@
+@page "/system/features"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Auth
+@using BARANG.Backoffice.Localization
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject IStringLocalizer<FeatureStrings> F
+@inject IStringLocalizer<NavigationStrings> Navi
+
+<PageTitle>@F["Features_Title"] · BARANG</PageTitle>
+<main class="page-shell system-features-page">
+    <header class="crud-header">
+        <div>
+            <span class="eyebrow">@Navi["Nav_SystemManagement"]</span>
+            <h1>@F["Features_Title"]</h1>
+            <p>@F["Features_Subtitle"]</p>
+        </div>
+    </header>
+
+    @if (Denied)
+    {
+        <section class="panel"><p class="muted">@F["Features_NoPermission"]</p></section>
+    }
+    else if (Loading)
+    {
+        <section class="panel"><p class="muted">…</p></section>
+    }
+    else
+    {
+        <div class="lang-tabs" role="tablist">
+            <button type="button" class="lang-tab @(Scope == "erp" ? "on" : "")" role="tab" aria-selected="@(Scope == "erp" ? "true" : "false")" @onclick='() => SwitchScope("erp")'>@F["Features_TabErp"]</button>
+            <button type="button" class="lang-tab @(Scope == "store" ? "on" : "")" role="tab" aria-selected="@(Scope == "store" ? "true" : "false")" @onclick='() => SwitchScope("store")'>@F["Features_TabStore"]</button>
+        </div>
+
+        <section class="panel feature-panel">
+            <div class="feature-toolbar">
+                <input type="search" class="feature-search" placeholder="@F["Features_Search"]" value="@Search" @oninput="SearchChanged" />
+                <span class="svc-count">@Filtered.Count @F["Features_Count"]</span>
+                @if (!string.IsNullOrEmpty(Message))
+                {
+                    <span class="muted">@Message</span>
+                }
+            </div>
+            @if (Filtered.Count == 0)
+            {
+                <p class="muted">@F["Features_Empty"]</p>
+            }
+            else
+            {
+                <div class="data-grid-wrap">
+                    <table class="data-grid feature-grid">
+                        <thead>
+                            <tr>
+                                <th>@F["Features_ColumnName"]</th>
+                                <th>@F["Features_ColumnDescription"]</th>
+                                <th>@F["Features_ColumnCode"]</th>
+                                <th class="feature-status-column">@F["Features_ColumnStatus"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (FeatureRow row in Filtered)
+                            {
+                                <tr data-feature-code="@row.Code">
+                                    <td class="feature-name">@Name(row)</td>
+                                    <td class="feature-description" dir="auto">@Description(row)</td>
+                                    <td dir="ltr" class="feature-code"><span class="feature-scope-badge feature-scope-@row.Scope">@ScopeLabel(row.Scope)</span> @row.Code</td>
+                                    <td class="feature-status-column">
+                                        <span class="feature-status-wrap" dir="ltr">
+                                            <span class="feature-state-label">@(row.IsEnabled ? F["Features_On"] : F["Features_Off"])</span>
+                                            <button type="button"
+                                                    class="feature-switch @(row.IsEnabled ? "is-on" : "")"
+                                                    role="switch"
+                                                    aria-checked="@row.IsEnabled"
+                                                    aria-label="@Name(row)"
+                                                    disabled="@row.Busy"
+                                                    @onclick="() => ToggleAsync(row)">
+                                                <span class="feature-switch-knob"></span>
+                                            </button>
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    }
+</main>
+
+@code {
+
+    // تب «فیچرهای ERP» فیچرهای پنل مدیریت و تب «فیچرهای پی‌رنگ» فیچرهای سایت فروشگاه را کنترل می‌کند.
+    // هر فیچر جدید = یک ردیف در یکی از این دو تب (barang.system_features).
+    private bool Loading = true, Denied;
+    private string Message = "", Search = "", Scope = "erp";
+    private List<FeatureRow> Rows = [];
+
+    private string CultureCode => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant() switch { "en" => "en", "ar" => "ar", "es" => "es", _ => "fa" };
+    private List<FeatureRow> Filtered => string.IsNullOrWhiteSpace(Search)
+        ? Rows
+        : [.. Rows.Where(r => Matches(r, Search.Trim()))];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        if (!user.IsInRole("system.administrator") && !user.HasClaim(AuthClaimTypes.Permission, "features.manage")) { Denied = true; Loading = false; return; }
+        await LoadAsync();
+    }
+
+    private async Task SwitchScope(string scope)
+    {
+        if (Scope == scope) return;
+        Scope = scope;
+        Message = "";
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        Loading = true;
+        var s = await Session();
+        if (s is null) { Loading = false; return; }
+        var result = await Core.GetAsync($"api/v1/features?scope={Scope}", s.Value.Token, s.Value.Company, default);
+        if (result.IsSuccess && result.Value.ValueKind == JsonValueKind.Array)
+        {
+            Rows = [.. result.Value.EnumerateArray().Select(x => new FeatureRow(
+                Text(x, "id"),
+                Text(x, "featureCode"),
+                Text(x, "scope", "erp"),
+                Text(x, "nameFa"), Text(x, "nameEn"), Text(x, "nameAr"), Text(x, "nameEs"),
+                Text(x, "descriptionFa"), Text(x, "descriptionEn"), Text(x, "descriptionAr"), Text(x, "descriptionEs"),
+                x.TryGetProperty("isEnabled", out var en) && en.GetBoolean(),
+                x.TryGetProperty("version", out var v) ? v.GetInt64() : 0))];
+        }
+        else if (result.Failure == ApiFailure.Forbidden) Denied = true;
+        Loading = false;
+    }
+
+    private void SearchChanged(ChangeEventArgs e) => Search = e.Value as string ?? "";
+
+    private async Task ToggleAsync(FeatureRow row)
+    {
+        var s = await Session();
+        if (s is null) return;
+        Message = "";
+        row.Busy = true;
+        var result = await Core.SendAsync(HttpMethod.Put, $"api/v1/features/{row.Id}", new { isEnabled = !row.IsEnabled, version = row.Version }, s.Value.Token, s.Value.Company, default);
+        row.Busy = false;
+        if (result.IsSuccess)
+        {
+            row.IsEnabled = !row.IsEnabled;
+            row.Version = result.Value.TryGetProperty("version", out var v) ? v.GetInt64() : row.Version + 1;
+        }
+        else if (result.Failure == ApiFailure.Conflict)
+        {
+            Message = F["Features_Concurrency"];
+            await LoadAsync();
+        }
+        else Message = F["Features_SaveFailed"];
+    }
+
+    private static bool Matches(FeatureRow r, string term) =>
+        r.Code.Contains(term, StringComparison.OrdinalIgnoreCase)
+        || r.NameFa.Contains(term, StringComparison.OrdinalIgnoreCase) || r.NameEn.Contains(term, StringComparison.OrdinalIgnoreCase)
+        || r.NameAr.Contains(term, StringComparison.OrdinalIgnoreCase) || r.NameEs.Contains(term, StringComparison.OrdinalIgnoreCase)
+        || r.DescriptionFa.Contains(term, StringComparison.OrdinalIgnoreCase) || r.DescriptionEn.Contains(term, StringComparison.OrdinalIgnoreCase)
+        || r.DescriptionAr.Contains(term, StringComparison.OrdinalIgnoreCase) || r.DescriptionEs.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+    private string Name(FeatureRow r) => CultureCode switch
+    {
+        "en" => NonEmpty(r.NameEn) ?? r.NameFa,
+        "ar" => NonEmpty(r.NameAr) ?? r.NameFa,
+        "es" => NonEmpty(r.NameEs) ?? NonEmpty(r.NameEn) ?? r.NameFa,
+        _ => r.NameFa,
+    };
+
+    private string Description(FeatureRow r) => CultureCode switch
+    {
+        "en" => NonEmpty(r.DescriptionEn) ?? r.DescriptionFa,
+        "ar" => NonEmpty(r.DescriptionAr) ?? r.DescriptionFa,
+        "es" => NonEmpty(r.DescriptionEs) ?? NonEmpty(r.DescriptionEn) ?? r.DescriptionFa,
+        _ => r.DescriptionFa,
+    };
+
+    private string ScopeLabel(string scope) => scope == "store" ? F["Features_ScopeStore"] : F["Features_ScopeErp"];
+
+    private static string? NonEmpty(string v) => v.Length == 0 ? null : v;
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
+    }
+
+    private static string Text(JsonElement x, string name, string fallback = "") => x.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? (v.GetString() ?? fallback) : fallback;
+
+    private sealed class FeatureRow
+    {
+        public FeatureRow(string id, string code, string scope, string nameFa, string nameEn, string nameAr, string nameEs, string descriptionFa, string descriptionEn, string descriptionAr, string descriptionEs, bool isEnabled, long version)
+        {
+            Id = id; Code = code; Scope = scope;
+            NameFa = nameFa; NameEn = nameEn; NameAr = nameAr; NameEs = nameEs;
+            DescriptionFa = descriptionFa; DescriptionEn = descriptionEn; DescriptionAr = descriptionAr; DescriptionEs = descriptionEs;
+            IsEnabled = isEnabled; Version = version;
+        }
+        public string Id { get; }
+        public string Code { get; }
+        public string Scope { get; }
+        public string NameFa { get; }
+        public string NameEn { get; }
+        public string NameAr { get; }
+        public string NameEs { get; }
+        public string DescriptionFa { get; }
+        public string DescriptionEn { get; }
+        public string DescriptionAr { get; }
+        public string DescriptionEs { get; }
+        public bool IsEnabled { get; set; }
+        public long Version { get; set; }
+        public bool Busy { get; set; }
+    }
+}

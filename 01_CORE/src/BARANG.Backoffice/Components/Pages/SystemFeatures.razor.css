@@ -1,0 +1,20 @@
+/* فیچرهای سیستم — تب‌ها از الگوی lang-tabs سراسری؛ اینجا فقط جدول و کلید خاموش/روشن iOS-style */
+.feature-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.feature-search { flex: 1 1 260px; max-width: 380px; padding: 9px 14px; border: 1px solid var(--border, #d6ded9); border-radius: 10px; font: inherit; background: #fff; }
+.feature-grid td, .feature-grid th { vertical-align: middle; }
+.feature-name { font-weight: 700; white-space: nowrap; }
+.feature-description { color: var(--muted, #5d6f68); max-width: 420px; }
+.feature-code { font-family: var(--mono, ui-monospace, monospace); font-size: .82rem; white-space: nowrap; }
+.feature-scope-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; margin-inline-end: 6px; }
+.feature-scope-erp { background: #e3eef5; color: #1d5d8c; }
+.feature-scope-store { background: #e7f0e9; color: #31574c; }
+.feature-status-column { text-align: center; width: 130px; }
+.feature-status-wrap { display: inline-flex; align-items: center; gap: 10px; }
+.feature-state-label { font-size: .8rem; color: var(--muted, #5d6f68); min-width: 52px; }
+
+/* کلید دوحالته (iOS-style) — با inset-inline-start در RTL هم درست کار می‌کند */
+.feature-switch { position: relative; display: inline-block; width: 46px; height: 26px; border-radius: 999px; border: 1px solid var(--border, #d6ded9); background: #c9d3ce; cursor: pointer; padding: 0; transition: background .2s ease; }
+.feature-switch.is-on { background: var(--primary, #31574c); border-color: var(--primary, #31574c); }
+.feature-switch:disabled { opacity: .55; cursor: wait; }
+.feature-switch-knob { position: absolute; top: 2px; inset-inline-start: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: inset-inline-start .2s ease; }
+.feature-switch.is-on .feature-switch-knob { inset-inline-start: 22px; }

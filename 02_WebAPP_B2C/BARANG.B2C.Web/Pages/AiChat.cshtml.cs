@@ -39,6 +39,19 @@ public sealed class AiChatModel(CoreApiClient core, CustomerContext customers) :
             return new JsonResult(new { ok = false, problem = problem ?? "unavailable" });
         }
         if (value is not JsonElement reply) return new JsonResult(new { ok = false, problem = "unavailable" });
+        // فیچرهای سیستم: «دستیار هوشمند» در تب فیچرهای پی‌رنگ خاموش است — پرچم + پاسخ چهارزبانه از Core
+        bool featureDisabled = Text(reply, "error") == "feature_disabled";
+        if (featureDisabled) return new JsonResult(new
+        {
+            ok = false,
+            featureDisabled = true,
+            problem = "feature_disabled",
+            reply = Text(reply, "reply") is { Length: > 0 } r ? r
+                : Culture() is "fa" ? "دستیار هوشمند در حال حاضر غیرفعال است."
+                : Culture() is "ar" ? "المساعد الذكي معطّل حاليًا."
+                : Culture() is "es" ? "El asistente inteligente está desactivado en este momento."
+                : "The AI assistant is currently disabled.",
+        });
         return new JsonResult(new
         {
             ok = true,

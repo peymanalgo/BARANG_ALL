@@ -21,6 +21,7 @@ builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.Circuits.Circu
 builder.Services.AddSingleton<LocaleDateService>();
 builder.Services.AddSingleton<ILocaleDateService>(services => services.GetRequiredService<LocaleDateService>());
 builder.Services.AddScoped<Order360FieldLabelResolver>();
+builder.Services.AddScoped<FeatureFlagsService>();
 builder.Services.Configure<CoreApiOptions>(builder.Configuration.GetSection(CoreApiOptions.Section));
 builder.Services.AddHttpClient<ICoreApiClient, CoreApiClient>((services, client) =>
 {

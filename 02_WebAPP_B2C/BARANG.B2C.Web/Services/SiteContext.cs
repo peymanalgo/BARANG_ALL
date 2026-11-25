@@ -99,6 +99,36 @@ public sealed class SiteContext(CoreApiClient core)
         catch { return null; }
     }
 
+    // ── فیچرهای سیستم: پرچم‌های «فیچرهای پی‌رنگ» از endpoint عمومی Core با کش کوتاه — خطا = روشن (fail-open) ──
+    private static readonly Dictionary<string, (bool Enabled, DateTimeOffset LoadedAt)> _featureCache = new();
+    private static readonly TimeSpan FeatureTtl = TimeSpan.FromSeconds(15);
+
+    public async Task<bool> FeatureEnabledAsync(string featureCode, string scope = "store")
+    {
+        string key = scope + ":" + featureCode;
+        if (_featureCache.TryGetValue(key, out (bool Enabled, DateTimeOffset LoadedAt) hit) && hit.LoadedAt > DateTimeOffset.UtcNow.Subtract(FeatureTtl))
+            return hit.Enabled;
+        bool enabled = true;
+        try
+        {
+            JsonElement? flags = await core.GetAsync($"api/v1/public/features/{Uri.EscapeDataString(scope)}");
+            if (flags is JsonElement arr && arr.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement x in arr.EnumerateArray())
+                {
+                    string code = Text(x, "featureCode");
+                    if (code.Length == 0) continue;
+                    bool on = x.TryGetProperty("isEnabled", out JsonElement e) && e.ValueKind == JsonValueKind.True;
+                    _featureCache[scope + ":" + code] = (on, DateTimeOffset.UtcNow);
+                    if (code == featureCode) enabled = on;
+                }
+            }
+        }
+        catch { /* در نبود Core، فیچر روشن می‌ماند */ }
+        _featureCache[key] = (enabled, DateTimeOffset.UtcNow);
+        return enabled;
+    }
+
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out JsonElement v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
     private static string? TextOrNull(JsonElement x, string p) { string v = Text(x, p); return v.Length == 0 ? null : v; }
     private static string Pick(JsonElement x, string fa, string en, string ar, string es, string culture)

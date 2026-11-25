@@ -5,6 +5,7 @@
 @inject IStringLocalizer<NavigationStrings> N
 @inject AuthenticationStateProvider AuthState
 @inject NavigationManager Navigation
+@inject FeatureFlagsService Features
 
 <div class="shell @(NavigationOpen ? "navigation-open" : null)">
     <button type="button" class="sidebar-scrim" aria-label="@L["Navigation"]" @onclick="CloseNavigationFromClick"></button>
@@ -114,6 +115,8 @@
         DisplayName = user.FindFirst(AuthClaimTypes.DisplayName)?.Value ?? user.Identity?.Name ?? "";
         CompanyName = user.FindFirst(AuthClaimTypes.CompanyName)?.Value ?? "";
         AssistantVisible = user.Identity?.IsAuthenticated == true && Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out _);
+        // فیچرهای سیستم: اگر «دستیار هوشمند» در تب فیچرهای ERP خاموش باشد، آیکون رندر نمی‌شود (خطا = روشن)
+        if (AssistantVisible) AssistantVisible = await Features.IsEnabledAsync("ai.assistant", "erp");
         VisibleGroups = ModuleCatalog.Navigation
             .Where(group => ModuleCatalog.IsVisible(group, user))
             .Select(group => group.Route is null ? group with { Items = group.Items.Where(item => ModuleCatalog.IsVisible(item, user)).Select(item => item.Children is null ? item : item with { Children = item.Children.Where(child => ModuleCatalog.IsVisible(child, user)).ToArray() }).ToArray() } : group)

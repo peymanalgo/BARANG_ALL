@@ -41,6 +41,7 @@ public static class ServicesCatalogData
         new("notifications", "اعلان‌ها", "Notifications", "الإشعارات"),
         new("auth", "احراز هویت و حساب کاربری", "Auth & Account", "المصادقة والحساب"),
         new("ai", "دستیار هوش مصنوعی", "AI Assistant", "المساعد الذكي"),
+        new("features", "فیچرهای سیستم", "System Features", "ميزانيات النظام"),
     ];
 
     public static readonly IReadOnlyList<ServiceInfo> All =
@@ -906,7 +907,36 @@ public static class ServicesCatalogData
             "Returns recent events (settings saved/tested, Q&A turns with tools used and token counts) for admin visibility.",
             "يعيد الأحداث الأخيرة (حفظ/اختبار الإعدادات والأسئلة والأجوبة مع الأدوات والرموز) لمراجعة الإدارة.",
             Inputs(In("take", "int", "Query", false)),
-            ListOut, "X-Company-ID", false)
+            ListOut, "X-Company-ID", false),
+
+        N("features", "72", "GET", "/features", "FeaturesManage", "—",
+            "فهرست فیچرهای سیستم", "List system features", "قائمة ميزانيات النظام",
+            "فیچرهای شرکت جاری را برمی‌گرداند (نام/توضیح چهارزبانه، کد، اسکوپ erp/store، وضعیت روشن/خاموش و version)؛ با پارامتر scope فیلتر تب و با search جستجو در نام/توضیح هر ۴ زبان ممکن است؛ تغذیه‌کننده صفحه «فیچرهای سیستم».",
+            "Returns the current company's system features (4-language name/description, code, erp/store scope, on/off state and version); the scope query filters the tab and search matches name/description in all 4 languages; feeds the System features page.",
+            "يعيد ميزات الشركة الحالية (الاسم/الوصف بأربع لغات والرمز والنطاق erp/store والحالة والإصدار)؛ يفلترها scope ويبحث search في كل اللغات؛ يغذي صفحة «ميزانيات النظام».",
+            Inputs(
+                In("scope", "string", "Query", false),
+                In("search", "string", "Query", false)),
+            ListOut, "X-Company-ID", false),
+
+        N("features", "73", "PUT", "/features/{id}", "FeaturesManage", "—",
+            "خاموش/روشن‌کردن فیچر", "Toggle a system feature", "تبديل حالة الميزة",
+            "وضعیت فیچر را با بهین‌یابی (version) تغییر می‌دهد؛ فیچر خاموش از پنل ERP یا فروشگاه پی‌رنگ حذف می‌شود (مثلاً «دستیار هوشمند») و در لاگ ممیزی ثبت می‌گردد.",
+            "Toggles a feature's state with optimistic concurrency (version); a disabled feature is removed from the ERP panel or the Peyrang storefront (e.g. the AI assistant) and the change is audit-logged.",
+            "يغير حالة الميزة مع التحقق الأمثل (version)؛ الميزة المعطّلة تُزال من لوحة ERP أو متجر بي‌رنگ (مثل المساعد الذكي) ويُسجَّل التغيير في سجل التدقيق.",
+            Inputs(
+                In("id", "Guid", "Route", true),
+                In("isEnabled", "bool", "Body", true),
+                In("version", "long", "Body", true)),
+            "JSON: ردیف به‌روزشده", "X-Company-ID", false),
+
+        N("features", "74", "GET", "/public/features/{scope}", "بدون احراز هویت (عمومی)", "client-read + کش ۱۰ ثانیه",
+            "پرچم‌های عمومی فیچرها", "Public feature flags", "أعلام الميزات العامة",
+            "کد فیچرها و وضعیت روشن/خاموش یک اسکوپ ('erp' یا 'store') را ناشناس و با کش ۱۰ ثانیه‌ای برمی‌گرداند؛ مصرف پنل و فروشگاه برای مخفی‌کردن قابلیت‌های خاموش بدون ورود کاربر.",
+            "Returns the feature codes and on/off flags of a scope ('erp' or 'store') anonymously with a 10-second cache; consumed by the panel and storefront to hide disabled capabilities without sign-in.",
+            "يعيد رموز الميزات وحالتها لنطاق واحد ('erp' أو 'store') دون مصادقة مع تخزين مؤقت 10 ثوانٍ؛ يستخدمه الموقع واللوحة لإخفاء الميزات المعطّلة.",
+            Inputs(In("scope", "string", "Route", true)),
+            "JSON: آرایه {featureCode,isEnabled}", "—", true)
     ];
 
     private static ServiceInfo N(string groupId, string sort, string method, string route, string permission, string limiter,

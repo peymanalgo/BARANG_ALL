@@ -54,6 +54,10 @@ public sealed class AiCustomerAssistantService(
         if (settings is null || !settings.IsEnabled)
             return Result.Success(AiCustomerAssistantReply.NotConfiguredReply(quotaUsed, QuotaLimit, await ReadHistoryAsync(companyId, userId, ct)));
 
+        // پرچم سیستمی «فیچرهای سیستم»: اگر «دستیار هوشمند» در اسکوپ فروشگاه (پی‌رنگ) خاموش باشد، پاسخ دوستانه چهارزبانه
+        if (!await IsAssistantEnabledForStoreAsync(companyId, ct))
+            return Result.Success(new AiCustomerAssistantReply(BARANG.Core.Application.Features.FeatureContracts.AssistantDisabledText(culture), false, "feature_disabled", [], quotaUsed, QuotaLimit, await ReadHistoryAsync(companyId, userId, ct)));
+
         // سهمیه سرور-side، پیش از هر فراخوانی مدل
         if (quotaUsed >= QuotaLimit)
             return Result.Success(new AiCustomerAssistantReply(QuotaExceededText(culture), false, QuotaExceededError, [], quotaUsed, QuotaLimit, await ReadHistoryAsync(companyId, userId, ct)));
@@ -146,6 +150,16 @@ public sealed class AiCustomerAssistantService(
             Result.Success(await db.Customers.AsNoTracking()
                 .FirstOrDefaultAsync(c => c.CustomerCode == actor.Actor.ActorUsername, t)), ct);
         return lookup.IsSuccess ? lookup.Value : null;
+    }
+
+    /// <summary>وضعیت فیچر «دستیار هوشمند» در اسکوپ فروشگاه (فیچرهای سیستم): بدون ردیف = فعال.</summary>
+    private async Task<bool> IsAssistantEnabledForStoreAsync(Guid companyId, CancellationToken ct)
+    {
+        bool? enabled = await db.SystemFeatures
+            .Where(f => f.CompanyId == companyId && f.FeatureCode == Domain.Features.FeatureCodes.AiAssistant && f.Scope == Domain.Features.FeatureScopes.Store)
+            .Select(f => (bool?)f.IsEnabled)
+            .FirstOrDefaultAsync(ct);
+        return enabled ?? true;
     }
 
     /// <summary>سهمیه: تعداد ردیف‌های user کانال مشتری در ۲۴ ساعت گذشته برای همین userId (پنجره غلتان).</summary>

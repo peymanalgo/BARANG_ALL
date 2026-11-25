@@ -4134,6 +4134,128 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BARANG.Core.Domain.Features.SystemFeature", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("DescriptionAr")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasDefaultValue("")
+                        .HasColumnName("description_ar");
+
+                    b.Property<string>("DescriptionEn")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasDefaultValue("")
+                        .HasColumnName("description_en");
+
+                    b.Property<string>("DescriptionEs")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasDefaultValue("")
+                        .HasColumnName("description_es");
+
+                    b.Property<string>("DescriptionFa")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasDefaultValue("")
+                        .HasColumnName("description_fa");
+
+                    b.Property<string>("FeatureCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("feature_code");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_enabled");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasDefaultValue("")
+                        .HasColumnName("name_ar");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasDefaultValue("")
+                        .HasColumnName("name_en");
+
+                    b.Property<string>("NameEs")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasDefaultValue("")
+                        .HasColumnName("name_es");
+
+                    b.Property<string>("NameFa")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasDefaultValue("")
+                        .HasColumnName("name_fa");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("scope");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_system_features");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_system_features_company_id");
+
+                    b.HasIndex("CompanyId", "FeatureCode", "Scope")
+                        .IsUnique()
+                        .HasDatabaseName("uq_system_features_company_code_scope");
+
+                    b.ToTable("system_features", "barang", t =>
+                        {
+                            t.HasCheckConstraint("ck_system_features_scope_valid", "scope IN ('erp','store')");
+
+                            t.HasCheckConstraint("ck_system_features_version_positive", "version > 0");
+                        });
+                });
+
             modelBuilder.Entity("BARANG.Core.Domain.Files.Artwork", b =>
                 {
                     b.Property<Guid>("Id")
@@ -10251,6 +10373,13 @@ namespace BARANG.Core.Infrastructure.Persistence.Migrations
                             Code = "workflow.monitor",
                             Module = "workflow",
                             TechnicalDescription = "workflow.monitor"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000094"),
+                            Code = "features.manage",
+                            Module = "features",
+                            TechnicalDescription = "features.manage"
                         });
                 });
 

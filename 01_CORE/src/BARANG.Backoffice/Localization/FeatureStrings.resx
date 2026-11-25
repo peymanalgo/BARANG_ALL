@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Features_Title" xml:space="preserve">
+    <value>فیچرهای سیستم</value>
+  </data>
+  <data name="Features_Subtitle" xml:space="preserve">
+    <value>خاموش/روشن‌کردن قابلیت‌های پنل مدیریت (ERP) و فروشگاه پی‌رنگ؛ فیچر خاموش از سایت/پنل حذف می‌شود</value>
+  </data>
+  <data name="Features_TabErp" xml:space="preserve">
+    <value>فیچرهای ERP</value>
+  </data>
+  <data name="Features_TabStore" xml:space="preserve">
+    <value>فیچرهای پی‌رنگ</value>
+  </data>
+  <data name="Features_Search" xml:space="preserve">
+    <value>جستجو در نام یا توضیح…</value>
+  </data>
+  <data name="Features_ColumnName" xml:space="preserve">
+    <value>نام فیچر</value>
+  </data>
+  <data name="Features_ColumnDescription" xml:space="preserve">
+    <value>توضیح</value>
+  </data>
+  <data name="Features_ColumnCode" xml:space="preserve">
+    <value>کد</value>
+  </data>
+  <data name="Features_ColumnStatus" xml:space="preserve">
+    <value>وضعیت</value>
+  </data>
+  <data name="Features_ScopeErp" xml:space="preserve">
+    <value>ERP</value>
+  </data>
+  <data name="Features_ScopeStore" xml:space="preserve">
+    <value>پی‌رنگ</value>
+  </data>
+  <data name="Features_On" xml:space="preserve">
+    <value>روشن</value>
+  </data>
+  <data name="Features_Off" xml:space="preserve">
+    <value>خاموش</value>
+  </data>
+  <data name="Features_Empty" xml:space="preserve">
+    <value>فیچری یافت نشد.</value>
+  </data>
+  <data name="Features_NoPermission" xml:space="preserve">
+    <value>دسترسی مدیریت فیچرهای سیستم را ندارید.</value>
+  </data>
+  <data name="Features_Count" xml:space="preserve">
+    <value>فیچر</value>
+  </data>
+  <data name="Features_SaveFailed" xml:space="preserve">
+    <value>ذخیره نشد؛ دوباره تلاش کنید.</value>
+  </data>
+  <data name="Features_Concurrency" xml:space="preserve">
+    <value>این فیچر هم‌زمان توسط دیگری تغییر کرده؛ فهرست به‌روزرسانی شد، دوباره تلاش کنید.</value>
+  </data>
+</root>

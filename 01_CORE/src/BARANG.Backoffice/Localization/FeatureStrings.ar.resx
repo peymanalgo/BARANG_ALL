@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Features_Title" xml:space="preserve">
+    <value>ميزانيات النظام</value>
+  </data>
+  <data name="Features_Subtitle" xml:space="preserve">
+    <value>تشغيل/إيقاف إمكانات لوحة الإدارة (ERP) ومتجر بي‌رنگ؛ الميزة المعطّلة تُزال من الموقع/اللوحة</value>
+  </data>
+  <data name="Features_TabErp" xml:space="preserve">
+    <value>ميزانيات ERP</value>
+  </data>
+  <data name="Features_TabStore" xml:space="preserve">
+    <value>ميزانيات بي‌رنگ</value>
+  </data>
+  <data name="Features_Search" xml:space="preserve">
+    <value>ابحث في الاسم أو الوصف…</value>
+  </data>
+  <data name="Features_ColumnName" xml:space="preserve">
+    <value>الميزة</value>
+  </data>
+  <data name="Features_ColumnDescription" xml:space="preserve">
+    <value>الوصف</value>
+  </data>
+  <data name="Features_ColumnCode" xml:space="preserve">
+    <value>الرمز</value>
+  </data>
+  <data name="Features_ColumnStatus" xml:space="preserve">
+    <value>الحالة</value>
+  </data>
+  <data name="Features_ScopeErp" xml:space="preserve">
+    <value>ERP</value>
+  </data>
+  <data name="Features_ScopeStore" xml:space="preserve">
+    <value>بي‌رنگ</value>
+  </data>
+  <data name="Features_On" xml:space="preserve">
+    <value>مفعّلة</value>
+  </data>
+  <data name="Features_Off" xml:space="preserve">
+    <value>معطّلة</value>
+  </data>
+  <data name="Features_Empty" xml:space="preserve">
+    <value>لا توجد ميزات.</value>
+  </data>
+  <data name="Features_NoPermission" xml:space="preserve">
+    <value>ليس لديك صلاحية إدارة ميزانيات النظام.</value>
+  </data>
+  <data name="Features_Count" xml:space="preserve">
+    <value>ميزة</value>
+  </data>
+  <data name="Features_SaveFailed" xml:space="preserve">
+    <value>فشل الحفظ؛ حاول مرة أخرى.</value>
+  </data>
+  <data name="Features_Concurrency" xml:space="preserve">
+    <value>تم تغيير هذه الميزة بواسطة شخص آخر؛ تم تحديث القائمة — حاول مرة أخرى.</value>
+  </data>
+</root>

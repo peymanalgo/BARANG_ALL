@@ -42,6 +42,10 @@ public sealed class AiAssistantService(
         if (settings is null || !settings.IsEnabled)
             return Result.Success(AiAssistantReply.NotConfiguredReply(await StoreUserTurnAsync(companyId, userId, request, culture, now, null, ct)));
 
+        // پرچم سیستمی «فیچرهای سیستم»: اگر «دستیار هوشمند» در اسکوپ ERP خاموش باشد، پاسخ دوستانه چهارزبانه
+        if (!await IsFeatureEnabledAsync(companyId, Domain.Features.FeatureScopes.Erp, ct))
+            return Result.Success(new AiAssistantReply(Application.Features.FeatureContracts.AssistantDisabledText(culture), false, "feature_disabled", [], null, null, await StoreUserTurnAsync(companyId, userId, request, culture, now, null, ct)));
+
         AiConversation conversation = await EnsureConversationAsync(companyId, userId, now, request.ResetConversation, ct);
         if (request.ResetConversation)
             await db.AiChatMessages.Where(m => m.ConversationId == conversation.Id).ExecuteDeleteAsync(ct);
@@ -114,6 +118,16 @@ public sealed class AiAssistantService(
         conversation.Touch(time.GetUtcNow());
         await db.SaveChangesAsync(ct);
         return Result.Success();
+    }
+
+    /// <summary>وضعیت فیچر سیستمی (فیچرهای سیستم): بدون ردیف = فعال (پیش‌فرض روشن).</summary>
+    private async Task<bool> IsFeatureEnabledAsync(Guid companyId, string scope, CancellationToken ct)
+    {
+        bool? enabled = await db.SystemFeatures.IgnoreQueryFilters()
+            .Where(f => f.CompanyId == companyId && f.FeatureCode == Domain.Features.FeatureCodes.AiAssistant && f.Scope == scope)
+            .Select(f => (bool?)f.IsEnabled)
+            .FirstOrDefaultAsync(ct);
+        return enabled ?? true;
     }
 
     private async Task<AiConversation> EnsureConversationAsync(Guid companyId, Guid userId, DateTimeOffset now, bool reset, CancellationToken ct)

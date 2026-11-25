@@ -1,9 +1,16 @@
 @inject BARANG.B2C.Web.Services.CustomerContext Customers
+@inject BARANG.B2C.Web.Services.SiteContext Site
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @* دستیار هوشمند مشتری — شناور: پایین-چپ در fa/ar (RTL) و پایین-راست در en/es (LTR)،
    همان زبان طراحی دستیار ERP با استایل فروشگاه. استفاده از چت فقط برای مشتری واردشده؛
-   بدون ورود، کلیک روی آیکون پنل «ورود لازم است» را باز می‌کند و لینک ورود با returnUrl همین صفحه می‌دهد. *@
+   بدون ورود، کلیک روی آیکون پنل «ورود لازم است» را باز می‌کند و لینک ورود با returnUrl همین صفحه می‌دهد.
+   فیچرهای سیستم: اگر «دستیار هوشمند» در تب فیچرهای پی‌رنگ خاموش باشد، آیکون/پنل اصلاً رندر نمی‌شود. *@
 @{
+    bool aiFeatureEnabled = await Site.FeatureEnabledAsync("ai.assistant", "store");
+}
+@if (aiFeatureEnabled)
+{
+
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     var dir = culture is "en" or "es" ? "ltr" : "rtl";
     string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
@@ -22,7 +29,6 @@
     string loginLink = "/account/login?returnUrl=" + Uri.EscapeDataString(returnUrl);
     // توکن antiforgery برای POSTهای AJAX (هدر استاندارد RequestVerificationToken — الگوی ویزارد)
     string afToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
-}
 <link rel="stylesheet" href="~/css/ai-chat.css" asp-append-version="true" />
 <div class="ai-assistant @(dir == "rtl" ? "ai-pos-left" : "ai-pos-right")"
      data-ai-assistant
@@ -243,6 +249,13 @@
             busy(false);
             if (!d) { bubble('assistant', culture === 'fa' ? 'خطای غیرمنتظره؛ دوباره تلاش کن.' : 'Unexpected error; please try again.', 'auto'); return; }
             if (d.problem === 'auth') { showLogin(true); return; }
+            if (d.featureDisabled) {
+                bubble('assistant', d.reply || (culture === 'fa' ? 'دستیار هوشمند در حال حاضر غیرفعال است.'
+                    : culture === 'ar' ? 'المساعد الذكي معطّل حاليًا.'
+                    : culture === 'es' ? 'El asistente inteligente está desactivado en este momento.'
+                    : 'The AI assistant is currently disabled.'), 'auto');
+                return;
+            }
             if (d.notConfigured) {
                 setQuota(d.quotaUsed || 0, d.quotaLimit);
                 bubble('assistant', culture === 'fa' ? 'دستیار فعلاً در دسترس نیست؛ بعداً سر بزن.'
@@ -294,3 +307,4 @@
     if (form) form.addEventListener('submit', function (e) { e.preventDefault(); ask(input.value); });
 })();
 </script>
+}

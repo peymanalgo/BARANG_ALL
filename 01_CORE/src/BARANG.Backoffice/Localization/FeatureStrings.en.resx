@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Features_Title" xml:space="preserve">
+    <value>System features</value>
+  </data>
+  <data name="Features_Subtitle" xml:space="preserve">
+    <value>Toggle backoffice (ERP) and Peyrang storefront capabilities; a disabled feature is removed from the site/panel</value>
+  </data>
+  <data name="Features_TabErp" xml:space="preserve">
+    <value>ERP features</value>
+  </data>
+  <data name="Features_TabStore" xml:space="preserve">
+    <value>Peyrang features</value>
+  </data>
+  <data name="Features_Search" xml:space="preserve">
+    <value>Search name or description…</value>
+  </data>
+  <data name="Features_ColumnName" xml:space="preserve">
+    <value>Feature</value>
+  </data>
+  <data name="Features_ColumnDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Features_ColumnCode" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="Features_ColumnStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Features_ScopeErp" xml:space="preserve">
+    <value>ERP</value>
+  </data>
+  <data name="Features_ScopeStore" xml:space="preserve">
+    <value>Peyrang</value>
+  </data>
+  <data name="Features_On" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="Features_Off" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="Features_Empty" xml:space="preserve">
+    <value>No features found.</value>
+  </data>
+  <data name="Features_NoPermission" xml:space="preserve">
+    <value>You do not have permission to manage system features.</value>
+  </data>
+  <data name="Features_Count" xml:space="preserve">
+    <value>features</value>
+  </data>
+  <data name="Features_SaveFailed" xml:space="preserve">
+    <value>Save failed; please try again.</value>
+  </data>
+  <data name="Features_Concurrency" xml:space="preserve">
+    <value>This feature was changed by someone else; the list was refreshed — please try again.</value>
+  </data>
+</root>
