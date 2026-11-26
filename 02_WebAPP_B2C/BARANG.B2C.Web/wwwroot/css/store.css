@@ -325,8 +325,9 @@ html[dir="rtl"] .btn-account { padding: .35rem .45rem .35rem .9rem; }
 .catalog-head { margin-bottom: .6rem; }
 .catalog-head p { margin: 0 0 .4rem; }
 .catalog-filter { display: flex; gap: .6rem; margin: 1rem 0 1.6rem; flex-wrap: wrap; }
+/* جستجوی کاتالوگ تمام‌عرض — تنها جستجوی سایت همین است */
 .catalog-filter input[type="search"] {
-    flex: 1; min-width: 220px; max-width: 460px;
+    flex: 1; width: 100%; min-width: 220px; max-width: none;
     border: 1px solid var(--border); border-radius: 10px; padding: .6rem 1rem; font: inherit; background: var(--surface); color: var(--text);
 }
 .catalog-filter input[type="search"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
