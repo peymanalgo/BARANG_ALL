@@ -6,6 +6,7 @@
 @using System.Globalization
 @using System.Net
 @using System.Text.Json
+@using Microsoft.AspNetCore.Components
 @inject IStringLocalizer<AppStrings> L
 @inject IStringLocalizer<Order360Strings> S
 @inject IStringLocalizer<Order360AdditionsStrings> A
@@ -29,10 +30,10 @@ else
 {
     <main class="order360-shell @ThemeClass @(Embedded ? "order360-embedded" : "")">
         <section class="order360-modal" role="dialog" aria-modal="true" aria-labelledby="order360-title">
-            <header class="order360-head"><div><span class="eyebrow">@S["Eyebrow"]</span><h1 id="order360-title">@Number</h1><small>@CustomerName · @Date(Summary, "orderDate")</small></div><div class="order360-head-actions"><span class="order360-pill">@StatusText(Status)</span><PriorityIndicator Priority="@Text(Summary, "priority", "Normal")" /><button type="button" class="order360-close" aria-label="@S["Close"]" title="@S["Close"]" @onclick="Close">×</button></div></header>
+            <header class="order360-head"><div><span class="eyebrow">@S["Eyebrow"]</span><h1 id="order360-title">@Number</h1><small>@CustomerName · @Date(Summary, "orderDate")</small></div><div class="order360-head-actions"><span class="order360-pill">@StatusText(Status)</span><PriorityIndicator Priority="@Text(Summary, "priority", "Normal")" />@if (!Embedded) { <button type="button" class="order360-close" aria-label="@S["Close"]" title="@S["Close"]" @onclick="Close">×</button> }</div></header>
 
-            @* پنل تمام‌عرض «طرح و فایل»: ماکاپ روی تیشرت + فایل‌های طرح با دانلود TIFF، بالای نمای ۳۶۰ (قرارداد کارتابل) *@
-            @if (Embedded && HasArtwork)
+            @* پنل تمام‌عرض «طرح و فایل»: ماکاپ روی تیشرت + فایل‌های طرح با دانلود TIFF — در هر دو مسیر کارتابل و سفارش‌ها (پنجره واحد) *@
+            @if (HasArtwork)
             {
                 <section class="order360-design-panel" aria-label="@A["Artwork"]">
                     <header class="order360-design-head"><h2>@A["Artwork"]</h2><span class="order360-pill">@S["Files"] · @Gallery.Length</span></header>
@@ -63,12 +64,18 @@ else
             }
             <div class="order360-metrics"><div class="order360-metric"><small>@S["MetricsTotal"]</small><strong dir="ltr">@Money(Pricing, "finalTotal") @Currency</strong></div><div class="order360-metric"><small>@S["MetricsPaid"]</small><strong dir="ltr">—</strong></div><div class="order360-metric"><small>@S["MetricsBalance"]</small><strong dir="ltr">—</strong></div><div class="order360-metric"><small>@S["MetricsDue"]</small><strong>@Date(Summary, "requestedDeliveryDate")</strong></div></div>
             <div class="order360-overview">
-                <section class="order360-card"><h2>@S["Overview"]</h2><dl class="order360-fields"><Field K="@S["Customer"]" V="@CustomerName" /><Field K="@S["Status"]" V="@StatusText(Status)" /><Field K="@S["Source"]" V="@Text(Summary, "source", S["NoData"])" /><Field K="@S["OrderDate"]" V="@Date(Summary, "orderDate")" /><Field K="@S["ExpectedDate"]" V="@Date(Summary, "requestedDeliveryDate")" /></dl></section>
-                <section class="order360-card order360-orbit"><div class="order360-orbit-ring"><button type="button" class="order360-orbit-node @(Active == "customer" ? "active" : null)" @onclick="SelectCustomer">@S["Customer"]</button><button type="button" class="order360-orbit-node @(Active == "items" ? "active" : null) items-node" @onclick="SelectItems">@A["Items"]</button><button type="button" class="order360-orbit-node @(Active == "prints" ? "active" : null)" @onclick="SelectPrints">@S["PrintOperations"]</button><button type="button" class="order360-orbit-node @(Active == "pricing" ? "active" : null)" @onclick="SelectPricing">@S["PriceSnapshot"]</button><button type="button" class="order360-orbit-node @(Active == "delivery" ? "active" : null)" @onclick="SelectDelivery">@S["Delivery"]</button><button type="button" class="order360-orbit-node @(Active == "services" ? "active" : null)" @onclick="SelectServices">@S["SelectedServices"]</button><button type="button" class="order360-orbit-node @(Active == "history" ? "active" : null)" @onclick="SelectHistory">@S["Timeline"]</button><div class="order360-orbit-center"><svg class="order360-shirt" viewBox="0 0 160 180" role="img" aria-label="@L["Product"]"><path d="M42 22 16 39 4 75l25 12 10-18v87c0 9 7 16 16 16h60c9 0 16-7 16-16V69l10 18 25-12-12-36-26-17-20 13H62z"/><path d="M61 22c2 18 36 18 38 0" fill="none"/></svg><button type="button" class="order360-artwork-marker @(HasArtwork ? null : "is-empty")" disabled="@(!HasArtwork)" aria-disabled="@(!HasArtwork)" aria-label="@L["Artwork"]" title="@L["Artwork"]" @onclick="OpenArtwork">@L["Artwork"]</button></div></div></section>
-                <aside class="order360-card order360-detail"><h2>@SectionTitle(Active)<span class="order360-pill">@S["ReadOnly"]</span></h2><div class="order360-detail-scroll">@if (!Embedded && Mockups.Length > 0) { <div class="order360-mockup-grid">@foreach (var m in Mockups) { <figure class="order360-mockup"><img src="@MockupUrl(m)" alt="@Text(m, "fileName", "")" /><figcaption>پیش‌نمایش روی تیشرت · @DisplayValue(Text(m, "printPositionCode", ""))</figcaption></figure> }</div> }@Detail()</div></aside>
+                <section class="order360-card"><h2>@S["Overview"]</h2><dl class="order360-fields"><Field K="@S["Customer"]" V="@CustomerName" /><Field K="@S["Status"]" V="@StatusText(Status)" /><Field K="@ItemCountLabel()" V="@Items.Length.ToString()" /><Field K="@S["Source"]" V="@Text(Summary, "source", S["NoData"])" /><Field K="@S["OrderDate"]" V="@Date(Summary, "orderDate")" /><Field K="@S["ExpectedDate"]" V="@Date(Summary, "requestedDeliveryDate")" /></dl></section>
+                @* مرکز دایره: پیش‌نمایش واقعی محصول+طرحِ قلم فعال؛ ناوبری اقلام چندتایی با فلش‌های قبلی/بعدی *@
+                <section class="order360-card order360-orbit"><div class="order360-orbit-body"><div class="order360-orbit-ring"><button type="button" class="order360-orbit-node @(Active == "customer" ? "active" : null)" @onclick="SelectCustomer">@S["Customer"]</button><button type="button" class="order360-orbit-node @(Active == "prints" ? "active" : null)" @onclick="SelectPrints">@S["PrintOperations"]</button><button type="button" class="order360-orbit-node @(Active == "pricing" ? "active" : null)" @onclick="SelectPricing">@S["PriceSnapshot"]</button><button type="button" class="order360-orbit-node @(Active == "delivery" ? "active" : null)" @onclick="SelectDelivery">@S["Delivery"]</button><button type="button" class="order360-orbit-node @(Active == "services" ? "active" : null)" @onclick="SelectServices">@S["SelectedServices"]</button><button type="button" class="order360-orbit-node @(Active == "history" ? "active" : null)" @onclick="SelectHistory">@S["Timeline"]</button><div class="order360-orbit-center">@if (ActiveMockupUrl.Length > 0) { <img class="order360-center-mockup" src="@ActiveMockupUrl" alt="@ActiveItemTitle" /> } else { <svg class="order360-shirt" viewBox="0 0 160 180" role="img" aria-label="@L["Product"]"><path d="M42 22 16 39 4 75l25 12 10-18v87c0 9 7 16 16 16h60c9 0 16-7 16-16V69l10 18 25-12-12-36-26-17-20 13H62z"/><path d="M61 22c2 18 36 18 38 0" fill="none"/></svg> }<button type="button" class="order360-artwork-marker @(HasArtwork ? null : "is-empty")" disabled="@(!HasArtwork)" aria-disabled="@(!HasArtwork)" aria-label="@L["Artwork"]" title="@L["Artwork"]" @onclick="OpenArtwork">@L["Artwork"]</button></div></div>@if (Items.Length > 0) { <div class="order360-item-caption"><strong>@ActiveItemTitle</strong>@if (Items.Length > 1) { <span class="order360-item-position" dir="ltr">@(ActiveItemIndex + 1) / @Items.Length</span> }</div> }@if (Items.Length > 1) { <div class="order360-item-nav"><button type="button" class="order360-item-arrow" title="@PrevLabel" aria-label="@PrevLabel" disabled="@(!CanPrevItem)" @onclick="PrevItem"><BarangIcon Name="@BackArrowIcon" /></button><button type="button" class="order360-item-arrow next" title="@NextLabel" aria-label="@NextLabel" disabled="@(!CanNextItem)" @onclick="NextItem"><BarangIcon Name="@ForwardArrowIcon" /></button></div> }</div></section>
+                <aside class="order360-card order360-detail"><h2>@SectionTitle(Active)<span class="order360-pill">@S["ReadOnly"]</span></h2><div class="order360-detail-scroll">@Detail()</div></aside>
             </div>
             <div class="order360-progress"><span>@S["Progress"] · @Progress٪</span><div class="order360-track"><span style="width:@($"{Progress}%")"></span></div></div>
             <button type="button" class="order360-specification-banner" @onclick="OpenSpecification"><span class="order360-specification-icon" aria-hidden="true">▤</span><span><strong>@A["FullSpecification"]</strong><small>@Entry["Subtitle"]</small></span><span aria-hidden="true">›</span></button>
+            @* بازگشت تمام‌عرض انتهای پنجره — به مبدأ ورود (کارتابل یا سفارش‌ها) *@
+            @if (!Embedded)
+            {
+                <footer class="order360-back-footer"><BarangButton Variant="secondary" Icon="@BackArrowIcon" Text="@BackLabel" Clicked="GoBack" Class="cartable-back-full" /></footer>
+            }
         </section>
     </main>
 }
@@ -87,9 +94,6 @@ else
                 </section>
                 <section class="order360-spec-card"><h3>@S["PrintOperations"]</h3>
                     @if (Prints.Length == 0) { <div class="order360-empty">@S["NoData"]</div> } else { @foreach (var p in Prints) { <article class="order360-spec-row"><strong>@ItemName(Text(p, "orderItemId"))</strong><dl class="order360-fields"><Field K="@S["PrintOperations"]" V="@Text(p, "printPositionCode", A["NotSpecified"])" /><Field K="@FD["PrintMethod"]" V="@DisplayValue(Text(p, "printMethodCode", A["NotSpecified"]))" /><Field K="@A["Dimensions"]" V="@Dimensions(p)" /><Field K="@A["Notes"]" V="@Text(p, "notes", A["NotSpecified"])" /></dl></article> } }
-                </section>
-                <section class="order360-spec-card"><h3>@A["Artwork"]</h3>
-                    @if (Gallery.Length == 0) { <div class="order360-empty">@S["NoData"]</div> } else { <div class="order360-spec-list">@foreach (var g in Gallery) { <article class="order360-spec-row"><strong>@Text(g, "artworkTitle", Text(g, "fileName", S["Files"]))</strong><span>@Text(g, "artworkCode", A["NotSpecified"]) · @Text(g, "fileName", A["NotSpecified"])</span></article> }</div><button type="button" class="secondary-action" @onclick="OpenArtwork">@A["Preview"]</button>}
                 </section>
                 <section class="order360-spec-card"><h3>@S["SelectedServices"]</h3>
                     @if (Services.Length == 0) { <div class="order360-empty">@S["NoData"]</div> } else { <table class="order360-grid"><thead><tr><th>@S["SelectedServices"]</th><th>@S["Quantity"]</th><th>@S["Item"]</th></tr></thead><tbody>@foreach (var service in Services) { <tr><td>@Text(service, "serviceCode", A["NotSpecified"])</td><td>@Text(service, "quantity")</td><td>@ItemName(Text(service, "orderItemId"))</td></tr> }</tbody></table>}
@@ -113,6 +117,7 @@ else
 
 @code {
     [Parameter] public Guid OrderId { get; set; } [Parameter] public bool Embedded { get; set; } [Parameter] public Guid? TaskId { get; set; }
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
     private bool Loading = true, Failed, GalleryOpen, SpecificationOpen, _disposed; private int GalleryIndex; private string Active = "customer", Number = "", Status = "", CustomerName = "", Currency = "—"; private string? ErrorMessage; private int Progress; private JsonElement Data, Summary, Customer, Pricing; private JsonElement[] Items = [], Prints = [], Services = [], Components = [], Timeline = [], WorkflowTimeline = [], Gallery = [], ReturnRows = [], ReturnHistory = []; private CancellationTokenSource? _loadCts; private bool HasArtwork => Gallery.Length > 0;
     private string ThemeClass => Status.ToLowerInvariant() switch { "workflowcompleted" => "theme-registered", "inworkflow" => "theme-registered", "submitted" => "theme-registered", "cancelled" => "theme-cancelled", _ => "theme-draft" };
     protected override async Task OnParametersSetAsync() => await Load();
@@ -130,7 +135,7 @@ else
             string path = $"api/v1/orders/{OrderId}/360" + (TaskId is Guid task ? $"?taskId={task}" : "");
             var r = await Core.GetAsync(path, s.Value.Token, s.Value.Company, ct);
             if (!r.IsSuccess) { Failed = true; ErrorMessage = X["LoadFailed"].Value; return; }
-            Data = r.Value; Summary = Get(Data, "summary"); Customer = Get(Data, "customer"); Pricing = Get(Data, "pricing"); Number = Text(Summary, "orderNumber", OrderId.ToString()); Status = Text(Get(Data, "workflowStatus"), "code", Text(Summary, "status")); CustomerName = Text(Customer, "displayName", S["NoData"]); Currency = Text(Pricing, "currencyCode", "—"); Items = Array(Data, "items"); Prints = Array(Data, "printOperations"); Services = Array(Data, "services"); Components = Array(Data, "pricingComponents"); Timeline = Array(Data, "timeline"); WorkflowTimeline = Array(Data, "workflowTimeline"); Gallery = Array(Data, "artworkGallery"); ReturnRows = Array(Get(Data, "logistics"), "deliveredQuantities"); ReturnHistory = Array(Get(Data, "logistics"), "returns"); Progress = Status.Equals("Submitted", StringComparison.OrdinalIgnoreCase) || Status.Equals("WorkflowCompleted", StringComparison.OrdinalIgnoreCase) ? 100 : Items.Length > 0 ? 35 : 10;
+            Data = r.Value; Summary = Get(Data, "summary"); Customer = Get(Data, "customer"); Pricing = Get(Data, "pricing"); Number = Text(Summary, "orderNumber", OrderId.ToString()); Status = Text(Get(Data, "workflowStatus"), "code", Text(Summary, "status")); CustomerName = Text(Customer, "displayName", S["NoData"]); Currency = Text(Pricing, "currencyCode", "—"); Items = Array(Data, "items"); Prints = Array(Data, "printOperations"); Services = Array(Data, "services"); Components = Array(Data, "pricingComponents"); Timeline = Array(Data, "timeline"); WorkflowTimeline = Array(Data, "workflowTimeline"); Gallery = Array(Data, "artworkGallery"); ReturnRows = Array(Get(Data, "logistics"), "deliveredQuantities"); ReturnHistory = Array(Get(Data, "logistics"), "returns"); Progress = Status.Equals("Submitted", StringComparison.OrdinalIgnoreCase) || Status.Equals("WorkflowCompleted", StringComparison.OrdinalIgnoreCase) ? 100 : Items.Length > 0 ? 35 : 10; ActiveItemIndex = 0;
             // Thumbnails are fetched server-side with the caller's token and inlined as data URIs: the browser cannot
             // call the core API directly (no proxy on the backoffice origin), so <img src="/api/v1/..."> would 404.
             GalleryPreviews.Clear();
@@ -160,7 +165,50 @@ else
         finally { if (!_disposed) Loading = false; }
     }
     public async ValueTask DisposeAsync() { _disposed = true; _loadCts?.Cancel(); _loadCts?.Dispose(); await Task.CompletedTask; }
-    private void SelectCustomer() => Active = "customer"; private void SelectItems() => Active = "items"; private void SelectPrints() => Active = "prints"; private void SelectPricing() => Active = "pricing"; private void SelectDelivery() => Active = "delivery"; private void SelectServices() => Active = "services"; private void SelectHistory() => Active = "history"; private void OpenArtwork() { if (HasArtwork) { GalleryIndex = 0; GalleryOpen = true; } } private void CloseArtwork() => GalleryOpen = false; private void OpenSpecification() => SpecificationOpen = true; private void CloseSpecification() => SpecificationOpen = false; private void PreviousArtwork() { if (GalleryIndex > 0) GalleryIndex--; } private void NextArtwork() { if (GalleryIndex + 1 < Gallery.Length) GalleryIndex++; }
+    private void SelectCustomer() => Active = "customer"; private void SelectPrints() => Active = "prints"; private void SelectPricing() => Active = "pricing"; private void SelectDelivery() => Active = "delivery"; private void SelectServices() => Active = "services"; private void SelectHistory() => Active = "history"; private void OpenArtwork() { if (HasArtwork) { GalleryIndex = 0; GalleryOpen = true; } } private void CloseArtwork() => GalleryOpen = false; private void OpenSpecification() => SpecificationOpen = true; private void CloseSpecification() => SpecificationOpen = false; private void PreviousArtwork() { if (GalleryIndex > 0) GalleryIndex--; } private void NextArtwork() { if (GalleryIndex + 1 < Gallery.Length) GalleryIndex++; }
+
+    // ناوبری اقلام سفارش در مرکز دایره — سفارش‌های چندقلمی با فلش‌های قبلی/بعدی
+    private int ActiveItemIndex;
+    private JsonElement ActiveItem => Items.Length == 0 ? default : Items[Math.Min(ActiveItemIndex, Items.Length - 1)];
+    private bool CanPrevItem => ActiveItemIndex > 0;
+    private bool CanNextItem => ActiveItemIndex < Items.Length - 1;
+    private void PrevItem() { if (CanPrevItem) ActiveItemIndex--; }
+    private void NextItem() { if (CanNextItem) ActiveItemIndex++; }
+    private bool Rtl => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is not ("en" or "es");
+    private string BackArrowIcon => Rtl ? "arrow-right" : "arrow-left";
+    private string ForwardArrowIcon => Rtl ? "arrow-left" : "arrow-right";
+    private string PrevLabel => Rtl ? "قبلی" : CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "es" => "Anterior", "ar" => "السابق", _ => "Previous" };
+    private string NextLabel => Rtl ? "بعدی" : CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "es" => "Siguiente", "ar" => "التالي", _ => "Next" };
+    private string BackLabel => Rtl ? "بازگشت" : CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "es" => "Volver", "ar" => "رجوع", _ => "Back" };
+    private string ItemCountLabel() => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => "Order item count", "es" => "Artículos del pedido", "ar" => "عدد أصناف الطلب", _ => "تعداد اقلام سفارش" };
+    private string ActiveItemTitle
+    {
+        get
+        {
+            if (Items.Length == 0) return Number;
+            JsonElement item = ActiveItem;
+            string product = Text(item, "snapshotProductName", "");
+            string variant = Text(item, "snapshotVariantDisplayName", Text(item, "snapshotVariantSku", ""));
+            if (string.IsNullOrWhiteSpace(product)) return Number;
+            // وقتی واریانت با نام محصول یکسان است تکرار نشان نده
+            if (string.IsNullOrWhiteSpace(variant) || variant.Equals(product, StringComparison.Ordinal) || variant.StartsWith(product + " —", StringComparison.Ordinal)) return product;
+            return $"{product} · {variant}";
+        }
+    }
+    private JsonElement? ActiveMockup
+    {
+        get
+        {
+            if (Items.Length == 0) return null;
+            string itemId = Text(ActiveItem, "id");
+            if (Gallery.FirstOrDefault(g => Text(g, "sourceType") == "Mockup" && Text(g, "orderItemId") == itemId) is { ValueKind: JsonValueKind.Object } mockup) return mockup;
+            if (Gallery.FirstOrDefault(g => Text(g, "sourceType") != "Mockup" && Text(g, "orderItemId") == itemId && Text(g, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase)) is { ValueKind: JsonValueKind.Object } design) return design;
+            return null;
+        }
+    }
+    private string ActiveMockupUrl => ActiveMockup is { } m ? MockupUrl(m) : "";
+    private void GoBack() => Navigation.NavigateTo(string.IsNullOrWhiteSpace(ReturnUrl) ? "/workspace/orders" : ReturnUrl);
+
     private bool DownloadBusy; private string? DownloadError; private readonly Dictionary<string, string> GalleryPreviews = new();
     private string FileUrl(JsonElement a) => GalleryPreviews.TryGetValue(Text(a, "fileVersionId"), out string? uri) ? uri : "";
     private async Task DownloadArtwork()
