@@ -62,7 +62,8 @@ public sealed class FeatureFlagsService(ICoreApiClient core, AuthenticationState
                         && item.TryGetProperty("isEnabled", out JsonElement enabled) && enabled.GetBoolean())
                         codes.Add(code.GetString()!);
             }
-            Preloaded[key] = (DateTimeOffset.UtcNow, codes ?? []);
+            // فقط نتیجه موفق کش می‌شود؛ خطا (null = fail-open) کش نمی‌شود تا مجموعه خالی، فراخوانی‌های بعدی را مسموم نکند
+            if (codes is not null) Preloaded[key] = (DateTimeOffset.UtcNow, codes);
             return codes; // null = fail-open
         }
         catch { return null; }

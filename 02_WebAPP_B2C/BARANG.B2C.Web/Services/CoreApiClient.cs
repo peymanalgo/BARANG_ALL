@@ -44,6 +44,20 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
         return response.IsSuccessStatusCode ? await ReadJsonAsync(response) : null;
     }
 
+    // دانلود فایل خام از Core (طرح، ماکاپ) — bytes + contentType + fileName برمی‌گرداند
+    public async Task<(byte[]? Content, string ContentType, string FileName)?> GetFileAsync(string path)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Get, path);
+        AttachToken(request);
+        using HttpResponseMessage response = await Create().SendAsync(request);
+        MarkStatus((int)response.StatusCode);
+        if (!response.IsSuccessStatusCode) return null;
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        var ct = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+        var fn = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "file";
+        return (bytes, ct, fn);
+    }
+
     public async Task<JsonElement?> PostAsync(string path, object? body)
     {
         using HttpRequestMessage request = new(HttpMethod.Post, path) { Content = Body(body) };

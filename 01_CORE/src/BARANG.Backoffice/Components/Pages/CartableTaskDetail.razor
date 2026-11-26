@@ -21,6 +21,8 @@
 
 <PageTitle>@C["TaskWorkspace"]</PageTitle>
 <link rel="stylesheet" href="/cartable.css" />
+<link rel="stylesheet" href="/cartable-actions-v5.css" />
+<link rel="stylesheet" href="/cartable-layout-final.css" />
 <link rel="stylesheet" href="/order360.css" />
 <link rel="stylesheet" href="/order360-embedded.css" />
 @if (Loading) { <BarangLoadingState Text='@C["Loading"]' /> }
@@ -29,10 +31,13 @@ else if (Row is null) { <div class="inline-error">@C["LoadFailed"]</div> }
 else
 {
     <main class="cartable-detail-page">
-        <header class="cartable-detail-header"><BarangButton Variant="secondary" Icon="arrow-left" Text='@C["Back"]' Clicked="Back" /><div><span class="eyebrow" dir="ltr">@(Row.OrderNumber ?? "—")</span><h1>@Row.Customer</h1><p>@Localized(Row.Stage) · @Row.Position</p></div><span class="cartable-state-pill">@CurrentStatus</span></header>
+        <header class="cartable-detail-header"><div><span class="eyebrow" dir="ltr">@(Row.OrderNumber ?? "—")</span><h1>@Row.Customer</h1><p>@Localized(Row.Stage) · @Row.Position</p></div><span class="cartable-state-pill">@CurrentStatus</span></header>
         @if (!Historical)
         {
-            <section class="cartable-panel cartable-actions-panel"><div class="cartable-panel-heading"><h2>@C["Actions"]</h2><small>@Localized(Row.Instructions)</small></div><BarangButton Variant="primary" Icon="user-plus" Text='@C["Claim"]' Busy="@Busy" Clicked="Claim" /></section>
+            <section class="cartable-panel cartable-claim-bar" aria-label='@C["Claim"]'>
+                @if (!string.IsNullOrWhiteSpace(Localized(Row.Instructions))) { <p class="cartable-claim-instructions">@Localized(Row.Instructions)</p> }
+                <BarangButton Variant="primary" Icon="user-plus" Text='@C["Claim"]' Busy="@Busy" Clicked="Claim" Class="cartable-claim-full" />
+            </section>
             @if (IsInventoryStage)
             {
                 <section class="cartable-panel"><div class="cartable-panel-heading"><h2>@(IsInventoryIssue ? InventoryLabel("صدور کالا از انبار", "صرف المخزون", "Warehouse issue") : InventoryLabel("رزرو موجودی", "حجز المخزون", "Inventory reservation"))</h2><small>@(IsInventoryIssue ? InventoryLabel("صدور واقعی موجودی را ثبت می‌کند؛ تکمیل task فقط پس از صدور همه اقلام انجام می‌شود.", "يسجل الصرف الفعلي؛ لا يكتمل task إلا بعد صرف كل البنود.", "Records the physical issue; the task completes only after all items are issued.") : InventoryLabel("انبار مجاز شرکت را انتخاب کنید؛ کمبود باعث باز ماندن task می‌شود.", "اختر مستودع الشركة؛ سيبقى task مفتوحاً عند النقص.", "Select an eligible company warehouse; shortages keep the task open."))</small></div><label for="reservation-warehouse">@InventoryLabel("انبار", "المستودع", "Warehouse")</label><select id="reservation-warehouse" @bind="SelectedWarehouse"><option value="">—</option>@foreach (var warehouse in Warehouses) { <option value="@warehouse.Id">@warehouse.Name</option> }</select></section>
@@ -40,6 +45,7 @@ else
             }
         }
         <section class="cartable-panel cartable-360-panel"><OrderDetails OrderId="@Row.OrderId" TaskId="@Row.Id" Embedded="true" /></section>
+        <footer class="cartable-detail-footer"><BarangButton Variant="secondary" Icon="@BackIcon" Text='@C["Back"]' Clicked="Back" Class="cartable-back-full" /></footer>
     </main>
 }
 @if (ConfirmOutcome is not null) { <div class="dialog-backdrop"><section class="dialog-card"><h2>@C["ConfirmTitle"]</h2><p>@C["ConfirmContext"]</p><strong>@Row?.OrderNumber · @Localized(Row!.Stage) · @Outcome(ConfirmOutcome)</strong><div class="form-actions"><BarangButton Variant="primary" Text='@C["Confirm"]' Busy="@Busy" Clicked="Complete" /><BarangButton Variant="secondary" Text='@C["Cancel"]' Clicked='@(() => ConfirmOutcome=null)' /></div></section></div> }
@@ -99,6 +105,8 @@ else
     }
     public ValueTask DisposeAsync() { _disposed = true; _loadCts?.Cancel(); _loadCts?.Dispose(); return ValueTask.CompletedTask; }
     private void Back() => Navigation.NavigateTo(string.IsNullOrWhiteSpace(ReturnUrl) ? "/cartable" : ReturnUrl);
+    // فلش بازگشت جهت‌آگاه: در زبان‌های LTR به چپ و در RTL به راست اشاره می‌کند
+    private string BackIcon => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is "en" or "es" ? "arrow-left" : "arrow-right";
     private Task Claim() { if (Row is not null && !Historical && !Busy) OperationalPopupOpen = true; return Task.CompletedTask; }
     private void CloseOperationalPopup() { if (!Busy) OperationalPopupOpen = false; }
     private async Task PopupDecision(string outcome)

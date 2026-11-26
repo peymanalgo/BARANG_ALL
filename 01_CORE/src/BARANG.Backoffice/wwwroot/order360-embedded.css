@@ -1,2 +1,19 @@
 .cartable-360-panel .order360-shell{position:relative!important;inset:auto!important;z-index:auto!important;padding:0!important;background:transparent!important;backdrop-filter:none!important;overflow:visible!important}
 .cartable-360-panel .order360-modal{max-width:none}
+
+/* پنل تمام‌عرض «طرح و فایل» بالای نمای ۳۶۰ — ماکاپ + طرح + دانلود TIFF (قرارداد کارتابل) */
+.order360-design-panel{display:grid;gap:.9rem;margin-block-end:1rem;padding:1rem;border:1px solid var(--border-color,#d9dee7);border-radius:.9rem;background:var(--surface,#fff)}
+.order360-design-head{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.order360-design-head h2{margin:0;font-size:1rem}
+.order360-design-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.9rem}
+.order360-design-card{display:grid;gap:.55rem;margin:0;padding:.7rem;border:1px solid var(--border-color,#d9dee7);border-radius:.75rem;background:var(--surface,#fff)}
+.order360-design-card.is-mockup{border-color:color-mix(in srgb,var(--primary,#2563eb) 40%,var(--border-color,#d9dee7))}
+.order360-design-card img{width:100%;aspect-ratio:1;object-fit:contain;border-radius:.5rem;background:#f8fafc}
+.order360-design-noview{display:grid;place-items:center;min-height:8rem;border-radius:.5rem;background:#f8fafc;color:var(--text-muted,#667085);font-size:.85rem;text-align:center;padding:.5rem;overflow-wrap:anywhere}
+.order360-design-card figcaption{display:grid;gap:.15rem}
+.order360-design-card figcaption strong{font-size:.9rem;overflow-wrap:anywhere}
+.order360-design-card figcaption small{color:var(--text-muted,#667085);font-size:.78rem;overflow-wrap:anywhere}
+.order360-design-actions{display:flex;gap:.45rem;flex-wrap:wrap}
+.order360-design-actions .secondary-action,.order360-design-actions .primary-action{flex:1 1 auto;min-height:2.4rem;white-space:nowrap}
+@media (max-width:640px){.order360-design-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:420px){.order360-design-grid{grid-template-columns:1fr}}

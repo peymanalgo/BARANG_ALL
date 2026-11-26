@@ -109,8 +109,44 @@
 }
 else
 {
-    <section class="container section">
-        <nav class="breadcrumbs no-print" aria-label="breadcrumb">
+<section class="container section">
+    @* ── پنل ماکاپ تیشرت + پنل طرح/دانلود ── *@
+    @if (Model.MockupEntries.Count > 0 || Model.DesignEntries.Count > 0)
+    {
+        <div class="order-panels">
+            @if (Model.MockupEntries.Count > 0)
+            {
+                <div class="order-panel order-panel-mockup">
+                    <h3>پیش‌نمایش روی تیشرت</h3>
+                    @foreach (var m in Model.MockupEntries)
+                    {
+                        <div class="order-mockup-card">
+                            <img src="@($"/account/orders/{Model.Id}/design-file?fileId={m.FileId}&fileVersionId={m.FileVersionId}&kind=thumb")" alt="@m.FileName" />
+                            <span class="order-mockup-pos">چاپ @DisplayValue(m.Position)</span>
+                        </div>
+                    }
+                </div>
+            }
+            @if (Model.DesignEntries.Count > 0)
+            {
+                <div class="order-panel order-panel-design">
+                    <h3>طرح سفارش‌داده‌شده</h3>
+                    @foreach (var g in Model.DesignEntries)
+                    {
+                        <div class="order-design-card">
+                            <img src="@($"/account/orders/{Model.Id}/design-file?fileId={g.FileId}&fileVersionId={g.FileVersionId}&kind=thumb")" alt="@g.FileName" />
+                            <div class="order-design-meta">
+                                <span>@g.FileName</span>
+                                <span class="chip">@DisplayValue(g.Position)</span>
+                                <a class="btn btn-ghost btn-sm" href="@($"/account/orders/{Model.Id}/design-file?fileId={g.FileId}&fileVersionId={g.FileVersionId}")" download="@g.FileName">دانلود طرح</a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    <nav class="breadcrumbs no-print" aria-label="breadcrumb">
             <a href="/account">@T("حساب کاربری", "My account", "حسابي", "Mi cuenta")</a> ›
             <a href="/account/orders">@T("سفارش‌ها", "Orders", "الطلبات", "Pedidos")</a> ›
             <span dir="ltr">@(Model.OrderNumber ?? "—")</span>
@@ -421,4 +457,12 @@ else
             });
         });
     </script>
+}
+@functions {
+    private string DisplayValue(string? code) => (code ?? "").Trim().ToUpperInvariant() switch
+    {
+        "FRONT" => "جلو",
+        "BACK" => "پشت",
+        _ => code ?? "—"
+    };
 }

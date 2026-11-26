@@ -11,7 +11,7 @@ public static class Order360Endpoints
     public static IEndpointRouteBuilder MapOrder360Endpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGet("/api/v1/orders/{orderId:guid}/360", GetAsync)
-            .RequireAuthorization(SecurityPermissions.OrderRead);
+            .RequireAuthorization("orders.360.view");
         return endpoints;
     }
 

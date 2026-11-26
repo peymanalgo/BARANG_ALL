@@ -62,6 +62,21 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
         if (order is not JsonElement o || o.ValueKind != JsonValueKind.Object) return NotFound();
         Found = true;
         ParseOrder(o);
+        // artworkGallery از order 360 — طرح و ماکاپ
+        var g360 = await core.GetAsync($"api/v1/orders/{id}/360");
+        if (g360 is JsonElement g && g.ValueKind == JsonValueKind.Object && g.TryGetProperty("artworkGallery", out JsonElement gal) && gal.ValueKind == JsonValueKind.Array)
+        {
+            var all = gal.EnumerateArray().Select(x => new GalleryRow(
+                x.TryGetProperty("sourceType", out var st) ? st.GetString() ?? "" : "",
+                x.TryGetProperty("printPositionCode", out var pc) ? pc.GetString() : null,
+                x.TryGetProperty("fileId", out var fi) && fi.TryGetGuid(out var fg) ? fg : Guid.Empty,
+                x.TryGetProperty("fileVersionId", out var fv) && Guid.TryParse(fv.GetString(), out var fvg) ? fvg : Guid.Empty,
+                x.TryGetProperty("fileName", out var fn) ? fn.GetString() ?? "" : "",
+                x.TryGetProperty("mediaType", out var mt) ? mt.GetString() ?? "" : ""
+            )).ToList();
+            DesignEntries = all.Where(x => x.SourceType != "Mockup").ToList();
+            MockupEntries = all.Where(x => x.SourceType == "Mockup").ToList();
+        }
         await LoadTrackingAsync();
         JsonElement? wp = await core.GetAsync($"api/v1/client/orders/{id}/wallet-payment");
         if (wp is JsonElement w && w.ValueKind == JsonValueKind.Object)
@@ -195,4 +210,19 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
     public sealed record ItemRow(int Line, string Product, string Variant, string Size, string Color, string Uom, decimal Quantity, string? Notes, IReadOnlyList<PrintOpRow> PrintOperations);
     public sealed record ShipmentRow(string Number, string Carrier, string? TrackingCode, string Status, DateTimeOffset? ShippedAt, DateTimeOffset? DeliveredAt);
     public sealed record TimelineRow(string Type, DateTimeOffset? At);
+    public sealed record GalleryRow(string SourceType, string? Position, Guid FileId, Guid FileVersionId, string FileName, string MediaType);
+
+    public IReadOnlyList<GalleryRow> DesignEntries { get; private set; } = [];
+    public IReadOnlyList<GalleryRow> MockupEntries { get; private set; } = [];
+
+    // پروکسی فایل طرح/ماکاپ — مشتری فقط به فایل‌های سفارش خودش دسترسی دارد
+    public async Task<IActionResult> OnGetDesignFileAsync(Guid id, Guid fileId, Guid fileVersionId, string? kind)
+    {
+        string path = kind == "thumb"
+            ? $"api/v1/files/{fileId}/versions/{fileVersionId}/thumbnail"
+            : $"api/v1/files/{fileId}/versions/{fileVersionId}/download";
+        var result = await core.GetFileAsync(path);
+        if (result is null || result.Value.Content is null || result.Value.Content.Length == 0) return NotFound();
+        return File(result.Value.Content, result.Value.ContentType, result.Value.FileName);
+    }
 }

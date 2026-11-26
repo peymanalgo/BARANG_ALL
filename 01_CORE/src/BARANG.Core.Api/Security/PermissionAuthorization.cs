@@ -21,3 +21,16 @@ public sealed class PermissionAuthorizationHandler(IPermissionAuthorizationServi
                 return Task.FromResult(Result.Success()); }, CancellationToken.None);
     }
 }
+
+// سیاست چندکُدِ «یا»: کافی است کاربر یکی از کدها را داشته باشد (مثلاً نمای ۳۶۰ سفارش برای کاربر کارتابل با workflow.read)
+public sealed record AnyPermissionRequirement(params string[] Codes) : IAuthorizationRequirement;
+public sealed class AnyPermissionAuthorizationHandler(IPermissionAuthorizationService authorization) : AuthorizationHandler<AnyPermissionRequirement>
+{
+    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, AnyPermissionRequirement requirement)
+    {
+        foreach (string code in requirement.Codes)
+        {
+            if ((await authorization.AuthorizeAsync(code, CancellationToken.None)).IsSuccess) { context.Succeed(requirement); return; }
+        }
+    }
+}

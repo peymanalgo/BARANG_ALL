@@ -132,3 +132,11 @@
   .cartable-search-chevron { transition: none; }
 }
 
+
+/* پنجره تصمیم (تایید/رد) رسپانسیو: دکمه‌ها در موبایل تمام‌عرض و زیر هم */
+@media (max-width:640px){
+  .cartable-operational-popup .cartable-v5-outcomes{display:grid;grid-template-columns:1fr;gap:.5rem}
+  .cartable-operational-popup .cartable-v5-outcomes .btn{width:100%;min-height:2.7rem;font-size:.85rem!important}
+  .cartable-operational-popup textarea{min-height:5rem}
+  .cartable-detail-header{flex-wrap:wrap;gap:.5rem}
+}
