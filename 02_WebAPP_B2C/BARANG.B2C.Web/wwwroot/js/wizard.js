@@ -12,7 +12,9 @@
     const fa = (n) => String(n).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
     // digit policy shared with store.js: fa/ar → Persian digits, en → Latin
     const num = (n) => (CULTURE === "fa" || CULTURE === "ar" ? fa(n) : String(n));
-    const money = (n) => num(String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+    // جداکننده هزارگان یکدست با بقیه سایت: ٬ (U+066C) در fa/ar، کاما در en/es
+    const SEP = (FA || CULTURE === "ar") ? "\u066C" : ",";
+    const money = (n) => num(String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, SEP));
     // توکن antiforgery برای POSTهای AJAX (هدر استاندارد RequestVerificationToken)
     const AF = (() => {
         const el = document.querySelector("#wz-af input[name='__RequestVerificationToken']");
@@ -83,7 +85,16 @@
         if (BOOT.flags.text === false && W.mode === "text") W.mode = null;
         if (BOOT.flags.gift === false) W.gift = false;
     }
-    const save = () => { try { sessionStorage.setItem("wz.state", JSON.stringify(W)); } catch { /* private mode */ } };
+    const save = () => {
+        try { sessionStorage.setItem("wz.state", JSON.stringify(W)); } catch { /* private mode */ }
+        // نشانگر «ذخیره خودکار» — فلش کوتاه کنار نوار مراحل
+        const chip = $("w-autosave");
+        if (chip) {
+            chip.hidden = false;
+            clearTimeout(window.__wzAutosave);
+            window.__wzAutosave = setTimeout(() => { chip.hidden = true; }, 1600);
+        }
+    };
 
     // ── تصاویر واقعی تیشرت (۴ رنگ × جلو/پشت) ──
     const TEE_IMAGES = {
@@ -205,7 +216,7 @@
         }
         if (!W.packaging && CONFIG.packaging.length) W.packaging = CONFIG.packaging[0].code;
         pickVariant();
-        renderPrintSizes(); renderPackaging(); renderProducts(); renderSizes();
+        renderPrintSizes(); renderPackaging(); renderProducts(); renderSizes(); renderQty();
         if (!W.printSize && CONFIG.printSizes.length) W.printSize = CONFIG.printSizes[Math.min(1, CONFIG.printSizes.length - 1)].code;
         renderPrintSizes();
         renderSum(); renderPreview(); quote();
@@ -277,7 +288,8 @@
             const price = p.salesPrice ?? (prices.length ? Math.min(...prices) : null);
             const c = document.createElement("div");
             c.className = "pcard" + (W.product === p.id ? " on" : "");
-            c.innerHTML = '<span class="ic">' + shirtIcon(productHex(p)) + "</span><b></b><small dir=\"auto\">" + (p.code || "") + "</small>" +
+            // کد فنی محصول (RAWTEE-BLACK/PRD-DEV-001…) به مشتری نشان داده نمی‌شود — نام تجاری + قیمت
+            c.innerHTML = '<span class="ic">' + shirtIcon(productHex(p)) + "</span><b></b>" +
                 '<div class="pr">' + (price != null ? money(price) + " " + T("toman") : "—") + "</div>";
             c.querySelector("b").textContent = p.name;
             c.addEventListener("click", () => {
@@ -298,24 +310,51 @@
         box.innerHTML = "";
         let vs = productVariants(p);
         if (W.colorCode) { const byColor = vs.filter((v) => (v.colorCode || "").toUpperCase() === W.colorCode.toUpperCase()); if (byColor.length) vs = byColor; }
-        const sizes = [...new Set(vs.map((v) => v.sizeCode).filter(Boolean))];
-        sizes.push("—");
+        // سایزها به‌ترتیب استاندارد S M L XL XXL (حروف اضافه/کمتر در انتها) — دکمه بی‌معنای «—» حذف شد
+        const ORDER = ["S", "M", "L", "XL", "XXL"];
+        const sizes = [...new Set(vs.map((v) => (v.sizeCode || "").trim()).filter(Boolean))]
+            .sort((a, b) => {
+                const ia = ORDER.indexOf(a.toUpperCase()), ib = ORDER.indexOf(b.toUpperCase());
+                if (ia >= 0 && ib >= 0) return ia - ib;
+                if (ia >= 0) return -1;
+                if (ib >= 0) return 1;
+                return a.localeCompare(b);
+            });
         sizes.forEach((s) => {
             const b = document.createElement("button");
             b.type = "button"; b.textContent = s;
-            const st = s === "—" ? null : stockOf(s);
-            if (st != null) { b.title = (st > 0 ? T("stockAvail") + ": " + num(st) : T("stockOut")); if (st <= 0) { b.disabled = true; b.style.opacity = ".45"; } }
+            const st = stockOf(s);
+            if (st != null) { b.title = (st > 0 ? T("stockAvail") + ": " + num(st) + " " + T("stockUnit") : T("stockOut")); if (st <= 0) { b.disabled = true; b.style.opacity = ".45"; } }
             if (s === (W.variant && W.variant.sizeCode)) b.classList.add("on");
-            b.addEventListener("click", () => { if (b.disabled) return; W.sizeCode = s === "—" ? null : s; pickVariant(); renderSizes(); renderSum(); quote(); renderPreview(); });
+            b.addEventListener("click", () => { if (b.disabled) return; W.sizeCode = s; pickVariant(); renderSizes(); renderQty(); renderSum(); quote(); renderPreview(); });
             box.appendChild(b);
         });
         box.parentElement.querySelectorAll(".stock-chip").forEach(x => x.remove());
         const cur = W.variant;
         const chip = document.createElement("span");
         chip.className = "stock-chip" + (cur && cur.stock === 0 ? " out" : "");
-        chip.textContent = !cur || cur.stock == null ? "" : (cur.stock > 0 ? "📦 " + T("stockAvail") + ": " + num(cur.stock) : "📦 " + T("stockOut"));
+        chip.textContent = !cur || cur.stock == null ? "" : (cur.stock > 0 ? T("stockAvail") + ": " + num(cur.stock) + " " + T("stockUnit") : T("stockOut"));
         if (cur && cur.stock != null) box.parentElement.appendChild(chip);
     }
+
+    // ── تعداد/تیراژ هر طرح (سفارش تیمی/عمده) — قیمت سمت سرور با همین تعداد صدا زده می‌شود ──
+    W.qty = W.qty && W.qty > 0 ? Math.min(W.qty, 50) : 1;
+    const qtyMax = () => {
+        const st = W.variant && W.variant.stock;
+        return st != null && st > 0 ? Math.min(st, 50) : 50;
+    };
+    function renderQty() {
+        const out = $("w-qty-out"), hint = $("w-qty-stock");
+        if (!out) return;
+        W.qty = Math.max(1, Math.min(W.qty, qtyMax()));
+        out.textContent = num(W.qty);
+        const st = W.variant && W.variant.stock;
+        hint.textContent = st != null && st > 0 ? "(" + num(st) + " " + T("stockUnit") + ")" : "";
+    }
+    const qtyBtn = (delta) => $("w-qty-" + delta);
+    const qtyMinus = qtyBtn("minus"), qtyPlus = qtyBtn("plus");
+    if (qtyMinus) qtyMinus.addEventListener("click", () => { W.qty--; renderQty(); renderSum(); quote(); save(); });
+    if (qtyPlus) qtyPlus.addEventListener("click", () => { W.qty++; renderQty(); renderSum(); quote(); save(); });
 
     // ── خلاصه و قیمت زنده (سمت سرور) ──
     let quoteTimer = null, quoteSeq = 0;
@@ -325,14 +364,27 @@
         if (!W.variant || !W.printSize) { priceEl.textContent = "—"; return; }
         quoteTimer = setTimeout(async () => {
             const seq = ++quoteSeq;
-            const r = await postJson("/order/wizard?handler=Quote", { productVariantId: W.variant.id, printSizeCode: W.printSize, printPosition: W.position, packagingTypeCode: W.packaging, quantity: 1 });
-            const data = await r.json();
-            if (seq !== quoteSeq || !data.ok) { if (seq === quoteSeq) priceEl.textContent = "—"; return; }
-            priceEl.textContent = money(data.quote.total);
+            try {
+                const r = await postJson("/order/wizard?handler=Quote", { productVariantId: W.variant.id, printSizeCode: W.printSize, printPosition: W.position, packagingTypeCode: W.packaging, quantity: W.qty || 1 });
+                const data = await r.json();
+                if (seq !== quoteSeq) return;
+                if (!data.ok) {
+                    // خطای محاسبه قیمت: دکمه تلاش دوباره کنار قیمت
+                    priceEl.innerHTML = "";
+                    const b = document.createElement("button");
+                    b.type = "button"; b.className = "btn btn-ghost btn-sm"; b.textContent = T("priceRetry");
+                    b.addEventListener("click", quote);
+                    priceEl.appendChild(b);
+                    return;
+                }
+                priceEl.textContent = money(data.quote.total);
+            } catch {
+                if (seq === quoteSeq) priceEl.textContent = "—";
+            }
         }, 320);
     }
     function designName() {
-        if (W.mode === "bank" && W.bank) return W.bank.title;
+        if (W.mode === "bank" && W.bank) return shortTitle(W.bank.title);
         if (W.mode === "upload" && W.fileMeta) return T("yourDesign");
         if (W.mode === "text" && W.text) return "«" + W.text.slice(0, 14) + "»";
         return null;
@@ -346,10 +398,16 @@
         chips.push([T("product"), p ? p.name : "—"]);
         chips.push([T("shirtSize"), (W.variant && W.variant.sizeCode) || "—"]);
         chips.push([T("color"), W.colorCode ? colorName(W.colorCode) : "—"]);
-        $("w-sumchips").innerHTML = chips.map((c) => '<span class="schip"></span>').join("");
-        $("w-sumchips").querySelectorAll(".schip").forEach((el, i) => {
-            const [k, v] = chips[i]; el.textContent = ""; el.append(k + ": ");
-            const b = document.createElement("b"); b.textContent = v; el.appendChild(b);
+        if ((W.qty || 1) > 1) chips.push([T("qty"), num(W.qty) + " " + T("qtyUnit")]);
+        const html = chips.map((c) => '<span class="schip"></span>').join("");
+        const targets = [$("w-sumchips"), $("w-paysumchips")];
+        targets.forEach((box) => {
+            if (!box) return;
+            box.innerHTML = html;
+            box.querySelectorAll(".schip").forEach((el, i) => {
+                const [k, v] = chips[i]; el.textContent = ""; el.append(k + ": ");
+                const b = document.createElement("b"); b.textContent = v; el.appendChild(b);
+            });
         });
         $("w-next1").disabled = !(designName() && W.product && W.variant && W.printSize);
     }
@@ -369,6 +427,17 @@
     const bankTextInput = $("w-banktext");
     if (bankTextInput) bankTextInput.addEventListener("input", function () { W.bankText = bankTextInput.value; save(); });
 
+    // نام نمایشی کوتاه طرح (قرینه‌ی Display.Title سمت سرور):
+    // «سینما — طرح 18742651» → «سینما · #۲۶۵۱» — عدد ۹-۱۰ رقمی خام به مشتری نشان داده نمی‌شود
+    const shortTitle = (raw) => {
+        const s = String(raw || "");
+        const m = s.match(/^(.*?)\s*[—–-]+\s*طرح\s*(\d{4,})$/);
+        if (!m) return s;
+        const digits = m[2];
+        const tail = digits.length > 4 ? digits.slice(-4) : digits;
+        return m[1].trim() + " · " + num("#" + tail);
+    };
+
     async function runSearch() {
         const q = ($("w-q").value || "").trim();
         $("w-pulse").hidden = false;
@@ -382,15 +451,22 @@
             const items = (res && (Array.isArray(res) ? res : res.items)) || [];
             $("w-pulse").hidden = true;
             $("w-status").textContent = items.length ? num(items.length) + " " + T("searchOf") + " — " + (q ? "«" + q + "»" : T("entryStore")) : T("noResults");
+            // تنوع نتایج: حداکثر ۶ نتیجه از هر دسته تا یک دسته همه گرید را نگیرد
+            const byCat = {};
+            const diverse = items.filter((d) => {
+                const c = d.categoryName || d.categoryCode || "";
+                byCat[c] = (byCat[c] || 0) + 1;
+                return byCat[c] <= 6;
+            });
             grid.innerHTML = "";
-            items.forEach((d) => {
+            diverse.forEach((d) => {
                 const pct = Math.max(0, Math.min(100, Number(d.score) || 0));
                 const mm = pct <= 30 ? "mm-low" : pct <= 70 ? "mm-mid" : "mm-high";
                 const fig = document.createElement("figure");
                 fig.className = "cardart" + (W.bank && W.bank.id === d.id ? " on" : "");
                 fig.innerHTML = '<div class="a">' + (d.thumbnailUrl || d.previewUrl ? '<img loading="lazy" src="' + (d.thumbnailUrl || d.previewUrl) + '" alt="">' : "") + "</div><figcaption></figcaption>" +
                     '<span class="match-meter ' + mm + '"><span class="bar" aria-hidden="true"><i style="width:' + pct + '%"></i></span><b class="pct">' + num(pct) + (CULTURE === "fa" || CULTURE === "ar" ? "٪" : "%") + "</b></span>";
-                fig.querySelector("figcaption").textContent = d.title || d.code || "";
+                fig.querySelector("figcaption").textContent = shortTitle(d.title || d.code || "");
                 fig.addEventListener("click", () => {
                     W.mode = "bank";
                     W.bank = { id: d.id, title: d.title || d.code, preview: d.previewUrl || d.thumbnailUrl, code: d.code };
@@ -543,11 +619,21 @@
     });
 
     // ── فاز ۱: متن ──
+    // نام‌های رنگ برای aria-label متمایز هر دکمه (همه «رنگ متن» نباشند)
+    const COLOR_ARIA = ["مشکی", "سفید", "نارنجی", "قرمز", "آبی", "سبز", "بنفش", "صورتی"];
+    const COLOR_ARIA_I18N = {
+        fa: COLOR_ARIA,
+        ar: ["أسود", "أبيض", "برتقالي", "أحمر", "أزرق", "أخضر", "بنفسجي", "وردي"],
+        en: ["Black", "White", "Orange", "Red", "Blue", "Green", "Purple", "Pink"],
+        es: ["Negro", "Blanco", "Naranja", "Rojo", "Azul", "Verde", "Morado", "Rosa"],
+    };
     TEXT_COLORS.forEach((c, i) => {
         const d = document.createElement("button");
         d.type = "button"; d.className = "dot" + (i === 0 ? " on" : "");
         d.style.background = c; d.style.boxShadow = "inset 0 0 0 1px rgba(0,0,0,.25)";
-        d.setAttribute("aria-label", T("textColor"));
+        const names = COLOR_ARIA_I18N[CULTURE] || COLOR_ARIA_I18N.fa;
+        d.setAttribute("aria-label", T("textColor") + " — " + names[i]);
+        d.title = names[i];
         d.addEventListener("click", () => {
             $("w-tdots").querySelectorAll(".dot").forEach((x) => x.classList.remove("on"));
             d.classList.add("on");
@@ -576,6 +662,9 @@
             b.classList.add("on");
             W.mode = b.dataset.mode;
             ["bank", "upload", "text"].forEach((m) => { $("w-pan-" + m).hidden = m !== W.mode; });
+            // راهنمای صلب «فقط همان مسیر» بعد از انتخاب کاربر مخفی می‌شود
+            const rule = $("w-srcrule");
+            if (rule) rule.hidden = true;
             if (W.mode === "bank" && !$("w-grid").children.length) runSearch();
             if (W.mode !== "bank") W.bank = W.mode === "bank" ? W.bank : (W.mode === "text" ? null : W.bank);
             save(); renderPreview(); renderSum(); quote();
@@ -592,6 +681,23 @@
     $("w-center").addEventListener("click", () => {
         (W.position === "FRONT" ? fF : fB).wrap.style.transform = "";
         renderPreview();
+    });
+    // بزرگ‌نمایی پیش‌نمایش برای بررسی جزئیات طرح (۱× / ۱٫۴× / ۱٫۸×)
+    let zoomLevel = 1;
+    const applyZoom = () => {
+        const g = $("w-garm");
+        if (!g) return;
+        g.style.setProperty("--zoom", zoomLevel);
+        g.style.transform = "scale(" + zoomLevel + ")";
+        g.style.transition = "transform .2s";
+    };
+    document.querySelectorAll("#w-zoom button").forEach((b) => {
+        b.addEventListener("click", () => {
+            document.querySelectorAll("#w-zoom button").forEach((x) => x.classList.remove("on"));
+            b.classList.add("on");
+            zoomLevel = parseFloat(b.dataset.zoom) || 1;
+            applyZoom();
+        });
     });
     // فیچر «بسته هدیه» خاموش باشد، بخش هدیه رندر نمی‌شود — بایند نال‌امن است
     const giftToggle = $("w-gift"); if (giftToggle) giftToggle.addEventListener("change", (e) => { W.gift = e.target.checked; $("w-giftbox").hidden = !W.gift; save(); });
@@ -620,7 +726,8 @@
             });
             const nu = document.createElement("div");
             nu.className = "pick";
-            nu.innerHTML = "<b>＋ " + T("newAddress") + "</b><small>" + T("newAddressHint") + "</small>";
+            // بدون «＋» تکراری — برچسب ترجمه‌شده خودش علامت دارد
+            nu.innerHTML = "<b>" + T("newAddress") + "</b><small>" + T("newAddressHint") + "</small>";
             nu.addEventListener("click", () => {
                 W.addressId = null; W.newAddress = true;
                 box.querySelectorAll(".arow,.pick").forEach((x) => x.classList.remove("on"));
@@ -656,7 +763,22 @@
     $("w-back2").addEventListener("click", () => goPhase(1));
     $("w-back3").addEventListener("click", () => goPhase(2));
     $("w-back4").addEventListener("click", () => goPhase(3));
-    $("w-confirm").addEventListener("click", () => goPhase(4));
+    // تیک قوانین: تا پذیرش شرایط، ادامه به پرداخت فعال نیست
+    const terms = $("w-terms"), termsMsg = $("w-terms-msg");
+    if (terms) {
+        terms.addEventListener("change", () => {
+            $("w-confirm").disabled = !terms.checked;
+            if (terms.checked) termsMsg.hidden = true;
+        });
+    }
+    $("w-confirm").addEventListener("click", () => {
+        if (terms && !terms.checked) {
+            if (termsMsg) { termsMsg.textContent = T("termsRequired"); termsMsg.className = "ai-msg"; termsMsg.hidden = false; }
+            terms.focus();
+            return;
+        }
+        goPhase(4);
+    });
     $("w-next2").addEventListener("click", () => {
         if (!W.packaging) { alert(T("pickPackFirst")); return; }
         goPhase(3);
@@ -682,12 +804,14 @@
             font: W.font, textColor: W.textColor, textSize: W.textSize,
             productId: W.variant ? W.variant.productId || W.product : W.product,
             productVariantId: W.variant ? W.variant.id : null,
+            quantity: W.qty || 1,
+            designTitle: W.bank ? W.bank.title : null,
+            designShortTitle: W.bank ? shortTitle(W.bank.title) : null,
             printSizeCode: W.printSize, printSizeName: size ? size.name : W.printSize,
             printPosition: W.position,
             shirtColorCode: W.colorCode, shirtColorName: W.colorCode ? colorName(W.colorCode) : null,
             productName: p ? p.name : null,
             packagingTypeCode: W.packaging,
-            quantity: 1,
             addressId: W.addressId,
             newAddress: W.newAddress ? { addressLine1: $("w-na-line").value.trim(), city: $("w-na-city").value.trim(), postalCode: $("w-na-postal").value.trim() } : null,
             gift,
@@ -763,7 +887,8 @@
             // قلم جدید به سبد اضافه شد → بج هدر به‌روز شود
             if (typeof window.barangRefreshCart === "function") window.barangRefreshCart();
             renderReview(data.pricing);
-            $("w-confirm").disabled = false;
+            const terms = $("w-terms");
+            $("w-confirm").disabled = !(terms && terms.checked);
         } catch { list.innerHTML = '<p class="status">' + T("errorGeneric") + "</p>"; }
     }
     function renderReview(pricing) {
@@ -792,6 +917,7 @@
             [T("shipTime"), T("shipTimeValue")],
         ];
         if (W.gift) kv.push([T("gift"), T("giftDetails")]);
+        if ((W.qty || 1) > 1) kv.push([T("qty"), num(W.qty) + " " + T("qtyUnit")]);
         $("w-revlist").innerHTML = kv.map((x) => '<div class="kv"><span></span><b dir="auto"></b></div>').join("");
         $("w-revlist").querySelectorAll(".kv").forEach((el, i) => {
             el.querySelector("span").textContent = kv[i][0];
@@ -820,6 +946,7 @@
     async function renderPay() {
         $("w-payarea").hidden = false;
         $("w-success").hidden = true;
+        renderSum(); // خلاصه سفارش در مرحله پرداخت هم دیده شود
         try {
             const r = await fetch("/order/wizard?handler=Wallet", { headers: { "Accept": "application/json" } });
             const data = await r.json();

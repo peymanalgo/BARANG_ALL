@@ -1,10 +1,13 @@
 @page
 @model LoginModel
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     ViewData["Title"] = T("ورود مشتریان", "Customer sign in", "دخول العملاء", "Iniciar sesión como cliente");
     var method = (Model.LoginMethod ?? "otp").ToLowerInvariant();
+    // راهنمای «کد ثابت ۱۱۱۱» فقط در محیط توسعه — در پروداکشن رندر نمی‌شود (ممیزی UI/UX)
+    bool devHints = Env.IsDevelopment();
 }
 <section class="container section auth-section">
     <div class="auth-card">
@@ -62,9 +65,13 @@
                     <span>@T("کد تأیید", "Verification code", "رمز التحقق", "Código de verificación")</span>
                     <input type="text" asp-for="Code" dir="ltr" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="1111" required />
                 </label>
-                <p class="muted small">@T("محیط آزمایشی: کد ثابت ۱۱۱۱ را وارد کنید.", "Development environment: enter the fixed code 1111.", "بيئة التطوير: أدخل الرمز الثابت 1111.", "Entorno de desarrollo: introduce el código fijo 1111.")</p>
+                @if (devHints)
+                {
+                    <p class="muted small">@T("محیط آزمایشی: کد ثابت ۱۱۱۱ را وارد کنید.", "Development environment: enter the fixed code 1111.", "بيئة التطوير: أدخل الرمز الثابت 1111.", "Entorno de desarrollo: introduce el código fijo 1111.")</p>
+                }
                 <button type="submit" class="btn btn-primary btn-lg btn-block">@T("ورود", "Sign in", "دخول", "Iniciar sesión")</button>
             </form>
+            <p class="muted small"><a href="/account/login">@T("ویرایش شماره/ایمیل", "Change email/mobile", "تغيير البريد/الهاتف", "Cambiar correo/móvil")</a></p>
         }
     </div>
 </section>

@@ -75,13 +75,14 @@
         if (this.popup) return;
         var self = this;
         var pop = document.createElement('div');
+        var dpAria = { fa: ['ماه قبل', 'ماه بعد', 'ماه', 'سال'], ar: ['الشهر السابق', 'الشهر التالي', 'الشهر', 'السنة'], es: ['Mes anterior', 'Mes siguiente', 'Mes', 'Año'], en: ['Previous month', 'Next month', 'Month', 'Year'] }[this.culture] || ['Previous month', 'Next month', 'Month', 'Year'];
         pop.className = 'barang-dp-popup';
         pop.innerHTML =
             '<div class="barang-dp-head">' +
-            '<button type="button" class="dp-nav dp-prev" aria-label="previous month">‹</button>' +
-            '<select class="dp-month" aria-label="month"></select>' +
-            '<select class="dp-year" aria-label="year"></select>' +
-            '<button type="button" class="dp-nav dp-next" aria-label="next month">›</button>' +
+            '<button type="button" class="dp-nav dp-prev" aria-label="' + dpAria[0] + '">‹</button>' +
+            '<select class="dp-month" aria-label="' + dpAria[2] + '"></select>' +
+            '<select class="dp-year" aria-label="' + dpAria[3] + '"></select>' +
+            '<button type="button" class="dp-nav dp-next" aria-label="' + dpAria[1] + '">›</button>' +
             '</div>' +
             '<div class="barang-dp-grid"></div>' +
             '<div class="barang-dp-actions">' +
@@ -217,7 +218,16 @@
         var icon = document.createElement('button');
         icon.type = 'button';
         icon.className = 'dp-icon';
-        icon.setAttribute('aria-label', 'calendar');
+        // aria-label ترجمه‌شده بر اساس زبان صفحه
+        var DP_I18N = {
+            fa: { cal: 'تقویم', prev: 'ماه قبل', next: 'ماه بعد', month: 'ماه', year: 'سال' },
+            ar: { cal: 'التقويم', prev: 'الشهر السابق', next: 'الشهر التالي', month: 'الشهر', year: 'السنة' },
+            es: { cal: 'Calendario', prev: 'Mes anterior', next: 'Mes siguiente', month: 'Mes', year: 'Año' },
+            en: { cal: 'Calendar', prev: 'Previous month', next: 'Next month', month: 'Month', year: 'Year' }
+        };
+        var dpLang = (document.documentElement.lang || 'fa').slice(0, 2);
+        var dpT = DP_I18N[dpLang] || DP_I18N.fa;
+        icon.setAttribute('aria-label', dpT.cal);
         icon.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
         wrap.appendChild(icon);
         new Calendar(input, icon);

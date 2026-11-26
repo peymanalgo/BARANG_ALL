@@ -46,7 +46,9 @@ public sealed class BlogModel(SiteContext site) : PageModel
                     Text(x, "slug"), title,
                     rawExcerpt.Length > 140 ? rawExcerpt[..140] + "…" : rawExcerpt,
                     Text(x, "thumbnailUrl"),
-                    x.TryGetProperty("publishedAtUtc", out JsonElement d) && d.ValueKind == JsonValueKind.String && DateTimeOffset.TryParse(d.GetString(), out DateTimeOffset dt) ? AppDate.Format(dt, culture) : ""));
+                    x.TryGetProperty("publishedAtUtc", out JsonElement d) && d.ValueKind == JsonValueKind.String && DateTimeOffset.TryParse(d.GetString(), out DateTimeOffset dt) ? AppDate.Format(dt, culture) : "",
+                    Text(x, "author"),
+                    Text(x, "category")));
             }
         Posts = posts;
         HasNext = Page * 12 < Total;
@@ -54,5 +56,5 @@ public sealed class BlogModel(SiteContext site) : PageModel
     }
 
     private static string Text(JsonElement x, string p) => x.TryGetProperty(p, out JsonElement v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
-    public sealed record PostCard(string Slug, string Title, string Excerpt, string? Thumbnail, string Date);
+    public sealed record PostCard(string Slug, string Title, string Excerpt, string? Thumbnail, string Date, string? Author = null, string? Category = null);
 }

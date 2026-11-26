@@ -3,6 +3,8 @@
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
+    // نام نمایشی کوتاه طرح: «سینما — طرح 18742651» → «سینما · #۲۶۵۱»
+    string CardTitle(string raw) => BARANG.B2C.Web.Services.Display.Title(raw, culture);
     ViewData["Title"] = T("کاتالوگ طرح‌ها", "Design catalog", "كتالوج التصاميم", "Catálogo de diseños");
 }
 <section class="container section">
@@ -10,11 +12,11 @@
         <h1>@T("کاتالوگ طرح‌ها", "Design catalog", "كتالوج التصاميم", "Catálogo de diseños")</h1>
         @if (Model.ConceptActive)
         {
-            <p class="muted">@T($"{Model.ConceptResults.Count} نتیجه مفهومی", $"{Model.ConceptResults.Count} concept matches", $"{Model.ConceptResults.Count} نتيجة مفاهيمية", $"{Model.ConceptResults.Count} coincidencias conceptuales")</p>
+            <p class="muted">@T($"{BARANG.B2C.Web.Services.AppDate.Digits(Model.ConceptResults.Count.ToString("N0"), culture)} نتیجه مفهومی", $"{Model.ConceptResults.Count} concept matches", $"{Model.ConceptResults.Count} نتيجة مفاهيمية", $"{Model.ConceptResults.Count} coincidencias conceptuales")</p>
         }
         else
         {
-            <p class="muted">@T($"{Model.Total} طرح آماده چاپ", $"{Model.Total} print-ready designs", $"{Model.Total} تصميم جاهز للطباعة", $"{Model.Total} diseños listos para imprimir")</p>
+            <p class="muted">@T($"{BARANG.B2C.Web.Services.AppDate.Digits(Model.Total.ToString("N0"), culture)} طرح آماده چاپ", $"{Model.Total} print-ready designs", $"{Model.Total} تصميم جاهز للطباعة", $"{Model.Total} diseños listos para imprimir")</p>
         }
     </header>
 
@@ -53,11 +55,11 @@
                         <span class="design-thumb">
                             @if (!string.IsNullOrWhiteSpace(m.Thumbnail))
                             {
-                                <img src="@m.Thumbnail" alt="@m.Title" width="600" height="600" loading="lazy" decoding="async" />
+                                <img src="@m.Thumbnail" alt="@CardTitle(m.Title)" width="600" height="600" loading="lazy" decoding="async" />
                             }
                         </span>
                         <span class="design-meta">
-                            <strong>@m.Title</strong>
+                            <strong>@CardTitle(m.Title)</strong>
                             <span class="match-meter @mm" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@pct" title="@T("میزان تطابق مفهومی", "Concept match level", "مستوى التطابق المفاهيمي", "Nivel de coincidencia conceptual")">
                                 <span class="bar" aria-hidden="true"><i style="width:@(pct)%"></i></span>
                                 <b class="pct">@BARANG.B2C.Web.Services.AppDate.Percent(pct, culture)</b>
@@ -85,11 +87,11 @@
                         <span class="design-thumb">
                             @if (!string.IsNullOrWhiteSpace(d.Thumbnail))
                             {
-                                <img src="@d.Thumbnail" alt="@d.Title" width="600" height="600" loading="lazy" decoding="async" />
+                                <img src="@d.Thumbnail" alt="@CardTitle(d.Title)" width="600" height="600" loading="lazy" decoding="async" />
                             }
                         </span>
                         <span class="design-meta">
-                            <strong>@d.Title</strong>
+                            <strong>@CardTitle(d.Title)</strong>
                             @if (!string.IsNullOrWhiteSpace(Model.CategoryNames.GetValueOrDefault(d.CategoryCode ?? "")))
                             {
                                 <span class="chip">@Model.CategoryNames.GetValueOrDefault(d.CategoryCode ?? "")</span>

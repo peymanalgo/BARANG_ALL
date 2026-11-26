@@ -41,30 +41,67 @@
         _ => p
     };
     string Num(decimal d) => d.ToString("0.##", CultureInfo.InvariantCulture);
+    // ارقام بومی + جداکننده ٬ — قاعده یکدست نمایش مبالغ (ممیزی UI/UX)
+    string Mon(decimal? d) => BARANG.B2C.Web.Services.Display.Money(d, culture);
+    string Dig(int n) => BARANG.B2C.Web.Services.AppDate.Digits(n.ToString("N0"), culture);
+    // نام انسانی رنگ از کد انگلیسی (RED → قرمز) — کد خام به مشتری نمایش داده نمی‌شود
+    string ColorName(string? code) => (code ?? "").Trim().ToUpperInvariant() switch
+    {
+        "RED" => T("قرمز", "Red", "أحمر", "Rojo"),
+        "BLUE" => T("آبی", "Blue", "أزرق", "Azul"),
+        "BLACK" => T("مشکی", "Black", "أسود", "Negro"),
+        "WHITE" => T("سفید", "White", "أبيض", "Blanco"),
+        "GREEN" => T("سبز", "Green", "أخضر", "Verde"),
+        "YELLOW" => T("زرد", "Yellow", "أصفر", "Amarillo"),
+        "ORANGE" => T("نارنجی", "Orange", "برتقالي", "Naranja"),
+        "GRAY" or "GREY" => T("خاکستری", "Gray", "رمادي", "Gris"),
+        "PINK" => T("صورتی", "Pink", "وردي", "Rosa"),
+        "PURPLE" => T("بنفش", "Purple", "بنفسجي", "Morado"),
+        "CREAM" => T("شیری", "Cream", "كريمي", "Crema"),
+        "" => "",
+        _ => code!
+    };
+    // واحد اندازه‌گیری انگلیسی (PCS) → زبان مشتری
+    string Uom(string? uom) => (uom ?? "").Trim().ToUpperInvariant() switch
+    {
+        "PCS" or "PC" or "EA" => T("عدد", "pcs", "عدد", "uds"),
+        "" => T("عدد", "pcs", "عدد", "uds"),
+        _ => uom!
+    };
+    // ردیف‌های ریز قیمت: نام فیلد انگلیسی → برچسب بومی + مبلغ فرمت‌شده
+    string QuoteRowLabel(string prop) => prop.ToLowerInvariant() switch
+    {
+        "rawproducttotal" or "producttotal" => T("محصول", "Product", "المنتج", "Producto"),
+        "printtotal" => T("چاپ", "Printing", "الطباعة", "Impresión"),
+        "packagingtotal" => T("بسته‌بندی", "Packaging", "التغليف", "Embalaje"),
+        "shippingtotal" => T("ارسال", "Shipping", "الشحن", "Envío"),
+        "discounttotal" => T("تخفیف", "Discount", "الخصم", "Descuento"),
+        "taxtotal" => T("مالیات", "Tax", "الضريبة", "Impuesto"),
+        "subtotal" => T("جمع کل", "Subtotal", "المجموع", "Subtotal"),
+        "finaltotal" => T("مبلغ نهایی", "Final total", "الإجمالي النهائي", "Total final"),
+        _ => prop
+    };
     (string Label, string Value)? TotalRow = null;
     List<(string Label, string Value)> QuoteRows = new();
     if (Model.Quote is JsonElement q && q.ValueKind == JsonValueKind.Object)
     {
         foreach (var prop in q.EnumerateObject())
         {
-            string text = prop.Value.ValueKind switch
+            if (prop.Value.ValueKind != JsonValueKind.Number) continue;
+            if (!prop.Value.TryGetDecimal(out decimal amount)) continue;
+            if (prop.Name.Equals("total", StringComparison.OrdinalIgnoreCase) || prop.Name.Equals("totalAmount", StringComparison.OrdinalIgnoreCase) || prop.Name.Equals("grandTotal", StringComparison.OrdinalIgnoreCase) || prop.Name.Equals("finalTotal", StringComparison.OrdinalIgnoreCase))
             {
-                JsonValueKind.Number => prop.Value.GetRawText(),
-                JsonValueKind.String => prop.Value.GetString() ?? "",
-                _ => ""
-            };
-            if (text.Length == 0) continue;
-            if (prop.Name.Equals("total", StringComparison.OrdinalIgnoreCase) || prop.Name.Equals("totalAmount", StringComparison.OrdinalIgnoreCase) || prop.Name.Equals("grandTotal", StringComparison.OrdinalIgnoreCase))
-            {
-                TotalRow = (T("مبلغ کل", "Total", "الإجمالي", "Total"), text);
+                TotalRow = (T("مبلغ کل", "Total", "الإجمالي", "Total"), Mon(amount));
             }
-            else if (prop.Value.ValueKind == JsonValueKind.Number)
+            else if (amount != 0)
             {
-                QuoteRows.Add((prop.Name, text));
+                QuoteRows.Add((QuoteRowLabel(prop.Name), Mon(amount)));
             }
         }
     }
     bool Cancellable = Model.OrderStatus is "Draft" or "Submitted";
+    // سفارش پرداخت‌شده: لغو با تأیید دومرحله‌ای + توضیح استرداد
+    bool PaidOrder = (Model.WalletPayment is { } pw && pw.Paid > 0) || Model.Paid == "1";
 }
 @if (!Model.Found)
 {
@@ -83,7 +120,13 @@ else
                 <h1>@T("سفارش", "Order", "الطلب", "Pedido") <span dir="ltr">@(Model.OrderNumber ?? "—")</span></h1>
                 <p class="muted">@T("تاریخ سفارش", "Order date", "تاريخ الطلب", "Fecha del pedido"): @Model.DateText(Model.OrderDate) @if (Model.SubmittedAt is not null) { <span> · @T("ثبت: ", "Submitted: ", "أُرسل: ", "Enviado: ")@Model.DateText(Model.SubmittedAt)</span> }</p>
             </div>
-            <span class="status-chip st-@Model.OrderStatus.ToLowerInvariant() status-lg">@OrderLabel(Model.OrderStatus)</span>
+            <div class="tracking-head-side">
+                <span class="status-chip st-@Model.OrderStatus.ToLowerInvariant() status-lg">@OrderLabel(Model.OrderStatus)</span>
+                @if (Model.OrderNumber is { Length: > 0 })
+                {
+                    <button type="button" class="btn btn-ghost btn-sm" data-copy="@Model.OrderNumber">@T("کپی شماره", "Copy number", "نسخ الرقم", "Copiar número")</button>
+                }
+            </div>
         </header>
 
         @if (Model.Paid == "1")
@@ -116,11 +159,11 @@ else
                         }
                     </div>
                     <div class="wallet-pay-amounts">
-                        <span>@T("مبلغ کل", "Total", "الإجمالي", "Total"): <strong dir="ltr">@wp.Total.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"))</strong></span>
-                        <span>@T("پرداخت‌شده", "Paid", "المدفوع", "Pagado"): <strong dir="ltr">@wp.Paid.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"))</strong></span>
+                        <span>@T("مبلغ کل", "Total", "الإجمالي", "Total"): <strong dir="ltr">@Mon(wp.Total)</strong></span>
+                        <span>@T("پرداخت‌شده", "Paid", "المدفوع", "Pagado"): <strong dir="ltr">@Mon(wp.Paid)</strong></span>
                         @if (!wp.FullyPaid)
                         {
-                            <span>@T("باقی‌مانده", "Remaining", "المتبقي", "Restante"): <strong dir="ltr">@wp.Remaining.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"))</strong></span>
+                            <span>@T("باقی‌مانده", "Remaining", "المتبقي", "Restante"): <strong dir="ltr">@Mon(wp.Remaining)</strong></span>
                         }
                     </div>
                     @if (!wp.FullyPaid && Model.OrderStatus == "Submitted")
@@ -129,7 +172,7 @@ else
 <form method="post" asp-page-handler="PayWallet" class="inline-form">
                             <input type="hidden" name="id" value="@Model.Id" />
                             <button type="submit" class="btn btn-primary" disabled="@(wp.WalletBalance < wp.Remaining)">
-                                @T($"پرداخت {wp.Remaining:N0} تومانی از کیف پول", $"Pay {wp.Remaining:N0} Toman from wallet", $"دفع {wp.Remaining:N0} تومان من المحفظة", $"Pagar {wp.Remaining:N0} tomans desde el monedero")
+                                @T($"پرداخت {Mon(wp.Remaining)} تومانی از کیف پول", $"Pay {Mon(wp.Remaining)} Toman from wallet", $"دفع {Mon(wp.Remaining)} تومان من المحفظة", $"Pagar {Mon(wp.Remaining)} tomans desde el monedero")
                             </button>
                             @if (wp.WalletBalance < wp.Remaining)
                             {
@@ -138,7 +181,7 @@ else
                                     <form method="post" asp-page="/Account/Wallet" asp-page-handler="Charge" class="inline-form" style="display:flex;gap:6px;margin-top:4px">
                                         <input type="hidden" name="amount" value="@(wp.Remaining - wp.WalletBalance)" />
                                         <input type="hidden" name="returnToken" value="1" />
-                                        <button type="submit" class="btn btn-primary btn-sm">@T($"شارژ {(wp.Remaining - wp.WalletBalance).ToString("N0")} تومان", $"Top up {(wp.Remaining - wp.WalletBalance).ToString("N0")} Toman", $"شحن {(wp.Remaining - wp.WalletBalance).ToString("N0")} تومان", $"Recargar {(wp.Remaining - wp.WalletBalance).ToString("N0")} tomans")</button>
+                                        <button type="submit" class="btn btn-primary btn-sm">@T($"شارژ {Mon(wp.Remaining - wp.WalletBalance)} تومان", $"Top up {Mon(wp.Remaining - wp.WalletBalance)} Toman", $"شحن {Mon(wp.Remaining - wp.WalletBalance)} تومان", $"Recargar {Mon(wp.Remaining - wp.WalletBalance)} tomans")</button>
                                     </form>
                                 </div>
                             }
@@ -161,18 +204,21 @@ else
         }
         else
         {
+            // استپر ۴مرحله‌ای — هم‌تراز با داشبورد (ثبت سفارش/در حال تولید/ارسال/تحویل)
+            var stepLabels = new[] { T("ثبت سفارش", "Placed", "تسجيل", "Realizado"), T("در حال تولید", "In production", "في الإنتاج", "En producción"), T("ارسال", "Shipped", "الشحن", "Enviado"), T("تحویل", "Delivered", "التسليم", "Entregado") };
+            int stage4 = Math.Min(Math.Max(Model.Stage, 1), 4);
             <div class="order-stepper" role="progressbar">
-                @{ var labels = new[] { T("ثبت سفارش", "Submitted", "إرسال الطلب", "Enviado"), T("ارسال", "Shipped", "الشحن", "Enviado"), T("تحویل", "Delivered", "التسليم", "Entregado") }; }
-                @for (int i = 1; i <= 3; i++)
+                @for (int i = 1; i <= 4; i++)
                 {
-                    var st = Model.Stage >= i ? "done" : Model.Stage + 1 == i ? "next" : "todo";
-                    <span class="ostep @st"><b>@(Model.Stage > i ? "✓" : i)</b> @labels[i - 1]</span>
-                    @if (i < 3)
+                    var st = Model.Stage >= i ? "done" : stage4 + 1 == i ? "next" : "todo";
+                    <span class="ostep @st"><b>@(Model.Stage > i ? "✓" : BARANG.B2C.Web.Services.AppDate.Digits(i.ToString(), culture))</b> @stepLabels[i - 1]</span>
+                    @if (i < 4)
                     {
                         <span class="ostep-line @(Model.Stage >= i ? "done" : "")"></span>
                     }
                 }
             </div>
+            <p class="muted small eta-note">⏱ @T("زمان تحویل برآوردی: ۳ تا ۵ روز کاری پس از تأیید چاپ.", "Estimated delivery: 3–5 business days after print approval.", "التسليم المقدر: ٣-٥ أيام عمل بعد اعتماد الطباعة.", "Entrega estimada: 3-5 días hábiles tras aprobar la impresión.")</p>
         }
 
         @if (Model.Error is not null)
@@ -202,14 +248,25 @@ else
                         <div class="order-item">
                             <div class="order-item-head">
                                 <strong>@item.Product</strong>
-                                <span class="chip">@Num(item.Quantity) @item.Uom</span>
+                                <span class="chip">@Dig((int)item.Quantity) @Uom(item.Uom)</span>
                             </div>
-                            <p class="muted small">
-                                @(string.Join(" · ", new[] { item.Variant, item.Size, item.Color }.Where(s => !string.IsNullOrWhiteSpace(s))))
-                            </p>
+                            @* سایز تکراری (XL · XL) و کد رنگ انگلیسی نمایش داده نمی‌شود — نام بومی رنگ *@
+                            @{
+                                string size = (item.Size ?? "").Trim();
+                                string variant = (item.Variant ?? "").Trim();
+                                string colorLabel = ColorName(item.Color);
+                                var specs = new List<string>();
+                                if (variant.Length > 0 && !string.Equals(variant, size, StringComparison.OrdinalIgnoreCase)) specs.Add(variant);
+                                if (size.Length > 0) specs.Add(size);
+                                if (colorLabel.Length > 0) specs.Add(colorLabel);
+                            }
+                            @if (specs.Count > 0)
+                            {
+                                <p class="muted small">@string.Join(" · ", specs)</p>
+                            }
                             @if (!string.IsNullOrWhiteSpace(item.Notes))
                             {
-                                <p class="small item-notes">@item.Notes</p>
+                                <p class="small item-notes">@BARANG.B2C.Web.Services.Display.FriendlyNotes(item.Notes, culture)</p>
                             }
                             @if (item.PrintOperations.Count > 0)
                             {
@@ -248,7 +305,12 @@ else
                                     <strong dir="ltr">@s.Number</strong>
                                     <span class="status-chip st-@s.Status.ToLowerInvariant()">@ShipmentLabel(s.Status)</span>
                                 </div>
-                                <p class="muted small">@T("حمل‌کننده", "Carrier", "الناقل", "Transportista"): <span dir="ltr">@s.Carrier</span> · @T("کد رهگیری", "Tracking", "رمز التتبع", "Seguimiento"): <strong dir="ltr">@(string.IsNullOrWhiteSpace(s.TrackingCode) ? "—" : s.TrackingCode)</strong></p>
+                                <p class="muted small">@T("حمل‌کننده", "Carrier", "الناقل", "Transportista"): <span dir="ltr">@s.Carrier</span> · @T("کد رهگیری", "Tracking", "رمز التتبع", "Seguimiento"): <strong dir="ltr">@(string.IsNullOrWhiteSpace(s.TrackingCode) ? "—" : s.TrackingCode)</strong>
+                                    @if (!string.IsNullOrWhiteSpace(s.TrackingCode))
+                                    {
+                                        <button type="button" class="btn btn-ghost btn-sm" data-copy="@s.TrackingCode">@T("کپی", "Copy", "نسخ", "Copiar")</button>
+                                    }
+                                </p>
                                 <p class="muted small">@T("ارسال", "Shipped", "الشحن", "Enviado"): @Model.DateText(s.ShippedAt) · @T("تحویل", "Delivered", "التسليم", "Entregado"): @Model.DateText(s.DeliveredAt)</p>
                             </div>
                         }
@@ -261,7 +323,22 @@ else
                     <h2>@T("خلاصه قیمت", "Price summary", "ملخص السعر", "Resumen de precios")</h2>
                     @if (QuoteRows.Count == 0 && TotalRow is null)
                     {
-                        <p class="muted small">@T("قیمت پس از تعریف تعرفه‌ها محاسبه می‌شود.", "Price appears once tariffs are set.", "يظهر السعر بعد تعيين التعريفات.", "El precio aparece cuando se fijen las tarifas.")</p>
+                        @* سفارش قیمت قطعی دارد (مثلاً پرداخت‌شده) ولی ریز تعرفه هنوز ثبت نشده: مبلغ واقعی نشان داده شود، نه وعده *@
+                        @if (Model.WalletPayment is { } wpSum)
+                        {
+                            <div class="quote-total"><span>@T("مبلغ سفارش", "Order amount", "مبلغ الطلب", "Importe del pedido")</span><strong dir="ltr">@Mon(wpSum.Total)</strong></div>
+                            <div class="quote-list-plain">
+                                <span>@T("پرداخت‌شده", "Paid", "المدفوع", "Pagado"): @Mon(wpSum.Paid)</span>
+                                @if (!wpSum.FullyPaid)
+                                {
+                                    <span>@T("باقی‌مانده", "Remaining", "المتبقي", "Restante"): @Mon(wpSum.Remaining)</span>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="muted small">@T("ریز قیمت پس از تأیید تولید محاسبه و همین‌جا نمایش داده می‌شود.", "The detailed price appears here once production tariffs are applied.", "يظهر تفصيل السعر بعد اعتماد التعريفات.", "El desglose aparece cuando se apliquen las tarifas de producción.")</p>
+                        }
                     }
                     else
                     {
@@ -282,7 +359,12 @@ else
                 {
                     <div class="card cancel-card no-print">
                         <h2>@T("لغو سفارش", "Cancel order", "إلغاء الطلب", "Cancelar pedido")</h2>
-                        <form method="post" asp-page-handler="Cancel" class="auth-form">
+                        @if (PaidOrder)
+                        {
+                            <p class="muted small">@T("این سفارش پرداخت شده است. لغو آن منجر به بازگشت کامل وجه به کیف پول شما در ۲ تا ۳ روز کاری می‌شود؛ پس از شروع چاپ امکان لغو نیست.", "This order is paid. Cancelling refunds the full amount to your wallet within 2–3 business days; cancellation is not possible once printing starts.", "هذا الطلب مدفوع. الإلغاء يعيد كامل المبلغ إلى محفظتك خلال ٢-٣ أيام عمل؛ لا يمكن الإلغاء بعد بدء الطباعة.", "Este pedido está pagado. Al cancelarlo se reembolsa el importe completo a tu billetera en 2-3 días hábiles; no se puede cancelar una vez iniciada la impresión.")</p>
+                        }
+                        <form method="post" asp-page-handler="Cancel" class="auth-form" data-confirm-cancel="@(PaidOrder ? "1" : "0")"
+                              data-confirm-text="@T("این سفارش پرداخت‌شده لغو شود؟ وجه به کیف پول شما برمی‌گردد.", "Cancel this paid order? The amount refunds to your wallet.", "هل يُلغى هذا الطلب المدفوع؟ يُعاد المبلغ إلى محفظتك.", "¿Cancelar este pedido pagado? El importe se devuelve a tu billetera.")">
                             @if (Model.CancelReasons.Count > 0)
                             {
                                 <label><span>@T("دلیل لغو", "Reason", "السبب", "Motivo")</span>
@@ -324,8 +406,19 @@ else
         </div>
 
         <div class="row-actions" style="margin-top:1.4rem">
-            <button type="button" class="btn btn-ghost btn-sm no-print" onclick="window.print()">🖨 @T("چاپ رسید", "Print receipt", "طباعة الإيصال", "Imprimir recibo")</button>
-            <a class="btn btn-ghost btn-sm" href="/account/orders">→ @T("بازگشت به سفارش‌ها", "Back to orders", "العودة إلى الطلبات", "Volver a pedidos")</a>
+            <button type="button" class="btn btn-ghost btn-sm no-print" onclick="window.print()">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 9V4h12v5M6 18v3h12v-3M4 9h16v9H4z"/></svg>
+                @T("چاپ رسید", "Print receipt", "طباعة الإيصال", "Imprimir recibo")
+            </button>
+            <a class="btn btn-ghost btn-sm" href="/account/orders">@T("بازگشت به سفارش‌ها", "Back to orders", "العودة إلى الطلبات", "Volver a pedidos")</a>
         </div>
     </section>
+    <script>
+        // تأیید دومرحله‌ای لغو سفارش پرداخت‌شده
+        document.querySelectorAll("form[data-confirm-cancel]").forEach(function (f) {
+            f.addEventListener("submit", function (e) {
+                if (f.getAttribute("data-confirm-cancel") === "1" && !window.confirm(f.getAttribute("data-confirm-text") || "")) e.preventDefault();
+            });
+        });
+    </script>
 }

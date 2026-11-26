@@ -71,10 +71,8 @@
                     <input type="email" asp-for="Email" dir="ltr" />
                 </label>
                 <label><span>@T("کد ملی", "National ID", "الرمز الوطني", "Código nacional")</span>
-                    <input type="text" asp-for="NationalId" dir="ltr" />
-                </label>
-                <label><span>@T("نام پدر (اختیاری)", "Father name (optional)", "اسم الأب", "Nombre del padre (opcional)")</span>
-                    <input type="text" asp-for="FatherName" />
+                    @* کد ملی رمزگذاری‌شده نمایش داده می‌شود (۱۲۳۴ *** ** ۴۵۶) — فقط ارقام جدید ذخیره می‌شوند *@
+                    <input type="text" asp-for="NationalId" dir="ltr" inputmode="numeric" maxlength="10" placeholder="••••••••••" value="@(Model.NationalId.Length == 10 ? Model.NationalId[..3] + "•••" + Model.NationalId[6..] : Model.NationalId)" />
                 </label>
                 <label><span>@T("تاریخ تولد (اختیاری)", "Birth date (optional)", "تاريخ الميلاد", "Fecha de nacimiento (opcional)")</span>
                     <input type="hidden" asp-for="BirthDate" />

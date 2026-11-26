@@ -7,6 +7,9 @@
     string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     ViewData["PanelActive"] = "settings";
     ViewData["PanelTitle"] = T("تنظیمات", "Settings", "الإعدادات", "Ajustes");
+    // سوییچر زبان — همان وعده متن صفحه («زبان فروشگاه را از همین‌جا مدیریت کن»)
+    string CultureLink(string c) => "/language/set?culture=" + c + "&returnUrl=" + Uri.EscapeDataString("/account/settings");
+    (string Code, string Name)[] langs = [("fa", "فارسی"), ("en", "English"), ("ar", "العربية"), ("es", "Español")];
 }
 
 <div class="panel-content">
@@ -47,6 +50,16 @@
                 <button type="submit" class="btn btn-primary">@T("تغییر کلمه عبور", "Change password", "تغيير", "Cambiar contraseña")</button>
                 <small class="muted">@T("پس از تغییر، همه نشست‌ها بسته می‌شوند و دوباره وارد می‌شوی.", "All sessions are revoked after the change and you sign in again.", "تُبطل جميع الجلسات بعد التغيير وتسجل الدخول مجدداً.", "Tras el cambio se revocan todas las sesiones y deberás iniciar sesión de nuevo.")</small>
             </form>
+        </div>
+
+        <div class="dash-card settings-language">
+            <h2>@T("زبان فروشگاه", "Store language", "لغة المتجر", "Idioma de la tienda")</h2>
+            <div class="settings-langs">
+                @foreach (var (code, name) in langs)
+                {
+                    <a class="btn btn-sm @(code == culture ? "btn-primary" : "btn-ghost")" href="@CultureLink(code)" hreflang="@code">@name</a>
+                }
+            </div>
         </div>
 
         <form method="post" asp-page="/Account/Index" asp-page-handler="Logout" class="dash-card settings-logout">

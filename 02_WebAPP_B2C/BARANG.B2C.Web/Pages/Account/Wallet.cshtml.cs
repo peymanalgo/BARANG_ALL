@@ -7,7 +7,19 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace BARANG.B2C.Web.Pages.Account;
 
-public sealed record WalletEntry(Guid Id, string Direction, decimal Amount, string? ReasonCode, string? ReferenceNote, DateTimeOffset CreatedAtUtc);
+public sealed record WalletEntry(Guid Id, string Direction, decimal Amount, string? ReasonCode, string? ReferenceNote, DateTimeOffset CreatedAtUtc)
+{
+    // شناسه‌های خام (checkout:0465b2c90928…) به مشتری نشان داده نمی‌شوند — برچسب انسانی
+    public string? FriendlyNote => ReferenceNote switch
+    {
+        null or "" => null,
+        string s when s.StartsWith("checkout:", StringComparison.OrdinalIgnoreCase) => null, // خرید با درگاه — «خرید» کافی است
+        string s when s.StartsWith("topup:", StringComparison.OrdinalIgnoreCase) => null,   // شارژ با درگاه
+        string s when s.StartsWith("payall:", StringComparison.OrdinalIgnoreCase) => s.Contains("ORD-") ? s : "پرداخت یکجای سبد خرید",
+        string s when !s.Contains(":") => s,
+        _ => null,
+    };
+}
 public sealed record TopUpRow(Guid Id, string Number, decimal Amount, string Status, DateTimeOffset CreatedAtUtc, long Version);
 
 [Authorize(Policy = "LoggedIn")]

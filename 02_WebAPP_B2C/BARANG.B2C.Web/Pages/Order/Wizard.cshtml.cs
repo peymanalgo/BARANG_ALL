@@ -10,10 +10,12 @@ namespace BARANG.B2C.Web.Pages.Order;
 // فقط نقش BFF دارد: داده و قیمت و سفارش همه از Core می‌آیند، هیچ چیز اینجا
 // هاردکد نیست. شروع طراحی فقط برای مشتری واردشده ممکن است؛ در غیر این صورت
 // همان اول به ورود/ثبت‌نام هدایت می‌شود (و بعد از ورود به همان ویزارد برمی‌گردد).
-public sealed class WizardModel(CoreApiClient core, CustomerContext customers, SiteContext site) : PageModel
+public sealed class WizardModel(CoreApiClient core, CustomerContext customers, SiteContext site, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env) : PageModel
 {
     public Guid? EntryDesignId { get; private set; }
     public bool IsAuthenticated { get; private set; }
+    // متن‌های «درگاه نمایشی/نسخه تستی» فقط در محیط توسعه نمایش داده می‌شوند (ممیزی UI/UX)
+    public bool DemoGateway { get; private set; } = false;
     // فیچرهای store ویزارد (خطا = روشن؛ fail-open) — خاموش بودن = دکمه/بخش متناظر رندر نمی‌شود
     public bool UploadEnabled { get; private set; } = true;
     public bool TextEnabled { get; private set; } = true;
@@ -24,6 +26,7 @@ public sealed class WizardModel(CoreApiClient core, CustomerContext customers, S
     {
         EntryDesignId = design;
         IsAuthenticated = User.Identity?.IsAuthenticated == true;
+        DemoGateway = env.IsDevelopment();
         Task<bool> uploadFlag = site.FeatureEnabledAsync("wizard.upload");
         Task<bool> textFlag = site.FeatureEnabledAsync("wizard.text");
         Task<bool> giftFlag = site.FeatureEnabledAsync("wizard.gift");
@@ -286,8 +289,12 @@ public sealed class WizardModel(CoreApiClient core, CustomerContext customers, S
             noteParts.Add($"ارسال برای دیگران: {Text(gift, "name")}");
             if (Text(gift, "message").Length > 0) noteParts.Add($"پیام کارت هدیه: {Text(gift, "message")}");
         }
-        if (designCode.Length > 0) noteParts.Add($"طرح: {designCode}");
+        // نام نمایشی طرح (نه کد فنی) — کد ABFA-... هرگز به مشتری نمایش داده نمی‌شود
+        string designTitle = Text(state, "designTitle");
+        if (designTitle.Length > 0) noteParts.Add($"طرح: {designTitle}");
+        else if (designCode.Length > 0) noteParts.Add($"طرح: {Text(state, "designShortTitle")}");
         if (Text(state, "shirtColorName").Length > 0) noteParts.Add($"رنگ تیشرت: {Text(state, "shirtColorName")}");
+        if ((Text(state, "quantity") is { Length: > 0 } qTxt) && qTxt != "1") noteParts.Add($"تعداد: {qTxt}");
         if (mode == "text")
         {
             noteParts.Add($"متن طرح: {Text(state, "text")}");

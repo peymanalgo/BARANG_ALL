@@ -24,7 +24,7 @@
     </nav>
     <header class="section-head">
         <h1>@T("سفارش‌های من", "My orders", "طلباتي", "Mis pedidos")</h1>
-        <a class="btn btn-primary btn-sm" href="/catalog">@T("سفارش جدید", "New order", "طلب جديد", "Nuevo pedido")</a>
+        <a class="btn btn-primary btn-sm" href="/order/wizard">@T("سفارش جدید", "New order", "طلب جديد", "Nuevo pedido")</a>
     </header>
 
     @if (!Model.HasProfile)
@@ -41,29 +41,59 @@
             <input type="search" name="search" value="@Model.Search" placeholder="@T("جستجوی شماره سفارش…", "Search order number…", "جستجوی شماره سفارش…", "Buscar número de pedido…")" style="flex:1;max-width:340px;border:1px solid var(--panel-border);border-radius:10px;padding:9px 12px;font:inherit;background:#fff;color:var(--panel-ink)" />
             <button type="submit" class="btn btn-primary btn-sm">@T("جستجو", "Search", "بحث", "Buscar")</button>
         </form>
+        @* فیلتر وضعیت — سمت کلاینت، بدون رفت‌وبرگشت *@
+        <div class="order-filters" role="tablist">
+            <button type="button" class="ofilter on" data-f="all">@T("همه", "All", "الكل", "Todas")</button>
+            <button type="button" class="ofilter" data-f="Submitted">@T("در جریان", "In progress", "قيد التنفيذ", "En curso")</button>
+            <button type="button" class="ofilter" data-f="Delivered">@T("تحویل‌شده", "Delivered", "تم التسليم", "Entregadas")</button>
+            <button type="button" class="ofilter" data-f="Draft">@T("پیش‌نویس", "Draft", "مسودة", "Borrador")</button>
+            <button type="button" class="ofilter" data-f="Cancelled">@T("لغوشده", "Cancelled", "ملغى", "Canceladas")</button>
+        </div>
         <div class="order-list">
             @foreach (var o in Model.Orders)
             {
-                <a class="card order-card" href="/account/orders/@o.Id">
+                <a class="card order-card" href="/account/orders/@o.Id" data-status="@o.Status">
                     <div class="order-main">
                         <strong class="order-number" dir="ltr">@o.Number</strong>
                         <span class="order-date muted">@DateText(o.CreatedAtUtc ?? o.OrderDate)</span>
                     </div>
+                    @if (o.Status == "Draft")
+                    {
+                        @* پیش‌نویس بدون شماره قطعی — برچسب شفاف + راه ادامه سفارش *@
+                        <span class="chip">@T("ادامه سفارش ←", "Resume order →", "متابعة الطلب ←", "Continuar pedido →")</span>
+                    }
                     <span class="status-chip st-@o.Status.ToLowerInvariant()">@StatusLabel(o.Status)</span>
                     <span class="order-go" dir="ltr" aria-hidden="true">@(culture == "en" ? "›" : "‹")</span>
                 </a>
             }
         </div>
-        <nav class="pagination" aria-label="pagination">
-            @if (Model.HasPrev)
-            {
-                <a class="btn btn-ghost btn-sm" href="/account/orders?page=@(Model.Page - 1)">← @T("قبلی", "Previous", "السابق", "Anterior")</a>
-            }
-            <span class="page-info">@Model.Page / @Math.Max(1, (int)Math.Ceiling(Model.Total / 8.0))</span>
-            @if (Model.HasNext)
-            {
-                <a class="btn btn-ghost btn-sm" href="/account/orders?page=@(Model.Page + 1)">@T("بعدی", "Next", "التالي", "Siguiente") →</a>
-            }
-        </nav>
+        @* صفحه‌بندی فقط وقتی بیش از یک صفحه است *@
+        @if (Model.Total > 8)
+        {
+            <nav class="pagination" aria-label="pagination">
+                @if (Model.HasPrev)
+                {
+                    <a class="btn btn-ghost btn-sm" href="/account/orders?page=@(Model.Page - 1)">← @T("قبلی", "Previous", "السابق", "Anterior")</a>
+                }
+                <span class="page-info">@BARANG.B2C.Web.Services.AppDate.Digits(Model.Page.ToString(), culture) / @BARANG.B2C.Web.Services.AppDate.Digits(Math.Max(1, (int)Math.Ceiling(Model.Total / 8.0)).ToString(), culture)</span>
+                @if (Model.HasNext)
+                {
+                    <a class="btn btn-ghost btn-sm" href="/account/orders?page=@(Model.Page + 1)">@T("بعدی", "Next", "التالي", "Siguiente") →</a>
+                }
+            </nav>
+        }
     }
 </section>
+<script>
+    // فیلتر وضعیت سفارش‌ها
+    document.querySelectorAll(".ofilter").forEach(function (b) {
+        b.addEventListener("click", function () {
+            document.querySelectorAll(".ofilter").forEach(function (x) { x.classList.remove("on"); });
+            b.classList.add("on");
+            var f = b.getAttribute("data-f");
+            document.querySelectorAll(".order-card").forEach(function (c) {
+                c.style.display = (f === "all" || c.getAttribute("data-status") === f) ? "" : "none";
+            });
+        });
+    });
+</script>

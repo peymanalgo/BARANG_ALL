@@ -1,9 +1,11 @@
 @page
 @model RegisterModel
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     ViewData["Title"] = T("ثبت‌نام در پی‌رنگ", "Create your account", "إنشاء حساب", "Crea tu cuenta");
+    bool devHints = Env.IsDevelopment();
 }
 <section class="container section auth-section">
     <div class="auth-card">
@@ -58,7 +60,10 @@
                     <input type="password" asp-for="ConfirmPassword" dir="ltr" autocomplete="new-password" required />
                 </label>
                 <p class="muted small">@T("رمز عبور حداقل ۹ کاراکتر با حرف بزرگ، حرف کوچک و رقم — بعداً می‌توانید با همین رمز (بدون کد پیامکی) وارد شوید.", "Password: at least 9 characters with an uppercase letter, a lowercase letter and a digit — you can later sign in with it instead of the SMS code.", "كلمة المرور: 9 أحرف على الأقل مع حرف كبير وحرف صغير ورقم — يمكنك لاحقًا الدخول بها بدلاً من رمز SMS.", "Contraseña: al menos 9 caracteres con una mayúscula, una minúscula y un dígito; luego podrás iniciar sesión con ella en lugar del código SMS.")</p>
-                <p class="muted small">@T("محیط آزمایشی: کد ثابت ۱۱۱۱ را وارد کنید.", "Development environment: enter the fixed code 1111.", "بيئة التطوير: أدخل الرمز الثابت 1111.", "Entorno de desarrollo: introduce el código fijo 1111.")</p>
+                @if (devHints)
+                {
+                    <p class="muted small">@T("محیط آزمایشی: کد ثابت ۱۱۱۱ را وارد کنید.", "Development environment: enter the fixed code 1111.", "بيئة التطوير: أدخل الرمز الثابت 1111.", "Entorno de desarrollo: introduce el código fijo 1111.")</p>
+                }
                 <button type="submit" class="btn btn-primary btn-lg btn-block">@T("تأیید و ساخت حساب", "Verify and create account", "تحقق وأنشئ الحساب", "Verificar y crear cuenta")</button>
             </form>
             @if (Model.AlreadyRegistered)

@@ -254,3 +254,34 @@
 #wz .garm{background:transparent}
 #wz .stock-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;background:rgba(52,211,153,.12);color:#34d399;border:1px solid rgba(52,211,153,.35);border-radius:99px;padding:3px 10px}
 #wz .stock-chip.out{background:rgba(248,113,113,.12);color:#f87171;border-color:rgba(248,113,113,.35)}
+
+/* ================= ممیزی UI/UX — ویزارد ================= */
+
+/* شمارنده تعداد (تیراژ سفارش) */
+.qty-row { display: flex; align-items: center; gap: .7rem; }
+.qty-row output { min-width: 2.6rem; text-align: center; font-size: 1.15rem; font-weight: 800; }
+.qty-btn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line, #3a3b42); background: transparent; color: inherit; font-size: 1.3rem; cursor: pointer; }
+.qty-btn:hover { border-color: var(--accent, #f07a19); color: var(--accent, #f07a19); }
+.qty-hint { font-size: .78rem; }
+
+/* نشانگر ذخیره خودکار کنار نوار مراحل */
+.autosave { font-size: .72rem; font-weight: 700; color: #8ff0c4; background: rgba(143,240,196,.12); border: 1px solid rgba(143,240,196,.35); border-radius: 999px; padding: .2rem .7rem; white-space: nowrap; }
+
+/* ابزار صحنه: وسط‌چین + بزرگ‌نمایی */
+.stage-tools { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.seg.zoom button { min-width: 44px; min-height: 36px; font-size: .78rem; font-weight: 750; }
+
+/* تیک پذیرش قوانین قبل از پرداخت */
+.terms-check { display: flex; align-items: flex-start; gap: .55rem; cursor: pointer; font-size: .86rem; line-height: 1.7; margin-top: .7rem; }
+.terms-check input { width: 18px; height: 18px; min-width: 18px; min-height: 18px; margin-top: .25rem; cursor: pointer; accent-color: var(--accent, #f07a19); }
+
+/* خلاصه سفارش در مرحله پرداخت */
+.paysum { margin-top: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line, #3a3b42); border-radius: 14px; padding: 12px 14px; }
+
+/* موبایل: فشرده‌سازی نوار مراحل + اهداف لمسی ≥۴۴px */
+@media (max-width: 640px) {
+    .steps li { font-size: .66rem !important; padding-inline: .3rem !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 23vw; }
+    .chips button, #w-side button { min-height: 44px; min-width: 44px; }
+    .mode { min-height: 56px; }
+    .qty-row { flex-wrap: wrap; }
+}

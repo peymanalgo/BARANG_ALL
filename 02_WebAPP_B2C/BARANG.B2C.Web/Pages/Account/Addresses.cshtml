@@ -7,10 +7,9 @@
     string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     string TypeLabel(string code) => code switch
     {
-        "shipping" => T("ارسال", "Shipping", "شحن", "Envío"),
-        "billing" => T("صورتحساب", "Billing", "فاتورة", "Facturación"),
-        "warehouse" => T("انبار", "Warehouse", "مستودع", "Almacén"),
-        "office" => T("دفتر", "Office", "مكتب", "Oficina"),
+        "home" => T("خانه", "Home", "المنزل", "Casa"),
+        "work" => T("محل کار", "Work", "العمل", "Trabajo"),
+        "other" => T("سایر", "Other", "أخرى", "Otro"),
         _ => code
     };
     ViewData["Title"] = T("نشانی‌های من", "My addresses", "عناويني", "Mis direcciones");
@@ -98,7 +97,7 @@
                                     <button type="submit" class="btn btn-primary btn-sm">@T("ذخیره", "Save", "حفظ", "Guardar")</button>
                                 </form>
                             </details>
-                            <form method="post" asp-page-handler="Remove">
+                            <form method="post" asp-page-handler="Remove" data-confirm-remove="1" data-confirm-text="@($"«{a.Title}» {T("حذف شود؟", "will be removed. Continue?", "سيُحذف. متابعة؟", "¿Eliminar?")}")">
                                 <input type="hidden" name="id" value="@a.Id" />
                                 <input type="hidden" name="version" value="@a.Version" />
                                 <button type="submit" class="btn btn-danger btn-sm">@T("حذف", "Remove", "إزالة", "Quitar")</button>
@@ -115,14 +114,14 @@
                 <div class="form-cols">
                     <label><span>@T("نوع", "Type", "النوع", "Tipo")</span>
                         <select name="addressTypeCode">
-                            <option value="shipping">@T("ارسال", "Shipping", "شحن", "Envío")</option>
-                            <option value="billing">@T("صورتحساب", "Billing", "فاتورة", "Facturación")</option>
-                            <option value="warehouse">@T("انبار", "Warehouse", "مستودع", "Almacén")</option>
-                            <option value="office">@T("دفتر", "Office", "مكتب", "Oficina")</option>
+                            <option value="home">@T("خانه", "Home", "المنزل", "Casa")</option>
+                            <option value="work">@T("محل کار", "Work", "العمل", "Trabajo")</option>
+                            <option value="other">@T("سایر", "Other", "أخرى", "Otro")</option>
                         </select>
                     </label>
                     <label><span>@T("عنوان نشانی (نام)", "Title", "عنوان العنوان", "Título")</span><input type="text" name="title" placeholder="@T("مثلاً: خانه، محل کار", "e.g. Home, Office", "مثال: المنزل", "p. ej. Casa, Oficina")" required /></label>
-                    <label><span>@T("کشور", "Country", "البلد", "País")</span><input type="text" name="countryCode" value="IR" dir="ltr" required /></label>
+                    @* کشور همیشه ایران است — فیلد در فرم نیست و سمت سرور IR ثبت می‌شود *@
+                    <label><span>@T("استان", "Province", "المحافظة", "Provincia")</span><input type="text" name="province" placeholder="@T("مثلاً: تهران", "e.g. Tehran", "مثال: طهران", "p. ej. Teherán")" /></label>
                     <label><span>@T("شهر / محله", "City / district", "المدينة / الحي", "Ciudad / distrito")</span><input type="text" name="district" /></label>
                     <label class="span2"><span>@T("نشانی کامل", "Address line 1", "سطر العنوان ١", "Línea de dirección 1")</span><input type="text" name="addressLine1" required /></label>
                     <label><span>@T("پلاک/تکمیلی", "Address line 2", "سطر العنوان ٢", "Línea de dirección 2")</span><input type="text" name="addressLine2" /></label>
@@ -136,3 +135,11 @@
         </details>
     }
 </section>
+<script>
+    // تأیید حذف نشانی
+    document.querySelectorAll("form[data-confirm-remove]").forEach(function (f) {
+        f.addEventListener("submit", function (e) {
+            if (!window.confirm(f.getAttribute("data-confirm-text") || "")) e.preventDefault();
+        });
+    });
+</script>

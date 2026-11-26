@@ -37,21 +37,21 @@ else
         <nav class="breadcrumbs" aria-label="breadcrumb">
             <a href="/">@T("خانه", "Home", "الرئيسية", "Inicio")</a> ›
             <a href="/catalog">@T("کاتالوگ", "Catalog", "الكتالوج", "Catálogo")</a> ›
-            <span>@Model.Title</span>
+            <span>@BARANG.B2C.Web.Services.Display.Title(Model.Title, culture)</span>
         </nav>
         <figure class="design-hero">
             @if (!string.IsNullOrWhiteSpace(Model.Preview))
             {
-                <img src="@Model.Preview" alt="@Model.Title" />
+                <img src="@Model.Preview" alt="@BARANG.B2C.Web.Services.Display.Title(Model.Title, culture)" />
             }
             else if (!string.IsNullOrWhiteSpace(Model.Thumbnail))
             {
-                <img src="@Model.Thumbnail" alt="@Model.Title" />
+                <img src="@Model.Thumbnail" alt="@BARANG.B2C.Web.Services.Display.Title(Model.Title, culture)" />
             }
             <figcaption class="muted">@T("پیش‌نمایش با علامت آب — فایل اصلی پس از سفارش تحویل می‌شود.", "Watermarked preview — the original file is delivered with your order.", "معاينة بعلامة مائية — يُسلّم الملف الأصلي مع طلبك.", "Vista previa con marca de agua: el archivo original se entrega con tu pedido.")</figcaption>
         </figure>
         <div class="design-specs">
-            <h1>@Model.Title</h1>
+            <h1>@BARANG.B2C.Web.Services.Display.Title(Model.Title, culture)</h1>
             <p class="design-code" dir="ltr">@Model.Code</p>
             @if (!string.IsNullOrWhiteSpace(Model.CategoryCode))
             {
@@ -82,11 +82,11 @@ else
                         <span class="design-thumb">
                             @if (!string.IsNullOrWhiteSpace(sm.Thumbnail))
                             {
-                                <img src="@sm.Thumbnail" alt="@sm.Title" width="600" height="600" loading="lazy" decoding="async" />
+                                <img src="@sm.Thumbnail" alt="@BARANG.B2C.Web.Services.Display.Title(sm.Title, culture)" width="600" height="600" loading="lazy" decoding="async" />
                             }
                         </span>
                         <span class="design-meta">
-                            <strong>@sm.Title</strong>
+                            <strong>@BARANG.B2C.Web.Services.Display.Title(sm.Title, culture)</strong>
                             <span class="score-chip">@BARANG.B2C.Web.Services.AppDate.Percent(sm.Score, culture) @T("تطابق", "match", "تطابق", "coincidencia")</span>
                         </span>
                     </a>

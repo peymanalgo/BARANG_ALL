@@ -78,17 +78,21 @@ public sealed class ProfileModel(CoreApiClient core, CustomerContext customers) 
         long profileVersion = 0;
         if (c.TryGetProperty("individualProfile", out JsonElement ip) && ip.ValueKind == JsonValueKind.Object && ip.TryGetProperty("version", out JsonElement pv) && pv.TryGetInt64(out long pvv)) profileVersion = pvv;
         string display = string.IsNullOrWhiteSpace(DisplayNameInput) ? $"{FirstName.Trim()} {LastName.Trim()}" : DisplayNameInput.Trim();
+        // کد ملی ماسک‌شده نمایش داده می‌شود؛ اگر کاربر آن را دست‌نخورده گذاشته (دارای •)، مقدار فعلی حفظ می‌شود
+        string existingNationalId = ip.ValueKind == JsonValueKind.Object && ip.TryGetProperty("nationalId", out JsonElement ni0) ? ni0.GetString() ?? "" : "";
+        string nationalId = string.IsNullOrWhiteSpace(NationalId) || NationalId.Contains('•')
+            ? (string.IsNullOrWhiteSpace(existingNationalId) ? null : existingNationalId)
+            : NationalId.Trim();
 
         (bool ok, string? problem) = await core.PutRawAsync($"api/v1/client/customers/{cid.GetString()}", new
         {
             displayName = display,
             firstName = FirstName.Trim(),
             lastName = LastName.Trim(),
-            nationalId = string.IsNullOrWhiteSpace(NationalId) ? null : NationalId.Trim(),
+            nationalId = nationalId,
             primaryMobile = Mobile.Trim(),
             primaryPhone = string.IsNullOrWhiteSpace(PrimaryPhone) ? null : PrimaryPhone.Trim(),
             primaryEmail = string.IsNullOrWhiteSpace(Email) ? null : Email.Trim(),
-            fatherName = string.IsNullOrWhiteSpace(FatherName) ? null : FatherName.Trim(),
             birthDate = string.IsNullOrWhiteSpace(BirthDate) ? null : BirthDate.Trim(),
             version,
             profileVersion

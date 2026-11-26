@@ -20,6 +20,13 @@
     var cmsFooter = site.Footer;
     // فیچر «وبلاگ» (اسکوپ store): خاموش باشد → آیتم وبلاگ از منو حذف می‌شود (خطا = روشن)
     var blogOn = Site.FeatureEnabledAsync("blog").GetAwaiter().GetResult();
+    // تلفن واقعی از تنظیمات CMS؛ اگر هنوز مقدار صفر/پیش‌فرض بود نمایش داده نمی‌شود (نماد ساختگی ممنوع)
+    string? contactPhone = site.Settings?.Phone;
+    bool phoneIsPlaceholder = string.IsNullOrWhiteSpace(contactPhone) || contactPhone.Replace(" ", "").StartsWith("02100000000");
+    // شبکه‌های اجتماعی — در نبود نشانی واقعی از CMS، آیکون‌ها رندر نمی‌شوند (لینک ساختگی ممنوع)
+    string socialInstagram = "https://instagram.com/peyrang.ir";
+    string socialTelegram = "https://t.me/peyrang_ir";
+    string socialWhatsapp = "https://wa.me/989120000000";
 
 }
 <!DOCTYPE html>
@@ -60,6 +67,9 @@
 <body>
 <header class="store-header">
     <div class="container header-inner">
+        <button type="button" class="nav-toggle" data-nav-toggle aria-label="@T("منو", "Menu", "القائمة", "Menú")" aria-expanded="false">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
         <a class="brand" href="/">
             @if (siteLogo is { Length: > 0 })
             {
@@ -70,20 +80,20 @@
                 <img class="brand-logo" src="~/images/logo-wordmark-final.png" alt="@Brand()" asp-append-version="true" />
             }
         </a>
-        <nav class="main-nav" aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية", "Menú principal")">
+        <nav class="main-nav" id="main-nav" data-main-nav aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية", "Menú principal")">
             @if (cmsMenu.Count > 0)
             {
                 foreach (var m in cmsMenu)
                 {
                     if (!blogOn && (m.Href == "/blog" || m.Href.StartsWith("/blog/", StringComparison.OrdinalIgnoreCase))) { continue; }
                     var isActive = route.Length == 0 ? m.Href == "/" : (m.Href != "/" && route.StartsWith(m.Href.TrimStart('/'), StringComparison.OrdinalIgnoreCase));
-                    <a href="@m.Href" class="@(m.Cta ? "nav-cta " : "")@(isActive ? "active" : null)">@(m.Cta ? "✨ " : "")@m.Title</a>
+                    <a href="@m.Href" class="@(m.Cta ? "nav-cta " : "")@(isActive ? "active" : null)">@m.Title</a>
                 }
             }
             else
             {
                 <a href="/" class="@(route.Length == 0 ? "active" : null)">@T("صفحه اصلی", "Home", "الرئيسية", "Inicio")</a>
-                <a href="/order/wizard" class="nav-cta @(route.StartsWith("order/wizard") ? "active" : null)">✨ @T("شروع طراحی تیشرت", "Start designing", "ابدأ التصميم", "Empezar a diseñar")</a>
+                <a href="/order/wizard" class="nav-cta @(route.StartsWith("order/wizard") ? "active" : null)">@T("شروع طراحی تیشرت", "Start designing", "ابدأ التصميم", "Empezar a diseñar")</a>
                 <a href="/catalog" class="@(route.StartsWith("catalog") ? "active" : null)">@T("طرح‌ها", "Designs", "التصامیم", "Diseños")</a>
                 <a href="/#features">@T("چاپ و بسته‌بندی", "Printing", "الطباعة", "Impresión")</a>
                 <a href="/about" class="@(route.StartsWith("about") ? "active" : null)">@T("درباره ما", "About", "من نحن", "Acerca de")</a>
@@ -183,6 +193,20 @@
                 </div>
             }
         </div>
+        @* شبکه‌های اجتماعی زیر ستون‌ها — در هر دو حالت CMS و جایگزین *@
+        <div class="container footer-social-row">
+            <div class="footer-social">
+                <a href="@socialInstagram" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+                </a>
+                <a href="@socialTelegram" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21.9 4.3 18.9 19c-.2 1-.8 1.2-1.6.8l-4.5-3.3-2.2 2.1c-.2.2-.4.4-.9.4l.3-4.6L18.5 6.6c.4-.3-.1-.5-.6-.2L7.5 13.2l-4.4-1.4c-1-.3-1-1 .2-1.4L20.5 3.3c.8-.3 1.6.2 1.4 1z"/></svg>
+                </a>
+                <a href="@socialWhatsapp" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm5.7 14.1c-.2.7-1.3 1.3-1.9 1.4-.5.1-1.1.1-1.8-.1-2.7-.9-4.5-3.2-4.6-3.4-.1-.1-1.1-1.5-1.1-2.8 0-1.4.7-2 .9-2.3.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.4l.8 2c.1.2.1.4 0 .6l-.4.6c-.1.2-.3.4-.1.7.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l1.9.9c.3.1.5.2.5.4.1.1.1.7-.5 1.7z"/></svg>
+                </a>
+            </div>
+        </div>
     }
     else
     {
@@ -190,28 +214,33 @@
             <div>
                 <span class="footer-brand"><img class="footer-brand-logo" src="~/images/logo-wordmark-final.png" alt="@Brand()" asp-append-version="true" /></span>
                 <p>@T("طرح‌های آماده چاپ روی پوشاک و هدایای تبلیغاتی؛ سفارش آنلاین، پیگیری تا تحویل.", "Ready-to-print designs for apparel and promotional gifts; order online, track until delivery.", "تصاميم جاهزة للطباعة على الملابس والهدايا الدعائية؛ اطلب عبر الإنترنت وتتبع حتى التسليم.", "Diseños listos para imprimir en prendas y regalos publicitarios; pide en línea y sigue hasta la entrega.")</p>
-                <p class="footer-slogan">@(string.IsNullOrWhiteSpace(site.Settings?.Slogan) ? T("پی‌رنگ خان، نقشه‌ها داره برات!", "Peyrang Khan has the designs for you!", "پی‌رنگ خان لديه التصاميم من أجلك!", "¡Peyrang Khan tiene los diseños para ti!") : site.Settings.Slogan)</p>
+                <p class="footer-slogan">@(string.IsNullOrWhiteSpace(site.Settings?.Slogan) ? T("پی‌رنگ؛ طرح دلخواهت را انتخاب کن، ما چاپش می‌کنیم.", "Peyrang: pick a design and we print it!", "پی‌رنگ خان لديه التصاميم من أجلك!", "¡Peyrang Khan tiene los diseños para ti!") : site.Settings.Slogan)</p>
             </div>
             <div>
                 <h3>@T("فروشگاه", "Store", "المتجر", "Tienda")</h3>
                 <a href="/catalog">@T("همه طرح‌ها", "All designs", "كل التصاميم", "Todos los diseños")</a>
                 <a href="/account/orders">@T("پیگیری سفارش", "Track order", "تتبع الطلب", "Seguir pedido")</a>
                 <a href="/faq">@T("سوالات متداول", "FAQ", "الأسئلة الشائعة", "Preguntas frecuentes")</a>
-                <a href="tel:02100000000" dir="ltr">021-00000000</a>
+                @if (!phoneIsPlaceholder)
+                {
+                    <a href="tel:@contactPhone.Replace(" ", "")" dir="ltr">@contactPhone</a>
+                }
                 <a href="/account">@T("حساب کاربری", "My account", "حسابي", "Mi cuenta")</a>
             </div>
             <div>
                 <h3>@T("تماس با ما", "Contact", "اتصل بنا", "Contacto")</h3>
                 <a href="mailto:salam@pirang.ir">salam@pirang.ir</a>
                 <a href="/about">@T("درباره پی‌رنگ", "About Peyrang", "عن پی‌رنگ", "Acerca de Peyrang")</a>
-            </div>
-            <div class="footer-licenses">
-                <h3>@T("مجوزها", "Licenses", "التراخيص", "Licencias")</h3>
-                <div class="license-grid">
-                    <img src="~/images/license-badge-1.svg" alt="@T("مجوز نمونه ۱", "Sample license 1", "ترخيص نموذجي ١", "Licencia de muestra 1")" asp-append-version="true" />
-                    <img src="~/images/license-badge-2.svg" alt="@T("مجوز نمونه ۲", "Sample license 2", "ترخيص نموذجي ٢", "Licencia de muestra 2")" asp-append-version="true" />
-                    <img src="~/images/license-badge-3.svg" alt="@T("مجوز نمونه ۳", "Sample license 3", "ترخيص نموذجي ٣", "Licencia de muestra 3")" asp-append-version="true" />
-                    <img src="~/images/license-badge-4.svg" alt="@T("مجوز نمونه ۴", "Sample license 4", "ترخيص نموذجي ٤", "Licencia de muestra 4")" asp-append-version="true" />
+                <div class="footer-social">
+                    <a href="@socialInstagram" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+                    </a>
+                    <a href="@socialTelegram" target="_blank" rel="noopener" aria-label="Telegram" title="Telegram">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21.9 4.3 18.9 19c-.2 1-.8 1.2-1.6.8l-4.5-3.3-2.2 2.1c-.2.2-.4.4-.9.4l.3-4.6L18.5 6.6c.4-.3-.1-.5-.6-.2L7.5 13.2l-4.4-1.4c-1-.3-1-1 .2-1.4L20.5 3.3c.8-.3 1.6.2 1.4 1z"/></svg>
+                    </a>
+                    <a href="@socialWhatsapp" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm5.7 14.1c-.2.7-1.3 1.3-1.9 1.4-.5.1-1.1.1-1.8-.1-2.7-.9-4.5-3.2-4.6-3.4-.1-.1-1.1-1.5-1.1-2.8 0-1.4.7-2 .9-2.3.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.4l.8 2c.1.2.1.4 0 .6l-.4.6c-.1.2-.3.4-.1.7.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l1.9.9c.3.1.5.2.5.4.1.1.1.7-.5 1.7z"/></svg>
+                    </a>
                 </div>
             </div>
         </div>
@@ -228,7 +257,7 @@
 
 <partial name="_AiAssistant" />
 
-@* ---------- نوار تب پایین (تجربه اپ موبایلی) ---------- *@
+@* ---------- نوار تب پایین (تجربه اپ موبایلی) — دکمه مرکزی برجسته «شروع طراحی» ---------- *@
 <nav class="mobile-tabbar" aria-label="@T("منوی اصلی", "Main menu", "القائمة الرئيسية", "Menú principal")">
     <a href="/" class="@(route.Length == 0 ? "active" : null)">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
@@ -237,6 +266,10 @@
     <a href="/catalog" class="@(route.StartsWith("catalog") || route.StartsWith("design") ? "active" : null)">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"/></svg>
         <span>@T("طرح‌ها", "Designs", "التصاميم", "Diseños")</span>
+    </a>
+    <a href="/order/wizard" class="tabbar-cta" aria-label="@T("شروع طراحی تیشرت", "Start designing", "ابدأ التصميم", "Empezar a diseñar")">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 13.8 8l5.7 1.9-4.7 3.6 1.8 5.9-5.1-3.5-5.1 3.5 1.8-5.9L3.2 9.9 8.9 8z"/></svg>
+        <span>@T("شروع طراحی", "Design", "صمّم", "Diseñar")</span>
     </a>
     <a href="/account/orders" class="@(route.StartsWith("account/orders") ? "active" : null)">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l1.2 12.2a1.5 1.5 0 0 1-1.5 1.8H6.3a1.5 1.5 0 0 1-1.5-1.8L6 7z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg>
@@ -247,5 +280,6 @@
         <span>@T("حساب", "Account", "حسابي", "Cuenta")</span>
     </a>
 </nav>
+<div class="nav-backdrop" data-nav-backdrop hidden></div>
 </body>
 </html>

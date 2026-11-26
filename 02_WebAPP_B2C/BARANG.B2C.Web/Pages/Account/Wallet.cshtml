@@ -1,5 +1,6 @@
 @page
 @model WalletModel
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
 @using System.Globalization
 @{
     Layout = "_AccountLayout";
@@ -71,7 +72,10 @@
             </label>
             <button type="submit" class="btn btn-primary">@T("رفتن به درگاه پرداخت", "Go to payment gateway", "الذهاب إلى بوابة الدفع", "Ir a la pasarela de pago")</button>
         </form>
-        <small class="muted">@T("پرداخت از طریق درگاه آزمایشی انجام می‌شود (نسخه تستی).", "Payment goes through the sandbox gateway (test version).", "الدفع عبر بوابة اختبارية (نسخة تجريبية).", "El pago se procesa por la pasarela de pruebas (versión de prueba).")</small>
+        @if (Env.IsDevelopment())
+        {
+            <small class="muted">@T("پرداخت از طریق درگاه آزمایشی انجام می‌شود (نسخه تستی).", "Payment goes through the sandbox gateway (test version).", "الدفع عبر بوابة اختبارية (نسخة تجريبية).", "El pago se procesa por la pasarela de pruebas (versión de prueba).")</small>
+        }
     </div>
 
     @if (Model.TopUps.Count > 0)
@@ -116,12 +120,16 @@
                 @foreach (var w in Model.Items)
                 {
                     <div class="wallet-row @(w.Direction == "credit" ? "in" : "out")">
-                        <span class="wallet-dir" aria-hidden="true">@(w.Direction == "credit" ? "＋" : "－")</span>
+                        <span class="wallet-dir" aria-hidden="true">
+                            @(w.Direction == "credit"
+                                ? Html.Raw("<svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round'><path d='M12 19V5M5 12l7-7 7 7'/></svg>")
+                                : Html.Raw("<svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round'><path d='M12 5v14M5 12l7 7 7-7'/></svg>"))
+                        </span>
                         <div class="wallet-meta">
                             <strong>@ReasonLabel(w.ReasonCode)</strong>
-                            @if (!string.IsNullOrWhiteSpace(w.ReferenceNote))
+                            @if (!string.IsNullOrWhiteSpace(w.FriendlyNote))
                             {
-                                <small class="muted">@w.ReferenceNote</small>
+                                <small class="muted">@w.FriendlyNote</small>
                             }
                             <small class="muted">@Date(w.CreatedAtUtc)</small>
                         </div>

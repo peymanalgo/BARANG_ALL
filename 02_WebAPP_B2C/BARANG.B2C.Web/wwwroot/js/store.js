@@ -103,6 +103,54 @@ document.querySelectorAll('[data-strip-scroll]').forEach((btn) => {
     });
 });
 
+// ── منوی همبرگر موبایل: کشوی افقی با پس‌زمینه ──
+(() => {
+    const toggle = document.querySelector('[data-nav-toggle]');
+    const nav = document.querySelector('[data-main-nav]');
+    const backdrop = document.querySelector('[data-nav-backdrop]');
+    if (!toggle || !nav) return;
+    const set = (open) => {
+        document.body.classList.toggle('nav-open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (backdrop) backdrop.hidden = !open;
+    };
+    toggle.addEventListener('click', () => set(!document.body.classList.contains('nav-open')));
+    if (backdrop) backdrop.addEventListener('click', () => set(false));
+    nav.addEventListener('click', (e) => { if (e.target.closest('a')) set(false); });
+    window.addEventListener('resize', () => { if (window.innerWidth > 900) set(false); });
+})();
+
+// ── توست کپی مشترک (کد دعوت، شماره سفارش، کد رهگیری) ──
+window.barangToast = (message) => {
+    let toast = document.querySelector('.barang-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'barang-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(window.__barangToastTimer);
+    window.__barangToastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+};
+// دکمه‌های data-copy: کپی در کلیپ‌بورد + توست
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-copy]');
+    if (!btn) return;
+    const text = btn.getAttribute('data-copy') || '';
+    let copied = false;
+    try { await navigator.clipboard.writeText(text); copied = true; }
+    catch {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { copied = document.execCommand('copy'); } catch { /* رد شدن */ }
+        ta.remove();
+    }
+    const I18N = { fa: 'کپی شد', en: 'Copied', ar: 'تم النسخ', es: 'Copiado' };
+    const lang = (document.documentElement.lang || 'fa').slice(0, 2);
+    window.barangToast((I18N[lang] || I18N.fa) + (copied ? ' ✓' : ''));
+});
+
 // ── تقویم مشترک: قالب‌بندی تاریخ ISO به جلالی/میلادی (هم‌سیاستِ AppDate سمت سرور) ──
 // Jalali ۱۴۰۵/۰۸/۲۱ (Persian digits) when <html lang="fa">, else Gregorian 2026/11/12.
 // Mirrors datepicker.js's Intl persian-calendar conversion (toJalali).

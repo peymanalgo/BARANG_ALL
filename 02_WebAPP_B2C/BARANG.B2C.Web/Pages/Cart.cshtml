@@ -4,7 +4,7 @@
 @{
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
-    string Money(decimal v) => v.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa"));
+    string Money(decimal v) => BARANG.B2C.Web.Services.Display.Money(v, culture);
     ViewData["Title"] = T("سبد خرید", "Cart", "السلة", "Carrito");
 }
 <section class="container section">
@@ -38,7 +38,7 @@
                             {
                                 item.Product,
                                 item.Variant,
-                                item.Quantity > 1 ? T("تعداد: ", "Qty: ", "الكمية: ", "Cant.: ") + item.Quantity.ToString("N0", CultureInfo.GetCultureInfo(culture is "en" or "es" ? "en" : "fa")) : "",
+                                item.Quantity > 1 ? T("تعداد: ", "Qty: ", "الكمية: ", "Cant.: ") + BARANG.B2C.Web.Services.Display.Digits(item.Quantity.ToString("N0"), culture) : "",
                                 item.PrintSize.Length > 0 ? T("اندازه چاپ: ", "Print: ", "الطباعة: ", "Impresión: ") + item.PrintSize : "",
                                 item.Packaging.Length > 0 ? T("بسته‌بندی: ", "Packaging: ", "التغليف: ", "Embalaje: ") + item.Packaging : "",
                             }.Where(s => s.Length > 0))

@@ -6,6 +6,8 @@
     ViewData["Title"] = T("سفارش چاپ روی پوشاک", "Custom print order", "طلب طباعة مخصصة", "Pedido de impresión personalizado");
 
     // دیکشنری ترجمه‌ها برای JS — همه متن‌های ویزارد از اینجا می‌آیند (چهار زبان: fa/en/ar/es)
+    // در محیط توسعه متن‌های «درگاه نمایشی» فعال است؛ در پروداکشن متن خنثی رندر می‌شود (ممیزی UI/UX)
+    bool demo = Model.DemoGateway;
     var i18n = new Dictionary<string, object>
     {
         ["dir"] = culture is "en" or "es" ? "ltr" : "rtl",
@@ -23,13 +25,13 @@
         ["searchPlaceholder"] = T("دنبال چی هستی؟ مثلاً: گربه فضایی، شیر اسطوره‌ای…", "What are you looking for? e.g. space cat, mythical lion…", "عمّ تبحث؟ مثلاً: قطة فضائية، أسطوري…", "¿Qué buscas? P. ej. gato espacial, león mitológico…"),
         ["bankTextOptional"] = T("متن دلخواه روی طرح (اختیاری)", "Optional text on the design", "نص اختياري على التصميم", "Texto opcional en el diseño"),
         ["bankTextPlaceholder"] = T("مثلاً: peyman", "e.g.: peyman", "مثال: peyman", "ej.: peyman"),
-        ["searchReady"] = T("موتور مفهومی آماده است", "Concept engine ready", "المحرك المفهومي جاهز", "Motor de conceptos listo"),
+        ["searchReady"] = T("هزاران طرح برای جستجو آماده‌اند", "Thousands of designs ready to search", "آلاف التصاميم جاهزة للبحث", "Miles de diseños listos para buscar"),
         ["searchOf"] = T("طرح", "designs", "تصميم", "diseños"),
         ["searching"] = T("در حال جستجو…", "Searching…", "جارٍ البحث…", "Buscando…"),
         ["noResults"] = T("چیزی پیدا نشد؛ کلیدواژه ساده‌تر امتحان کن", "Nothing found; try a simpler keyword", "لا نتائج؛ جرّب كلمة أبسط", "No se encontró nada; prueba una palabra más simple"),
         ["nearest"] = T("نزدیک‌ترین", "nearest", "الأقرب", "más cercanos"),
         ["dropTitle"] = T("فایل طرح را اینجا رها کن", "Drop your design file here", "أفلت ملف تصميمك هنا", "Suelta aquí tu archivo de diseño"),
-        ["dropHint"] = T("PNG با پس‌زمینه شفاف بهترین نتیجه را می‌دهد — تحلیل کیفیت خودکار انجام می‌شود", "Transparent-background PNG works best — automatic quality analysis", "PNG بخلفية شفافة أفضل — تحليل جودة تلقائي", "El PNG con fondo transparente funciona mejor: análisis de calidad automático"),
+        ["dropHint"] = T("PNG یا JPG تا ۱۵ مگابایت — حداقل ۸۰۰ پیکسل برای چاپ A4، ۱۴۰۰ پیکسل برای A3. PNG با پس‌زمینه شفاف بهترین نتیجه را می‌دهد.", "PNG or JPG up to 15 MB — at least 800px for A4 prints, 1400px for A3. Transparent-background PNG works best.", "PNG أو JPG حتى ١٥ ميجابايت — ٨٠٠ بكسل على الأقل لـ A4 و١٤٠٠ لـ A3. PNG بخلفية شفافة أفضل.", "PNG o JPG hasta 15 MB: al menos 800 px para A4 y 1400 px para A3. El PNG con fondo transparente funciona mejor."),
         ["pickFile"] = T("انتخاب فایل", "Choose file", "اختر ملفاً", "Elegir archivo"),
         ["analysis"] = T("تحلیل هوشمند فایل", "Smart file analysis", "تحليل ذكي للملف", "Análisis inteligente del archivo"),
         ["qExcellent"] = T("کیفیت عالی — برای A3 هم مناسب است", "Excellent — suitable for A3 too", "ممتاز — يصلح حتى A3", "Excelente: apto también para A3"),
@@ -44,7 +46,7 @@
         ["rtlLtr"] = T("فارسی/عربی راست‌چین · انگلیسی چپ‌چین", "Persian/Arabic RTL · English LTR", "الفارسية/العربية يمين · الإنجليزية يسار", "Persa/árabe RTL · español/inglés LTR"),
         ["textPlaceholder"] = T("مثلاً: پی‌رنگ خان، نقشه‌ها داره برات!", "e.g. Peyrang Khan has the designs for you!", "مثلاً: پی‌رنگ خان لديه التصاميم!", "p. ej. ¡Peyrang Khan tiene los diseños para ti!"),
         ["font"] = T("فونت", "Font", "الخط", "Fuente"),
-        ["font1"] = T("لاله‌زار", "Lalezar", "لاله‌زار", "Lalezar"), ["font2"] = T("وزیرمتن", "Vazirmatn", "وزیرمتن", "Vazirmatn"), ["font3"] = T("دست‌نویس", "Handwritten", "يدوي", "Manuscrita"), ["font4"] = T("استعداد", "Bold caps", "استعداد", "Mayúsculas negrita"),
+        ["font1"] = T("لاله‌زار", "Lalezar", "لاله‌زار", "Lalezar"), ["font2"] = T("وزیرمتن", "Vazirmatn", "وزیرمتن", "Vazirmatn"), ["font3"] = T("دست‌نویس", "Handwritten", "يدوي", "Manuscrita"), ["font4"] = T("تیتر", "Headline caps", "عنوان", "Titular mayúscula"),
         ["textColor"] = T("رنگ متن", "Text color", "لون النص", "Color del texto"),
         ["textSize"] = T("اندازه متن", "Text size", "حجم النص", "Tamaño del texto"),
         ["front"] = T("جلو", "Front", "أمام", "Delantero"),
@@ -83,7 +85,7 @@
         ["giftPhone"] = T("شماره تماس گیرنده", "Recipient phone", "هاتف المستلم", "Teléfono del destinatario"),
         ["giftAddress"] = T("نشانی گیرنده", "Recipient address", "عنوان المستلم", "Dirección del destinatario"),
         ["giftMessage"] = T("پیام مناسبت (روی کارت هدیه چاپ می‌شود) ✨", "Occasion message (printed on the gift card) ✨", "رسالة المناسبة (تُطبع على بطاقة الهدية) ✨", "Mensaje de ocasión (impreso en la tarjeta de regalo) ✨"),
-        ["back2"] = T("→ بازگشت به طراحی", "→ Back to designing", "→ عودة للتصميم", "→ Volver al diseño"),
+        ["back2"] = T("بازگشت به طراحی →", "← Back to designing", "عودة للتصميم ←", "← Volver al diseño"),
         ["next2"] = T("ادامه — پیش‌نمایش سفارش ←", "Continue — review →", "متابعة — مراجعة ←", "Continuar — revisión →"),
         ["pickPackFirst"] = T("اول روش بسته‌بندی را انتخاب کن", "Pick a packaging method first", "اختر طريقة التغليف أولاً", "Elige primero un método de embalaje"),
         ["loginRequired"] = T("برای ادامه باید وارد حساب کاربری شوی", "Sign in to continue", "سجّل الدخول للمتابعة", "Inicia sesión para continuar"),
@@ -92,22 +94,29 @@
         ["p3Desc"] = T("همه چیز را چک کن و در صورت تایید به پرداخت برو.", "Check everything, then proceed to payment.", "تحقق من كل شيء ثم انتقل للدفع.", "Revisa todo y continúa al pago."),
         ["priceBreakdown"] = T("ریز قیمت سفارش", "Price breakdown", "تفصيل السعر", "Desglose de precios"),
         ["payable"] = T("مبلغ قابل پرداخت", "Payable amount", "المبلغ المستحق", "Importe a pagar"),
-        ["serverPriceNote"] = T("قیمت نهایی سمت سرور محاسبه و اعتبارسنجی شده است؛ این صفحه فقط نمایش است.", "The final price is calculated and validated server-side; this page only displays it.", "السعر النهائي محسوب ومُتحقق منه في الخادم؛ هذه الصفحة للعرض فقط.", "El precio final se calcula y valida en el servidor; esta página solo lo muestra."),
-        ["back3"] = T("→ بازگشت", "→ Back", "→ عودة", "→ Atrás"),
+        ["serverPriceNote"] = T("قیمت نهایی توسط سامانه محاسبه و تضمین می‌شود؛ پس از تأیید تغییر نمی‌کند.", "The final price is calculated and guaranteed by the system; it won't change after approval.", "السعر النهائي يحسبه النظام ويضمنه؛ لا يتغير بعد الموافقة.", "El precio final lo calcula y garantiza el sistema; no cambia tras la aprobación."),
+        ["back3"] = T("بازگشت →", "← Back", "عودة ←", "← Atrás"),
         ["confirm"] = T("تایید و ادامه به پرداخت ←", "Approve & continue to payment →", "موافقة ومتابعة للدفع ←", "Aprobar y continuar al pago →"),
+        ["terms"] = T("شرایط چاپ و بازگشت کالای سفارش‌های چاپ‌شده را می‌پذیرم.", "I accept the printing & return policy for custom-printed orders.", "أوافق على سياسة الطباعة والإرجاع للطلبات المطبوعة.", "Acepto la política de impresión y devolución de pedidos personalizados."),
+        ["termsRequired"] = T("برای ادامه، پذیرش شرایط الزامی است.", "Accepting the terms is required to continue.", "قبول الشروط مطلوب للمتابعة.", "Aceptar los términos es obligatorio para continuar."),
         ["sourceBank"] = T("طرح بانک", "Bank design", "تصميم البنك", "Diseño del banco"),
         ["yourFile"] = T("فایل شخصی شما", "Your own file", "ملفك الخاص", "Tu propio archivo"),
         ["textQuote"] = T("متن", "Text", "نص", "Texto"),
         ["printSize"] = T("اندازه چاپ", "Print size", "حجم الطباعة", "Tamaño de impresión"),
         ["p4Title"] = T("پرداخت و ثبت سفارش", "Payment & submit", "الدفع وإتمام الطلب", "Pago y envío"),
-        ["p4Desc"] = T("روش پرداخت را انتخاب کن — در این نسخه، درگاه نمایشی همیشه موفق است.", "Pick a payment method — in this version the demo gateway always succeeds.", "اختر طريقة الدفع — في هذه النسخة البوابة التجريبية تنجح دائماً.", "Elige un método de pago: en esta versión la pasarela demo siempre funciona."),
+        ["p4Desc"] = demo
+            ? T("روش پرداخت را انتخاب کن — در این نسخه، درگاه نمایشی همیشه موفق است.", "Pick a payment method — in this version the demo gateway always succeeds.", "اختر طريقة الدفع — في هذه النسخة البوابة التجريبية تنجح دائماً.", "Elige un método de pago: en esta versión la pasarela demo siempre funciona.")
+            : T("روش پرداخت را انتخاب کن و سفارشت را نهایی کن.", "Pick a payment method and finish your order.", "اختر طريقة الدفع وأكمل طلبك.", "Elige un método de pago y finaliza tu pedido."),
         ["payGateway"] = T("درگاه پرداخت بانکی", "Bank payment gateway", "بوابة الدفع البنكية", "Pasarela de pago bancaria"),
-        ["payGatewayDesc"] = T("انتقال به درگاه نمایشی و پرداخت آنلاین (در این نسخه: همیشه موفق)", "Redirects to the demo gateway (always succeeds in this version)", "ينقلك إلى البوابة التجريبية (تنجح دائماً في هذه النسخة)", "Redirige a la pasarela demo (siempre funciona en esta versión)"),
+        ["payGatewayDesc"] = demo
+            ? T("انتقال به درگاه نمایشی و پرداخت آنلاین (در این نسخه: همیشه موفق)", "Redirects to the demo gateway (always succeeds in this version)", "ينقلك إلى البوابة التجريبية (تنجح دائماً في هذه النسخة)", "Redirige a la pasarela demo (siempre funciona en esta versión)")
+            : T("پرداخت آنلاین امن با کارت بانکی", "Secure online payment with a bank card", "دفع آمن أونلاين ببطاقة بنكية", "Pago en línea seguro con tarjeta bancaria"),
         ["payWallet"] = T("کیف پول", "Wallet", "المحفظة", "Billetera"),
         ["payWalletDesc"] = T("پرداخت از موجودی کیف پول", "Pay from your wallet balance", "الدفع من رصيد محفظتك", "Pagar con el saldo de tu billetera"),
         ["balance"] = T("موجودی", "Balance", "الرصيد", "Saldo"),
-        ["back4"] = T("→ بازگشت به پیش‌نمایش", "→ Back to review", "→ عودة للمراجعة", "→ Volver a la revisión"),
-        ["gwDemo"] = T("درگاه نمایشی", "DEMO GATEWAY", "بوابة تجريبية", "PASARELA DEMO"),
+        ["back4"] = T("بازگشت به پیش‌نمایش →", "← Back to review", "عودة للمراجعة ←", "← Volver a la revisión"),
+        ["gwTitle"] = demo ? "ZARINPAL-DEMO GATEWAY · " + T("درگاه نمایشی", "DEMO GATEWAY", "بوابة تجريبية", "PASARELA DEMO")
+                           : T("درگاه پرداخت امن", "Secure payment gateway", "بوابة دفع آمنة", "Pasarela de pago segura"),
         ["gwPayOrder"] = T("پرداخت سفارش چاپ پی‌رنگ خان", "Peyrang Khan print order payment", "دفع طلب طباعة پی‌رنگ خان", "Pago del pedido de impresión de Peyrang Khan"),
         ["gwPay"] = T("پرداخت", "Pay", "ادفع", "Pagar"),
         ["gwCancel"] = T("انصراف", "Cancel", "إلغاء", "Cancelar"),
@@ -130,6 +139,12 @@
         ["priceSubtotal"] = T("جمع کل", "Subtotal", "المجموع", "Subtotal"),
         ["priceFinal"] = T("مبلغ نهایی", "Final total", "الإجمالي النهائي", "Total final"),
         ["qty"] = T("تعداد", "Quantity", "الكمية", "Cantidad"),
+        ["qtyUnit"] = T("عدد", "pcs", "عدد", "uds"),
+        ["stockUnit"] = T("عدد موجود", "in stock", "عدد متوفر", "en stock"),
+        ["autosave"] = T("ذخیره خودکار ✓", "Autosaved ✓", "حُفظ تلقائيًا ✓", "Autoguardado ✓"),
+        ["priceRetry"] = T("محاسبه دوباره قیمت", "Retry price", "احتساب السعر مجددًا", "Reintentar precio"),
+        ["paySummaryTitle"] = T("خلاصه سفارش", "Order summary", "ملخص الطلب", "Resumen del pedido"),
+        ["shipNote"] = T("هزینه ارسال در همین جمع محاسبه شده است.", "Shipping is already included in this total.", "الشحن محسوب في هذا الإجمالي.", "El envío ya está incluido en este total."),
         ["stockAvail"] = T("موجودی انبار", "Stock", "المخزون", "Existencias"),
         ["stockOut"] = T("ناموجود", "Out of stock", "غير متوفر", "Sin existencias"),
         ["sampleText"] = T("پی‌رنگ خان", "Peyrang Khan", "پی‌رنگ خان", "Peyrang Khan"),
@@ -156,6 +171,7 @@
   <header class="shell">
     <div class="brand">👑 @T("پی‌رنگ خان", "Peyrang Khan", "پی‌رنگ خان", "Peyrang Khan") <small>@i18n["brandNote"]</small></div>
     <ol class="steps" id="w-steps"></ol>
+    <span class="autosave" id="w-autosave" hidden>@i18n["autosave"]</span>
   </header>
 
   <section class="phase" id="w-p1" hidden>
@@ -163,7 +179,7 @@
     <div class="grid1">
       <aside class="tools">
         <div>
-          <div class="lbl">@i18n["designSource"] — @i18n["sourceRule"]</div>
+          <div class="lbl" id="w-srcrule">@i18n["designSource"] — @i18n["sourceRule"]</div>
           <div class="modes">
             <button type="button" class="mode" data-mode="bank"><span class="ic">🗂️</span><b>@i18n["tabBank"]</b><small id="w-bankcount">@i18n["tabBankHint"]</small></button>
             @if (Model.UploadEnabled)
@@ -237,7 +253,14 @@
               <button type="button" data-side="BACK">@i18n["back"]</button>
             </div>
             <div class="seg" id="w-code"></div>
-            <button type="button" class="btn btn-ghost btn-sm" id="w-center">🎯 @i18n["autoCenter"]</button>
+            <div class="stage-tools">
+              <button type="button" class="btn btn-ghost btn-sm" id="w-center">🎯 @i18n["autoCenter"]</button>
+              <div class="seg zoom" id="w-zoom" aria-label="@T("بزرگ‌نمایی پیش‌نمایش", "Zoom preview", "تكبير المعاينة", "Ampliar vista")">
+                <button type="button" data-zoom="1" class="on" aria-label="1×">1×</button>
+                <button type="button" data-zoom="1.4" aria-label="1.4×">1.4×</button>
+                <button type="button" data-zoom="1.8" aria-label="1.8×">1.8×</button>
+              </div>
+            </div>
           </div>
           <div class="scene">
             <div class="garm" id="w-garm">
@@ -254,6 +277,16 @@
         <div>
           <h3 class="sec">@i18n["shirtSize"]</h3>
           <div class="seg" id="w-ssize" style="flex-wrap:wrap"></div>
+        </div>
+
+        <div>
+          <h3 class="sec">@i18n["qty"]</h3>
+          <div class="qty-row">
+            <button type="button" class="qty-btn" id="w-qty-minus" aria-label="−">−</button>
+            <output id="w-qty-out">۱</output>
+            <button type="button" class="qty-btn" id="w-qty-plus" aria-label="+">+</button>
+            <small class="muted qty-hint" id="w-qty-stock"></small>
+          </div>
         </div>
 
         <div class="sumbar">
@@ -319,7 +352,12 @@
         <h3 class="sec" style="margin-top:0">@i18n["priceBreakdown"]</h3>
         <div id="w-pricelines"></div>
         <div class="ptotal"><span>@i18n["payable"]</span><b id="w-total">—</b></div>
-        <p class="pnote">⚙️ @i18n["serverPriceNote"]</p>
+        <p class="pnote">@i18n["serverPriceNote"]</p>
+        <label class="sw terms-check">
+            <input type="checkbox" id="w-terms">
+            <span>@i18n["terms"]</span>
+        </label>
+        <p class="ai-msg" id="w-terms-msg" hidden></p>
         <div class="navrow" style="margin-top:16px">
           <button type="button" class="btn btn-ghost" id="w-back3">@i18n["back3"]</button>
           <button type="button" class="btn btn-main" id="w-confirm">@i18n["confirm"]</button>
@@ -332,6 +370,10 @@
     <div id="w-payarea">
       <h2 class="ph">@i18n["p4Title"]</h2>
       <p class="phd">@i18n["p4Desc"]</p>
+      <div class="paysum">
+        <h3 class="sec" style="margin-top:0">@i18n["paySummaryTitle"]</h3>
+        <div class="sumchips" id="w-paysumchips" aria-live="polite"></div>
+      </div>
       <div class="totalhero"><div class="n" id="w-paytotal">—</div><small>@i18n["toman"] — @i18n["payable"]</small></div>
       <div class="paygrid" style="margin-top:14px">
         <div class="paycard" id="w-paygw" role="button" tabindex="0">
@@ -382,7 +424,7 @@
 </div>
 
 <div class="overlay" id="w-gw" hidden>  <div class="gw">
-    <div class="bank ltr" style="text-align:center">ZARINPAL-DEMO GATEWAY · @i18n["gwDemo"]</div>
+    <div class="bank ltr" style="text-align:center" id="w-gwtitle">@i18n["gwTitle"]</div>
     <div class="amt" id="w-gwamt">—</div>
     <small>@i18n["gwPayOrder"]</small>
     <div class="gwcard ltr">
