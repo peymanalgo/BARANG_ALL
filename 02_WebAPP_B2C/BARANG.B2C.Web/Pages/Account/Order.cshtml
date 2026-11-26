@@ -121,7 +121,7 @@ else
                     @foreach (var m in Model.MockupEntries)
                     {
                         <div class="order-mockup-card">
-                            <img src="@($"/account/orders/{Model.Id}/design-file?fileId={m.FileId}&fileVersionId={m.FileVersionId}&kind=thumb")" alt="@m.FileName" />
+                            <img src="@($"/account/orders/{Model.Id}/?handler=DesignFile&fileVersionId={m.FileVersionId}&kind=thumb")" alt="@m.FileName" />
                             <span class="order-mockup-pos">چاپ @DisplayValue(m.Position)</span>
                         </div>
                     }
@@ -134,11 +134,11 @@ else
                     @foreach (var g in Model.DesignEntries)
                     {
                         <div class="order-design-card">
-                            <img src="@($"/account/orders/{Model.Id}/design-file?fileId={g.FileId}&fileVersionId={g.FileVersionId}&kind=thumb")" alt="@g.FileName" />
+                            <img src="@($"/account/orders/{Model.Id}/?handler=DesignFile&fileVersionId={g.FileVersionId}&kind=thumb")" alt="@g.FileName" />
                             <div class="order-design-meta">
                                 <span>@g.FileName</span>
                                 <span class="chip">@DisplayValue(g.Position)</span>
-                                <a class="btn btn-ghost btn-sm" href="@($"/account/orders/{Model.Id}/design-file?fileId={g.FileId}&fileVersionId={g.FileVersionId}")" download="@g.FileName">دانلود طرح</a>
+                                <a class="btn btn-ghost btn-sm" href="@($"/account/orders/{Model.Id}/?handler=DesignFile&fileVersionId={g.FileVersionId}")" download="@g.FileName">دانلود طرح</a>
                             </div>
                         </div>
                     }

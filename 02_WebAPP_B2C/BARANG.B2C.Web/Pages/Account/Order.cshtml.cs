@@ -62,15 +62,15 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
         if (order is not JsonElement o || o.ValueKind != JsonValueKind.Object) return NotFound();
         Found = true;
         ParseOrder(o);
-        // artworkGallery از order 360 — طرح و ماکاپ
-        var g360 = await core.GetAsync($"api/v1/orders/{id}/360");
-        if (g360 is JsonElement g && g.ValueKind == JsonValueKind.Object && g.TryGetProperty("artworkGallery", out JsonElement gal) && gal.ValueKind == JsonValueKind.Array)
+        // گالری طرح/ماکاپ از endpoint کلاینت (توکن مشتری به endpoint کارمندی /orders/360 دسترسی ندارد)
+        var g360 = await core.GetAsync($"api/v1/client/orders/{id}/designs");
+        if (g360 is JsonElement g && g.ValueKind == JsonValueKind.Array)
         {
-            var all = gal.EnumerateArray().Select(x => new GalleryRow(
+            var all = g.EnumerateArray().Select(x => new GalleryRow(
                 x.TryGetProperty("sourceType", out var st) ? st.GetString() ?? "" : "",
                 x.TryGetProperty("printPositionCode", out var pc) ? pc.GetString() : null,
                 x.TryGetProperty("fileId", out var fi) && fi.TryGetGuid(out var fg) ? fg : Guid.Empty,
-                x.TryGetProperty("fileVersionId", out var fv) && Guid.TryParse(fv.GetString(), out var fvg) ? fvg : Guid.Empty,
+                x.TryGetProperty("fileVersionId", out var fv) && fv.ValueKind == JsonValueKind.String && Guid.TryParse(fv.GetString(), out var fvg) ? fvg : Guid.Empty,
                 x.TryGetProperty("fileName", out var fn) ? fn.GetString() ?? "" : "",
                 x.TryGetProperty("mediaType", out var mt) ? mt.GetString() ?? "" : ""
             )).ToList();
@@ -216,11 +216,11 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
     public IReadOnlyList<GalleryRow> MockupEntries { get; private set; } = [];
 
     // پروکسی فایل طرح/ماکاپ — مشتری فقط به فایل‌های سفارش خودش دسترسی دارد
-    public async Task<IActionResult> OnGetDesignFileAsync(Guid id, Guid fileId, Guid fileVersionId, string? kind)
+    public async Task<IActionResult> OnGetDesignFileAsync(Guid id, Guid fileVersionId, string? kind)
     {
         string path = kind == "thumb"
-            ? $"api/v1/files/{fileId}/versions/{fileVersionId}/thumbnail"
-            : $"api/v1/files/{fileId}/versions/{fileVersionId}/download";
+            ? $"api/v1/client/orders/{id}/designs/{fileVersionId}?kind=thumb"
+            : $"api/v1/client/orders/{id}/designs/{fileVersionId}";
         var result = await core.GetFileAsync(path);
         if (result is null || result.Value.Content is null || result.Value.Content.Length == 0) return NotFound();
         return File(result.Value.Content, result.Value.ContentType, result.Value.FileName);

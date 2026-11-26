@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using BARANG.Core.Api.Errors;
+using BARANG.Core.Application.Abstractions.Companies;
 using BARANG.Core.Application.Abstractions.Correlation;
 using BARANG.Core.Application.BusinessAnalysis;
 using BARANG.Core.Application.Catalog;
@@ -234,7 +235,96 @@ public static class ClientApiEndpoints
             }, ct);
             return result.IsSuccess ? Results.NoContent() : new ClientProblemResult(result.Error);
         }).RequireAuthorization(SecurityPermissions.ClientCustomerWrite);
-                root.MapPost("/files/upload",UploadAsync).RequireAuthorization(SecurityPermissions.ClientFileUpload).RequireRateLimiting("upload").DisableAntiforgery();root.MapGet("/branches",async(IOrganizationAdministration service,CancellationToken ct)=>{Result<IReadOnlyList<BranchView>>branches=await service.ListBranchesAsync(ct);return branches.IsSuccess?Results.Json(branches.Value.Where(x=>x.IsActive).ToArray()):new ClientProblemResult(branches.Error);}).RequireAuthorization(SecurityPermissions.ClientOrderRead);root.MapGet("/lookups/{typeCode}/options",async(string typeCode,string?culture,ILookupAdministration service,CancellationToken ct)=>ClientLookupTypes.Contains(typeCode)?Map(await service.GetOptionsAsync(typeCode,string.IsNullOrWhiteSpace(culture)?"fa":culture,true,ct)):Problem(Error.NotFound("lookup.type_not_found"),null)).RequireAuthorization(SecurityPermissions.ClientCatalogRead);return endpoints;
+                root.MapPost("/files/upload",UploadAsync).RequireAuthorization(SecurityPermissions.ClientFileUpload).RequireRateLimiting("upload").DisableAntiforgery();root.MapGet("/branches",async(IOrganizationAdministration service,CancellationToken ct)=>{Result<IReadOnlyList<BranchView>>branches=await service.ListBranchesAsync(ct);return branches.IsSuccess?Results.Json(branches.Value.Where(x=>x.IsActive).ToArray()):new ClientProblemResult(branches.Error);}).RequireAuthorization(SecurityPermissions.ClientOrderRead);root.MapGet("/lookups/{typeCode}/options",async(string typeCode,string?culture,ILookupAdministration service,CancellationToken ct)=>ClientLookupTypes.Contains(typeCode)?Map(await service.GetOptionsAsync(typeCode,string.IsNullOrWhiteSpace(culture)?"fa":culture,true,ct)):Problem(Error.NotFound("lookup.type_not_found"),null)).RequireAuthorization(SecurityPermissions.ClientCatalogRead);        // گالری طرح/ماکاپ سفارش برای پرتال مشتری (B2C) — فقط فایل‌های متعلق به همین سفارش
+        orders.MapGet("/{id:guid}/designs", ClientOrderDesignsAsync).RequireAuthorization(SecurityPermissions.ClientOrderRead);
+        orders.MapGet("/{id:guid}/designs/{fileVersionId:guid}", ClientOrderDesignFileAsync).RequireAuthorization(SecurityPermissions.ClientOrderRead);
+        return endpoints;
+    }
+    private static async Task<IResult> ClientOrderDesignsAsync(Guid id, bool? debug, ITransactionExecutor tx, CoreDbContext db, CancellationToken ct)
+    {
+        // RLS: GUCهای company/user فقط داخل تراکنش ست می‌شوند — کوئری‌ها باید داخل ExecuteAsync باشند
+        Result<List<object>> result = await tx.ExecuteAsync(async t => Result.Success(await OrderDesignGalleryAsync(db, id, t)), ct);
+        if (!result.IsSuccess) return Results.Problem(statusCode: 500);
+        return debug == true ? Results.Ok(new { total = result.Value.Count, rows = result.Value }) : Results.Ok(result.Value);
+    }
+
+    // همان منطق artworkGallery نمای ۳۶۰: طرح عملیات چاپ (آپلودی یا بانکی) + ماکاپ از یادداشت قلم
+    private static async Task<List<object>> OrderDesignGalleryAsync(CoreDbContext db, Guid orderId, CancellationToken ct)
+    {
+        var printOps = await db.OrderPrintOperations.AsNoTracking().Where(x => x.OrderId == orderId && x.IsActive)
+            .OrderBy(x => x.OrderItemId).ThenBy(x => x.Sequence)
+            .Select(x => new { x.Id, x.OrderItemId, x.PrintPositionCode, x.ArtworkVersionId, x.FileVersionId }).ToListAsync(ct);
+        List<Guid> artworkVersionIds = printOps.Where(x => x.ArtworkVersionId is not null).Select(x => x.ArtworkVersionId!.Value).Distinct().ToList();
+        Dictionary<Guid, (Guid ArtworkId, Guid FileVersionId)> artworkFiles = await db.ArtworkVersions.AsNoTracking()
+            .Where(x => artworkVersionIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, x => (x.ArtworkId, x.FileVersionId), ct);
+        List<Guid> artworkIds = artworkFiles.Values.Select(x => x.ArtworkId).Distinct().ToList();
+        Dictionary<Guid, string> artworkTitles = await db.Artworks.AsNoTracking()
+            .Where(x => artworkIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, x => x.Title, ct);
+        var mockupCandidates = new List<(Guid OrderItemId, Guid FileVersionId, string Position)>();
+        var itemsWithNotes = await db.OrderItems.AsNoTracking().Where(x => x.OrderId == orderId)
+            .Select(x => new { x.Id, x.Notes }).ToListAsync(ct);
+        foreach (var it in itemsWithNotes)
+        {
+            if (string.IsNullOrWhiteSpace(it.Notes)) continue;
+            Guid? mockFv = null; string mockPos = "FRONT";
+            foreach (var part in it.Notes.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (part.StartsWith("mockup-fv:", StringComparison.OrdinalIgnoreCase) && Guid.TryParse(part.AsSpan(10), out var g)) mockFv = g;
+                if (part.StartsWith("mockup-pos:", StringComparison.OrdinalIgnoreCase)) mockPos = part.AsSpan(11).Trim().ToString();
+            }
+            if (mockFv is { } mfv && mfv != Guid.Empty) mockupCandidates.Add((it.Id, mfv, mockPos));
+        }
+        List<Guid> fileVersionIds = printOps.Select(x => x.FileVersionId ?? artworkFiles.GetValueOrDefault(x.ArtworkVersionId ?? Guid.Empty).FileVersionId)
+            .Concat(mockupCandidates.Select(m => m.FileVersionId))
+            .Where(x => x != Guid.Empty).Distinct().ToList();
+        Dictionary<Guid, (Guid FileId, string FileName, string MediaType)> fileVersions = await db.FileVersions.AsNoTracking()
+            .Where(x => fileVersionIds.Contains(x.Id) && !x.IsArchived)
+            .ToDictionaryAsync(x => x.Id, x => (x.FileId, x.OriginalFileName, x.MediaType), ct);
+        List<object> rows = [];
+        foreach (var op in printOps)
+        {
+            Guid fv = op.FileVersionId ?? (op.ArtworkVersionId is Guid av && artworkFiles.TryGetValue(av, out var af) ? af.FileVersionId : Guid.Empty);
+            if (fv == Guid.Empty || !fileVersions.TryGetValue(fv, out var f)) continue;
+            string? title = op.ArtworkVersionId is Guid av2 && artworkFiles.TryGetValue(av2, out var src) && artworkTitles.TryGetValue(src.ArtworkId, out var t) ? t : null;
+            rows.Add(new { printOperationId = op.Id, orderItemId = op.OrderItemId, printPositionCode = op.PrintPositionCode, sourceType = op.FileVersionId is not null ? "UploadedFile" : "DesignBank", artworkTitle = title, fileId = f.FileId, fileVersionId = fv, fileName = f.FileName, mediaType = f.MediaType });
+        }
+        foreach (var m in mockupCandidates)
+        {
+            if (!fileVersions.TryGetValue(m.FileVersionId, out var mf)) continue;
+            rows.Add(new { printOperationId = Guid.Empty, orderItemId = m.OrderItemId, printPositionCode = m.Position, sourceType = "Mockup", artworkTitle = (string?)null, fileId = mf.FileId, fileVersionId = m.FileVersionId, fileName = mf.FileName, mediaType = mf.MediaType });
+        }
+        return rows;
+    }
+
+    // استریم فایل طرح/ماکاپ برای مشتری — fileVersion باید به همین سفارش تعلق داشته باشد
+    private static async Task<IResult> ClientOrderDesignFileAsync(Guid id, Guid fileVersionId, string? kind, ITransactionExecutor tx, CoreDbContext db, IArtworkFileAdministration files, HttpContext http, CancellationToken ct)
+    {
+        Result<Guid> resolved = await tx.ExecuteAsync<Guid>(async t =>
+        {
+            bool allowed = await db.OrderPrintOperations.AsNoTracking().AnyAsync(p => p.OrderId == id && p.FileVersionId == fileVersionId, t)
+                || await (from p in db.OrderPrintOperations.AsNoTracking()
+                          join av in db.ArtworkVersions.AsNoTracking() on p.ArtworkVersionId equals av.Id
+                          where p.OrderId == id && av.FileVersionId == fileVersionId
+                          select p).AnyAsync(t)
+                || await db.OrderItems.AsNoTracking().AnyAsync(i => i.OrderId == id && i.Notes != null && i.Notes.Contains("mockup-fv:" + fileVersionId), t);
+            if (!allowed) return Result.Success(Guid.Empty);
+            var fv = await db.FileVersions.AsNoTracking().Where(x => x.Id == fileVersionId && !x.IsArchived)
+                .Select(x => new { x.FileId, x.OriginalFileName }).SingleOrDefaultAsync(t);
+            return Result.Success(fv is null ? Guid.Empty : fv.FileId);
+        }, ct);
+        Guid fileGuid = resolved.IsSuccess ? resolved.Value : Guid.Empty;
+        if (fileGuid == Guid.Empty) return Results.NotFound();
+        Result<DownloadFile> result = string.Equals(kind, "thumb", StringComparison.OrdinalIgnoreCase)
+            ? await files.GetFileVersionThumbnailAsync(fileGuid, fileVersionId, ct)
+            : await files.DownloadAsync(fileGuid, fileVersionId, ct);
+        if (result.IsFailure) return Results.NotFound();
+        DownloadFile file = result.Value;
+        await using MemoryStream ms = new();
+        await file.Content.CopyToAsync(ms, ct);
+        http.Response.Headers.CacheControl = "private, max-age=3600";
+        return Results.File(ms.ToArray(), file.MediaType, fileDownloadName: file.FileName);
     }
     private static async Task<Result<IReadOnlyList<PublicProduct>> >PublicProducts(ICatalogAdministration service,string?search,int page,int pageSize,CancellationToken ct){var result=await service.SearchProductsAsync(new(search,true,Math.Max(1,page),Math.Clamp(pageSize,1,100)),ct);return result.IsFailure?Result.Failure<IReadOnlyList<PublicProduct>>(result.Error):Result.Success<IReadOnlyList<PublicProduct>>(result.Value.Items.Select(x=>new PublicProduct(x.Id,x.ProductCode,x.Name,x.ProductTypeCode,x.UnitOfMeasureCode,x.IsActive)).ToArray());}
     private static async Task<Result<IReadOnlyList<PublicVariant>>>PublicVariants(ICatalogAdministration service,Guid id,CancellationToken ct){var result=await service.ListVariantsAsync(id,true,ct);return result.IsFailure?Result.Failure<IReadOnlyList<PublicVariant>>(result.Error):Result.Success<IReadOnlyList<PublicVariant>>(result.Value.Select(x=>new PublicVariant(x.Id,x.ProductId,x.Sku,x.DisplayName,x.SizeCode,x.ColorCode,x.IsUsable)).ToArray());}
