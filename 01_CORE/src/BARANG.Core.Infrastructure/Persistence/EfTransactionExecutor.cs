@@ -16,6 +16,14 @@ public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyConte
     {
         ArgumentNullException.ThrowIfNull(operation);
 
+        // فراخوانی تودرتو (مثلاً سرویسی داخل سرویس دیگر): داخل تراکنش جاری اجرا و مدیریتش با مالک بیرونی
+        if (dbContext.Database.CurrentTransaction is not null)
+        {
+            await SetSecurityContextAsync(cancellationToken);
+            Result result = await operation(cancellationToken);
+            return result;
+        }
+
         await using IDbContextTransaction transaction =
             await dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
@@ -54,6 +62,14 @@ public sealed class EfTransactionExecutor(CoreDbContext dbContext, ICompanyConte
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(operation);
+
+        // فراخوانی تودرتو: داخل تراکنش جاری اجرا و مدیریتش با مالک بیرونی
+        if (dbContext.Database.CurrentTransaction is not null)
+        {
+            await SetSecurityContextAsync(cancellationToken);
+            Result<T> result = await operation(cancellationToken);
+            return result;
+        }
 
         await using IDbContextTransaction transaction =
             await dbContext.Database.BeginTransactionAsync(cancellationToken);
