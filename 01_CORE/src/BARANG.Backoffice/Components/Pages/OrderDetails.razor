@@ -35,7 +35,7 @@ else
             <div class="order360-overview">
                 <section class="order360-card"><h2>@S["Overview"]</h2><dl class="order360-fields"><Field K="@S["Customer"]" V="@CustomerName" /><Field K="@S["Status"]" V="@StatusText(Status)" /><Field K="@ItemCountLabel()" V="@Items.Length.ToString()" /><Field K="@S["Source"]" V="@Text(Summary, "source", S["NoData"])" /><Field K="@S["OrderDate"]" V="@Date(Summary, "orderDate")" /><Field K="@S["ExpectedDate"]" V="@Date(Summary, "requestedDeliveryDate")" /></dl></section>
                 @* مرکز دایره: پیش‌نمایش واقعی محصول+طرحِ قلم فعال؛ ناوبری اقلام چندتایی با فلش‌های قبلی/بعدی *@
-                <section class="order360-card order360-orbit"><div class="order360-orbit-body"><div class="order360-orbit-ring"><button type="button" class="order360-orbit-node @(Active == "customer" ? "active" : null)" @onclick="SelectCustomer">@S["Customer"]</button><button type="button" class="order360-orbit-node @(Active == "prints" ? "active" : null)" @onclick="SelectPrints">@S["PrintOperations"]</button><button type="button" class="order360-orbit-node @(Active == "pricing" ? "active" : null)" @onclick="SelectPricing">@S["PriceSnapshot"]</button><button type="button" class="order360-orbit-node @(Active == "delivery" ? "active" : null)" @onclick="SelectDelivery">@S["Delivery"]</button><button type="button" class="order360-orbit-node @(Active == "services" ? "active" : null)" @onclick="SelectServices">@S["SelectedServices"]</button><button type="button" class="order360-orbit-node @(Active == "history" ? "active" : null)" @onclick="SelectHistory">@S["Timeline"]</button><div class="order360-orbit-center">@if (ActiveMockupUrl.Length > 0) { <img class="order360-center-mockup" src="@ActiveMockupUrl" alt="@ActiveItemTitle" /> } else { <svg class="order360-shirt" viewBox="0 0 160 180" role="img" aria-label="@L["Product"]"><path d="M42 22 16 39 4 75l25 12 10-18v87c0 9 7 16 16 16h60c9 0 16-7 16-16V69l10 18 25-12-12-36-26-17-20 13H62z"/><path d="M61 22c2 18 36 18 38 0" fill="none"/></svg> }<button type="button" class="order360-artwork-marker @(HasArtwork ? null : "is-empty")" disabled="@(!HasArtwork)" aria-disabled="@(!HasArtwork)" aria-label="@L["Artwork"]" title="@L["Artwork"]" @onclick="OpenArtwork">@L["Artwork"]</button></div></div>@if (Items.Length > 0) { <div class="order360-item-caption"><strong>@ActiveItemTitle</strong>@if (Items.Length > 1) { <span class="order360-item-position" dir="ltr">@(ActiveItemIndex + 1) / @Items.Length</span> }</div> }@if (Items.Length > 1) { <div class="order360-item-nav"><button type="button" class="order360-item-arrow" title="@PrevLabel" aria-label="@PrevLabel" disabled="@(!CanPrevItem)" @onclick="PrevItem"><BarangIcon Name="@BackArrowIcon" /></button><button type="button" class="order360-item-arrow next" title="@NextLabel" aria-label="@NextLabel" disabled="@(!CanNextItem)" @onclick="NextItem"><BarangIcon Name="@ForwardArrowIcon" /></button></div> }</div></section>
+                <section class="order360-card order360-orbit"><div class="order360-orbit-body"><div class="order360-orbit-ring"><button type="button" class="order360-orbit-node @(Active == "customer" ? "active" : null)" @onclick="SelectCustomer">@S["Customer"]</button><button type="button" class="order360-orbit-node @(Active == "prints" ? "active" : null)" @onclick="SelectPrints">@S["PrintOperations"]</button><button type="button" class="order360-orbit-node @(Active == "pricing" ? "active" : null)" @onclick="SelectPricing">@S["PriceSnapshot"]</button><button type="button" class="order360-orbit-node @(Active == "delivery" ? "active" : null)" @onclick="SelectDelivery">@S["Delivery"]</button><button type="button" class="order360-orbit-node @(Active == "services" ? "active" : null)" @onclick="SelectServices">@S["SelectedServices"]</button><button type="button" class="order360-orbit-node @(Active == "history" ? "active" : null)" @onclick="SelectHistory">@S["Timeline"]</button><div class="order360-orbit-center">@if (ActiveMockupUrl.Length > 0) { <img class="order360-center-mockup" src="@ActiveMockupUrl" alt="@ActiveItemTitle" /> } else if (ActiveDesignUrl.Length > 0) { <div class="order360-center-composite"><img class="order360-tee-photo" src="@ActiveTeeUrl" alt="" /><img class="order360-tee-design" src="@ActiveDesignUrl" alt="@ActiveItemTitle" /></div> } else { <svg class="order360-shirt" viewBox="0 0 160 180" role="img" aria-label="@L["Product"]"><path d="M42 22 16 39 4 75l25 12 10-18v87c0 9 7 16 16 16h60c9 0 16-7 16-16V69l10 18 25-12-12-36-26-17-20 13H62z"/><path d="M61 22c2 18 36 18 38 0" fill="none"/></svg> }<button type="button" class="order360-artwork-marker @(HasArtwork ? null : "is-empty")" disabled="@(!HasArtwork)" aria-disabled="@(!HasArtwork)" aria-label="@L["Artwork"]" title="@L["Artwork"]" @onclick="OpenArtwork">@L["Artwork"]</button></div></div>@if (Items.Length > 0) { <div class="order360-item-caption"><strong>@ActiveItemTitle</strong>@if (Items.Length > 1) { <span class="order360-item-position" dir="ltr">@(ActiveItemIndex + 1) / @Items.Length</span> }</div> }@if (Items.Length > 1) { <div class="order360-item-nav"><button type="button" class="order360-item-arrow" title="@PrevLabel" aria-label="@PrevLabel" disabled="@(!CanPrevItem)" @onclick="PrevItem"><BarangIcon Name="@BackArrowIcon" /></button><button type="button" class="order360-item-arrow next" title="@NextLabel" aria-label="@NextLabel" disabled="@(!CanNextItem)" @onclick="NextItem"><BarangIcon Name="@ForwardArrowIcon" /></button></div> }</div></section>
                 <aside class="order360-card order360-detail"><h2>@SectionTitle(Active)<span class="order360-pill">@S["ReadOnly"]</span></h2><div class="order360-detail-scroll">@Detail()</div></aside>
             </div>
             <div class="order360-progress"><span>@S["Progress"] · @Progress٪</span><div class="order360-track"><span style="width:@($"{Progress}%")"></span></div></div>
@@ -171,11 +171,33 @@ else
             if (Items.Length == 0) return null;
             string itemId = Text(ActiveItem, "id");
             if (Gallery.FirstOrDefault(g => Text(g, "sourceType") == "Mockup" && Text(g, "orderItemId") == itemId) is { ValueKind: JsonValueKind.Object } mockup) return mockup;
-            if (Gallery.FirstOrDefault(g => Text(g, "sourceType") != "Mockup" && Text(g, "orderItemId") == itemId && Text(g, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase)) is { ValueKind: JsonValueKind.Object } design) return design;
             return null;
         }
     }
     private string ActiveMockupUrl => ActiveMockup is { } m ? MockupUrl(m) : "";
+
+    // وقتی ماکاپ ذخیره‌شده (کامپوزیت ویزارد) وجود ندارد: ترکیب زندهٔ عکس تی‌شرت هم‌رنگ محصول + طرح روی سینه
+    private string ActiveDesignUrl
+    {
+        get
+        {
+            if (Items.Length == 0) return "";
+            string itemId = Text(ActiveItem, "id");
+            JsonElement match = Gallery.FirstOrDefault(g => Text(g, "sourceType") != "Mockup" && Text(g, "orderItemId") == itemId && Text(g, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase) && GalleryPreviews.ContainsKey(Text(g, "fileVersionId")));
+            if (match.ValueKind != JsonValueKind.Object)
+                match = Gallery.FirstOrDefault(g => Text(g, "sourceType") != "Mockup" && Text(g, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase) && GalleryPreviews.ContainsKey(Text(g, "fileVersionId")));
+            return match.ValueKind == JsonValueKind.Object ? FileUrl(match) : "";
+        }
+    }
+    private string ActiveTeeUrl
+    {
+        get
+        {
+            string color = Text(ActiveItem, "snapshotColorCode").Trim().ToUpperInvariant();
+            string key = color switch { "WHITE" or "CREAM" => "white", "RED" or "PINK" => "red", "BLUE" or "PURPLE" => "blue", _ => "black" };
+            return "/images/tee/" + key + "-front.jpg";
+        }
+    }
     private void GoBack() => Navigation.NavigateTo(string.IsNullOrWhiteSpace(ReturnUrl) ? "/workspace/orders" : ReturnUrl);
 
     private bool DownloadBusy; private string? DownloadError; private readonly Dictionary<string, string> GalleryPreviews = new();
