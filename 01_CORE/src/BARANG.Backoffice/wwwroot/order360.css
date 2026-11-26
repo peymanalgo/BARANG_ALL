@@ -40,3 +40,7 @@
 .order360-gallery-composite .order360-tee-photo{width:100%;height:100%;object-fit:contain}
 .order360-gallery-composite .order360-tee-design{position:absolute;top:30%;left:34%;width:32%;max-height:38%;object-fit:contain}
 .order360-gallery-note{grid-column:1/-1;padding:8px 12px;border-radius:10px;background:var(--order360-soft,#e4f6ec);color:var(--order360-accent,#16865a);font-size:.8rem;font-weight:600}
+/* تی‌شرت مرکز دایره قابل کلیک است — باز شدن پاپ‌آپ فایل‌ها و طرح‌ها */
+.order360-center-clickable{cursor:pointer;transition:transform .15s ease}
+.order360-center-clickable:hover{transform:scale(1.04)}
+.order360-center-clickable:focus-visible{outline:3px solid #1c6dff;outline-offset:3px;border-radius:.7rem}
