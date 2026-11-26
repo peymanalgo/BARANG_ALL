@@ -227,4 +227,14 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
         if (result is null || result.Value.Content is null || result.Value.Content.Length == 0) return NotFound();
         return File(result.Value.Content, result.Value.ContentType, result.Value.FileName);
     }
+
+    // پیش‌نمایش «طرح روی تیشرت» — سرور ترکیب عکس تی‌شرت هم‌رنگ + طرح را می‌سازد
+    // و اگر کامپوزیت ذخیره‌شدهٔ ویزارد معتبر باشد همان را برمی‌گرداند
+    public async Task<IActionResult> OnGetCompositeAsync(Guid id, Guid fileVersionId, string? kind)
+    {
+        string path = $"api/v1/client/orders/{id}/designs/{fileVersionId}/composite" + (string.IsNullOrWhiteSpace(kind) ? "" : $"?kind={kind}");
+        var result = await core.GetFileAsync(path);
+        if (result is null || result.Value.Content is null || result.Value.Content.Length == 0) return NotFound();
+        return File(result.Value.Content, result.Value.ContentType, result.Value.FileName);
+    }
 }

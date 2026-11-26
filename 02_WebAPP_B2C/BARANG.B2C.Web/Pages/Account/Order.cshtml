@@ -133,14 +133,28 @@ else
     @if (Model.MockupEntries.Count > 0 || Model.DesignEntries.Count > 0)
     {
         <div class="order-panels">
-            @if (Model.MockupEntries.Count > 0)
+            @* پیش‌نمایش روی تیشرت از کامپوزیت هر قلم: سرور ترکیب عکس تی‌شرت هم‌رنگ + طرح را برمی‌گرداند
+               (اگر کامپوزیت ذخیره‌شدهٔ ویزارد معتبر باشد همان ارسال می‌شود) *@
+            @if (Model.DesignEntries.Count > 0)
+            {
+                <div class="order-panel order-panel-mockup">
+                    <h3>@T("پیش‌نمایش روی تیشرت", "Preview on t-shirt", "معاينة على التيشيرت", "Vista previa en camiseta")</h3>
+                    @foreach (var g in Model.DesignEntries)
+                    {
+                        <div class="order-mockup-card">
+                            <img src="@($"/account/orders/{Model.Id}/?handler=Composite&fileVersionId={g.FileVersionId}")" alt="@T("پیش‌نمایش طرح روی تیشرت", "Design preview on t-shirt", "معاينة التصميم على التيشيرت", "Vista previa del diseño en la camiseta")" />
+                            <span class="order-mockup-pos">@T("چاپ", "Print", "طباعة", "Impresión") @DisplayValue(g.Position)</span>
+                        </div>
+                    }
+                </div>
+            }
+            else if (Model.MockupEntries.Count > 0)
             {
                 <div class="order-panel order-panel-mockup">
                     <h3>@T("پیش‌نمایش روی تیشرت", "Preview on t-shirt", "معاينة على التيشيرت", "Vista previa en camiseta")</h3>
                     @foreach (var m in Model.MockupEntries)
                     {
                         <div class="order-mockup-card">
-                            @* تصویر کامل همان پیش‌نمایش ویزارد (thumb برای ماکاپ رندر نمی‌شود) *@
                             <img src="@($"/account/orders/{Model.Id}/?handler=DesignFile&fileVersionId={m.FileVersionId}")" alt="@T("پیش‌نمایش طرح روی تیشرت", "Design preview on t-shirt", "معاينة التصميم على التيشيرت", "Vista previa del diseño en la camiseta")" />
                             <span class="order-mockup-pos">@T("چاپ", "Print", "طباعة", "Impresión") @DisplayValue(m.Position)</span>
                         </div>

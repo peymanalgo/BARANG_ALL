@@ -81,7 +81,8 @@ else
     </div>
 }
 
-@if (GalleryOpen) { <div class="order360-gallery" role="dialog" aria-modal="true" aria-labelledby="artwork-gallery-title"><section class="order360-gallery-card"><header class="order360-gallery-head"><h2 id="artwork-gallery-title">@S["Files"]</h2><button type="button" class="order360-close" aria-label="@S["Close"]" @onclick="CloseArtwork">×</button></header>@if (Gallery.Length == 0) { <div class="order360-empty">@S["NoData"]</div> } else { var a = Gallery[GalleryIndex]; <div class="order360-gallery-preview">@if (Text(a, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(Text(a, "fileId")) && !string.IsNullOrWhiteSpace(Text(a, "fileVersionId"))) { <img src="@FileUrl(a)" alt="@Text(a, "artworkTitle", S["Files"])" /> } else { <span>@L["FileVersion"] · @Text(a, "fileName", S["NoData"])</span> }</div><dl class="order360-gallery-meta"><Field K="@S["Item"]" V="@ItemName(Text(a, "orderItemId"))" /><Field K="@L["PrintLocation"]" V="@Text(a, "printPositionCode", S["NoData"])" /><Field K="@L["Artwork"]" V="@Text(a, "artworkTitle", S["NoData"])" /><Field K="@L["FileVersion"]" V="@Text(a, "fileVersion", S["NoData"])" /></dl><div class="order360-gallery-actions"><button type="button" class="secondary-action" @onclick="PreviousArtwork" disabled="@(GalleryIndex == 0)">@L["Previous"]</button><span>@(GalleryIndex + 1) / @Gallery.Length</span><button type="button" class="secondary-action" @onclick="NextArtwork" disabled="@(GalleryIndex >= Gallery.Length - 1)">@L["Next"]</button><button type="button" class="secondary-action" @onclick="DownloadArtworkTiff" disabled="@(DownloadBusy || !Text(a, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase))">دانلود TIFF</button>
+@if (GalleryOpen) { <div class="order360-gallery" role="dialog" aria-modal="true" aria-labelledby="artwork-gallery-title"><section class="order360-gallery-card"><header class="order360-gallery-head"><h2 id="artwork-gallery-title">@S["Files"]</h2><button type="button" class="order360-close" aria-label="@S["Close"]" @onclick="CloseArtwork">×</button></header>@if (Gallery.Length == 0) { <div class="order360-empty">@S["NoData"]</div> } else { var a = Gallery[GalleryIndex]; bool aIsMockup = Text(a, "sourceType") == "Mockup"; bool aComposite = !aIsMockup && !ItemHasStoredMockup(Text(a, "orderItemId")); <div class="order360-gallery-preview">@if (aComposite) { <div class="order360-center-composite order360-gallery-composite"><img class="order360-tee-photo" src="@TeePhotoUrl(Text(a, "orderItemId"))" alt="" /><img class="order360-tee-design" src="@FileUrl(a)" alt="@Text(a, "artworkTitle", S["Files"])" /></div> } else if (Text(a, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(Text(a, "fileId")) && !string.IsNullOrWhiteSpace(Text(a, "fileVersionId"))) { <img src="@FileUrl(a)" alt="@Text(a, "artworkTitle", S["Files"])" /> } else { <span>@L["FileVersion"] · @Text(a, "fileName", S["NoData"])</span> }</div><dl class="order360-gallery-meta">@if (aComposite) { <div class="order360-gallery-note">@CompositeNote()</div> } <Field K="@S["Item"]" V="@ItemName(Text(a, "orderItemId"))" /><Field K="@L["PrintLocation"]" V="@Text(a, "printPositionCode", S["NoData"])" /><Field K="@L["Artwork"]" V="@Text(a, "artworkTitle", S["NoData"])" /><Field K="@L["FileVersion"]" V="@Text(a, "fileVersion", S["NoData"])" /></dl><div class="order360-gallery-actions"><button type="button" class="secondary-action" @onclick="PreviousArtwork" disabled="@(GalleryIndex == 0)">@L["Previous"]</button><span>@(GalleryIndex + 1) / @Gallery.Length</span><button type="button" class="secondary-action" @onclick="NextArtwork" disabled="@(GalleryIndex >= Gallery.Length - 1)">@L["Next"]</button><button type="button" class="secondary-action" @onclick="DownloadArtworkTiff" disabled="@(DownloadBusy || !Text(a, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase))">دانلود TIFF</button>
+                                        @if (aComposite) { <button type="button" class="secondary-action" @onclick='@(() => DownloadMockupComposite(a))' disabled="@DownloadBusy">دانلود پیش‌نمایش روی تیشرت</button> }
                                         <button type="button" class="primary-action" @onclick="DownloadArtwork" disabled="@DownloadBusy">@L["Download"]</button></div> }</section></div> }
 
 @code {
@@ -134,7 +135,39 @@ else
         finally { if (!_disposed) Loading = false; }
     }
     public async ValueTask DisposeAsync() { _disposed = true; _loadCts?.Cancel(); _loadCts?.Dispose(); await Task.CompletedTask; }
-    private void SelectCustomer() => Active = "customer"; private void SelectPrints() => Active = "prints"; private void SelectPricing() => Active = "pricing"; private void SelectDelivery() => Active = "delivery"; private void SelectServices() => Active = "services"; private void SelectHistory() => Active = "history"; private void OpenArtwork() { if (HasArtwork) { GalleryIndex = 0; GalleryOpen = true; } } private void CloseArtwork() => GalleryOpen = false; private void OpenSpecification() => SpecificationOpen = true; private void CloseSpecification() => SpecificationOpen = false; private void PreviousArtwork() { if (GalleryIndex > 0) GalleryIndex--; } private void NextArtwork() { if (GalleryIndex + 1 < Gallery.Length) GalleryIndex++; }
+    private void SelectCustomer() => Active = "customer"; private void SelectPrints() => Active = "prints"; private void SelectPricing() => Active = "pricing"; private void SelectDelivery() => Active = "delivery"; private void SelectServices() => Active = "services"; private void SelectHistory() => Active = "history"; private void OpenArtwork() { if (HasArtwork) { GalleryIndex = FirstMockupIndex(); GalleryOpen = true; } } private void CloseArtwork() => GalleryOpen = false; private void OpenSpecification() => SpecificationOpen = true; private void CloseSpecification() => SpecificationOpen = false; private void PreviousArtwork() { if (GalleryIndex > 0) GalleryIndex--; } private void NextArtwork() { if (GalleryIndex + 1 < Gallery.Length) GalleryIndex++; }
+
+    // گالری: شروع از ماکاپ (تی‌شرت+طرح) — همان چیزی که چاپ می‌شود
+    private int FirstMockupIndex()
+    {
+        for (int i = 0; i < Gallery.Length; i++)
+            if (Text(Gallery[i], "sourceType") == "Mockup") return i;
+        return 0;
+    }
+    private bool ItemHasStoredMockup(string orderItemId) => Gallery.Any(g => Text(g, "sourceType") == "Mockup" && Text(g, "orderItemId") == orderItemId);
+    private string TeePhotoUrl(string orderItemId)
+    {
+        string color = "";
+        foreach (JsonElement item in Items)
+            if (Text(item, "id") == orderItemId) { color = Text(item, "snapshotColorCode"); break; }
+        string key = color.Trim().ToUpperInvariant() switch { "WHITE" or "CREAM" => "white", "RED" or "PINK" => "red", "BLUE" or "PURPLE" => "blue", _ => "black" };
+        return "/images/tee/" + key + "-front.jpg";
+    }
+    // دانلود ترکیب تی‌شرت+طرح از سرور (برای طرح‌هایی که ماکاپ ذخیره‌شده ندارند)
+    private async Task DownloadMockupComposite(JsonElement a)
+    {
+        var s = await Session();
+        if (s is null || DownloadBusy) return;
+        DownloadBusy = true; DownloadError = null;
+        try
+        {
+            var result = await Core.DownloadAsync($"/api/v1/orders/{OrderId}/360/design-composite/{Text(a, "fileVersionId")}?kind=tiff", s.Value.Token, s.Value.Company, default);
+            if (result.IsSuccess) await JS.InvokeVoidAsync("barangDownloadFile", result.Value.FileName, result.Value.ContentType, Convert.ToBase64String(result.Value.Content));
+            else DownloadError = X["LoadFailed"].Value;
+        }
+        catch (InvalidOperationException) { DownloadError = X["LoadFailed"].Value; }
+        finally { DownloadBusy = false; }
+    }
 
     // ناوبری اقلام سفارش در مرکز دایره — سفارش‌های چندقلمی با فلش‌های قبلی/بعدی
     private int ActiveItemIndex;
@@ -149,6 +182,7 @@ else
     private string PrevLabel => Rtl ? "قبلی" : CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "es" => "Anterior", "ar" => "السابق", _ => "Previous" };
     private string NextLabel => Rtl ? "بعدی" : CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "es" => "Siguiente", "ar" => "التالي", _ => "Next" };
     private string BackLabel => Rtl ? "بازگشت" : CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "es" => "Volver", "ar" => "رجوع", _ => "Back" };
+    private string CompositeNote() => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => "Design preview as printed on the t-shirt; the print file is the design itself.", "es" => "Vista previa del diseño impreso en la camiseta; el archivo de impresión es el diseño.", "ar" => "معاينة التصميم كما يُطبع على التيشيرت؛ ملف الطباعة هو التصميم نفسه.", _ => "پیش‌نمایش طرح همان‌طور که روی تیشرت چاپ می‌شود؛ فایل چاپ، خودِ طرح است." };
     private string ItemCountLabel() => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch { "en" => "Order item count", "es" => "Artículos del pedido", "ar" => "عدد أصناف الطلب", _ => "تعداد اقلام سفارش" };
     private string ActiveItemTitle
     {

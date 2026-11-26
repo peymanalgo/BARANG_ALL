@@ -991,8 +991,12 @@
         const side = W.position;
         const k = teeKey();
         const loadImg = (src) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+        const tryLoad = async (src) => { try { return await loadImg(src); } catch { return null; } };
         let shirtImg = null;
-        if (k) { try { shirtImg = await loadImg(TEE_IMAGES[k][side]); } catch { shirtImg = null; } }
+        // همان تصویری که در پیش‌نمایش صحنه دیده می‌شود (عکس واریانت محصول، بعد تی‌شرت هم‌رنگ) — کامپوزیت باید با پیش‌نمایش یکسان باشد
+        const curVariant = (CONFIG && (CONFIG.products || []).flatMap(p => p.variants || []).find(v => v.id === (W.variant && W.variant.id)));
+        if (side === "FRONT" && curVariant && curVariant.imageUrl) shirtImg = await tryLoad(curVariant.imageUrl);
+        if (!shirtImg && k) shirtImg = await tryLoad(TEE_IMAGES[k][side]);
         const hex = hexOf(colorName(W.colorCode), W.colorCode);
         if (shirtImg) ctx.drawImage(shirtImg, 0, 0, c.width, c.height);
         else {
