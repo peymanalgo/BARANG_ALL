@@ -31,37 +31,6 @@ else
     <main class="order360-shell @ThemeClass @(Embedded ? "order360-embedded" : "")">
         <section class="order360-modal" role="dialog" aria-modal="true" aria-labelledby="order360-title">
             <header class="order360-head"><div><span class="eyebrow">@S["Eyebrow"]</span><h1 id="order360-title">@Number</h1><small>@CustomerName · @Date(Summary, "orderDate")</small></div><div class="order360-head-actions"><span class="order360-pill">@StatusText(Status)</span><PriorityIndicator Priority="@Text(Summary, "priority", "Normal")" />@if (!Embedded) { <button type="button" class="order360-close" aria-label="@S["Close"]" title="@S["Close"]" @onclick="Close">×</button> }</div></header>
-
-            @* پنل تمام‌عرض «طرح و فایل»: ماکاپ روی تیشرت + فایل‌های طرح با دانلود TIFF — در هر دو مسیر کارتابل و سفارش‌ها (پنجره واحد) *@
-            @if (HasArtwork)
-            {
-                <section class="order360-design-panel" aria-label="@A["Artwork"]">
-                    <header class="order360-design-head"><h2>@A["Artwork"]</h2><span class="order360-pill">@S["Files"] · @Gallery.Length</span></header>
-                    <div class="order360-design-grid">
-                        @foreach (var a in Gallery)
-                        {
-                            bool isImage = Text(a, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase);
-                            bool isMockup = Text(a, "sourceType") == "Mockup";
-                            <figure class="order360-design-card @(isMockup ? "is-mockup" : "")">
-                                @if (isImage && !string.IsNullOrWhiteSpace(Text(a, "fileId")) && !string.IsNullOrWhiteSpace(Text(a, "fileVersionId")))
-                                {
-                                    <img src="@FileUrl(a)" alt="@Text(a, "artworkTitle", Text(a, "fileName", ""))" loading="lazy" />
-                                }
-                                else { <span class="order360-design-noview">@L["FileVersion"] · @Text(a, "fileName", S["NoData"])</span> }
-                                <figcaption>
-                                    <strong>@(isMockup ? "پیش‌نمایش روی تیشرت" : Text(a, "artworkTitle", Text(a, "fileName", S["Files"])))</strong>
-                                    <small>@DisplayValue(Text(a, "printPositionCode", ""))@(string.IsNullOrWhiteSpace(Text(a, "fileName")) ? "" : $" · {Text(a, "fileName")}")</small>
-                                </figcaption>
-                                <div class="order360-design-actions">
-                                    @if (isImage) { <button type="button" class="secondary-action" @onclick='@(() => DownloadTiffFor(a))' disabled="@DownloadBusy">دانلود TIFF</button> }
-                                    <button type="button" class="primary-action" @onclick='@(() => DownloadFor(a))' disabled="@DownloadBusy">@L["Download"]</button>
-                                </div>
-                            </figure>
-                        }
-                    </div>
-                    @if (DownloadError is not null) { <div class="inline-error" role="alert">@DownloadError</div> }
-                </section>
-            }
             <div class="order360-metrics"><div class="order360-metric"><small>@S["MetricsTotal"]</small><strong dir="ltr">@Money(Pricing, "finalTotal") @Currency</strong></div><div class="order360-metric"><small>@S["MetricsPaid"]</small><strong dir="ltr">—</strong></div><div class="order360-metric"><small>@S["MetricsBalance"]</small><strong dir="ltr">—</strong></div><div class="order360-metric"><small>@S["MetricsDue"]</small><strong>@Date(Summary, "requestedDeliveryDate")</strong></div></div>
             <div class="order360-overview">
                 <section class="order360-card"><h2>@S["Overview"]</h2><dl class="order360-fields"><Field K="@S["Customer"]" V="@CustomerName" /><Field K="@S["Status"]" V="@StatusText(Status)" /><Field K="@ItemCountLabel()" V="@Items.Length.ToString()" /><Field K="@S["Source"]" V="@Text(Summary, "source", S["NoData"])" /><Field K="@S["OrderDate"]" V="@Date(Summary, "orderDate")" /><Field K="@S["ExpectedDate"]" V="@Date(Summary, "requestedDeliveryDate")" /></dl></section>
