@@ -69,6 +69,7 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
             var all = g.EnumerateArray().Select(x => new GalleryRow(
                 x.TryGetProperty("sourceType", out var st) ? st.GetString() ?? "" : "",
                 x.TryGetProperty("printPositionCode", out var pc) ? pc.GetString() : null,
+                x.TryGetProperty("orderItemId", out var oi) ? oi.GetString() ?? "" : "",
                 x.TryGetProperty("fileId", out var fi) && fi.TryGetGuid(out var fg) ? fg : Guid.Empty,
                 x.TryGetProperty("fileVersionId", out var fv) && fv.ValueKind == JsonValueKind.String && Guid.TryParse(fv.GetString(), out var fvg) ? fvg : Guid.Empty,
                 x.TryGetProperty("fileName", out var fn) ? fn.GetString() ?? "" : "",
@@ -146,6 +147,7 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
                                 p.TryGetProperty("notes", out JsonElement pn) ? pn.GetString() : null)).ToList();
                     }
                     return new ItemRow(
+                        x.TryGetProperty("id", out JsonElement iid) ? iid.GetString() ?? "" : "",
                         x.TryGetProperty("lineNumber", out JsonElement ln) && ln.TryGetInt32(out int line) ? line : 0,
                         Prop(snap, "productName").Length > 0 ? Prop(snap, "productName") : Prop(snap, "productCode"),
                         Prop(snap, "variantDisplayName").Length > 0 ? Prop(snap, "variantDisplayName") : Prop(snap, "variantSku"),
@@ -207,10 +209,10 @@ public sealed class OrderModel(CoreApiClient core) : PageModel
 
     public sealed record OrderAddressRow(string RecipientName, string RecipientMobile, string Line, string PostalCode);
     public sealed record PrintOpRow(string Position, string? Method, decimal? Width, decimal? Height, string? Notes);
-    public sealed record ItemRow(int Line, string Product, string Variant, string Size, string Color, string Uom, decimal Quantity, string? Notes, IReadOnlyList<PrintOpRow> PrintOperations);
+    public sealed record ItemRow(string Id, int Line, string Product, string Variant, string Size, string Color, string Uom, decimal Quantity, string? Notes, IReadOnlyList<PrintOpRow> PrintOperations);
     public sealed record ShipmentRow(string Number, string Carrier, string? TrackingCode, string Status, DateTimeOffset? ShippedAt, DateTimeOffset? DeliveredAt);
     public sealed record TimelineRow(string Type, DateTimeOffset? At);
-    public sealed record GalleryRow(string SourceType, string? Position, Guid FileId, Guid FileVersionId, string FileName, string MediaType);
+    public sealed record GalleryRow(string SourceType, string? Position, string OrderItemId, Guid FileId, Guid FileVersionId, string FileName, string MediaType);
 
     public IReadOnlyList<GalleryRow> DesignEntries { get; private set; } = [];
     public IReadOnlyList<GalleryRow> MockupEntries { get; private set; } = [];

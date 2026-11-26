@@ -110,42 +110,6 @@
 else
 {
 <section class="container section">
-    @* ── پنل ماکاپ تیشرت + پنل طرح/دانلود ── *@
-    @if (Model.MockupEntries.Count > 0 || Model.DesignEntries.Count > 0)
-    {
-        <div class="order-panels">
-            @if (Model.MockupEntries.Count > 0)
-            {
-                <div class="order-panel order-panel-mockup">
-                    <h3>پیش‌نمایش روی تیشرت</h3>
-                    @foreach (var m in Model.MockupEntries)
-                    {
-                        <div class="order-mockup-card">
-                            <img src="@($"/account/orders/{Model.Id}/?handler=DesignFile&fileVersionId={m.FileVersionId}&kind=thumb")" alt="@m.FileName" />
-                            <span class="order-mockup-pos">چاپ @DisplayValue(m.Position)</span>
-                        </div>
-                    }
-                </div>
-            }
-            @if (Model.DesignEntries.Count > 0)
-            {
-                <div class="order-panel order-panel-design">
-                    <h3>طرح سفارش‌داده‌شده</h3>
-                    @foreach (var g in Model.DesignEntries)
-                    {
-                        <div class="order-design-card">
-                            <img src="@($"/account/orders/{Model.Id}/?handler=DesignFile&fileVersionId={g.FileVersionId}&kind=thumb")" alt="@g.FileName" />
-                            <div class="order-design-meta">
-                                <span>@g.FileName</span>
-                                <span class="chip">@DisplayValue(g.Position)</span>
-                                <a class="btn btn-ghost btn-sm" href="@($"/account/orders/{Model.Id}/?handler=DesignFile&fileVersionId={g.FileVersionId}")" download="@g.FileName">دانلود طرح</a>
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-        </div>
-    }
     <nav class="breadcrumbs no-print" aria-label="breadcrumb">
             <a href="/account">@T("حساب کاربری", "My account", "حسابي", "Mi cuenta")</a> ›
             <a href="/account/orders">@T("سفارش‌ها", "Orders", "الطلبات", "Pedidos")</a> ›
@@ -164,6 +128,63 @@ else
                 }
             </div>
         </header>
+
+    @* ── دو پنل مستقل کنار هم، زیر هدر صفحه: پیش‌نمایش روی تیشرت + طرح سفارش‌داده‌شده ── *@
+    @if (Model.MockupEntries.Count > 0 || Model.DesignEntries.Count > 0)
+    {
+        <div class="order-panels">
+            @if (Model.MockupEntries.Count > 0)
+            {
+                <div class="order-panel order-panel-mockup">
+                    <h3>@T("پیش‌نمایش روی تیشرت", "Preview on t-shirt", "معاينة على التيشيرت", "Vista previa en camiseta")</h3>
+                    @foreach (var m in Model.MockupEntries)
+                    {
+                        <div class="order-mockup-card">
+                            @* تصویر کامل همان پیش‌نمایش ویزارد (thumb برای ماکاپ رندر نمی‌شود) *@
+                            <img src="@($"/account/orders/{Model.Id}/?handler=DesignFile&fileVersionId={m.FileVersionId}")" alt="@T("پیش‌نمایش طرح روی تیشرت", "Design preview on t-shirt", "معاينة التصميم على التيشيرت", "Vista previa del diseño en la camiseta")" />
+                            <span class="order-mockup-pos">@T("چاپ", "Print", "طباعة", "Impresión") @DisplayValue(m.Position)</span>
+                        </div>
+                    }
+                </div>
+            }
+            @if (Model.DesignEntries.Count > 0)
+            {
+                <div class="order-panel order-panel-design">
+                    <h3>@T("طرح سفارش‌داده‌شده", "Ordered design", "التصميم المطلوب", "Diseño del pedido")</h3>
+                    @foreach (var g in Model.DesignEntries)
+                    {
+                        string? printSize = null;
+                        foreach (var item in Model.Items)
+                        {
+                            if (item.Id.Length > 0 && item.Id != g.OrderItemId) continue;
+                            var op = item.PrintOperations.FirstOrDefault(o => string.Equals(o.Position, g.Position, StringComparison.OrdinalIgnoreCase)) ?? item.PrintOperations.FirstOrDefault();
+                            if (op?.Width is decimal w && op.Height is decimal h) { printSize = $"{Num(w)} × {Num(h)} {T("سانتی‌متر", "cm", "سم", "cm")}"; break; }
+                        }
+                        <div class="order-design-card">
+                            @* کلیک روی تصویر → پاپ‌آپ بزرگ مشاهده طرح واقعی *@
+                            <button type="button" class="order-design-view" data-zoom="@($"/account/orders/{Model.Id}/?handler=DesignFile&fileVersionId={g.FileVersionId}")" aria-label="@T("مشاهده بزرگ طرح", "View design large", "عرض كبير للتصميم", "Ver diseño grande")">
+                                <img src="@($"/account/orders/{Model.Id}/?handler=DesignFile&fileVersionId={g.FileVersionId}&kind=thumb")" alt="@g.FileName" loading="lazy" />
+                                <span class="order-design-zoom-hint">⤢</span>
+                            </button>
+                            <div class="order-design-meta">
+                                <span class="order-design-name">@g.FileName</span>
+                                <span class="chip">@DisplayValue(g.Position)</span>
+                                @if (printSize is not null)
+                                {
+                                    <span class="chip chip-size">@T("سایز چاپ", "Print size", "مقاس الطباعة", "Tamaño de impresión"): <b dir="ltr">@printSize</b></span>
+                                }
+                            </div>
+                        </div>
+                    }
+                    @* دانلود طرح — دکمه تمام‌عرض در انتهای پنل *@
+                    @foreach (var g in Model.DesignEntries)
+                    {
+                        <a class="btn btn-ghost order-design-download" href="@($"/account/orders/{Model.Id}/?handler=DesignFile&fileVersionId={g.FileVersionId}")" download="@g.FileName">⬇ @T("دانلود طرح", "Download design", "تنزيل التصميم", "Descargar diseño")</a>
+                    }
+                </div>
+            }
+        </div>
+    }
 
         @if (Model.Paid == "1")
         {
@@ -449,6 +470,11 @@ else
             <a class="btn btn-ghost btn-sm" href="/account/orders">@T("بازگشت به سفارش‌ها", "Back to orders", "العودة إلى الطلبات", "Volver a pedidos")</a>
         </div>
     </section>
+    @* پاپ‌آپ بزرگ مشاهده طرح واقعی *@
+    <div class="design-lightbox" id="design-lightbox" role="dialog" aria-modal="true" aria-label="@T("مشاهده طرح", "Design preview", "معاينة التصميم", "Vista previa del diseño")" hidden>
+        <button type="button" class="design-lightbox-close" aria-label="@T("بستن", "Close", "إغلاق", "Cerrar")">×</button>
+        <figure><img src="" alt="@T("طرح سفارش‌داده‌شده", "Ordered design", "التصميم المطلوب", "Diseño del pedido")" /></figure>
+    </div>
     <script>
         // تأیید دومرحله‌ای لغو سفارش پرداخت‌شده
         document.querySelectorAll("form[data-confirm-cancel]").forEach(function (f) {
@@ -456,6 +482,22 @@ else
                 if (f.getAttribute("data-confirm-cancel") === "1" && !window.confirm(f.getAttribute("data-confirm-text") || "")) e.preventDefault();
             });
         });
+        // لایت‌باکس طرح: کلیک روی تصویر پنل → پنجره بزرگ با تصویر واقعی (بدون thumb)
+        (function () {
+            var box = document.getElementById("design-lightbox");
+            if (!box) return;
+            var img = box.querySelector("img");
+            document.querySelectorAll(".order-design-view").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    img.src = btn.getAttribute("data-zoom") || "";
+                    box.hidden = false;
+                    document.body.style.overflow = "hidden";
+                });
+            });
+            function close() { box.hidden = true; img.src = ""; document.body.style.overflow = ""; }
+            box.addEventListener("click", function (e) { if (e.target === box || e.target.classList.contains("design-lightbox-close")) close(); });
+            document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !box.hidden) close(); });
+        })();
     </script>
 }
 @functions {

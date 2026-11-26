@@ -388,15 +388,29 @@ button[data-confirm], form[data-confirm] button { cursor: pointer; }
 .panel-topbar .panel-cart-link .panel-cart-badge { top: -6px; inset-inline-end: -6px; }
 
 /* ── پنل‌های طرح و ماکاپ در جزئیات سفارش ── */
-.order-panels{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem}
+/* دو پنل مستقل کنار هم زیر هدر سفارش: پیش‌نمایش تیشرت + طرح سفارش‌داده‌شده */
+.order-panels{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin:0 0 1.2rem}
+.order-panel{background:#fff;border:1.5px solid var(--border,#e5e7eb);border-radius:16px;padding:18px;box-shadow:0 6px 22px rgba(15,23,42,.08);display:flex;flex-direction:column;gap:12px;min-width:0}
+.order-panel h3{margin:0;font-size:.98rem;font-weight:800;color:#111827;padding-bottom:10px;border-bottom:1px dashed var(--border,#e5e7eb)}
+.order-mockup-card{text-align:center;display:flex;flex-direction:column;gap:10px;flex:1;justify-content:center}
+.order-mockup-card img{width:100%;max-height:24rem;object-fit:contain;border-radius:12px;background:#fafafa;display:block;margin:0 auto}
+.order-mockup-pos{display:inline-block;margin:0 auto;font-size:.8rem;font-weight:700;color:#e11d48;background:#fff1f2;border:1px solid #fecaca;border-radius:99px;padding:4px 14px}
+.order-design-card{display:flex;flex-direction:column;gap:10px;flex:1}
+.order-design-view{position:relative;display:block;width:100%;padding:0;border:1px solid var(--border,#e5e7eb);border-radius:12px;background:#fafafa;cursor:zoom-in;overflow:hidden}
+.order-design-view img{width:100%;height:auto;min-height:11rem;max-height:20rem;object-fit:contain;display:block}
+.order-design-zoom-hint{position:absolute;inset-inline-end:10px;inset-block-end:10px;width:2rem;height:2rem;display:grid;place-items:center;border-radius:50%;background:#111827cc;color:#fff;font-size:1rem;pointer-events:none}
+.order-design-view:hover .order-design-zoom-hint{background:#e11d48}
+.order-design-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.85rem;color:#374151}
+.order-design-name{font-weight:700;overflow-wrap:anywhere}
+.chip-size{background:#f0f9ff;border-color:#bae6fd;color:#075985}
+.order-design-download{width:100%;display:flex;justify-content:center;align-items:center;gap:6px;margin-top:auto}
+/* پاپ‌آپ بزرگ مشاهده طرح واقعی */
+.design-lightbox{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;background:#0f172ae0;padding:24px;backdrop-filter:blur(4px)}
+.design-lightbox[hidden]{display:none}
+.design-lightbox figure{margin:0;max-width:min(920px,94vw);max-height:88vh;display:grid;place-items:center}
+.design-lightbox img{max-width:100%;max-height:86vh;object-fit:contain;border-radius:12px;background:#fff;box-shadow:0 1.2rem 3rem #0009}
+.design-lightbox-close{position:absolute;inset-block-start:18px;inset-inline-end:18px;width:2.6rem;height:2.6rem;border-radius:50%;border:0;background:#ffffff26;color:#fff;font-size:1.5rem;cursor:pointer}
+.design-lightbox-close:hover{background:#e11d48}
 @media(max-width:700px){.order-panels{grid-template-columns:1fr}}
-.order-panel{background:#fff;border:1px solid var(--border,#e5e7eb);border-radius:14px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,.06)}
-.order-panel h3{margin:0 0 12px;font-size:.95rem;font-weight:800;color:#111827}
-.order-mockup-card{text-align:center}
-.order-mockup-card img{width:100%;max-width:280px;border-radius:10px;margin:0 auto;display:block}
-.order-mockup-pos{display:inline-block;margin-top:8px;font-size:.8rem;font-weight:700;color:#e11d48;background:#fff1f2;border:1px solid #fecaca;border-radius:99px;padding:4px 14px}
-.order-design-card{display:flex;gap:12px;align-items:center;margin-bottom:10px}
-.order-design-card img{width:80px;height:80px;object-fit:contain;border:1px solid var(--border,#e5e7eb);border-radius:8px;background:#fafafa}
-.order-design-meta{display:flex;flex-direction:column;gap:5px;font-size:.85rem;color:#374151}
 .order-design-meta .btn{margin-top:4px;align-self:flex-start}
 .order-design-meta .chip{align-self:flex-start}
