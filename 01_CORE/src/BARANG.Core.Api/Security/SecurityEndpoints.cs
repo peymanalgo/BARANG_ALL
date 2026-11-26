@@ -58,6 +58,7 @@ public static class SecurityEndpoints
         users.MapPut("/{id:guid}/activation", async (Guid id, SecurityActivationRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.SetUserActiveAsync(id, r.IsActive, r.Version, ct))).RequireAuthorization(SecurityPermissions.SecurityUserStatusManage);
         users.MapPut("/{id:guid}/unlock", async (Guid id, VersionRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.UnlockUserAsync(id, r.Version, ct))).RequireAuthorization(SecurityPermissions.SecurityUserStatusManage);
         users.MapPut("/{id:guid}/password", async (Guid id, PasswordRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.SetPasswordAsync(id, r.Password, ct))).RequireAuthorization(SecurityPermissions.SecurityUserPasswordReset);
+        users.MapPut("/{id:guid}/change-password", async (Guid id, ChangeUserPasswordRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.ChangeUserPasswordAsync(id, r.CurrentPassword, r.NewPassword, ct))).RequireAuthorization(SecurityPermissions.SecurityUserPasswordReset);
         users.MapGet("/{id:guid}/companies", async (Guid id, ISecurityAdministration s, CancellationToken ct) => Map(await s.ListCompaniesAsync(id, ct))).RequireAuthorization(SecurityPermissions.SecurityUserRead);
         users.MapPost("/{id:guid}/companies", async (Guid id, CompanyAccessRequest r, ISecurityAdministration s, CancellationToken ct) => Map(await s.GrantCompanyAsync(id, r.CompanyId, r.ValidToUtc, ct))).RequireAuthorization(SecurityPermissions.SecurityUserRoleManage);
         users.MapDelete("/{id:guid}/companies/{companyId:guid}", async (Guid id, Guid companyId, ISecurityAdministration s, CancellationToken ct) => Map(await s.RevokeCompanyAsync(id, companyId, ct))).RequireAuthorization(SecurityPermissions.SecurityUserRoleManage);
@@ -213,6 +214,7 @@ public sealed record CreateUserRequest(string Username, string DisplayName, stri
 public sealed record UpdateUserRequest(string DisplayName, string? Email, long Version);
 public sealed record SecurityActivationRequest(bool IsActive, long Version);
 public sealed record PasswordRequest(string Password);
+public sealed record ChangeUserPasswordRequest(string CurrentPassword, string NewPassword);
 public sealed record CreatePersonUserRequest(string Username,string Password,string? DisplayName,string? Email,bool Enabled=true);
 public sealed record CompanyAccessRequest(Guid CompanyId, DateTimeOffset? ValidToUtc);
 public sealed record RoleAssignmentRequest(Guid RoleId, Guid CompanyId, DateTimeOffset? ValidToUtc);

@@ -198,6 +198,24 @@ public sealed class SecurityAdministration(
         return Result.Success();
     }, ct);
 
+    // Administrator-initiated password change for a specific user. Unlike
+    // SetPasswordAsync (privileged reset without verification), this variant
+    // requires the target account's current password to be supplied and verified
+    // first, mirroring the self-service ChangeMyPasswordAsync flow.
+    public Task<Result> ChangeUserPasswordAsync(Guid id, string currentPassword, string newPassword, CancellationToken ct) => transactions.ExecuteAsync(async token =>
+    {
+        Result<ApplicationUser> scoped = await FindScopedUser(id, token);
+        if (scoped.IsFailure) return Result.Failure(scoped.Error);
+        ApplicationUser user = scoped.Value;
+        Result<PasswordAuthenticationOutcome> checkedPassword = await identity.CheckPasswordAsync(user, currentPassword, token);
+        if (checkedPassword.IsFailure || checkedPassword.Value != PasswordAuthenticationOutcome.Success) return Result.Failure(SecurityErrors.InvalidCredentials);
+        Result reset = await identity.ResetPasswordAsync(user, newPassword, token);
+        if (reset.IsFailure) return reset;
+        int revoked = RevokeSessions(await store.ListActiveSessionsAsync(id, time.GetUtcNow(), token));
+        Audit(AuditActions.UserPasswordReset, "user", id, company.RequireCompanyId(), AuditChangeKind.Modified, new Dictionary<string, object?> { ["currentPasswordVerified"] = true, ["revokedSessionCount"] = revoked });
+        return Result.Success();
+    }, ct);
+
     public Task<Result<RoleView>> CreateRoleAsync(string code, string title, CancellationToken ct) => CreateRoleAsync(code, title, null, ct);
     public Task<Result<RoleView>> CreateRoleAsync(string code, string title, string? description, CancellationToken ct) => transactions.ExecuteAsync(async token =>
     {

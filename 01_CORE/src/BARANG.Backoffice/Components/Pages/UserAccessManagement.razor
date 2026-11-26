@@ -185,9 +185,9 @@ else
         <header><h2>@(EditingUser?U["EditUserAccount"]:SelectedUser.Person.FullName)</h2><BarangIconButton Icon="close" Label="@U["Close"]" Clicked="CloseDialogs" /></header><div class="uam-dialog-body">
         @PersonCard(SelectedUser.Person)
         <section class="uam-account-panel"><h3>@U["UserAccountInformation"]</h3><div class="form-grid"><label><span>@U["Username"]</span><input dir="ltr" @bind="EditUsername" disabled="@(!EditingUser||!CanEditUser)" /></label>@if(EditingUser&&CanManageUserStatus){<label class="uam-check"><input type="checkbox" @bind="EditEnabled" /><span>@U["AccountEnabled"]</span></label>}else{<label><span>@U["AccountStatus"]</span><input value="@StateLabel(SelectedUser.Account.State)" disabled /></label>}<label><span>@U["LastLogin"]</span><input value="@FormatDate(SelectedUser.Account.LastLogin)" disabled /></label></div></section>
-        @if(EditingUser&&CanResetUserPassword){<section class="uam-account-panel"><h3>@U["ResetPassword"]</h3><div class="form-grid"><label><span>@U["NewPassword"]</span><input type="password" autocomplete="new-password" @bind="ResetPasswordValue" /></label><label><span>@U["ConfirmPassword"]</span><input type="password" autocomplete="new-password" @bind="ResetPasswordConfirm" /></label></div><div class="uam-inline-actions"><button type="button" class="btn btn-secondary" @onclick="ResetSelectedPassword">@U["ResetPassword"]</button></div></section>}
-        <section class="uam-account-panel"><h3>@U["AssignedRoles"]</h3>@if(EditingUser){<div class="uam-role-assignment"><SearchableSelect Options="RoleAssignmentOptions" @bind-Value="DetailRoleId" SearchChanged="SearchAssignmentRoles" Placeholder="@U["SearchRoles"]" /><button type="button" class="btn btn-primary" @onclick="AssignDetailRole">@U["AssignRole"]</button></div>}<div class="uam-chip-list">@foreach (UserRole role in SelectedUser.Roles) { <span class="uam-chip">@role.Title @if (EditingUser && !role.System) { <BarangIconButton Icon="unlink" Label="@U["Revoke"]" Clicked="() => RevokeDetailRole(role)" /> }</span> }</div></section>
-        </div>@if(EditingUser){<footer><div class="uam-inline-actions"><button type="button" class="btn btn-secondary" disabled="@SavingDialog" @onclick="CancelUserEdit">@U["Cancel"]</button><button type="button" class="btn btn-primary" disabled="@SavingDialog" @onclick="SaveUserAccount"><BarangIcon Name="edit" />@U["Edit"]</button></div></footer>}else{<footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button></footer>}
+        @if(EditingUser&&CanResetUserPassword){<section class="uam-account-panel"><h3>@U["ChangePassword"]</h3><div class="form-grid"><label class="form-span"><span>@U["CurrentPassword"]</span><input type="password" autocomplete="current-password" @bind="EditCurrentPassword" /></label><div class="uam-password-row"><label><span>@U["NewPassword"]</span><input type="password" autocomplete="new-password" @bind="EditNewPassword" /></label><label><span>@U["ConfirmNewPassword"]</span><input type="password" autocomplete="new-password" @bind="EditConfirmPassword" /></label></div></div><p class="field-help">@U["PasswordPolicy"]</p></section>}
+        <section class="uam-account-panel"><h3>@U["AssignedRoles"]</h3>@if(EditingUser){<div class="uam-role-assignment"><SearchableSelect Options="RoleAssignmentOptions" Value="@DetailRoleId" ValueChanged="StageDetailRole" SearchChanged="SearchAssignmentRoles" Placeholder="@U["SearchRoles"]" /></div><p class="field-help">@U["RolesStagedHint"]</p>}<div class="uam-chip-list">@foreach (UserRole role in StagedRoles) { <span class="uam-chip">@role.Title @if (EditingUser && !role.System) { <BarangIconButton Icon="unlink" Label="@U["Revoke"]" Clicked="() => UnstageDetailRole(role)" /> }</span> }</div></section>
+        </div>@if(EditingUser){<footer><div class="uam-inline-actions"><button type="button" class="btn btn-secondary" disabled="@SavingDialog" @onclick="CancelUserEdit">@U["Cancel"]</button><button type="button" class="btn btn-primary" disabled="@SavingDialog" @onclick="SaveUserAccount"><BarangIcon Name="check" />@U["Save"]</button></div></footer>}else{<footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button></footer>}
     </section></div>
 }
 
@@ -217,6 +217,16 @@ else
 }
 
 <BarangConfirmDialog Open="ConfirmSubstitutionRevoke" Title="@U["RevokeSubstitution"]" Description="@U["ConfirmRevokeSubstitution"]" CancelText="@U["Close"]" ConfirmText="@U["Confirm"]" Cancel="() => ConfirmSubstitutionRevoke = false" Confirm="RevokeSubstitution" />
+
+@if (ShowPersonView)
+{
+    <PersonViewDialog @key="PersonViewId" Open="ShowPersonView" PersonId="PersonViewId" CloseRequested="ClosePersonView" />
+}
+
+@if (SavePopup is not null)
+{
+    <div class="dialog-backdrop uam-popup-overlay" @onclick="CloseSavePopup"><section class="crud-dialog barang-modal uam-save-popup" role="alertdialog" aria-modal="true" @onclick:stopPropagation><div class="dialog-body"><span class="uam-save-popup-icon @(SavePopupSuccess ? "success" : "error")" aria-hidden="true">@(SavePopupSuccess ? "✓" : "!")</span><p class="uam-save-popup-message">@SavePopup</p><button type="button" class="btn btn-primary" @onclick="CloseSavePopup">@U["Close"]</button></div></section></div>
+}
 
 @code {
     private string ActiveTab = "users";
@@ -251,8 +261,13 @@ else
     private bool NewEnabled = true;
     private PersonInfo? SelectedPerson;
     private UserDetail? SelectedUser;
-    private string EditUsername = "", ResetPasswordValue = "", ResetPasswordConfirm = "", DetailRoleId = "";
+    private string EditUsername = "", EditCurrentPassword = "", EditNewPassword = "", EditConfirmPassword = "", DetailRoleId = "";
     private bool EditEnabled;
+    private List<UserRole> StagedRoles = [];
+    private bool ShowPersonView;
+    private Guid? PersonViewId;
+    private string? SavePopup;
+    private bool SavePopupSuccess;
     private RoleRow? EditingRole;
     private string RoleCode = "", RoleTitle = "", RoleDescription = "";
 
@@ -375,35 +390,52 @@ else
     private async Task OpenUser(Guid id, bool edit = false)
     {
         SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync($"api/v1/security/users/{id}", session.Token, session.Company, Lifetime.Token); if (!result.IsSuccess) { ShowResult(result); return; }
-        SelectedUser = ParseUserDetail(result.Value); EditUsername = SelectedUser.Account.Username; EditEnabled=SelectedUser.Account.State=="Active"; EditingUser=edit&&CanUserAccountEdit; ResetPasswordValue = ResetPasswordConfirm = DetailRoleId = ""; await SearchAssignmentRoles(""); ShowUserDetail = true;
+        SelectedUser = ParseUserDetail(result.Value); EditUsername = SelectedUser.Account.Username; EditEnabled=SelectedUser.Account.State=="Active"; EditingUser=edit&&CanUserAccountEdit; StagedRoles = SelectedUser.Roles.ToList(); EditCurrentPassword = EditNewPassword = EditConfirmPassword = ""; DetailRoleId = ""; await SearchAssignmentRoles(""); ShowUserDetail = true;
     }
     private void BeginUserEdit(){if(SelectedUser is null||!CanUserAccountEdit)return;EditUsername=SelectedUser.Account.Username;EditEnabled=SelectedUser.Account.State=="Active";EditingUser=true;}
     private void CancelUserEdit(){CloseDialogs();}
     private async Task SaveUserAccount()
     {
         if(SelectedUser is null||!CanUserAccountEdit||string.IsNullOrWhiteSpace(EditUsername))return;
+        bool wantsPassword=CanResetUserPassword&&(EditCurrentPassword.Length>0||EditNewPassword.Length>0||EditConfirmPassword.Length>0);
+        if(wantsPassword&&(string.IsNullOrWhiteSpace(EditCurrentPassword)||EditNewPassword!=EditConfirmPassword||!IsValidPassword(EditNewPassword)))
+        {
+            ShowSavePopup(false,string.IsNullOrWhiteSpace(EditCurrentPassword)?U["ValidationError"]:EditNewPassword!=EditConfirmPassword?U["PasswordMismatch"]:U["PasswordPolicy"]);return;
+        }
         SessionInfo? session=await Session();if(session is null)return;
         SavingDialog=true;Guid id=SelectedUser.Account.Id;long version=SelectedUser.Account.Version;
         if(CanEditUser&&!string.Equals(EditUsername.Trim(),SelectedUser.Account.Username,StringComparison.OrdinalIgnoreCase))
         {
             ApiResult<System.Text.Json.JsonElement> renamed=await Core.SendAsync(HttpMethod.Put,$"api/v1/security/users/{id}/account",new{username=EditUsername,version},session.Token,session.Company,Lifetime.Token);
-            if(!renamed.IsSuccess){SavingDialog=false;ShowResult(renamed);return;}
+            if(!renamed.IsSuccess){SavingDialog=false;ShowSaveFailure(renamed);return;}
             version=Long(renamed.Value,"version");
         }
         bool currentlyEnabled=SelectedUser.Account.State=="Active";
         if(CanManageUserStatus&&EditEnabled!=currentlyEnabled)
         {
             ApiResult<System.Text.Json.JsonElement> status=await Core.SendAsync(HttpMethod.Put,$"api/v1/security/users/{id}/activation",new{isActive=EditEnabled,version},session.Token,session.Company,Lifetime.Token);
-            if(!status.IsSuccess){SavingDialog=false;ShowResult(status);return;}
+            if(!status.IsSuccess){SavingDialog=false;ShowSaveFailure(status);return;}
         }
-        SavingDialog=false;ShowNotice("Saved",true);await OpenUser(id,false);await LoadUsers();
+        if(wantsPassword)
+        {
+            ApiResult<System.Text.Json.JsonElement> password=await Core.SendAsync(HttpMethod.Put,$"api/v1/security/users/{id}/change-password",new{currentPassword=EditCurrentPassword,newPassword=EditNewPassword},session.Token,session.Company,Lifetime.Token);
+            if(!password.IsSuccess){SavingDialog=false;ShowSaveFailure(password,password.ProblemCode=="security.login.invalid_credentials"?U["CurrentPasswordIncorrect"].Value:null);return;}
+        }
+        foreach(UserRole role in StagedRoles)
+        {
+            if(SelectedUser.Roles.Any(x=>x.RoleId==role.RoleId))continue;
+            ApiResult<System.Text.Json.JsonElement> assigned=await Core.SendAsync(HttpMethod.Post,$"api/v1/security/users/{id}/roles",new{roleId=role.RoleId,companyId=session.Company},session.Token,session.Company,Lifetime.Token);
+            if(!assigned.IsSuccess){SavingDialog=false;ShowSaveFailure(assigned);return;}
+        }
+        foreach(UserRole role in SelectedUser.Roles)
+        {
+            if(role.System||StagedRoles.Any(x=>x.RoleId==role.RoleId))continue;
+            ApiResult<System.Text.Json.JsonElement> revoked=await Core.SendAsync(HttpMethod.Delete,$"api/v1/security/users/{id}/roles/{role.RoleId}/companies/{session.Company}",null,session.Token,session.Company,Lifetime.Token);
+            if(!revoked.IsSuccess){SavingDialog=false;ShowSaveFailure(revoked);return;}
+        }
+        SavingDialog=false;ShowSavePopup(true,L["OperationSucceeded"]);await LoadUsers();
     }
     private async Task UnlockSelectedUser() { if (SelectedUser is null) return; await UserAction(HttpMethod.Put, $"api/v1/security/users/{SelectedUser.Account.Id}/unlock", new { version = SelectedUser.Account.Version }); }
-    private async Task ResetSelectedPassword()
-    {
-        if (SelectedUser is null || ResetPasswordValue != ResetPasswordConfirm) { ShowNotice("PasswordMismatch", false); return; }
-        await UserAction(HttpMethod.Put, $"api/v1/security/users/{SelectedUser.Account.Id}/password", new { password = ResetPasswordValue }); ResetPasswordValue = ResetPasswordConfirm = "";
-    }
     private async Task UserAction(HttpMethod method, string path, object body)
     {
         SessionInfo? session = await Session(); if (session is null || SelectedUser is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(method, path, body, session.Token, session.Company, Lifetime.Token); ShowResult(result); if (result.IsSuccess) { await OpenUser(SelectedUser.Account.Id, false); await LoadUsers(); }
@@ -413,14 +445,17 @@ else
         SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync($"api/v1/security/roles/search?search={Uri.EscapeDataString(query)}&isActive=true&pageSize=50", session.Token, session.Company, Lifetime.Token);
         if (result.IsSuccess) RoleAssignmentOptions = result.Value.GetProperty("items").EnumerateArray().Select(ParseRole).Where(x => !x.System).Select(x => new SearchableSelectOption(x.Id.ToString(), $"{x.Title} · {x.Code}")).ToList();
     }
-    private async Task AssignDetailRole()
+    private void StageDetailRole(string value)
     {
-        if (SelectedUser is null || !Guid.TryParse(DetailRoleId, out Guid role)) return; SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Post, $"api/v1/security/users/{SelectedUser.Account.Id}/roles", new { roleId = role, companyId = session.Company }, session.Token, session.Company, Lifetime.Token); ShowResult(result); if (result.IsSuccess) await OpenUser(SelectedUser.Account.Id);
+        DetailRoleId = value;
+        if (SelectedUser is null || !Guid.TryParse(value, out Guid roleId)) return;
+        DetailRoleId = "";
+        if (StagedRoles.Any(x => x.RoleId == roleId)) return;
+        SearchableSelectOption? option = RoleAssignmentOptions.FirstOrDefault(x => x.Value == value);
+        string title = (option?.Label ?? "").Split('·')[0].Trim();
+        StagedRoles.Add(new UserRole(roleId, title.Length == 0 ? value : title, "", false));
     }
-    private async Task RevokeDetailRole(UserRole role)
-    {
-        if (SelectedUser is null) return; SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Delete, $"api/v1/security/users/{SelectedUser.Account.Id}/roles/{role.RoleId}/companies/{session.Company}", null, session.Token, session.Company, Lifetime.Token); ShowResult(result); if (result.IsSuccess) await OpenUser(SelectedUser.Account.Id);
-    }
+    private void UnstageDetailRole(UserRole role) => StagedRoles.RemoveAll(x => x.RoleId == role.RoleId);
 
     private void OpenAddRole() { CloseDialogs(); EditingRole = null; RoleCode = RoleTitle = RoleDescription = ""; ShowRoleDialog = true; }
     private void OpenRole(RoleRow role) { CloseDialogs(); EditingRole = role; RoleCode = role.Code; RoleTitle = role.Title; RoleDescription = role.Description; ShowRoleDialog = true; }
@@ -503,10 +538,16 @@ else
     {
         int s = 0; builder.OpenElement(s++, "section"); builder.AddAttribute(s++, "class", "uam-person-card"); builder.OpenElement(s++, "div"); builder.AddMarkupContent(s++, "<span class=\"person-avatar\" aria-hidden=\"true\">●</span>"); builder.OpenElement(s++, "span"); builder.OpenElement(s++, "strong"); builder.AddContent(s++, Person.FullName); builder.CloseElement(); builder.OpenElement(s++, "small"); builder.AddContent(s++, $"{U["PersonnelCode"]}: {Person.PersonnelCode}"); builder.CloseElement(); builder.CloseElement(); builder.CloseElement();
         foreach ((string label, string value) in new[] { (U["Mobile"].Value, Person.Mobile), (U["Email"].Value, Person.Email), (U["Organization"].Value, Person.Organization), (U["AccountStatus"].Value, Person.Active ? U["Active"].Value : U["Inactive"].Value) }) { builder.OpenElement(s++, "dl"); builder.OpenElement(s++, "dt"); builder.AddContent(s++, label); builder.CloseElement(); builder.OpenElement(s++, "dd"); builder.AddContent(s++, string.IsNullOrWhiteSpace(value) ? "—" : value); builder.CloseElement(); builder.CloseElement(); }
-        builder.OpenElement(s++, "a"); builder.AddAttribute(s++, "class", "btn btn-secondary btn-small"); builder.AddAttribute(s++, "href", $"/master/persons?personId={Person.Id}"); builder.AddContent(s++, U["ViewPerson"]); builder.CloseElement(); builder.CloseElement();
+        builder.OpenElement(s++, "button"); builder.AddAttribute(s++, "type", "button"); builder.AddAttribute(s++, "class", "btn btn-secondary btn-small"); builder.AddAttribute(s++, "onclick", EventCallback.Factory.Create(this, () => ViewPersonDetail(Person.Id))); builder.AddContent(s++, U["ViewPerson"]); builder.CloseElement(); builder.CloseElement();
     };
 
-    private void CloseDialogs() { ShowAddUser = ShowUserDetail = ShowRoleDialog = ShowSubstitutionDialog = ShowSubstitutionView = EditingUser = false; SelectedPerson = null; SelectedUser = null; EditingRole = null; ViewedSubstitution = null; }
+    private void CloseDialogs() { ShowAddUser = ShowUserDetail = ShowRoleDialog = ShowSubstitutionDialog = ShowSubstitutionView = EditingUser = ShowPersonView = false; SelectedPerson = null; SelectedUser = null; EditingRole = null; ViewedSubstitution = null; }
+    private void ViewPersonDetail(Guid id) { PersonViewId = id; ShowPersonView = true; }
+    private void ClosePersonView() { ShowPersonView = false; PersonViewId = null; }
+    private void ShowSavePopup(bool success, string message) { SavePopupSuccess = success; SavePopup = message; if (success) CloseDialogs(); }
+    private void CloseSavePopup() => SavePopup = null;
+    private void ShowSaveFailure(ApiResult<System.Text.Json.JsonElement> result, string? message = null) => ShowSavePopup(false, message ?? result.Failure switch { ApiFailure.Forbidden or ApiFailure.Unauthorized => U["Forbidden"].Value, ApiFailure.Conflict => U["Conflict"].Value, _ => U["ValidationError"].Value });
+    private static bool IsValidPassword(string password) => password.Length is >= 12 and <= 256 && password.Any(char.IsUpper) && password.Any(char.IsLower) && password.Any(char.IsDigit);
     private void ShowNotice(string key, bool success) { Notice = key; NoticeSuccess = success; }
     private void ShowResult(ApiResult<System.Text.Json.JsonElement> result, string success = "Saved") => ShowNotice(result.IsSuccess ? success : result.Failure switch { ApiFailure.Forbidden or ApiFailure.Unauthorized => "Forbidden", ApiFailure.Conflict => "Conflict", _ => "ValidationError" }, result.IsSuccess);
     private async Task<SessionInfo?> Session() { var user = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid company) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? new(token, company) : null; }

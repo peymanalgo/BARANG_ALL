@@ -1,0 +1,144 @@
+@using System.Text.Json
+@inject IStringLocalizer<OrganizationStrings> O
+@inject IStringLocalizer<CrudStrings> T
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+
+@* Read-only person view dialog, replicating the «اشخاص» page view experience as a
+   stacked overlay. It renders above the caller's own dialog via the uam-person-overlay
+   backdrop class and never touches navigation, so the host dialog stays intact underneath. *@
+<BarangModal Open="@Open" Title="@T["View"]" CloseLabel="@T["Cancel"]" CloseRequested="Closed" Size="large" BackdropClass="uam-person-overlay">
+    <ChildContent>
+        @if (Loading)
+        {
+            <BarangLoadingState Text="@T["Loading"]" />
+        }
+        else if (LoadFailed)
+        {
+            <div class="inline-error" role="alert">@O["OperationFailed"]</div>
+        }
+        else
+        {
+            <div class="tabs" role="tablist">
+                @foreach (var tab in Tabs)
+                {
+                    <button type="button" role="tab" aria-selected="@(Tab == tab.Key)" class="@(Tab == tab.Key ? "active" : null)" @onclick="() => Tab = tab.Key">@O[tab.Label]</button>
+                }
+            </div>
+            <section class="person-tab">
+                @switch (Tab)
+                {
+                    case "chart": <ReadOnlyOrganizationalChart HighlightPersonId="PersonId" /> break;
+                    case "user": @UserPanel break;
+                    case "roles": @AccessPanel break;
+                    default: @FullView break;
+                }
+            </section>
+        }
+    </ChildContent>
+    <Footer>
+        <button type="button" class="btn btn-secondary" @onclick="Closed">@T["Cancel"]</button>
+    </Footer>
+</BarangModal>
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public Guid? PersonId { get; set; }
+    [Parameter] public EventCallback CloseRequested { get; set; }
+
+    private static readonly (string Key, string Label)[] Tabs = [("full", "FullInformation"), ("chart", "OrganizationalChart"), ("user", "UserInformation"), ("roles", "RolesPermissions")];
+
+    private bool Loading, LoadFailed;
+    private string Tab = "full";
+    private string Code = "", First = "", Last = "", NationalId = "", Email = "", Phone = "", Address = "", Notes = "";
+    private DateOnly? Birth;
+    private Guid? LoadedPersonId;
+    private List<string> AssignedRoles = [], EffectivePermissions = [];
+    private LinkedAccount? LinkedUser;
+
+    private Task Closed() => CloseRequested.InvokeAsync();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!Open || PersonId is not Guid person) return;
+        if (LoadedPersonId == person) return;
+        LoadedPersonId = person;
+        Loading = true; LoadFailed = false; Tab = "full";
+        await LoadPerson(person);
+        Loading = false;
+    }
+
+    private async Task LoadPerson(Guid person)
+    {
+        (string Token, Guid Company)? session = await Session(); if (session is null) { LoadFailed = true; return; }
+        ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/organization/persons/{person}", session.Value.Token, session.Value.Company, default);
+        if (!result.IsSuccess) { LoadFailed = true; return; }
+        Code = Get(result.Value, "personnelCode"); First = Get(result.Value, "firstName"); Last = Get(result.Value, "lastName"); NationalId = Get(result.Value, "nationalId"); Email = Get(result.Value, "email"); Phone = Get(result.Value, "phone"); Address = Get(result.Value, "address"); Notes = Get(result.Value, "notes");
+        Birth = result.Value.TryGetProperty("birthDate", out JsonElement dateValue) && dateValue.ValueKind != JsonValueKind.Null && Dates.TryParseCanonical(dateValue.GetString() ?? "", out DateOnly date) ? date : null;
+        await LoadAccess(session.Value, person);
+    }
+
+    private async Task LoadAccess((string Token, Guid Company) session, Guid person)
+    {
+        AssignedRoles = []; EffectivePermissions = []; LinkedUser = null;
+        ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/security/users/by-person/{person}", session.Token, session.Company, default);
+        if (!result.IsSuccess) return;
+        if (result.Value.TryGetProperty("user", out JsonElement user) && user.ValueKind != JsonValueKind.Null)
+        {
+            JsonElement raw = user.GetProperty("accountState"); string state = raw.ValueKind == JsonValueKind.String ? raw.GetString() ?? "Active" : raw.GetInt32() switch { 1 => "Inactive", 2 => "Locked", _ => "Active" };
+            LinkedUser = new(Get(user, "username"), state == "Active" ? T["Active"] : state == "Inactive" ? T["Inactive"] : O["Locked"]);
+        }
+        if (result.Value.TryGetProperty("assignedRoles", out JsonElement roles)) AssignedRoles = roles.EnumerateArray().Select(x => x.GetString() ?? "").ToList();
+        if (result.Value.TryGetProperty("effectivePermissions", out JsonElement permissions)) EffectivePermissions = permissions.EnumerateArray().Select(x => x.GetString() ?? "").ToList();
+    }
+
+    private RenderFragment FullView => @<div class="crud-form person-editor-form">
+        <fieldset disabled="true">
+            <div class="form-grid">
+                <label><span>@O["PersonnelCode"]</span><input value="@(string.IsNullOrWhiteSpace(Code) ? O["AssignedAutomatically"] : Code)" disabled /></label>
+                <label><span>@O["FirstName"] *</span><input value="@First" disabled /></label>
+                <label><span>@O["LastName"] *</span><input value="@Last" disabled /></label>
+                <label><span>@O["NationalId"]</span><input value="@NationalId" disabled /></label>
+                <label><span>@O["BirthDate"]</span><LocaleDateInput Name="person-view-birth-date" Value="@Birth" Disabled="true" /></label>
+                <label><span>@O["Email"]</span><input value="@Email" disabled /></label>
+                <label><span>@O["Phone"]</span><input value="@Phone" disabled /></label>
+                <label><span>@O["Address"]</span><textarea value="@Address" disabled></textarea></label>
+                <label><span>@O["Notes"]</span><textarea value="@Notes" disabled></textarea></label>
+            </div>
+        </fieldset>
+    </div>;
+
+    private RenderFragment UserPanel => @<div>
+        <h3>@O["UserInformation"]</h3>
+        @if (LinkedUser is null)
+        {
+            <p>@O["NoAccount"]</p>
+        }
+        else
+        {
+            <dl class="details-list"><dt>@O["Username"]</dt><dd>@LinkedUser.Username</dd><dt>@T["Status"]</dt><dd>@LinkedUser.State</dd></dl>
+        }
+    </div>;
+
+    private RenderFragment AccessPanel => @<div>
+        <p class="read-only-note">@O["ReadOnly"]</p>
+        @if (LinkedUser is null)
+        {
+            <CrudEmptyState Title="@O["NoAccount"]" Description="" />
+        }
+        else
+        {
+            <h3>@O["AssignedRoles"]</h3>@if (AssignedRoles.Count == 0) { <CrudEmptyState Title="@T["NoRecords"]" Description="" /> } else { <ul class="permission-list">@foreach (string role in AssignedRoles) { <li>@role</li> }</ul> }
+            <h3>@O["EffectivePermissions"]</h3>@if (EffectivePermissions.Count == 0) { <CrudEmptyState Title="@T["NoRecords"]" Description="" /> } else { <ul class="permission-list">@foreach (string permission in EffectivePermissions) { <li><code>@permission</code></li> }</ul> }
+        }
+    </div>;
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid company) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? (token, company) : null;
+    }
+    private static string Get(JsonElement value, string name) => value.TryGetProperty(name, out JsonElement property) && property.ValueKind != JsonValueKind.Null ? property.GetString() ?? "" : "";
+    private sealed record LinkedAccount(string Username, string State);
+}
