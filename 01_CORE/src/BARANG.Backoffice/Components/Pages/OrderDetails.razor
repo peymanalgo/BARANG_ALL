@@ -35,7 +35,7 @@ else
             <div class="order360-overview">
                 <section class="order360-card"><h2>@S["Overview"]</h2><dl class="order360-fields"><Field K="@S["Customer"]" V="@CustomerName" /><Field K="@S["Status"]" V="@StatusText(Status)" /><Field K="@S["Source"]" V="@Text(Summary, "source", S["NoData"])" /><Field K="@S["OrderDate"]" V="@Date(Summary, "orderDate")" /><Field K="@S["ExpectedDate"]" V="@Date(Summary, "requestedDeliveryDate")" /></dl></section>
                 <section class="order360-card order360-orbit"><div class="order360-orbit-ring"><button type="button" class="order360-orbit-node @(Active == "customer" ? "active" : null)" @onclick="SelectCustomer">@S["Customer"]</button><button type="button" class="order360-orbit-node @(Active == "items" ? "active" : null) items-node" @onclick="SelectItems">@A["Items"]</button><button type="button" class="order360-orbit-node @(Active == "prints" ? "active" : null)" @onclick="SelectPrints">@S["PrintOperations"]</button><button type="button" class="order360-orbit-node @(Active == "pricing" ? "active" : null)" @onclick="SelectPricing">@S["PriceSnapshot"]</button><button type="button" class="order360-orbit-node @(Active == "delivery" ? "active" : null)" @onclick="SelectDelivery">@S["Delivery"]</button><button type="button" class="order360-orbit-node @(Active == "services" ? "active" : null)" @onclick="SelectServices">@S["SelectedServices"]</button><button type="button" class="order360-orbit-node @(Active == "history" ? "active" : null)" @onclick="SelectHistory">@S["Timeline"]</button><div class="order360-orbit-center"><svg class="order360-shirt" viewBox="0 0 160 180" role="img" aria-label="@L["Product"]"><path d="M42 22 16 39 4 75l25 12 10-18v87c0 9 7 16 16 16h60c9 0 16-7 16-16V69l10 18 25-12-12-36-26-17-20 13H62z"/><path d="M61 22c2 18 36 18 38 0" fill="none"/></svg><button type="button" class="order360-artwork-marker @(HasArtwork ? null : "is-empty")" disabled="@(!HasArtwork)" aria-disabled="@(!HasArtwork)" aria-label="@L["Artwork"]" title="@L["Artwork"]" @onclick="OpenArtwork">@L["Artwork"]</button></div></div></section>
-                <aside class="order360-card order360-detail"><h2>@SectionTitle(Active)<span class="order360-pill">@S["ReadOnly"]</span></h2><div class="order360-detail-scroll">@Detail()</div></aside>
+                <aside class="order360-card order360-detail"><h2>@SectionTitle(Active)<span class="order360-pill">@S["ReadOnly"]</span></h2><div class="order360-detail-scroll">@if (Mockups.Length > 0) { <div class="order360-mockup-grid">@foreach (var m in Mockups) { <figure class="order360-mockup"><img src="@MockupUrl(m)" alt="@Text(m, "fileName", "")" /><figcaption>پیش‌نمایش روی تیشرت · @DisplayValue(Text(m, "printPositionCode", ""))</figcaption></figure> }</div> }@Detail()</div></aside>
             </div>
             <div class="order360-progress"><span>@S["Progress"] · @Progress٪</span><div class="order360-track"><span style="width:@($"{Progress}%")"></span></div></div>
             <button type="button" class="order360-specification-banner" @onclick="OpenSpecification"><span class="order360-specification-icon" aria-hidden="true">▤</span><span><strong>@A["FullSpecification"]</strong><small>@Entry["Subtitle"]</small></span><span aria-hidden="true">›</span></button>
@@ -78,7 +78,8 @@ else
     </div>
 }
 
-@if (GalleryOpen) { <div class="order360-gallery" role="dialog" aria-modal="true" aria-labelledby="artwork-gallery-title"><section class="order360-gallery-card"><header class="order360-gallery-head"><h2 id="artwork-gallery-title">@S["Files"]</h2><button type="button" class="order360-close" aria-label="@S["Close"]" @onclick="CloseArtwork">×</button></header>@if (Gallery.Length == 0) { <div class="order360-empty">@S["NoData"]</div> } else { var a = Gallery[GalleryIndex]; <div class="order360-gallery-preview">@if (Text(a, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(Text(a, "fileId")) && !string.IsNullOrWhiteSpace(Text(a, "fileVersionId"))) { <img src="@FileUrl(a)" alt="@Text(a, "artworkTitle", S["Files"])" /> } else { <span>@L["FileVersion"] · @Text(a, "fileName", S["NoData"])</span> }</div><dl class="order360-gallery-meta"><Field K="@S["Item"]" V="@ItemName(Text(a, "orderItemId"))" /><Field K="@L["PrintLocation"]" V="@Text(a, "printPositionCode", S["NoData"])" /><Field K="@L["Artwork"]" V="@Text(a, "artworkTitle", S["NoData"])" /><Field K="@L["FileVersion"]" V="@Text(a, "fileVersion", S["NoData"])" /></dl><div class="order360-gallery-actions"><button type="button" class="secondary-action" @onclick="PreviousArtwork" disabled="@(GalleryIndex == 0)">@L["Previous"]</button><span>@(GalleryIndex + 1) / @Gallery.Length</span><button type="button" class="secondary-action" @onclick="NextArtwork" disabled="@(GalleryIndex >= Gallery.Length - 1)">@L["Next"]</button><button type="button" class="primary-action" @onclick="DownloadArtwork" disabled="@DownloadBusy">@L["Download"]</button></div> }</section></div> }
+@if (GalleryOpen) { <div class="order360-gallery" role="dialog" aria-modal="true" aria-labelledby="artwork-gallery-title"><section class="order360-gallery-card"><header class="order360-gallery-head"><h2 id="artwork-gallery-title">@S["Files"]</h2><button type="button" class="order360-close" aria-label="@S["Close"]" @onclick="CloseArtwork">×</button></header>@if (Gallery.Length == 0) { <div class="order360-empty">@S["NoData"]</div> } else { var a = Gallery[GalleryIndex]; <div class="order360-gallery-preview">@if (Text(a, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(Text(a, "fileId")) && !string.IsNullOrWhiteSpace(Text(a, "fileVersionId"))) { <img src="@FileUrl(a)" alt="@Text(a, "artworkTitle", S["Files"])" /> } else { <span>@L["FileVersion"] · @Text(a, "fileName", S["NoData"])</span> }</div><dl class="order360-gallery-meta"><Field K="@S["Item"]" V="@ItemName(Text(a, "orderItemId"))" /><Field K="@L["PrintLocation"]" V="@Text(a, "printPositionCode", S["NoData"])" /><Field K="@L["Artwork"]" V="@Text(a, "artworkTitle", S["NoData"])" /><Field K="@L["FileVersion"]" V="@Text(a, "fileVersion", S["NoData"])" /></dl><div class="order360-gallery-actions"><button type="button" class="secondary-action" @onclick="PreviousArtwork" disabled="@(GalleryIndex == 0)">@L["Previous"]</button><span>@(GalleryIndex + 1) / @Gallery.Length</span><button type="button" class="secondary-action" @onclick="NextArtwork" disabled="@(GalleryIndex >= Gallery.Length - 1)">@L["Next"]</button><button type="button" class="secondary-action" @onclick="DownloadArtworkTiff" disabled="@(DownloadBusy || !Text(a, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase))">دانلود TIFF</button>
+                                        <button type="button" class="primary-action" @onclick="DownloadArtwork" disabled="@DownloadBusy">@L["Download"]</button></div> }</section></div> }
 
 @code {
     [Parameter] public Guid OrderId { get; set; } [Parameter] public bool Embedded { get; set; } [Parameter] public Guid? TaskId { get; set; }
@@ -109,6 +110,12 @@ else
                 try
                 {
                     var preview = await Core.DownloadAsync($"/api/v1/files/{Text(a, "fileId")}/versions/{Text(a, "fileVersionId")}/thumbnail", s.Value.Token, s.Value.Company, ct);
+                    if (!preview.IsSuccess && Text(a, "sourceType") == "Mockup")
+                    {
+                        // ماکاپ PNG بدون derivative — تصویر کامل به‌صورت data URI
+                        var full = await Core.DownloadAsync($"/api/v1/files/{Text(a, "fileId")}/versions/{Text(a, "fileVersionId")}/download", s.Value.Token, s.Value.Company, ct);
+                        if (full.IsSuccess) preview = full;
+                    }
                     if (preview.IsSuccess) GalleryPreviews[Text(a, "fileVersionId")] = $"data:{preview.Value.ContentType};base64,{Convert.ToBase64String(preview.Value.Content)}";
                 }
                 catch (Exception) when (ct.IsCancellationRequested) { }
@@ -142,11 +149,37 @@ else
         catch (InvalidOperationException) { DownloadError = X["LoadFailed"].Value; }
         finally { DownloadBusy = false; }
     }
+
+    // دانلود TIFF با کیفیت چاپ (LZW + ۳۰۰ DPI) — برای کارتابل چاپ؛ فایل ترکیبی طرح+متن یک‌جا قابل چاپ است
+    private async Task DownloadArtworkTiff()
+    {
+        if (Gallery.Length == 0 || GalleryIndex >= Gallery.Length || DownloadBusy) return;
+        JsonElement a = Gallery[GalleryIndex];
+        if (!Text(a, "mediaType").StartsWith("image/", StringComparison.OrdinalIgnoreCase)) return;
+        var s = await Session();
+        if (s is null) return;
+        DownloadBusy = true; DownloadError = null;
+        try
+        {
+            var result = await Core.DownloadAsync($"/api/v1/files/{Text(a, "fileId")}/versions/{Text(a, "fileVersionId")}/download-tiff", s.Value.Token, s.Value.Company, default);
+            if (result.IsSuccess) await JS.InvokeVoidAsync("barangDownloadFile", result.Value.FileName, result.Value.ContentType, Convert.ToBase64String(result.Value.Content));
+            else DownloadError = X["LoadFailed"].Value;
+        }
+        catch (InvalidOperationException) { DownloadError = X["LoadFailed"].Value; }
+        finally { DownloadBusy = false; }
+    }
     private JsonElement? GalleryFor(string printOperationId) => Gallery.FirstOrDefault(g => Text(g, "printOperationId") == printOperationId && !string.IsNullOrWhiteSpace(Text(g, "fileId"))) is { ValueKind: JsonValueKind.Object } g ? g : null;
     private string SectionTitle(string k) => k switch { "customer" => S["Customer"], "items" => A["Items"], "prints" => S["PrintOperations"], "pricing" => S["PriceSnapshot"], "delivery" => S["Delivery"], "services" => S["SelectedServices"], "history" => S["Timeline"], _ => S["Overview"] };
     private RenderFragment Detail() => builder => builder.AddMarkupContent(0, BuildDetail(Active));
     private string BuildDetail(string k) => k switch { "customer" => $"<dl class='order360-fields'>{F(S["Customer"], CustomerName)}{F(FD["CustomerCode"], Text(Customer, "customerCode", S["NoData"]))}{F(FD["CustomerType"], DisplayValue(Text(Customer, "customerType", S["NoData"])))}{F(L["SourceMobile"], Text(Customer, "primaryMobile", S["NoData"]))}{F(L["Email"], Text(Customer, "primaryEmail", S["NoData"]))}</dl>", "items" => ItemsTable(), "prints" => PrintsTable(), "services" => ServicesTable(), "delivery" => $"<dl class='order360-fields'>{F(S["ShippingMethod"], Text(Get(Data, "businessProfile"), "shippingMethodCode", S["NoData"]))}{F(S["Customer"], Text(Get(Data, "shippingAddress"), "recipientName", S["NoData"]))}{F(S["Address"], Text(Get(Data, "shippingAddress"), "addressLine1", S["NoData"]))}{F(L["PostalCode"], Text(Get(Data, "shippingAddress"), "postalCode", S["NoData"]))}{F(S["ExpectedDate"], Date(Summary, "requestedDeliveryDate"))}</dl>", "pricing" => PricingTable(), "history" => HistoryTable(), _ => $"<dl class='order360-fields'>{F(S["OrderDate"], Date(Summary, "orderDate"))}{F(S["ExpectedDate"], Date(Summary, "requestedDeliveryDate"))}{F(S["Source"], Text(Summary, "source", S["NoData"]))}{F(S["Status"], StatusText(Status))}</dl>" };
     private string ItemsTable() => Items.Length == 0 ? $"<div class='order360-empty'>{S["NoData"]}</div>" : $"<table class='order360-grid'><thead><tr><th>{S["Product"]}</th><th>{L["Variant"]}</th><th>{S["Quantity"]}</th><th>{S["Unit"]}</th></tr></thead><tbody>{string.Concat(Items.Select(i => $"<tr><td>{E(Text(i, "snapshotProductName", S["NoData"]))}</td><td>{E(Text(i, "snapshotVariantSku", S["NoData"]))}</td><td>{E(Text(i, "quantity"))}</td><td>{E(Text(i, "snapshotUomCode", S["NoData"]))}</td></tr>"))}</tbody></table>";
+    private JsonElement[] Mockups => Gallery.Where(g => Text(g, "sourceType") == "Mockup").ToArray();
+
+    private string MockupUrl(JsonElement m)
+    {
+        return GalleryPreviews.TryGetValue(Text(m, "fileVersionId"), out string? uri) ? uri : "";
+    }
+
     private string PrintsTable() => Prints.Length == 0 ? $"<div class='order360-empty'>{S["NoData"]}</div>" : $"<table class='order360-grid'><thead><tr><th>{S["Item"]}</th><th>{S["PrintOperations"]}</th><th>{A["Artwork"]}</th><th>{L["FileVersion"]}</th></tr></thead><tbody>{string.Concat(Prints.Select(p => { JsonElement? g = GalleryFor(Text(p, "id")); string source = g is { } gv ? SourceLabel(gv) : S["NoData"]; string file = g is { } gv2 ? E(Text(gv2, "fileName", Text(p, "fileVersionId", S["NoData"]))) : E(Text(p, "fileVersionId", S["NoData"])); return $"<tr><td>{E(ItemName(Text(p, "orderItemId")))}</td><td>{E(DisplayValue(Text(p, "printPositionCode", S["NoData"])))}</td><td>{E(source)}</td><td>{file}</td></tr>"; }))}</tbody></table>";
     private string SourceLabel(JsonElement g) => Text(g, "sourceType") switch { "DesignBank" => A["DesignBank"].Value, "UploadedFile" => A["UploadedFile"].Value, _ => S["NoData"] };
     private string ServicesTable() => Services.Length == 0 ? $"<div class='order360-empty'>{S["NoData"]}</div>" : $"<table class='order360-grid'><thead><tr><th>{S["SelectedServices"]}</th><th>{S["Quantity"]}</th><th>{S["Item"]}</th></tr></thead><tbody>{string.Concat(Services.Select(x => $"<tr><td>{E(Text(x, "serviceCode", S["NoData"]))}</td><td>{E(Text(x, "quantity"))}</td><td>{E(ItemName(Text(x, "orderItemId")))}</td></tr>"))}</tbody></table>";

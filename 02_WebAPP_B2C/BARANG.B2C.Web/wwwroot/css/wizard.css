@@ -447,3 +447,10 @@
     #wz .v3pop-bd{max-height:48vh}
     #wz .v3stage .garm{width:min(300px,66%)}
 }
+/* v3.1 — اصلاحات ممیزی دوم */
+#wz .v3pop#w-po-text .v3pop-bd{max-height:none;overflow:visible}
+#wz .v3bigtin{font-size:14px;min-height:96px}
+#wz .laywrap .artbox.bare{background:none;box-shadow:none;border-radius:0}
+#wz .v3txpos{width:100%;justify-content:stretch}
+#wz .v3txpos button{flex:1;min-height:38px;font-size:11px;color:#9aa6bd}
+#wz .v3txpos button.on{background:linear-gradient(135deg,rgba(246,178,60,.9),rgba(240,138,29,.9));color:#231303;font-weight:800;border:none}

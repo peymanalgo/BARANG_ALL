@@ -151,6 +151,10 @@
         ["layersTitle"] = T("لایه‌ها", "Layers", "الطبقات", "Capas"),
         ["infoTitle"] = T("توضیحات", "Info", "معلومات", "Info"),
         ["auditTitle"] = T("ممیزی طراحی", "Design audit", "تدقيق التصميم", "Auditoría"),
+        ["textPosLabel"] = T("موقعیت متن", "Text position", "موضع النص", "Posición del texto"),
+        ["textPosTop"] = T("بالا", "Top", "أعلى", "Arriba"),
+        ["textPosMid"] = T("وسط", "Middle", "وسط", "Medio"),
+        ["textPosBot"] = T("پایین", "Bottom", "أسفل", "Abajo"),
         ["auditRun"] = T("بررسی طراحی", "Run audit", "تشغيل التدقيق", "Ejecutar"),
         ["auditPending"] = T("بررسی نشده", "Not checked", "لم يُفحص", "Sin revisar"),
         ["auditPendingHint"] = T("با دکمه ممیزی یا «ادامه»، قوانین چاپ بررسی می‌شوند.", "Run the audit or press continue — print rules will be checked.", "مع زر التدقيق أو «متابعة» تُفحص قواعد الطباعة.", "Con el botón de auditoría o «continuar» se revisan las reglas."),
@@ -248,7 +252,6 @@
           <div class="v3pop-hd"><span>@i18n["tabBank"]</span><button type="button" class="v3pop-x" data-po-close aria-label="@i18n["close"]">✕</button></div>
           <div class="v3pop-bd">
             <div class="search"><input id="w-q" type="text" dir="auto" placeholder="@i18n["searchPlaceholder"]" aria-label="@i18n["tabBankHint"]"></div>
-            <div class="chips" id="w-chips"></div>
             <p class="status" id="w-status" aria-live="polite">@i18n["searchReady"]</p>
             <div class="gridcards" id="w-grid"></div>
           </div>
@@ -278,7 +281,7 @@
         <div class="v3pop start" id="w-po-text" hidden>
           <div class="v3pop-hd"><span>@i18n["overlayTextToggle"]</span><button type="button" class="v3pop-x" data-po-close aria-label="@i18n["close"]">✕</button></div>
           <div class="v3pop-bd" id="w-texteditor">
-            <textarea class="tin" id="w-textin" rows="2" dir="auto" placeholder="@i18n["textPlaceholder"]"></textarea>
+            <textarea class="tin v3bigtin" id="w-textin" rows="3" dir="auto" placeholder="@i18n["textPlaceholder"]"></textarea>
             <div class="lbl">@i18n["font"]</div>
             <div class="fonts">
               <button type="button" class="fbtn" data-f="1" style="font-weight:900">@i18n["font1"]</button>
@@ -288,6 +291,12 @@
             </div>
             <div class="lbl">@i18n["textColor"]</div>
             <div class="dots" id="w-tdots"></div>
+            <div class="lbl">@i18n["textPosLabel"]</div>
+            <div class="seg v3txpos" id="w-txpos">
+              <button type="button" data-pos="top">@i18n["textPosTop"]</button>
+              <button type="button" class="on" data-pos="mid">@i18n["textPosMid"]</button>
+              <button type="button" data-pos="bot">@i18n["textPosBot"]</button>
+            </div>
             <div class="lbl">@i18n["textSize"] <output id="w-tsout">@BARANG.B2C.Web.Services.AppDate.Digits("100", culture)</output></div>
             <input class="rng" id="w-tsz" type="range" min="55" max="150" value="100">
             <p class="v3hint"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>@i18n["textDragHint"]</p>

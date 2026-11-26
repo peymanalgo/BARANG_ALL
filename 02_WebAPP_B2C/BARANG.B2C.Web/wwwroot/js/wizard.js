@@ -30,6 +30,8 @@
     const szCm = (code) => SZ[(code || "").toUpperCase()] || SZ.A4;
     const SZPX = { A3: { w: 116, h: 164 }, A4: { w: 82, h: 116 }, A5: { w: 56, h: 79 } };
     const szPx = (code) => SZPX[(code || "").toUpperCase()] || SZPX.A4;
+    // لبه بالایی ناحیه چاپ: حدود ۴ انگشت (۸ سانت) زیر یقه — یکسان در جلو و پشت
+    const COLLAR_TOP = 108;
     const HEX = [
         [/سفید|أبيض|white|blanco/i, "#f2f3f1"], [/مشکی|سیاه|أسود|black|negro/i, "#1a1a1a"], [/شیری|کرم|cream|beige|crema/i, "#e8ddc8"],
         [/قرمز|زرشکی|أحمر|red|crimson|burgundy|rojo/i, "#8e2323"], [/آبی|أزرق|blue|azul/i, "#3f6d9e"], [/سبز|أخضر|green|verde/i, "#2d5a3d"],
@@ -65,7 +67,7 @@
         bank: null,             // {id,title,preview,code,widthPx,heightPx}
         file: null, fileMeta: null, // fileMeta {url,width,height}
         text: "", font: 1, textColor: "#1c1917", textSize: 100,
-        textX: 0.5, textY: 0.5,
+        textX: 0.5, textY: 0.5, textPos: "mid",
         audit: null,            // null=بررسی‌نشده | {passed,results} | {running:true} | {empty:true}
         position: "FRONT", printSize: null,
         product: null, variant: null, colorCode: null, sizeCode: null,
@@ -167,7 +169,7 @@
             f.el.style.visibility = active ? "visible" : "hidden";
             if (!active) continue;
             f.rect.style.left = (150 - S.w / 2) + "px";
-            f.rect.style.top = (118 - S.h / 2) + "px";
+            f.rect.style.top = COLLAR_TOP + "px";
             f.rect.style.width = S.w + "px";
             f.rect.style.height = S.h + "px";
             f.rect.setAttribute("data-lbl", (W.printSize || "") + " · " + short + " " + T("cm"));
@@ -178,7 +180,7 @@
                 d.style.display = "";
                 d.style.left = f.rect.style.left; d.style.top = f.rect.style.top;
                 d.style.width = S.w + "px"; d.style.height = S.h + "px";
-                d.innerHTML = '<div class="artbox"><img src="' + src + '" alt="" draggable="false"></div>';
+                d.innerHTML = '<div class="artbox bare"><img src="' + src + '" alt="" draggable="false"></div>';
             } else { d.style.display = "none"; d.innerHTML = ""; }
             // لایه متن
             const t = f.tWrap;
@@ -188,7 +190,7 @@
                     (W.font === 3 ? "font-style:italic;" : "") + (W.font === 2 ? "letter-spacing:.08em;font-weight:500;" : W.font === 4 ? "letter-spacing:.25em;" : "font-weight:900;");
                 t.style.display = "";
                 t.style.left = (150 - S.w / 2 + W.textX * S.w) + "px";
-                t.style.top = (118 - S.h / 2 + W.textY * S.h) + "px";
+                t.style.top = (COLLAR_TOP + W.textY * S.h) + "px";
                 t.style.width = S.w * 0.92 + "px";
                 t.innerHTML = '<div class="txt" dir="auto" style="' + style + '"><span class="tt">' + escapeHtml(W.text) + "</span></div>";
             } else { t.style.display = "none"; t.innerHTML = ""; }
@@ -234,7 +236,8 @@
             nx = Math.max(0.08, Math.min(0.92, nx));
             ny = Math.max(0.08, Math.min(0.92, ny));
             if (Math.abs(nx - 0.5) < 0.03) nx = 0.5;
-            if (Math.abs(ny - 0.5) < 0.03) ny = 0.5;
+            const snap = [textYFor("top"), textYFor("mid"), textYFor("bot")];
+            for (const sy of snap) if (Math.abs(ny - sy) < 0.035) ny = sy;
             W.textX = nx; W.textY = ny;
             renderPreview();
             drag.moved = true;
@@ -418,6 +421,28 @@
         return m[1].trim() + " · " + num("#" + tail);
     };
     const escapeHtml = (v) => String(v).replace(/</g, "&lt;").replace(/&/g, "&amp;");
+    // سه گزینه موقعیت متن: با طرح = بالای طرح / روی طرح (وسط طرح) / پایین طرح؛ بدون طرح = بالا/وسط/پایین ناحیه چاپ
+    function textYFor(pos) {
+        const S = szPx(W.printSize);
+        if (!hasDesign()) return pos === "top" ? 0.16 : pos === "bot" ? 0.82 : 0.5;
+        const iw = W.mode === "upload" ? (W.fileMeta ? W.fileMeta.width : 1) : (W.bank ? W.bank.widthPx || 1 : 1);
+        const ih = W.mode === "upload" ? (W.fileMeta ? W.fileMeta.height : 1) : (W.bank ? W.bank.heightPx || 1 : 1);
+        const sc = Math.min(S.w / Math.max(iw, 1), S.h / Math.max(ih, 1));
+        const dh = S.h * sc, dy = (S.h - dh) / 2;
+        if (pos === "top") return Math.max(0.06, (dy / 2) / S.h);
+        if (pos === "bot") return Math.min(0.94, (dy + dh + (S.h - dh) / 2) / S.h);
+        return (dy + dh / 2) / S.h;
+    }
+    document.querySelectorAll("#w-txpos button").forEach((b) => {
+        b.addEventListener("click", () => {
+            document.querySelectorAll("#w-txpos button").forEach((x) => x.classList.remove("on"));
+            b.classList.add("on");
+            W.textPos = b.dataset.pos;
+            W.textY = textYFor(W.textPos || "mid");
+            if (!W.text) { W.text = T("sampleText"); $("w-textin").value = W.text; }
+            invalidateAudit(); save(); renderPreview(); renderBar(); quote();
+        });
+    });
     function renderBar() {
         const sum = $("w-sum");
         if (!sum) return;
@@ -434,19 +459,6 @@
         $("w-next1").disabled = !(dn && W.product && W.variant && W.printSize);
         updateAuditUI();
     }
-
-    // ── بانک طرح‌ها ──
-    const CHIPS = FA ? ["شیر اسطوره‌ای", "گربه فضایی", "دریا و موج", "کوه دماوند", "کهکشان", "غروب نارنجی"]
-        : CULTURE === "ar" ? ["أسد أسطوري", "قطة فضائية", "البحر والموج", "جبل", "مجرة", "غروب"]
-        : CULTURE === "es" ? ["león mitológico", "gato espacial", "mar y olas", "montaña", "galaxia", "atardecer"]
-        : ["mythical lion", "space cat", "sea and waves", "mountain", "galaxy", "sunset"];
-    const chipsBox = $("w-chips");
-    if (chipsBox) CHIPS.forEach((c) => {
-        const b = document.createElement("button");
-        b.type = "button"; b.textContent = c;
-        b.addEventListener("click", () => { $("w-q").value = c; runSearch(); });
-        chipsBox.appendChild(b);
-    });
 
     function measureImage(url) {
         return new Promise((resolve) => {
@@ -958,11 +970,75 @@
                     const lh = sizePx * 1.35, y0 = cy - (lines.length - 1) * lh / 2;
                     lines.forEach(function (l, i) { ctx.fillText(l, cx, y0 + i * lh); });
                 }
+        // نویز یکتا در گوشه بوم — هش هر فایل یکتا بماند (Core تکراری را duplicate رد می‌کند)
+        const nz = ctx.createImageData(2, 2);
+        for (let i = 0; i < 8; i++) nz.data[i] = 200 + Math.floor(Math.random() * 55);
+        nz.data[3] = 8; nz.data[7] = 8;
+        ctx.putImageData(nz, c.width - 2, c.height - 2);
                 c.toBlob(function (b) { resolve(b ? new File([b], "bank-text-design.png", { type: "image/png" }) : null); }, "image/png");
             };
             img.onerror = function () { resolve(null); };
             img.src = W.bank.preview || "";
         });
+    }
+
+
+    // ماکاپ تیشرت (پیش‌نمایش محل چاپ) — با سفارش به ERP می‌رود تا در کارتابل‌ها دیده شود
+    async function shirtMockupFile() {
+        const c = document.createElement("canvas");
+        c.width = 600; c.height = 680;
+        const ctx = c.getContext("2d");
+        const side = W.position;
+        const k = teeKey();
+        const loadImg = (src) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+        let shirtImg = null;
+        if (k) { try { shirtImg = await loadImg(TEE_IMAGES[k][side]); } catch { shirtImg = null; } }
+        const hex = hexOf(colorName(W.colorCode), W.colorCode);
+        if (shirtImg) ctx.drawImage(shirtImg, 0, 0, c.width, c.height);
+        else {
+            const svg = tee(side).replace("var(--teeC)", hex);
+            try { const si = await loadImg("data:image/svg+xml;utf8," + encodeURIComponent(svg)); ctx.drawImage(si, 0, 0, c.width, c.height); }
+            catch { ctx.fillStyle = hex; ctx.fillRect(0, 0, c.width, c.height); }
+        }
+        // ناحیه چاپ (مطابق صحنه: لبه بالایی ۱۰۸ از ۳۴۰)
+        const S = szPx(W.printSize);
+        const sc = c.width / 300;
+        const px = S.w * sc, py = S.h * sc;
+        const px0 = (150 - S.w / 2) * sc, py0 = COLLAR_TOP * sc;
+        let dsrc = null;
+        if (W.mode === "bank" && W.bank) dsrc = W.bank.preview;
+        else if (W.mode === "upload" && W.fileMeta) dsrc = W.fileMeta.url;
+        if (dsrc) {
+            try {
+                const di = await loadImg(dsrc);
+                const msc = Math.min(px / di.width, py / di.height);
+                const dw = di.width * msc, dh2 = di.height * msc;
+                ctx.drawImage(di, px0 + (px - dw) / 2, py0 + (py - dh2) / 2, dw, dh2);
+            } catch { /* طرح بی‌صدا حذف می‌شود */ }
+        }
+        if (overlayText()) {
+            const sizePx = Math.max(12, Math.round(W.textSize / 100 * px * 0.30));
+            ctx.fillStyle = W.textColor; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.font = (W.font === 3 ? "italic " : W.font === 2 ? "500 " : "700 ") + sizePx + "px Vazirmatn, Tahoma, sans-serif";
+            const cx = px0 + px * W.textX, cy = py0 + py * W.textY;
+            const words = String(W.text).split(/\s+/); const lines = []; let line = "";
+            words.forEach(function (w2) { const t = line ? line + " " + w2 : w2; if (ctx.measureText(t).width > px * 0.92 && line) { lines.push(line); line = w2; } else line = t; });
+            lines.push(line);
+            const lh = sizePx * 1.3, y0 = cy - (lines.length - 1) * lh / 2;
+            lines.forEach(function (l, i) { ctx.fillText(l, cx, y0 + i * lh); });
+        }
+        // نویز یکتا در گوشه بوم — هش هر فایل یکتا بماند (Core تکراری را duplicate رد می‌کند)
+        const nz2 = ctx.createImageData(2, 2);
+        for (let i = 0; i < 8; i++) nz2.data[i] = 200 + Math.floor(Math.random() * 55);
+        nz2.data[3] = 8; nz2.data[7] = 8;
+        ctx.putImageData(nz2, c.width - 2, c.height - 2);
+        // نویز یکتا در گوشه بوم (ماکاپ)
+        const nz = ctx.createImageData(2, 2);
+        for (let i = 0; i < 8; i++) nz.data[i] = 200 + Math.floor(Math.random() * 55);
+        nz.data[3] = 8; nz.data[7] = 8;
+        ctx.putImageData(nz, c.width - 2, c.height - 2);
+        const blob = await new Promise((res) => c.toBlob(res, "image/png"));
+        return blob ? new File([blob], "shirt-mockup.png", { type: "image/png" }) : null;
     }
 
     function textDesignFile() {
@@ -995,6 +1071,7 @@
                 const fd = new FormData();
                 fd.append("state", JSON.stringify(checkoutState()));
                 fd.append("file", file, file.name || "text-design.png");
+                try { const mp = await shirtMockupFile(); if (mp) fd.append("filePreview", mp, mp.name); } catch { /* ماکاپ اختیاری است */ }
                 fd.append("__RequestVerificationToken", AF);
                 r = await fetch("/order/wizard?handler=Checkout", { method: "POST", body: fd });
             } else {
@@ -1164,6 +1241,7 @@
     // ── راه‌اندازی ──
     goPhase(W.phase || 1);
     if (W.text) $("w-textin").value = W.text;
+    document.querySelectorAll("#w-txpos button").forEach((b) => b.classList.toggle("on", b.dataset.pos === (W.textPos || "mid")));
     $("w-tsout").textContent = num(W.textSize);
     applyGarmTransform();
     document.querySelectorAll("#w-side button").forEach((b) => b.classList.toggle("on", b.dataset.side === W.position));

@@ -168,6 +168,21 @@ public sealed class WizardModel(CoreApiClient core, CustomerContext customers, S
             else return new JsonResult(new { ok = false, problem = "file-required" });
         }
 
+        // ۱.۱) ماکاپ تیشرت (پیش‌نمایش طرح روی پارچه + محل چاپ) — در یادداشت قلم ثبت می‌شود
+        // تا در همه کارتابل‌های ERP علاوه بر فایل چاپ، خودِ تیشرت و محل قرارگیری هم دیده شود.
+        string? mockupVersionId = null;
+        if (Request.HasFormContentType)
+        {
+            IFormFile? mockup = Request.Form.Files.GetFiles("filePreview").FirstOrDefault();
+            if (mockup is { Length: > 0 })
+            {
+                (bool mpOk, JsonElement? mp, string? _) = await core.PostMultipartAsync(
+                    "api/v1/client/files/upload", mockup.FileName, mockup.ContentType, mockup.OpenReadStream(), mockup.Length, $"mockup-{Guid.NewGuid():N}");
+                if (mpOk && mp is JsonElement mv && mv.TryGetProperty("fileVersionId", out JsonElement mvid)) mockupVersionId = mvid.GetString();
+                // ماکاپ اختیاری است — خطا مسیر را قطع نمی‌کند
+            }
+        }
+
         // ۲) طرح بانکی → نسخه فعلی طرح برای عملیات چاپ
         Guid? artworkVersionId = null;
         string designCode = Text(state, "designCode");
@@ -294,6 +309,8 @@ public sealed class WizardModel(CoreApiClient core, CustomerContext customers, S
         if (designTitle.Length > 0) noteParts.Add($"طرح: {designTitle}");
         else if (designCode.Length > 0) noteParts.Add($"طرح: {Text(state, "designShortTitle")}");
         if (Text(state, "shirtColorName").Length > 0) noteParts.Add($"رنگ تیشرت: {Text(state, "shirtColorName")}");
+        if (!string.IsNullOrEmpty(mockupVersionId)) noteParts.Add($"mockup-fv:{mockupVersionId}");
+        noteParts.Add("mockup-pos:" + position);
         if ((Text(state, "quantity") is { Length: > 0 } qTxt) && qTxt != "1") noteParts.Add($"تعداد: {qTxt}");
         if (mode == "text")
         {

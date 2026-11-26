@@ -70,7 +70,23 @@ public static class Order360Endpoints
         Dictionary<Guid, (string? Code, string? Title)> artworkTitles = await db.Artworks.AsNoTracking()
             .Where(x => artworkIds.Contains(x.Id))
             .ToDictionaryAsync(x => x.Id, x => ((string?)x.Code, (string?)x.Title), ct);
+        // ماکاپ‌ها از یادداشت قلم (mockup-fv / mockup-pos) — fv آن‌ها هم باید در کوئری فایل‌ها باشد
+        var mockupCandidates = new List<(Guid OrderItemId, Guid FileVersionId, string Position)>();
+        var itemsWithNotes = await db.OrderItems.AsNoTracking().Where(x => x.OrderId == orderId)
+            .Select(x => new { x.Id, x.Notes }).ToListAsync(ct);
+        foreach (var it in itemsWithNotes)
+        {
+            if (string.IsNullOrWhiteSpace(it.Notes)) continue;
+            Guid? mockFv = null; string mockPos = "FRONT";
+            foreach (var part in it.Notes.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (part.StartsWith("mockup-fv:", StringComparison.OrdinalIgnoreCase) && Guid.TryParse(part.AsSpan(10), out var g)) mockFv = g;
+                if (part.StartsWith("mockup-pos:", StringComparison.OrdinalIgnoreCase)) mockPos = part.AsSpan(11).Trim().ToString();
+            }
+            if (mockFv is { } mfv && mfv != Guid.Empty) mockupCandidates.Add((it.Id, mfv, mockPos));
+        }
         List<Guid> fileVersionIds = printOps.Select(x => x.FileVersionId ?? artworkFiles.GetValueOrDefault(x.ArtworkVersionId ?? Guid.Empty).FileVersionId)
+            .Concat(mockupCandidates.Select(m => m.FileVersionId))
             .Where(x => x != Guid.Empty).Distinct().ToList();
         Dictionary<Guid, (Guid FileId, int VersionNumber, string FileName, string MediaType, long SizeBytes)> fileVersions = await db.FileVersions.AsNoTracking()
             .Where(x => fileVersionIds.Contains(x.Id) && !x.IsArchived)
@@ -100,6 +116,31 @@ public static class Order360Endpoints
                 };
             }).Where(x => x is not null).Select(x => x!).ToArray();
 
+        // ماکاپ تیشرت (پیش‌نمایش طرح+متن روی پارچه و محل چاپ) از یادداشت قلم
+        var mockupRows = new List<object>();
+        foreach (var m in mockupCandidates)
+        {
+            var mf = fileVersions.GetValueOrDefault(m.FileVersionId);
+            if (mf.FileId == Guid.Empty) continue;
+            mockupRows.Add(new
+            {
+                printOperationId = Guid.Empty,
+                orderItemId = m.OrderItemId,
+                printPositionCode = m.Position,
+                sourceType = "Mockup",
+                artworkId = (Guid?)null,
+                artworkCode = (string?)null,
+                artworkTitle = (string?)null,
+                fileId = mf.FileId,
+                fileVersionId = m.FileVersionId,
+                fileVersion = (int?)mf.VersionNumber,
+                fileName = "shirt-mockup.png",
+                mediaType = "image/png",
+                sizeBytes = (long?)mf.SizeBytes
+            });
+        }
+        var galleryAll = artworkGallery.Concat(mockupRows).ToArray();
+
         return Result.Success<IResult>(Results.Ok(new
         {
             summary = new { order.Id, order.OrderNumber, order.Status, order.Source, order.ExternalReference, order.OrderDate, order.RequestedDeliveryDate, order.SubmittedAtUtc, order.CancelledAtUtc, order.CancellationReasonCode, order.CancellationReasonText, order.Version },
@@ -113,7 +154,7 @@ public static class Order360Endpoints
                 .Select(x => new { x.Id, x.LineNumber, x.ProductId, x.ProductVariantId, x.Quantity, x.Notes, x.IsActive, x.SnapshotProductCode, x.SnapshotProductName, x.SnapshotVariantSku, x.SnapshotVariantDisplayName, x.SnapshotSizeCode, x.SnapshotColorCode, x.SnapshotUomCode, x.Version }).ToListAsync(ct),
             printOperations = await db.OrderPrintOperations.AsNoTracking().Where(x => x.OrderId == orderId).OrderBy(x => x.OrderItemId).ThenBy(x => x.Sequence)
                 .Select(x => new { x.Id, x.OrderItemId, x.Sequence, x.PrintPositionCode, x.PrintMethodCode, x.Width, x.Height, x.ArtworkVersionId, x.FileVersionId, x.Notes, x.IsActive, x.Version }).ToListAsync(ct),
-            artworkGallery,
+            artworkGallery = galleryAll,
             printTechnicalProfiles = await db.PrintTechnicalProfiles.AsNoTracking().Where(x => db.OrderPrintOperations.Where(p => p.OrderId == orderId).Select(p => p.Id).Contains(x.OrderPrintOperationId))
                 .Select(x => new { x.OrderPrintOperationId, x.DirectionCode, x.PrintSizeCode, x.PrintCount, x.PrinterEquipmentId, x.HeatPressEquipmentId, x.Specifications, x.Version }).ToListAsync(ct),
             productTechnicalProfiles = await db.ProductTechnicalProfiles.AsNoTracking().Where(x => db.OrderItems.Where(i => i.OrderId == orderId).Select(i => i.ProductId).Contains(x.ProductId))
