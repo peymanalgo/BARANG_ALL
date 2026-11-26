@@ -91,16 +91,6 @@
                 <a class="ai-login-btn" href="@(!authed ? loginLink : "/account/complete-profile")">@T("ورود / ثبت‌نام", "Sign in", "تسجيل الدخول", "Iniciar sesión")</a>
             </div>
         }
-        @if (!authed || !hasProfile)
-        {
-            @* کاربر وارد نشده یا پروفایل مشتری ندارد: فقط پیام ورود/تکمیل پروفایل — چیپ و کادر پیام اصلاً رندر نمی‌شود *@
-            <div class="ai-login" data-ai-login>
-                <p>@(!authed
-                    ? T("برای گفتگو با دستیار، اول وارد حساب کاربری‌ات شوید.", "Please sign in to your account to chat with the assistant.", "سجّل الدخول إلى حسابك للتحدث مع المساعد.", "Inicia sesión en tu cuenta para chatear con el asistente.")
-                    : T("برای استفاده از دستیار، ابتدا اطلاعات حساب خود را تکمیل کنید.", "Complete your profile first to use the assistant.", "أكمل ملفك الشخصي أولاً لاستخدام المساعد."))</p>
-                <a class="ai-login-btn" href="@(!authed ? loginLink : "/account/complete-profile")">@T("ورود / ثبت‌نام", "Sign in", "تسجيل الدخول", "Iniciar sesión")</a>
-            </div>
-        }
         else
         {
         <div class="ai-chips" data-ai-chips>
