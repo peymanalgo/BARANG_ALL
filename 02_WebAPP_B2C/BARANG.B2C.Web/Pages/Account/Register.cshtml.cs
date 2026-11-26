@@ -20,6 +20,8 @@ public sealed class RegisterModel(CoreApiClient core) : PageModel
     [BindProperty] public string LastName { get; set; } = "";
     [BindProperty] public string Target { get; set; } = "";
     [BindProperty] public string Code { get; set; } = "";
+    [BindProperty] public string Password { get; set; } = "";
+    [BindProperty] public string ConfirmPassword { get; set; } = "";
     [BindProperty(SupportsGet = true)] public string? InviteCode { get; set; }
 
     public bool CodeSent { get; private set; }
@@ -82,7 +84,30 @@ public sealed class RegisterModel(CoreApiClient core) : PageModel
             Error = culture switch { "en" => "Enter the verification code.", "ar" => "أدخل رمز التحقق.", "es" => "Introduce el código de verificación.", _ => "کد تأیید را وارد کنید." };
             return Page();
         }
-        CoreApiClient.LoginOutcome outcome = await core.OtpRegisterAsync(Target.Trim(), Code.Trim(), FirstName.Trim(), LastName.Trim());
+        // رمز عبور اجباری در ثبت‌نام — همین رمز بعداً برای ورود بدون OTP استفاده می‌شود
+        if (Password.Length < 9 || !Password.Any(char.IsUpper) || !Password.Any(char.IsLower) || !Password.Any(char.IsDigit))
+        {
+            Error = culture switch
+            {
+                "en" => "Password must be at least 9 characters and include an uppercase letter, a lowercase letter and a digit.",
+                "ar" => "يجب أن تكون كلمة المرور 9 أحرف على الأقل وتتضمن حرفًا كبيرًا وحرفًا صغيرًا ورقمًا.",
+                "es" => "La contraseña debe tener al menos 9 caracteres e incluir una mayúscula, una minúscula y un dígito.",
+                _ => "رمز عبور باید حداقل ۹ کاراکتر و شامل حرف بزرگ، حرف کوچک و رقم باشد."
+            };
+            return Page();
+        }
+        if (Password != ConfirmPassword)
+        {
+            Error = culture switch
+            {
+                "en" => "Password confirmation does not match.",
+                "ar" => "تأكيد كلمة المرور غير مطابق.",
+                "es" => "La confirmación de la contraseña no coincide.",
+                _ => "تکرار رمز عبور با رمز عبور یکسان نیست."
+            };
+            return Page();
+        }
+        CoreApiClient.LoginOutcome outcome = await core.OtpRegisterAsync(Target.Trim(), Code.Trim(), FirstName.Trim(), LastName.Trim(), Password);
         if (!outcome.Ok)
         {
             if (outcome.ProblemCode == "auth.already_registered")
@@ -90,13 +115,23 @@ public sealed class RegisterModel(CoreApiClient core) : PageModel
                 AlreadyRegistered = true;
                 Error = culture switch { "en" => "This email/mobile is already registered. Sign in instead.", "ar" => "هذا البريد/الرقم مسجل بالفعل. سجّل الدخول بدلاً من ذلك.", "es" => "Este correo/número ya está registrado. Inicia sesión.", _ => "این ایمیل/شماره قبلاً ثبت شده است. وارد شوید." };
             }
+            else if (outcome.ProblemCode == "auth.password_policy")
+            {
+                Error = culture switch
+                {
+                    "en" => "Password must be at least 9 characters and include an uppercase letter, a lowercase letter and a digit.",
+                    "ar" => "يجب أن تكون كلمة المرور 9 أحرف على الأقل وتتضمن حرفًا كبيرًا وحرفًا صغيرًا ورقمًا.",
+                    "es" => "La contraseña debe tener al menos 9 caracteres e incluir una mayúscula, una minúscula y un dígito.",
+                    _ => "رمز عبور باید حداقل ۹ کاراکتر و شامل حرف بزرگ، حرف کوچک و رقم باشد."
+                };
+            }
             else
             {
                 Error = culture switch { "en" => "The verification code is wrong.", "ar" => "رمز التحقق غير صحيح.", "es" => "El código de verificación es incorrecto.", _ => "کد تأیید نادرست است." };
             }
             return Page();
         }
-        return LocalRedirect("/account/complete-profile");
+        return LocalRedirect(string.IsNullOrWhiteSpace(ReturnUrl) ? "/account/complete-profile" : "/account/complete-profile?returnUrl=" + Uri.EscapeDataString(ReturnUrl));
     }
 
     private bool IsValidTarget(string value)

@@ -28,7 +28,14 @@ public static class SecurityEndpoints
             string? publicCompany = config["Catalog:PublicCompanyId"];
             if (string.IsNullOrWhiteSpace(publicCompany) || !Guid.TryParse(publicCompany, out Guid companyId)) return Map(Result.Failure<LoginResult>(Error.Validation("auth.public_company_missing")));
             using IDisposable scope = companies.BeginScope(companyId);
-            return Map(await s.VerifyPortalRegisterAsync(companyId, r.Target, r.Code, r.FirstName, r.LastName, ct));
+            return Map(await s.VerifyPortalRegisterAsync(companyId, r.Target, r.Code, r.FirstName, r.LastName, r.Password, ct));
+        }).AllowAnonymous().RequireRateLimiting("login");
+        auth.MapPost("/login-password", async (PortalPasswordLoginRequest r, IConfiguration config, CompanyContext companies, ISecurityAdministration s, CancellationToken ct) =>
+        {
+            string? publicCompany = config["Catalog:PublicCompanyId"];
+            if (string.IsNullOrWhiteSpace(publicCompany) || !Guid.TryParse(publicCompany, out Guid companyId)) return Map(Result.Failure<LoginResult>(Error.Validation("auth.public_company_missing")));
+            using IDisposable scope = companies.BeginScope(companyId);
+            return Map(await s.VerifyPortalPasswordAsync(companyId, r.Target, r.Password, ct));
         }).AllowAnonymous().RequireRateLimiting("login");
         auth.MapPost("/otp/login", async (PortalOtpLoginRequest r, IConfiguration config, CompanyContext companies, ISecurityAdministration s, CancellationToken ct) =>
         {
@@ -205,8 +212,9 @@ public static class SecurityEndpoints
     }
 }
 public sealed record PortalOtpRequest(string Target);
-public sealed record PortalOtpRegisterRequest(string Target,string Code,string FirstName,string LastName);
+public sealed record PortalOtpRegisterRequest(string Target,string Code,string FirstName,string LastName,string? Password=null);
 public sealed record PortalOtpLoginRequest(string Target,string Code);
+public sealed record PortalPasswordLoginRequest(string Target,string Password);
 public sealed record LoginRequest(string Username, string Password);
 public sealed record CompanySelectionRequest(Guid CompanyId);
 public sealed record ChangeMyPasswordRequest(string CurrentPassword, string NewPassword);

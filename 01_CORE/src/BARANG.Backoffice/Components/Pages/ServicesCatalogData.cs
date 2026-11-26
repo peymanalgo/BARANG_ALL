@@ -596,6 +596,47 @@ public static class ServicesCatalogData
             Inputs(),
             "JSON: آرایه شرکت‌های مجاز", "Authorization: Bearer Token", false, true),
 
+        N("auth", "41", "POST", "/auth/otp/request", "—", "عمومی — RateLimiter login",
+            "ارسال کد یکبارمصرف", "Send one-time code", "إرسال الرمز لمرة واحدة",
+            "برای ایمیل/موبایل مشتری کد تأیید یکبارمصرف می‌فرستد (در محیط آزمایشی کد ثابت است). اولین قدم ورود یا ثبت‌نام در سایت پی‌رنگ.",
+            "Sends a one-time verification code to the customer's email/mobile (fixed code in the dev environment). First step of sign-in or sign-up on the Peyrang site.",
+            "يرسل رمز تحقق لمرة واحدة إلى البريد/هاتف العميل (رمز ثابت في بيئة التطوير). الخطوة الأولى للدخول أو التسجيل في موقع بي‌رنگ.",
+            Inputs(In("target", "string", "Body", true)),
+            "JSON: { sent, expiresInMinutes }", "بدون هدر", true),
+
+        N("auth", "42", "POST", "/auth/otp/register", "—", "عمومی — RateLimiter login",
+            "ثبت‌نام مشتری با کد", "Customer sign-up with code", "تسجيل العميل بالرمز",
+            "ثبت‌نام مشتری پرتال با کد یکبارمصرف؛ نقش «Portal customer» و پروفایل ساخت می‌شود. رمز عبور هم در همین مرحله از مشتری گرفته و ذخیره می‌شود تا ورود بعدی با رمز (بدون پیامک) ممکن باشد.",
+            "Registers a portal customer with the one-time code; creates the Portal customer role and profile. A password is also taken and stored at this step so the customer can later sign in with it instead of the SMS code.",
+            "يسجّل عميل البوابة بالرمز لمرة واحدة؛ وينشئ دور «Portal customer» والملف الشخصي. تُؤخذ كلمة المرور وتُحفظ في هذه الخطوة ليتمكن العميل لاحقًا من الدخول بها بدلاً من رمز SMS.",
+            Inputs(
+                In("target", "string", "Body", true),
+                In("code", "string", "Body", true),
+                In("firstName", "string", "Body", true),
+                In("lastName", "string", "Body", true),
+                In("password", "string", "Body", true)),
+            "JSON: کاربر + توکن Bearer", "بدون هدر", true),
+
+        N("auth", "43", "POST", "/auth/otp/login", "—", "عمومی — RateLimiter login",
+            "ورود مشتری با کد پیامکی", "Customer sign-in with SMS code", "دخول العميل برمز SMS",
+            "ورود مشتری پرتال با ایمیل/موبایل و کد یکبارمصرف؛ توکن Bearer صادر می‌کند. روش پیش‌فرض ورود در سایت پی‌رنگ.",
+            "Signs in a portal customer with email/mobile and the one-time code; issues a Bearer token. The default sign-in method on the Peyrang site.",
+            "يدخل العميل بالبريد/الهاتف والرمز لمرة واحدة؛ ويصدر رمز Bearer. الطريقة الافتراضية للدخول في موقع بي‌رنگ.",
+            Inputs(
+                In("target", "string", "Body", true),
+                In("code", "string", "Body", true)),
+            "JSON: کاربر + توکن Bearer", "بدون هدر", true),
+
+        N("auth", "44", "POST", "/auth/login-password", "—", "عمومی — RateLimiter login",
+            "ورود مشتری با رمز عبور", "Customer sign-in with password", "دخول العميل بكلمة المرور",
+            "ورود مشتری پرتال با ایمیل/موبایل و رمز عبور (به‌جای کد پیامکی)؛ رمز هنگام ثبت‌نام گرفته شده و ادمین می‌تواند از بک‌آفیس (کاربران و دسترسی‌ها ← تب مشتری‌ها) بدون رمز قبلی آن را بازنشانی کند.",
+            "Signs in a portal customer with email/mobile and password (instead of the SMS code); the password is set at sign-up and an admin can reset it from the backoffice (Users & access ← Customers tab) without the old password.",
+            "يدخل العميل بالبريد/الهاتف وكلمة المرور (بدلاً من رمز SMS)؛ تُحدد كلمة المرور عند التسجيل ويمكن للمدير إعادة تعيينها من لوحة التحكم (المستخدمون والصلاحيات ← تبويب العملاء) دون كلمة المرور القديمة.",
+            Inputs(
+                In("target", "string", "Body", true),
+                In("password", "string", "Body", true)),
+            "JSON: کاربر + توکن Bearer", "بدون هدر", true),
+
         N("customers", "41", "GET", "/client/customers/{customerId}/favorites", "ClientCustomerRead", "client-read",
             "طرح‌های مورد علاقه مشتری", "Customer favorite designs", "تصاميم العميل المفضلة",
             "فهرست طرح‌هایی که مشتری به علاقه‌مندی‌هایش افزوده است؛ همراه عنوان، دسته‌بندی و تصویر بندانگشتی هر طرح.",

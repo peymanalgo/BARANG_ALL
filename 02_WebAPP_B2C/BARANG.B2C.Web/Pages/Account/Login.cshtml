@@ -4,17 +4,44 @@
     var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
     string T(string fa, string en, string ar, string? es = null) => culture switch { "en" => en, "ar" => ar, "es" => es ?? en, _ => fa };
     ViewData["Title"] = T("ورود مشتریان", "Customer sign in", "دخول العملاء", "Iniciar sesión como cliente");
+    var method = (Model.LoginMethod ?? "otp").ToLowerInvariant();
 }
 <section class="container section auth-section">
     <div class="auth-card">
         <h1>@T("ورود مشتریان", "Customer sign in", "دخول العملاء", "Iniciar sesión como cliente")</h1>
-        <p class="muted">@T("با ایمیل یا شماره موبایل وارد شوید؛ کد تأیید برایتان فرستاده می‌شود.", "Sign in with your email or mobile; we'll send you a verification code.", "سجّل الدخول بالبريد أو الهاتف؛ سنرسل لك رمز التحقق.", "Inicia sesión con tu correo o móvil; te enviaremos un código de verificación.")</p>
+
+        @* انتخاب روش ورود *@
+        <div class="auth-methods" role="tablist">
+            <a class="auth-method @(method == "otp" ? "active" : "")" href="@Model.OtpSwitchUrl">@T("کد پیامکی (OTP)", "OTP code", "رمز یکبارمصرف", "Código OTP")</a>
+            <a class="auth-method @(method == "password" ? "active" : "")" href="@Model.PasswordSwitchUrl">@T("رمز عبور", "Password", "كلمة المرور", "Contraseña")</a>
+        </div>
+
         @if (Model.Error is not null)
         {
             <div class="alert alert-error" role="alert">@Model.Error</div>
         }
-        @if (!Model.CodeSent)
+
+        @if (method == "password")
         {
+            <p class="muted">@T("با ایمیل/موبایل و رمز عبور خود وارد شوید.", "Sign in with your email/mobile and password.", "سجّل الدخول بالبريد/الهاتف وكلمة المرور.", "Inicia sesión con tu correo/móvil y contraseña.")</p>
+            <form method="post" asp-page-handler="PasswordLogin" class="auth-form">
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                <input type="hidden" name="LoginMethod" value="password" />
+                <label>
+                    <span>@T("ایمیل یا شماره تلفن", "Email or mobile number", "البريد الإلكتروني أو الهاتف", "Correo electrónico o número de móvil")</span>
+                    <input type="text" asp-for="Target" dir="ltr" autocomplete="username" placeholder="09121234567" required />
+                </label>
+                <label>
+                    <span>@T("رمز عبور", "Password", "كلمة المرور", "Contraseña")</span>
+                    <input type="password" asp-for="Password" dir="ltr" autocomplete="current-password" required />
+                </label>
+                <button type="submit" class="btn btn-primary btn-lg btn-block">@T("ورود", "Sign in", "دخول", "Iniciar sesión")</button>
+            </form>
+            <p class="muted small">@T("رمز عبور ندارید؟ روش کد پیامکی (OTP) را انتخاب کنید یا از ثبت‌نام رمز تعیین کنید.", "No password yet? Use the OTP method or set one during sign-up.", "لا تملك كلمة مرور؟ استخدم رمز OTP أو حددها عند التسجيل.", "¿Sin contraseña? Usa el método OTP o establécela al registrarte.") <a href="/account/register">@T("ثبت‌نام", "Sign up", "التسجيل", "Registrarse")</a></p>
+        }
+        else if (!Model.CodeSent)
+        {
+            <p class="muted">@T("با ایمیل یا شماره موبایل وارد شوید؛ کد تأیید برایتان فرستاده می‌شود.", "Sign in with your email or mobile; we'll send you a verification code.", "سجّل الدخول بالبريد أو الهاتف؛ سنرسل لك رمز التحقق.", "Inicia sesión con tu correo o móvil; te enviaremos un código de verificación.")</p>
             <form method="post" asp-page-handler="RequestCode" class="auth-form">
                 <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
                 <label>

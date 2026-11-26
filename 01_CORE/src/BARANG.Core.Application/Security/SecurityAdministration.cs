@@ -606,7 +606,7 @@ public sealed class SecurityAdministration(
         return Task.FromResult(Result.Success());
     }
 
-    public Task<Result<LoginResult>> VerifyPortalRegisterAsync(Guid companyId, string target, string code, string firstName, string lastName, CancellationToken ct) => transactions.ExecuteAsync(async token =>
+    public Task<Result<LoginResult>> VerifyPortalRegisterAsync(Guid companyId, string target, string code, string firstName, string lastName, string? password, CancellationToken ct) => transactions.ExecuteAsync(async token =>
     {
         if (code != PortalOtpMockCode) return Result.Failure<LoginResult>(Error.Validation("auth.otp_invalid"));
         string username = NormalizePortalUsername(target);
@@ -623,6 +623,12 @@ public sealed class SecurityAdministration(
         if (made.IsFailure) return Result.Failure<LoginResult>(made.Error);
         Result identityCreated = await identity.CreateAsync(made.Value, Guid.NewGuid().ToString("N") + "!Aa", token);
         if (identityCreated.IsFailure) return Result.Failure<LoginResult>(identityCreated.Error);
+        // رمز عبور اختیاری در ثبت‌نام — تا مشتری بتواند بعداً با رمز (به‌جای OTP) وارد شود
+        if (!string.IsNullOrWhiteSpace(password))
+        {
+            Result pwd = await identity.ResetPasswordAsync(made.Value, password, token);
+            if (pwd.IsFailure) return Result.Failure<LoginResult>(Error.Validation("auth.password_policy"));
+        }
         bool roleExists = await store.RoleCodeExistsAsync(PortalCustomerRoleCode, token);
         Role role;
         if (roleExists)
@@ -660,6 +666,26 @@ public sealed class SecurityAdministration(
         string username = NormalizePortalUsername(target);
         ApplicationUser? user = await store.FindUserByUsernameAsync(username, token);
         if (user is null || !user.IsActive) return Result.Failure<LoginResult>(Error.NotFound("auth.user_not_found"));
+        user.RecordLogin(time.GetUtcNow());
+        (string raw, string hash) = tokens.Create();
+        DateTimeOffset expires = time.GetUtcNow().AddMinutes(30);
+        store.Add(AuthenticationSession.Create(user.Id, hash, time.GetUtcNow(), expires));
+        Audit(AuditActions.LoginSucceeded, "user", user.Id, actorUsername: user.Username, actorUserId: user.Id);
+        return Result.Success(new LoginResult(raw, expires, View(user)));
+    }, ct);
+
+    // ورود مشتری پرتال با رمز عبور (به‌جای OTP) — همان نشست و همان حسابرسی
+    public Task<Result<LoginResult>> VerifyPortalPasswordAsync(Guid companyId, string target, string password, CancellationToken ct) => transactions.ExecuteAsync(async token =>
+    {
+        if (string.IsNullOrWhiteSpace(target) || string.IsNullOrWhiteSpace(password)) return Result.Failure<LoginResult>(Error.Validation("auth.otp_target_required"));
+        string username = NormalizePortalUsername(target);
+        ApplicationUser? user = await store.FindUserByUsernameAsync(username, token);
+        if (user is null || !user.IsActive) return Result.Failure<LoginResult>(Error.NotFound("auth.user_not_found"));
+        if ((await identity.CheckPasswordAsync(user, password, token)).Value != PasswordAuthenticationOutcome.Success)
+        {
+            Audit(AuditActions.LoginFailed, "user", user.Id, actorUsername: user.Username, actorUserId: user.Id);
+            return Result.Failure<LoginResult>(Error.Validation("auth.invalid_credentials"));
+        }
         user.RecordLogin(time.GetUtcNow());
         (string raw, string hash) = tokens.Create();
         DateTimeOffset expires = time.GetUtcNow().AddMinutes(30);

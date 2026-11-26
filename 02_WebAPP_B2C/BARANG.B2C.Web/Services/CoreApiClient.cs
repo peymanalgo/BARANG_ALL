@@ -184,10 +184,17 @@ public sealed class CoreApiClient(IHttpClientFactory factory, IHttpContextAccess
         return new(result is not null, result is null ? "otp_request_failed" : null);
     }
 
-    public async Task<LoginOutcome> OtpRegisterAsync(string target, string code, string firstName, string lastName)
+    public async Task<LoginOutcome> OtpRegisterAsync(string target, string code, string firstName, string lastName, string? password = null)
     {
-        (bool ok, JsonElement? value, string? problem) = await PostRawWithBodyAsync("api/v1/auth/otp/register", new { target, code, firstName, lastName });
+        (bool ok, JsonElement? value, string? problem) = await PostRawWithBodyAsync("api/v1/auth/otp/register", new { target, code, firstName, lastName, password });
         if (!ok) return new(false, problem ?? "otp_invalid");
+        return await SignInFromLoginAsync(value, target);
+    }
+
+    public async Task<LoginOutcome> PortalPasswordLoginAsync(string target, string password)
+    {
+        (bool ok, JsonElement? value, string? problem) = await PostRawWithBodyAsync("api/v1/auth/login-password", new { target, password });
+        if (!ok) return new(false, problem ?? "invalid_credentials");
         return await SignInFromLoginAsync(value, target);
     }
 
