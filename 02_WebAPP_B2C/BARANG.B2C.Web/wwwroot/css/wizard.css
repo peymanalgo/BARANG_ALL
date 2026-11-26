@@ -285,3 +285,50 @@
     .mode { min-height: 56px; }
     .qty-row { flex-wrap: wrap; }
 }
+
+/* ================= بازطراحی حرفه‌ای پنل ابزار طراحی (الگوی Printful/CustomInk) ================= */
+
+/* تب‌های منبع طرح: آیکون SVG + عنوان + زیرنویس، حالت فعال برجسته */
+#wz .modes { gap: 9px }
+#wz .mode { position: relative; gap: 5px; padding: 13px 6px 11px; border-radius: 14px; background: rgba(255,255,255,.03); }
+#wz .mode .ic { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.05); color: var(--sub); transition: .18s; }
+#wz .mode b { font-size: 12px; font-weight: 800; }
+#wz .mode small { font-size: 9.5px; }
+#wz .mode:hover { transform: translateY(-2px); border-color: rgba(246,178,60,.4); }
+#wz .mode:hover .ic { color: #ffd98a; }
+#wz .mode.on { background: linear-gradient(165deg, rgba(246,178,60,.17), rgba(139,92,246,.10)); border-color: rgba(246,178,60,.55); box-shadow: 0 10px 26px -12px rgba(246,178,60,.5); }
+#wz .mode.on .ic { background: linear-gradient(135deg, rgba(246,178,60,.28), rgba(139,92,246,.22)); color: #ffd98a; }
+#wz .mode.on::after { content: ""; position: absolute; top: 8px; inset-inline-end: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 8px rgba(246,178,60,.9); }
+
+/* دکمه هوش مصنوعی با آیکون SVG */
+#wz .ai-btn { border-radius: 14px; padding: 11px 14px; }
+#wz .ai-btn .ic { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: rgba(139,92,246,.18); color: #cbb8ff; }
+
+/* سکشن «متن روی طرح» — لایه دوم روی بانک طرح/طرح خودم */
+#wz .toolsec { border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.03); overflow: hidden; }
+#wz .ovtoggle { display: flex; align-items: center; gap: 9px; width: 100%; border: none; background: none; color: var(--ink); padding: 11px 13px; cursor: pointer; text-align: start; font-family: inherit; }
+#wz .ovtoggle:hover { background: rgba(246,178,60,.06); }
+#wz .ovtoggle .ic { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: rgba(139,92,246,.15); color: #cbb8ff; flex: 0 0 auto; }
+#wz .ovtoggle b { font-size: 12.5px; font-weight: 800; flex: 1; }
+#wz .ovtoggle .pill { font-size: 10.5px; font-weight: 800; border: 1px solid rgba(246,178,60,.45); color: #ffd98a; border-radius: 99px; padding: 3px 12px; transition: .18s; }
+#wz .ovtoggle .pill.on { background: linear-gradient(135deg, rgba(246,178,60,.9), rgba(240,138,29,.9)); color: #231303; border-color: transparent; }
+#wz .ovslot { padding: 4px 13px 13px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; }
+#wz .ovslot[hidden] { display: none; }
+#wz .ovslot .lbl { margin: 4px 0 0; }
+
+/* فوکوس واضح روی همه ورودی‌های پنل (دسترس‌پذیری) */
+#wz .tools input:focus-visible, #wz .tools textarea:focus-visible, #wz .tools button:focus-visible { outline: 2px solid rgba(246,178,60,.7); outline-offset: 2px; }
+
+/* رنگ‌ها با حلقه انتخاب تمیزتر */
+#wz .dot { position: relative; }
+#wz .dot:hover { transform: scale(1.18); }
+
+/* اسلایدر اندازه متن با برچسب مقدار زنده */
+#wz input.rng { height: 6px; border-radius: 99px; background: var(--panel2); appearance: none; }
+#wz input.rng::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #f6b23c, #f08a1d); border: 2px solid #fff2; box-shadow: 0 4px 12px rgba(246,178,60,.5); cursor: pointer; }
+
+/* کارت‌های طرح بانک: شفاف‌تر برای تشخیص طرح‌های سفید روی زمینه روشن */
+#wz .cardart .a { background: repeating-linear-gradient(45deg, #f2f4f8 0 10px, #e9edf3 10px 20px); }
+
+/* نوار وضعیت جستجو به‌صورت چیپ */
+#wz .status { background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 99px; padding: 5px 12px; align-self: flex-start; }

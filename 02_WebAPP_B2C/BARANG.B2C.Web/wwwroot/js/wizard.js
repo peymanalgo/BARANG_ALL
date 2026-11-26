@@ -69,6 +69,7 @@
         bank: null,            // {id,title,preview}
         file: null, fileMeta: null,
         text: "", font: 1, textColor: "#1c1917", textSize: 100,
+        overlayOn: false,      // لایه متن روی طرح (حالت بانک/آپلود/هوش مصنوعی)
         position: "FRONT", printSize: null,
         product: null, variant: null, colorCode: null, sizeCode: null,
         packaging: null, addressId: null, newAddress: false, gift: false,
@@ -161,9 +162,31 @@
             if (html) { f.wrap.classList.remove("pop"); void f.wrap.offsetWidth; f.wrap.classList.add("pop"); }
         }
     }
+    // استایل لایه متن — مشترک بین پیش‌نمایش و فایل چاپ نهایی
+    function overlayTextStyle() {
+        const size = Math.round(W.textSize / 100 * szPx(W.printSize).w * 0.26);
+        return "color:" + W.textColor + ";font-size:" + size + "px;" +
+            (W.font === 3 ? "font-style:italic;" : "") + (W.font === 2 ? "letter-spacing:.08em;font-weight:500;" : W.font === 4 ? "letter-spacing:.25em;" : "font-weight:900;");
+    }
+    function overlayActive() {
+        return W.overlayOn && (W.text || "").trim().length > 0;
+    }
     function designHTML() {
-        if (W.mode === "bank" && W.bank) return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center"><img src="' + W.bank.preview + '" alt="" style="max-width:100%;max-height:100%;object-fit:contain"></div>';
-        if (W.mode === "upload" && W.fileMeta) return '<img src="' + W.fileMeta.url + '" alt="" style="max-width:100%;max-height:100%;object-fit:contain">';
+        // ترکیب لایه‌ای: طرح (بانک/آپلود) + لایه متن روی آن — یا متن تنها
+        const designImg = W.mode === "bank" && W.bank
+            ? '<img src="' + W.bank.preview + '" alt="" style="max-width:100%;max-height:100%;object-fit:contain">'
+            : W.mode === "upload" && W.fileMeta
+                ? '<img src="' + W.fileMeta.url + '" alt="" style="max-width:100%;max-height:100%;object-fit:contain">'
+                : null;
+        if (designImg) {
+            if (overlayActive()) {
+                return '<div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center">' +
+                    designImg +
+                    '<div class="t" dir="auto" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:92%;text-align:center;line-height:1.3;' + overlayTextStyle() + '">' + W.text.replace(/</g, "&lt;") + '</div>' +
+                    "</div>";
+            }
+            return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">' + designImg + "</div>";
+        }
         if (W.mode === "text" && W.text) {
             const size = Math.round(W.textSize / 100 * (szPx(W.printSize).w * 0.42));
             const style = "color:" + W.textColor + ";font-size:" + size + "px;" +
@@ -398,6 +421,7 @@
         chips.push([T("product"), p ? p.name : "—"]);
         chips.push([T("shirtSize"), (W.variant && W.variant.sizeCode) || "—"]);
         chips.push([T("color"), W.colorCode ? colorName(W.colorCode) : "—"]);
+        if (overlayActive()) chips.push([T("overlayTextToggle"), "«" + W.text.slice(0, 12) + "»"]);
         if ((W.qty || 1) > 1) chips.push([T("qty"), num(W.qty) + " " + T("qtyUnit")]);
         const html = chips.map((c) => '<span class="schip"></span>').join("");
         const targets = [$("w-sumchips"), $("w-paysumchips")];
@@ -424,8 +448,6 @@
         $("w-chips").appendChild(b);
     });
 
-    const bankTextInput = $("w-banktext");
-    if (bankTextInput) bankTextInput.addEventListener("input", function () { W.bankText = bankTextInput.value; save(); });
 
     // نام نمایشی کوتاه طرح (قرینه‌ی Display.Title سمت سرور):
     // «سینما — طرح 18742651» → «سینما · #۲۶۵۱» — عدد ۹-۱۰ رقمی خام به مشتری نشان داده نمی‌شود
@@ -512,6 +534,7 @@
             $("w-check").hidden = false; $("w-checkmsg").textContent = msg;
             $("w-meter").style.width = bp + "%"; $("w-best").textContent = best;
             W.mode = "upload";
+            placeEditor();
             save(); renderPreview(); renderSum(); quote();
         };
         im.src = W.fileMeta.url;
@@ -637,7 +660,8 @@
         d.addEventListener("click", () => {
             $("w-tdots").querySelectorAll(".dot").forEach((x) => x.classList.remove("on"));
             d.classList.add("on");
-            W.mode = "text"; W.textColor = c;
+            if (!designContext()) W.mode = "text";
+            W.textColor = c;
             if (!W.text) W.text = T("sampleText");
             save(); renderPreview(); renderSum(); quote();
         });
@@ -647,13 +671,48 @@
         b.addEventListener("click", () => {
             document.querySelectorAll(".fbtn").forEach((x) => x.classList.remove("on"));
             b.classList.add("on");
-            W.mode = "text"; W.font = +b.dataset.f;
+            if (!designContext()) W.mode = "text";
+            W.font = +b.dataset.f;
             if (!W.text) W.text = T("sampleText");
             save(); renderPreview(); renderSum(); quote();
         });
     });
-    $("w-textin").addEventListener("input", (e) => { W.mode = "text"; W.text = e.target.value; save(); renderPreview(); renderSum(); quote(); });
-    $("w-tsz").addEventListener("input", (e) => { W.textSize = +e.target.value; $("w-tsout").textContent = num(W.textSize); if (W.mode === "text") renderPreview(); });
+    $("w-textin").addEventListener("input", (e) => { W.text = e.target.value; save(); renderPreview(); renderSum(); quote(); });
+    $("w-tsz").addEventListener("input", (e) => { W.textSize = +e.target.value; $("w-tsout").textContent = num(W.textSize); renderPreview(); });
+
+    // ── ویرایشگر متن تک‌نمونه: در پنل «متن» یا لایه «متن روی طرح» جابجا می‌شود ──
+    // هر تغییر (متن/فونت/رنگ/اندازه) بلافاصله روی تیشرت اعمال می‌شود؛ ترکیب طرح + متن پشتیبانی می‌شود.
+    const editor = $("w-texteditor");
+    const ovsec = $("w-ovsec"), ovtoggle = $("w-ovtoggle"), ovslot = $("w-ov-slot"), ovstate = $("w-ovstate");
+    const designContext = () => W.mode === "bank" || W.mode === "upload";
+    function placeEditor() {
+        const designOn = designContext();
+        if (ovsec) ovsec.hidden = !designOn;
+        if (!designOn) {
+            const panText = $("w-pan-text");
+            if (editor && panText && editor.parentElement !== panText) panText.appendChild(editor);
+            return;
+        }
+        if (W.overlayOn) {
+            ovslot.hidden = false;
+            ovslot.appendChild(editor);
+            ovstate.textContent = T("overlayOn");
+            ovstate.classList.add("on");
+            ovtoggle.setAttribute("aria-expanded", "true");
+        } else {
+            ovslot.hidden = true;
+            const panText = $("w-pan-text");
+            if (editor && panText && editor.parentElement !== panText) panText.appendChild(editor);
+            ovstate.textContent = T("overlayAdd");
+            ovstate.classList.remove("on");
+            ovtoggle.setAttribute("aria-expanded", "false");
+        }
+    }
+    if (ovtoggle) ovtoggle.addEventListener("click", () => {
+        W.overlayOn = !W.overlayOn;
+        if (W.overlayOn && !W.text) { W.text = T("sampleText"); $("w-textin").value = W.text; }
+        placeEditor(); save(); renderPreview(); renderSum(); quote();
+    });
 
     // ── فاز ۱: کنترل‌ها ──
     document.querySelectorAll(".mode").forEach((b) => {
@@ -665,6 +724,7 @@
             // راهنمای صلب «فقط همان مسیر» بعد از انتخاب کاربر مخفی می‌شود
             const rule = $("w-srcrule");
             if (rule) rule.hidden = true;
+            placeEditor();
             if (W.mode === "bank" && !$("w-grid").children.length) runSearch();
             if (W.mode !== "bank") W.bank = W.mode === "bank" ? W.bank : (W.mode === "text" ? null : W.bank);
             save(); renderPreview(); renderSum(); quote();
@@ -675,28 +735,28 @@
         W.position = b.dataset.side;
         $("w-side").querySelectorAll("button").forEach((x) => x.classList.remove("on"));
         b.classList.add("on");
-        $("w-garm").classList.toggle("back", W.position === "BACK");
+        applyGarmTransform();
         save(); renderPreview(); renderSum(); quote();
     });
     $("w-center").addEventListener("click", () => {
         (W.position === "FRONT" ? fF : fB).wrap.style.transform = "";
         renderPreview();
     });
-    // بزرگ‌نمایی پیش‌نمایش برای بررسی جزئیات طرح (۱× / ۱٫۴× / ۱٫۸×)
+    // بزرگ‌نمایی + چرخش جلو/پشت — یک ترنسفورم ترکیبی تا زوم، فلپ را خنثی نکند
     let zoomLevel = 1;
-    const applyZoom = () => {
+    const applyGarmTransform = () => {
         const g = $("w-garm");
         if (!g) return;
-        g.style.setProperty("--zoom", zoomLevel);
-        g.style.transform = "scale(" + zoomLevel + ")";
-        g.style.transition = "transform .2s";
+        const flip = W.position === "BACK" ? "rotateY(180deg) " : "";
+        g.style.transform = flip + "scale(" + zoomLevel + ")";
+        g.style.transition = "transform .3s cubic-bezier(.25,1,.3,1)";
     };
     document.querySelectorAll("#w-zoom button").forEach((b) => {
         b.addEventListener("click", () => {
             document.querySelectorAll("#w-zoom button").forEach((x) => x.classList.remove("on"));
             b.classList.add("on");
             zoomLevel = parseFloat(b.dataset.zoom) || 1;
-            applyZoom();
+            applyGarmTransform();
         });
     });
     // فیچر «بسته هدیه» خاموش باشد، بخش هدیه رندر نمی‌شود — بایند نال‌امن است
@@ -800,7 +860,8 @@
             mode: W.mode,
             designId: W.bank ? W.bank.id : null,
             designCode: W.bank ? W.bank.code : null,
-            text: W.mode === "text" ? W.text : null,
+            text: W.mode === "text" || overlayActive() ? W.text : null,
+            overlay: overlayActive(),
             font: W.font, textColor: W.textColor, textSize: W.textSize,
             productId: W.variant ? W.variant.productId || W.product : W.product,
             productVariantId: W.variant ? W.variant.id : null,
@@ -817,6 +878,7 @@
             gift,
         };
     }
+    // کامپوزیت طرح + لایه متن — متن دقیقاً وسطِ طرح کشیده می‌شود (مطابق پیش‌نمایش)، نه پایین بوم
     function bankTextCompositeFile() {
         return new Promise(function (resolve) {
             const c = document.createElement("canvas");
@@ -829,11 +891,18 @@
                 const maxW = c.width * 0.78, maxH = c.height * 0.52;
                 const sc = Math.min(maxW / img.width, maxH / img.height);
                 const dw = img.width * sc, dh = img.height * sc;
-                ctx.drawImage(img, (c.width - dw) / 2, c.height * 0.06, dw, dh);
-                const sizePx = Math.max(64, Math.round(c.width * 0.1));
-                ctx.fillStyle = W.textColor || "#1c1917"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                ctx.font = "700 " + sizePx + "px Vazirmatn, Tahoma, sans-serif";
-                ctx.fillText((W.bankText || "").trim(), c.width / 2, c.height * 0.78);
+                const dx = (c.width - dw) / 2, dy = c.height * 0.06;
+                ctx.drawImage(img, dx, dy, dw, dh);
+                if (overlayActive()) {
+                    const sizePx = Math.max(48, Math.round(W.textSize / 100 * dw * 0.30));
+                    ctx.fillStyle = W.textColor || "#1c1917"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                    ctx.font = (W.font === 3 ? "italic " : W.font === 2 ? "500 " : "700 ") + sizePx + "px Vazirmatn, Tahoma, sans-serif";
+                    const words = String(W.text).split(/\s+/); const lines = []; let line = "";
+                    words.forEach(function (w) { const t = line ? line + " " + w : w; if (ctx.measureText(t).width > dw * 0.9 && line) { lines.push(line); line = w; } else line = t; });
+                    lines.push(line);
+                    const cy = dy + dh / 2, lh = sizePx * 1.35, y0 = cy - (lines.length - 1) * lh / 2;
+                    lines.forEach(function (l, i) { ctx.fillText(l, c.width / 2, y0 + i * lh); });
+                }
                 c.toBlob(function (b) { resolve(b ? new File([b], "bank-text-design.png", { type: "image/png" }) : null); }, "image/png");
             };
             img.onerror = function () { resolve(null); };
@@ -865,7 +934,7 @@
         $("w-confirm").disabled = true;
         try {
             let r;
-            if ((W.mode === "upload" && W.file) || (W.mode === "text" && W.text) || (W.mode === "bank" && W.bank && (W.bankText || "").trim())) {
+            if ((W.mode === "upload" && W.file) || (W.mode === "text" && W.text) || (W.mode === "bank" && W.bank && overlayActive())) {
                 // فایل چاپ: آپلود مشتری یا رندر متن به PNG (فایل واقعی برای مرحله چاپ)
                 const file = W.mode === "text" ? await textDesignFile() : W.mode === "bank" ? await bankTextCompositeFile() : W.file;
                 const fd = new FormData();
@@ -988,7 +1057,8 @@
     if (W.mode) ["bank", "upload", "text"].forEach((m) => { $("w-pan-" + m).hidden = m !== W.mode; });
     if (W.text) $("w-textin").value = W.text;
     $("w-tsout").textContent = num(W.textSize);
-    $("w-garm").classList.toggle("back", W.position === "BACK");
+    applyGarmTransform();
+    placeEditor();
     document.querySelectorAll("#w-side button").forEach((b) => b.classList.toggle("on", b.dataset.side === W.position));
     if (W.gift && $("w-gift") && $("w-giftbox")) { $("w-gift").checked = true; $("w-giftbox").hidden = false; }
 
