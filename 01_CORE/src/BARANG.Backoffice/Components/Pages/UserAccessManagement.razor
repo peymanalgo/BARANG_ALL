@@ -16,6 +16,7 @@
 
 <nav class="uam-tabs" role="tablist" aria-label="@U["Title"]">
     <button type="button" role="tab" aria-selected="@(ActiveTab == "users")" class="@(ActiveTab == "users" ? "active" : null)" @onclick='() => SelectTab("users")'><BarangIcon Name="users" />@U["Users"]</button>
+    <button type="button" role="tab" aria-selected="@(ActiveTab == "customers")" class="@(ActiveTab == "customers" ? "active" : null)" @onclick='() => SelectTab("customers")'><BarangIcon Name="person" />@U["Customers"]</button>
     <button type="button" role="tab" aria-selected="@(ActiveTab == "roles")" class="@(ActiveTab == "roles" ? "active" : null)" @onclick='() => SelectTab("roles")'><BarangIcon Name="shield" />@U["Roles"]</button>
     <button type="button" role="tab" aria-selected="@(ActiveTab == "substitutions")" class="@(ActiveTab == "substitutions" ? "active" : null)" @onclick='() => SelectTab("substitutions")'><BarangIcon Name="calendar" />@U["Substitutions"]</button>
     <button type="button" role="tab" aria-selected="@(ActiveTab == "access")" class="@(ActiveTab == "access" ? "active" : null)" @onclick='() => SelectTab("access")'><BarangIcon Name="key" />@U["Access"]</button>
@@ -54,6 +55,36 @@
         @Pager(UserPage, UserTotalPages)
     </section>
 }
+else if (ActiveTab == "customers")
+{
+    <section class="crud-card uam-panel" role="tabpanel">
+        <div class="uam-toolbar">
+            <label class="search-box uam-search"><BarangIcon Name="search" /><input value="@CustomerSearch" @onchange="ChangeCustomerSearch" placeholder="@U["SearchCustomers"]" /></label>
+            <select class="uam-select" value="@CustomerState" @onchange="ChangeCustomerState" aria-label="@U["AccountStatus"]"><option value="">@U["AllStatuses"]</option><option value="Active">@U["Enabled"]</option><option value="Inactive">@U["Disabled"]</option><option value="Locked">@U["Locked"]</option></select>
+            <button type="button" class="btn btn-secondary" @onclick="LoadCustomers"><BarangIcon Name="refresh" />@U["Refresh"]</button>
+        </div>
+        <div class="uam-inherited-note"><BarangIcon Name="info" />@U["CustomersIntro"]</div>
+        @if (CustomersLoading) { <div class="uam-state"><span class="uam-spinner"></span>@U["Loading"]</div> }
+        else if (CustomersError) { <div class="uam-state error">@U["LoadError"] <button type="button" class="btn btn-secondary btn-small" @onclick="LoadCustomers">@U["Refresh"]</button></div> }
+        else if (Customers.Count == 0) { <div class="uam-state"><BarangIcon Name="person" />@U["NoCustomers"]</div> }
+        else
+        {
+            <div class="data-grid-wrap uam-users-grid-wrap"><table class="data-grid uam-grid uam-users-grid"><thead><tr>
+                <th class="uam-col-person">@U["PersonFullName"]</th>
+                <th class="uam-col-username">@U["Username"]</th>
+                <th class="uam-col-status">@U["AccountStatus"]</th>
+                <th class="uam-col-login">@U["RegistrationDate"]</th>
+                <th class="uam-col-actions">@U["Actions"]</th>
+            </tr></thead><tbody>
+            @foreach (CustomerRow row in Customers)
+            {
+                <tr><td class="uam-col-person"><strong>@row.PersonName</strong><small class="uam-cell-note" title="@row.Contact">@row.Contact</small></td><td class="uam-col-username" dir="ltr"><span class="code-pill uam-username" title="@row.Username">@row.Username</span></td><td class="uam-col-status"><span class="status-badge @StateClass(row.State)">@StateLabel(row.State)</span></td><td class="uam-col-login">@FormatDate(row.RegisteredAt)</td><td class="uam-col-actions"><BarangActionMenu><BarangIconButton Icon="eye" Label="@U["View"]" Clicked="() => ViewPersonDetail(row.PersonId)" />@if(CanUserAccountEdit){<BarangIconButton Icon="edit" Label="@U["Edit"]" Clicked="() => OpenCustomer(row)" />}</BarangActionMenu></td></tr>
+            }
+            </tbody></table></div>
+        }
+        @(Pager(CustomerPage, CustomerTotalPages, async delta => { CustomerPage += delta; await LoadCustomers(); }))
+    </section>
+}
 else if (ActiveTab == "roles")
 {
     <section class="crud-card uam-panel" role="tabpanel">
@@ -70,11 +101,11 @@ else if (ActiveTab == "roles")
             <div class="data-grid-wrap"><table class="data-grid uam-grid"><thead><tr><th><BarangSortHeader Label="@U["RoleName"]" Active="@(RoleSort=="title")" Descending="@RoleDescending" Clicked='() => SortRoles("title")' /></th><th><BarangSortHeader Label="@U["Code"]" Active="@(RoleSort=="code")" Descending="@RoleDescending" Clicked='() => SortRoles("code")' /></th><th>@U["Scope"]</th><th>@U["UserCount"]</th><th>@U["AccountStatus"]</th><th>@U["Actions"]</th></tr></thead><tbody>
             @foreach (RoleRow role in Roles)
             {
-                <tr><td><strong>@role.Title</strong><small class="uam-cell-note">@role.Description</small></td><td dir="ltr"><span class="code-pill">@role.Code</span></td><td><span class="uam-scope">@(role.Scope == "System" ? U["SystemScope"] : U["CompanyScope"])</span></td><td>@role.UserCount</td><td><span class="status-badge @(role.Active ? "active" : "inactive")">@(role.Active ? U["Active"] : U["Inactive"])</span></td><td><BarangActionMenu><BarangIconButton Icon="edit" Label="@U["Edit"]" Clicked="() => OpenRole(role)" /></BarangActionMenu></td></tr>
+                <tr><td><strong>@role.Title</strong><small class="uam-cell-note">@role.Description</small></td><td dir="ltr"><span class="code-pill">@role.Code</span></td><td><span class="uam-scope">@(role.Scope == "System" ? U["SystemScope"] : U["CompanyScope"])</span></td><td>@role.UserCount</td><td><span class="status-badge @(role.Active ? "active" : "inactive")">@(role.Active ? U["Active"] : U["Inactive"])</span></td><td><BarangActionMenu><BarangIconButton Icon="edit" Label="@U["Edit"]" Clicked="() => OpenRole(role)" />@if (!role.System) { <BarangIconButton Icon="trash" Semantic="danger" Label="@L["Delete"]" Clicked="() => AskRoleDelete(role)" /> }</BarangActionMenu></td></tr>
             }
             </tbody></table></div>
         }
-        @Pager(RolePage, RoleTotalPages, true)
+        @(Pager(RolePage, RoleTotalPages, async delta => { RolePage += delta; await LoadRoles(); }))
     </section>
 }
 else if (ActiveTab == "substitutions")
@@ -186,14 +217,27 @@ else
         @PersonCard(SelectedUser.Person)
         <section class="uam-account-panel"><h3>@U["UserAccountInformation"]</h3><div class="form-grid"><label><span>@U["Username"]</span><input dir="ltr" @bind="EditUsername" disabled="@(!EditingUser||!CanEditUser)" /></label>@if(EditingUser&&CanManageUserStatus){<label class="uam-check"><input type="checkbox" @bind="EditEnabled" /><span>@U["AccountEnabled"]</span></label>}else{<label><span>@U["AccountStatus"]</span><input value="@StateLabel(SelectedUser.Account.State)" disabled /></label>}<label><span>@U["LastLogin"]</span><input value="@FormatDate(SelectedUser.Account.LastLogin)" disabled /></label></div></section>
         @if(EditingUser&&CanResetUserPassword){<section class="uam-account-panel"><h3>@U["ChangePassword"]</h3><div class="form-grid"><label class="form-span"><span>@U["CurrentPassword"]</span><input type="password" autocomplete="current-password" @bind="EditCurrentPassword" /></label><div class="uam-password-row"><label><span>@U["NewPassword"]</span><input type="password" autocomplete="new-password" @bind="EditNewPassword" /></label><label><span>@U["ConfirmNewPassword"]</span><input type="password" autocomplete="new-password" @bind="EditConfirmPassword" /></label></div></div><p class="field-help">@U["PasswordPolicy"]</p></section>}
-        <section class="uam-account-panel"><h3>@U["AssignedRoles"]</h3>@if(EditingUser){<div class="uam-role-assignment"><SearchableSelect Options="RoleAssignmentOptions" Value="@DetailRoleId" ValueChanged="StageDetailRole" SearchChanged="SearchAssignmentRoles" Placeholder="@U["SearchRoles"]" /></div><p class="field-help">@U["RolesStagedHint"]</p>}<div class="uam-chip-list">@foreach (UserRole role in StagedRoles) { <span class="uam-chip">@role.Title @if (EditingUser && !role.System) { <BarangIconButton Icon="unlink" Label="@U["Revoke"]" Clicked="() => UnstageDetailRole(role)" /> }</span> }</div></section>
+        <section class="uam-account-panel"><h3>@U["AssignedRoles"]</h3>@if(EditingUser){<div class="uam-role-assignment"><SearchableSelect Options="RoleAssignmentOptions" Value="@DetailRoleId" ValueChanged="StageDetailRole" SearchChanged="SearchAssignmentRoles" Placeholder="@U["SearchRoles"]" /></div><p class="field-help">@U["RolesStagedHint"]</p>}<div class="uam-chip-list">@foreach (UserRole role in StagedRoles) { <span class="uam-chip">@role.Title @if (EditingUser) { <BarangIconButton Icon="unlink" Label="@U["Revoke"]" Clicked="() => UnstageDetailRole(role)" /> }</span> }</div></section>
         </div>@if(EditingUser){<footer><div class="uam-inline-actions"><button type="button" class="btn btn-secondary" disabled="@SavingDialog" @onclick="CancelUserEdit">@U["Cancel"]</button><button type="button" class="btn btn-primary" disabled="@SavingDialog" @onclick="SaveUserAccount"><BarangIcon Name="check" />@U["Save"]</button></div></footer>}else{<footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button></footer>}
     </section></div>
 }
 
 @if (ShowRoleDialog)
 {
-    <div class="dialog-backdrop" @onclick="CloseDialogs"><section class="crud-dialog uam-dialog" role="dialog" aria-modal="true" aria-label="@U["Roles"]" @onclick:stopPropagation><header><h2>@(EditingRole is null ? U["AddRole"] : U["RoleName"])</h2><BarangIconButton Icon="close" Label="@U["Close"]" Clicked="CloseDialogs" /></header><div class="uam-dialog-body"><div class="form-grid"><label><span>@U["Code"]</span><input dir="ltr" disabled="@(EditingRole is not null)" @bind="RoleCode" /></label><label><span>@U["RoleName"]</span><input disabled="@(EditingRole?.System == true)" @bind="RoleTitle" /></label><label class="form-span"><span>@U["Description"]</span><textarea disabled="@(EditingRole?.System == true)" @bind="RoleDescription"></textarea></label></div>@if (EditingRole?.System == true) { <div class="uam-inherited-note">@U["ProtectedRole"]</div> }</div><footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button>@if (EditingRole?.System != true) { <button type="button" class="btn btn-primary" @onclick="SaveRole">@U["Save"]</button>@if (EditingRole is not null) { <button type="button" class="btn btn-secondary" @onclick="ToggleRole">@(EditingRole.Active ? U["Disable"] : U["Enable"])</button><button type="button" class="btn btn-danger" @onclick="() => ConfirmRoleDelete = true">@U["DeleteRole"]</button> } }</footer></section></div>
+    <div class="dialog-backdrop" @onclick="CloseDialogs"><section class="crud-dialog uam-dialog" role="dialog" aria-modal="true" aria-label="@U["Roles"]" @onclick:stopPropagation><header><h2>@(EditingRole is null ? U["AddRole"] : U["RoleName"])</h2><BarangIconButton Icon="close" Label="@U["Close"]" Clicked="CloseDialogs" /></header><div class="uam-dialog-body"><div class="form-grid"><label><span>@U["Code"]</span><input dir="ltr" disabled="@(EditingRole is not null)" @bind="RoleCode" /></label><label><span>@U["RoleName"]</span><input disabled="@(EditingRole?.System == true)" @bind="RoleTitle" /></label><label class="form-span"><span>@U["Description"]</span><textarea disabled="@(EditingRole?.System == true)" @bind="RoleDescription"></textarea></label></div>@if (EditingRole?.System == true) { <div class="uam-inherited-note">@U["ProtectedRole"]</div> }</div><footer><button type="button" class="btn btn-secondary" @onclick="CloseDialogs">@U["Close"]</button>@if (EditingRole?.System != true) { <button type="button" class="btn btn-primary" @onclick="SaveRole">@U["Save"]</button>@if (EditingRole is not null) { <button type="button" class="btn btn-secondary" @onclick="ToggleRole">@(EditingRole.Active ? U["Disable"] : U["Enable"])</button> } }</footer></section></div>
+}
+
+@if (ShowCustomerDialog && SelectedCustomer is not null)
+{
+    @* دیالوگ محدود ویرایش مشتری پرتال: بدون هیچ بخش نقش‌ها؛ فقط وضعیت حساب و بازنشانی رمز عبور (بدون رمز فعلی). *@
+    <div class="dialog-backdrop" @onclick="CloseDialogs"><section class="crud-dialog uam-dialog wide" role="dialog" aria-modal="true" aria-label="@U["EditCustomer"]" @onclick:stopPropagation>
+        <header><h2>@U["EditCustomer"]</h2><BarangIconButton Icon="close" Label="@U["Close"]" Clicked="CloseDialogs" /></header><div class="uam-dialog-body">
+        @PersonCard(SelectedCustomer.Person)
+        <section class="uam-account-panel"><h3>@U["UserAccountInformation"]</h3><div class="form-grid"><label><span>@U["Username"]</span><input dir="ltr" value="@SelectedCustomer.Account.Username" disabled /></label>@if(CanManageUserStatus){<label class="uam-check"><input type="checkbox" @bind="CustomerEnabled" /><span>@U["AccountEnabled"]</span></label>}else{<label><span>@U["AccountStatus"]</span><input value="@StateLabel(SelectedCustomer.Account.State)" disabled /></label>}<label><span>@U["RegistrationDate"]</span><input value="@FormatDate(SelectedCustomer.RegisteredAt)" disabled /></label><label><span>@U["LastLogin"]</span><input value="@FormatDate(SelectedCustomer.Account.LastLogin)" disabled /></label></div></section>
+        <div class="uam-inherited-note"><BarangIcon Name="info" />@U["PortalCustomerRolesLocked"]</div>
+        @if(CanResetUserPassword){<section class="uam-account-panel"><h3>@U["ResetPassword"]</h3><div class="uam-password-row"><label><span>@U["NewPassword"]</span><input type="password" autocomplete="new-password" @bind="CustomerNewPassword" /></label><label><span>@U["ConfirmPassword"]</span><input type="password" autocomplete="new-password" @bind="CustomerConfirmPassword" /></label></div><p class="field-help">@U["PasswordPolicy"]</p><button type="button" class="btn btn-primary" disabled="@SavingDialog" @onclick="ResetCustomerPassword"><BarangIcon Name="key" />@U["ResetPassword"]</button></section>}
+        </div><footer><div class="uam-inline-actions"><button type="button" class="btn btn-secondary" disabled="@SavingDialog" @onclick="CloseDialogs">@U["Close"]</button>@if(CanManageUserStatus){<button type="button" class="btn btn-primary" disabled="@(SavingDialog || CustomerEnabled == (SelectedCustomer.Account.State == "Active"))" @onclick="SaveCustomerStatus"><BarangIcon Name="check" />@U["Save"]</button>}</div></footer>
+    </section></div>
 }
 
 <BarangConfirmDialog Open="ConfirmRoleDelete" Title="@U["DeleteRole"]" Description="@U["ConfirmDeleteRole"]" CancelText="@U["Close"]" ConfirmText="@U["Confirm"]" Cancel="() => ConfirmRoleDelete = false" Confirm="DeleteRole" />
@@ -240,6 +284,12 @@ else
     private string UserSearch = "", UserState = "", UserSort = "person";
     private bool UserDescending;
     private int UserPage = 1, UserTotalPages = 1;
+    private List<CustomerRow> Customers = [];
+    private bool CustomersLoading, CustomersError, ShowCustomerDialog;
+    private string CustomerSearch = "", CustomerState = "", CustomerNewPassword = "", CustomerConfirmPassword = "";
+    private int CustomerPage = 1, CustomerTotalPages = 1;
+    private CustomerDetail? SelectedCustomer;
+    private bool CustomerEnabled;
     private List<RoleRow> Roles = [];
     private bool RolesLoading, RolesError;
     private string RoleSearch = "", RoleSort = "title";
@@ -269,6 +319,7 @@ else
     private string? SavePopup;
     private bool SavePopupSuccess;
     private RoleRow? EditingRole;
+    private RoleRow? DeletingRole;
     private string RoleCode = "", RoleTitle = "", RoleDescription = "";
 
     private List<SearchableSelectOption> AccessRoleOptions = [], AccessUserOptions = [], RoleAssignmentOptions = [];
@@ -293,7 +344,7 @@ else
         CanManageSubstitutions=system||user.HasClaim(AuthClaimTypes.Permission,"security.user.manage");
         await LoadUsers();
     }
-    private async Task SelectTab(string tab) { ActiveTab = tab; Notice = null; if (tab == "users") await LoadUsers(); else if (tab == "roles") await LoadRoles(); else if (tab == "substitutions") await LoadSubstitutions(); else await PrepareAccess(); }
+    private async Task SelectTab(string tab) { ActiveTab = tab; Notice = null; if (tab == "users") await LoadUsers(); else if (tab == "customers") await LoadCustomers(); else if (tab == "roles") await LoadRoles(); else if (tab == "substitutions") await LoadSubstitutions(); else await PrepareAccess(); }
 
     private async Task LoadSubstitutions()
     {
@@ -347,7 +398,8 @@ else
         UsersLoading = true; UsersError = false; Notice = null;
         SessionInfo? session = await Session(); if (session is null) { UsersLoading = false; UsersError = true; return; }
         string state = UserState.Length == 0 ? "" : $"&accountState={Uri.EscapeDataString(UserState)}";
-        string path = $"api/v1/security/users/search?search={Uri.EscapeDataString(UserSearch)}{state}&sortBy={UserSort}&descending={UserDescending.ToString().ToLowerInvariant()}&pageNumber={UserPage}&pageSize={PageSize}";
+        // تب «کاربران» فقط کاربران داخلی ERP را نشان می‌دهد؛ مشتری‌های ثبت‌نام‌شده پرتال (پیرنگ‌خان) کنار گذاشته می‌شوند.
+        string path = $"api/v1/security/users/search?search={Uri.EscapeDataString(UserSearch)}{state}&portal=false&sortBy={UserSort}&descending={UserDescending.ToString().ToLowerInvariant()}&pageNumber={UserPage}&pageSize={PageSize}";
         ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync(path, session.Token, session.Company, Lifetime.Token);
         UsersLoading = false; if (!result.IsSuccess) { UsersError = true; return; }
         System.Text.Json.JsonElement root = result.Value; long total = Long(root, "totalCount"); UserTotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize));
@@ -356,6 +408,47 @@ else
     private async Task ChangeUserSearch(ChangeEventArgs e) { UserSearch = e.Value?.ToString() ?? ""; UserPage = 1; await LoadUsers(); }
     private async Task ChangeUserState(ChangeEventArgs e) { UserState = e.Value?.ToString() ?? ""; UserPage = 1; await LoadUsers(); }
     private async Task SortUsers(string sort) { if (UserSort == sort) UserDescending = !UserDescending; else { UserSort = sort; UserDescending = false; } await LoadUsers(); }
+
+    // ── تب «مشتری‌ها»: فقط کاربران ثبت‌نام‌شده از طریق پرتال B2C (پیرنگ‌خان) ──
+    private async Task LoadCustomers()
+    {
+        CustomersLoading = true; CustomersError = false; Notice = null;
+        SessionInfo? session = await Session(); if (session is null) { CustomersLoading = false; CustomersError = true; return; }
+        string state = CustomerState.Length == 0 ? "" : $"&accountState={Uri.EscapeDataString(CustomerState)}";
+        string path = $"api/v1/security/users/search?search={Uri.EscapeDataString(CustomerSearch)}{state}&portal=true&sortBy=person&descending=false&pageNumber={CustomerPage}&pageSize={PageSize}";
+        ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync(path, session.Token, session.Company, Lifetime.Token);
+        CustomersLoading = false; if (!result.IsSuccess) { CustomersError = true; return; }
+        System.Text.Json.JsonElement root = result.Value; long total = Long(root, "totalCount"); CustomerTotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize));
+        Customers = root.GetProperty("items").EnumerateArray().Select(ParseCustomerRow).ToList();
+    }
+    private async Task ChangeCustomerSearch(ChangeEventArgs e) { CustomerSearch = e.Value?.ToString() ?? ""; CustomerPage = 1; await LoadCustomers(); }
+    private async Task ChangeCustomerState(ChangeEventArgs e) { CustomerState = e.Value?.ToString() ?? ""; CustomerPage = 1; await LoadCustomers(); }
+    private void OpenCustomer(CustomerRow row)
+    {
+        CloseDialogs();
+        SelectedCustomer = new(new UserAccount(row.Id, row.Username, row.State, null, row.Version), new PersonInfo(row.PersonId, row.PersonnelCode, row.PersonName, row.Mobile, row.Email, row.State == "Active", ""), row.RegisteredAt);
+        CustomerEnabled = row.State == "Active"; CustomerNewPassword = CustomerConfirmPassword = "";
+        ShowCustomerDialog = true;
+    }
+    // بازنشانی رمز عبور مشتری با همان endpoint مدیریت‌ محور موجود (بدون نیاز به رمز فعلی).
+    private async Task ResetCustomerPassword()
+    {
+        if (SelectedCustomer is null) return;
+        if (CustomerNewPassword != CustomerConfirmPassword || !IsValidPassword(CustomerNewPassword)) { ShowSavePopup(false, CustomerNewPassword != CustomerConfirmPassword ? U["PasswordMismatch"].Value : U["PasswordPolicy"].Value); return; }
+        SessionInfo? session = await Session(); if (session is null) return; SavingDialog = true;
+        ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Put, $"api/v1/security/users/{SelectedCustomer.Account.Id}/password", new { password = CustomerNewPassword }, session.Token, session.Company, Lifetime.Token);
+        SavingDialog = false; CustomerNewPassword = CustomerConfirmPassword = "";
+        if (!result.IsSuccess) { ShowSaveFailure(result); return; }
+        ShowSavePopup(true, U["PasswordResetDone"].Value);
+    }
+    private async Task SaveCustomerStatus()
+    {
+        if (SelectedCustomer is null || !CanManageUserStatus) return;
+        if (CustomerEnabled == (SelectedCustomer.Account.State == "Active")) { CloseDialogs(); return; }
+        SessionInfo? session = await Session(); if (session is null) return; SavingDialog = true;
+        ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Put, $"api/v1/security/users/{SelectedCustomer.Account.Id}/activation", new { isActive = CustomerEnabled, version = SelectedCustomer.Account.Version }, session.Token, session.Company, Lifetime.Token);
+        SavingDialog = false; ShowResult(result); if (result.IsSuccess) { CloseDialogs(); await LoadCustomers(); }
+    }
 
     private async Task LoadRoles()
     {
@@ -429,7 +522,7 @@ else
         }
         foreach(UserRole role in SelectedUser.Roles)
         {
-            if(role.System||StagedRoles.Any(x=>x.RoleId==role.RoleId))continue;
+            if(StagedRoles.Any(x=>x.RoleId==role.RoleId))continue;
             ApiResult<System.Text.Json.JsonElement> revoked=await Core.SendAsync(HttpMethod.Delete,$"api/v1/security/users/{id}/roles/{role.RoleId}/companies/{session.Company}",null,session.Token,session.Company,Lifetime.Token);
             if(!revoked.IsSuccess){SavingDialog=false;ShowSaveFailure(revoked);return;}
         }
@@ -443,7 +536,8 @@ else
     private async Task SearchAssignmentRoles(string query)
     {
         SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.GetAsync($"api/v1/security/roles/search?search={Uri.EscapeDataString(query)}&isActive=true&pageSize=50", session.Token, session.Company, Lifetime.Token);
-        if (result.IsSuccess) RoleAssignmentOptions = result.Value.GetProperty("items").EnumerateArray().Select(ParseRole).Where(x => !x.System).Select(x => new SearchableSelectOption(x.Id.ToString(), $"{x.Title} · {x.Code}")).ToList();
+        // نقش‌های سیستمی (مثل System administrator) هم باید قابل تخصیص باشند؛ سمت API فقط بازیگر system-administrator اجازه‌ی این کار را دارد.
+        if (result.IsSuccess) RoleAssignmentOptions = result.Value.GetProperty("items").EnumerateArray().Select(ParseRole).Select(x => new SearchableSelectOption(x.Id.ToString(), $"{x.Title} · {x.Code}")).ToList();
     }
     private void StageDetailRole(string value)
     {
@@ -467,9 +561,14 @@ else
     {
         if (EditingRole is null) return; SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Put, $"api/v1/security/roles/{EditingRole.Id}/activation", new { isActive = !EditingRole.Active, version = EditingRole.Version }, session.Token, session.Company, Lifetime.Token); ShowResult(result); if (result.IsSuccess) { CloseDialogs(); await LoadRoles(); }
     }
+    // استاندارد گریدها: حذف در منوی سه‌نقطه‌ی ردیف است، نه داخل دیالوگ ویرایش.
+    private void AskRoleDelete(RoleRow role) { CloseDialogs(); DeletingRole = role; ConfirmRoleDelete = true; }
     private async Task DeleteRole()
     {
-        ConfirmRoleDelete = false; if (EditingRole is null) return; SessionInfo? session = await Session(); if (session is null) return; ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Delete, $"api/v1/security/roles/{EditingRole.Id}?version={EditingRole.Version}", null, session.Token, session.Company, Lifetime.Token); ShowResult(result); if (result.IsSuccess) { CloseDialogs(); await LoadRoles(); }
+        ConfirmRoleDelete = false; RoleRow? role = DeletingRole; DeletingRole = null; if (role is null) return; SessionInfo? session = await Session(); if (session is null) return;
+        ApiResult<System.Text.Json.JsonElement> result = await Core.SendAsync(HttpMethod.Delete, $"api/v1/security/roles/{role.Id}?version={role.Version}", null, session.Token, session.Company, Lifetime.Token);
+        if (!result.IsSuccess && result.Failure == ApiFailure.Conflict) { ShowSavePopup(false, U["RoleDeleteProtected"]); return; }
+        ShowResult(result, "Deleted"); if (result.IsSuccess) { CloseDialogs(); await LoadRoles(); }
     }
 
     private async Task PrepareAccess()
@@ -527,12 +626,13 @@ else
     private bool IsMatch(PermissionFeature feature) => PermissionSearch.Length > 0 && (FeatureLabel(feature.Path).Contains(PermissionSearch, StringComparison.CurrentCultureIgnoreCase) || feature.Permissions.Any(IsMatch));
     private bool IsMatch(PermissionItem permission) => PermissionSearch.Length > 0 && (permission.Code.Contains(PermissionSearch, StringComparison.OrdinalIgnoreCase) || FeatureLabel(permission.FeaturePath).Contains(PermissionSearch, StringComparison.CurrentCultureIgnoreCase) || ActionLabel(permission.Action).Contains(PermissionSearch, StringComparison.CurrentCultureIgnoreCase));
 
-    private RenderFragment Pager(int Page, int TotalPages, bool IsRole = false) => builder =>
+    // Move: تغییر صفحه با دلتای ‎±1‎؛ پیش‌فرض، گرید کاربران.
+    private RenderFragment Pager(int Page, int TotalPages, Func<int, Task>? Move = null) => builder =>
     {
-        if (TotalPages <= 1) return; int sequence = 0; builder.OpenElement(sequence++, "div"); builder.AddAttribute(sequence++, "class", "uam-pager");
-        builder.OpenElement(sequence++, "button"); builder.AddAttribute(sequence++, "type", "button"); builder.AddAttribute(sequence++, "class", "btn btn-secondary btn-small"); builder.AddAttribute(sequence++, "disabled", Page <= 1); builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, async () => { if (IsRole) { RolePage--; await LoadRoles(); } else { UserPage--; await LoadUsers(); } })); builder.AddContent(sequence++, U["Previous"]); builder.CloseElement();
+        Func<int, Task> move = Move ?? new Func<int, Task>(async delta => { UserPage += delta; await LoadUsers(); }); if (TotalPages <= 1) return; int sequence = 0; builder.OpenElement(sequence++, "div"); builder.AddAttribute(sequence++, "class", "uam-pager");
+        builder.OpenElement(sequence++, "button"); builder.AddAttribute(sequence++, "type", "button"); builder.AddAttribute(sequence++, "class", "btn btn-secondary btn-small"); builder.AddAttribute(sequence++, "disabled", Page <= 1); builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, () => move(-1))); builder.AddContent(sequence++, U["Previous"]); builder.CloseElement();
         builder.OpenElement(sequence++, "span"); builder.AddContent(sequence++, U["PageOf", Page, TotalPages]); builder.CloseElement();
-        builder.OpenElement(sequence++, "button"); builder.AddAttribute(sequence++, "type", "button"); builder.AddAttribute(sequence++, "class", "btn btn-secondary btn-small"); builder.AddAttribute(sequence++, "disabled", Page >= TotalPages); builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, async () => { if (IsRole) { RolePage++; await LoadRoles(); } else { UserPage++; await LoadUsers(); } })); builder.AddContent(sequence++, U["Next"]); builder.CloseElement(); builder.CloseElement();
+        builder.OpenElement(sequence++, "button"); builder.AddAttribute(sequence++, "type", "button"); builder.AddAttribute(sequence++, "class", "btn btn-secondary btn-small"); builder.AddAttribute(sequence++, "disabled", Page >= TotalPages); builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create(this, () => move(+1))); builder.AddContent(sequence++, U["Next"]); builder.CloseElement(); builder.CloseElement();
     };
     private RenderFragment PersonCard(PersonInfo Person) => builder =>
     {
@@ -541,7 +641,7 @@ else
         builder.OpenElement(s++, "button"); builder.AddAttribute(s++, "type", "button"); builder.AddAttribute(s++, "class", "btn btn-secondary btn-small"); builder.AddAttribute(s++, "onclick", EventCallback.Factory.Create(this, () => ViewPersonDetail(Person.Id))); builder.AddContent(s++, U["ViewPerson"]); builder.CloseElement(); builder.CloseElement();
     };
 
-    private void CloseDialogs() { ShowAddUser = ShowUserDetail = ShowRoleDialog = ShowSubstitutionDialog = ShowSubstitutionView = EditingUser = ShowPersonView = false; SelectedPerson = null; SelectedUser = null; EditingRole = null; ViewedSubstitution = null; }
+    private void CloseDialogs() { ShowAddUser = ShowUserDetail = ShowRoleDialog = ShowSubstitutionDialog = ShowSubstitutionView = EditingUser = ShowPersonView = ShowCustomerDialog = false; SelectedPerson = null; SelectedUser = null; SelectedCustomer = null; EditingRole = null; DeletingRole = null; ViewedSubstitution = null; }
     private void ViewPersonDetail(Guid id) { PersonViewId = id; ShowPersonView = true; }
     private void ClosePersonView() { ShowPersonView = false; PersonViewId = null; }
     private void ShowSavePopup(bool success, string message) { SavePopupSuccess = success; SavePopup = message; if (success) CloseDialogs(); }
@@ -562,6 +662,7 @@ else
     private static long Long(System.Text.Json.JsonElement x, string name) => x.TryGetProperty(name, out var p) && p.TryGetInt64(out long n) ? n : 0;
     private static DateTimeOffset? Date(System.Text.Json.JsonElement x, string name) => x.TryGetProperty(name, out var p) && p.ValueKind != System.Text.Json.JsonValueKind.Null && p.TryGetDateTimeOffset(out DateTimeOffset value) ? value : null;
     private static UserRow ParseUserRow(System.Text.Json.JsonElement x) { var a = x.GetProperty("account"); var p = x.GetProperty("person"); return new(a.GetProperty("id").GetGuid(), Text(a, "username"), Text(p, "fullName"), Text(p, "personnelCode"), Text(p, "mobile"), OrganizationOf(p), Text(a, "accountState"), Date(a, "lastLoginAtUtc"), x.GetProperty("assignedRoleTitles").EnumerateArray().Select(y => y.ToString()).ToList(), Long(a, "version")); }
+    private static CustomerRow ParseCustomerRow(System.Text.Json.JsonElement x) { var a = x.GetProperty("account"); var p = x.GetProperty("person"); return new(a.GetProperty("id").GetGuid(), p.GetProperty("id").GetGuid(), Text(a, "username"), Text(p, "fullName"), Text(p, "personnelCode"), Text(p, "mobile"), Text(p, "email"), Text(a, "accountState"), Date(a, "createdAtUtc"), Long(a, "version")); }
     private static RoleRow ParseRole(System.Text.Json.JsonElement x) => new(x.GetProperty("id").GetGuid(), Text(x, "code"), Text(x, "displayTitle"), Text(x, "description"), Text(x, "scope"), Bool(x, "isSystem"), Bool(x, "isActive"), Long(x, "userCount"), Long(x, "version"));
     private static PersonCandidate ParsePersonCandidate(System.Text.Json.JsonElement x) => new(ParsePerson(x.GetProperty("person")), Bool(x, "hasUserAccount"));
     private static PersonInfo ParsePerson(System.Text.Json.JsonElement p) => new(p.GetProperty("id").GetGuid(), Text(p, "personnelCode"), Text(p, "fullName"), Text(p, "mobile"), Text(p, "email"), Bool(p, "isActive"), OrganizationOf(p));
@@ -572,6 +673,7 @@ else
 
     private sealed record SessionInfo(string Token, Guid Company);
     private sealed record UserRow(Guid Id, string Username, string PersonName, string PersonnelCode, string Mobile, string Organization, string State, DateTimeOffset? LastLogin, IReadOnlyList<string> Roles, long Version);
+    private sealed record CustomerRow(Guid Id, Guid PersonId, string Username, string PersonName, string PersonnelCode, string Mobile, string Email, string State, DateTimeOffset? RegisteredAt, long Version) { public string Contact => string.Join(" · ", new[] { Mobile, Email }.Where(s => !string.IsNullOrWhiteSpace(s))); }
     private sealed record RoleRow(Guid Id, string Code, string Title, string Description, string Scope, bool System, bool Active, long UserCount, long Version);
     private sealed record SubstitutionRow(Guid Id, Guid PrincipalUserId, string PrincipalName, Guid SubstituteUserId, string SubstituteName, DateTimeOffset EffectiveFromUtc, DateTimeOffset EffectiveToUtc, bool IsActive, string? Reason, long Version, string? CreatedByName, DateTimeOffset? RevokedAtUtc);
     private sealed record PersonInfo(Guid Id, string PersonnelCode, string FullName, string Mobile, string Email, bool Active, string Organization);
@@ -579,6 +681,7 @@ else
     private sealed record UserAccount(Guid Id, string Username, string State, DateTimeOffset? LastLogin, long Version);
     private sealed record UserRole(Guid RoleId, string Title, string Code, bool System);
     private sealed record UserDetail(UserAccount Account, PersonInfo Person, IReadOnlyList<UserRole> Roles);
+    private sealed record CustomerDetail(UserAccount Account, PersonInfo Person, DateTimeOffset? RegisteredAt);
     private sealed record PermissionAssignment(bool Direct, bool Inherited, bool Effective);
     private sealed record PermissionTarget(string Kind, Guid Id, string Name, long Version, List<PermissionItem> Permissions);
     private sealed record PermissionItem(Guid Id, string Code, string Module, string FeaturePath, string Action, string Capability) { public bool Direct { get; set; } public bool Inherited { get; set; } public bool Effective { get; set; } }

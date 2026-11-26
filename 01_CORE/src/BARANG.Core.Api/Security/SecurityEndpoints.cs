@@ -86,7 +86,7 @@ public static class SecurityEndpoints
         return endpoints;
     }
 
-    private static async Task<IResult> SearchUsersAsync(string? search, string? accountState, string? sortBy, bool? descending, int? pageNumber, int? pageSize, ISecurityAdministration security, CancellationToken ct)
+    private static async Task<IResult> SearchUsersAsync(string? search, string? accountState, string? sortBy, bool? descending, int? pageNumber, int? pageSize, bool? portal, ISecurityAdministration security, CancellationToken ct)
     {
         UserAccountState? state = null;
         if (!string.IsNullOrWhiteSpace(accountState))
@@ -95,7 +95,8 @@ public static class SecurityEndpoints
                 return Map(Result.Failure<PagedResult<SecurityUserListItemView>>(Error.Validation("security.user.account_state_invalid")));
             state = parsed;
         }
-        return Map(await security.SearchUsersAsync(new(search, state, sortBy ?? "person", descending ?? false, pageNumber ?? 1, pageSize ?? 20), ct));
+        // portal=true → فقط مشتری‌های ثبت‌نام‌شده پرتال، portal=false → فقط کاربران داخلی ERP، بدون پارامتر → همه (رفتار قبلی).
+        return Map(await security.SearchUsersAsync(new(search, state, sortBy ?? "person", descending ?? false, pageNumber ?? 1, pageSize ?? 20, portal), ct));
     }
 
     private static async Task<IResult> BootstrapAsync(BootstrapRequest request, HttpContext http, IConfiguration config, CompanyContext companies, CoreDbContext db, ISecurityAdministration security, CancellationToken ct)

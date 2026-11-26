@@ -11,7 +11,8 @@ public sealed record PersonUserCandidateView(PersonSummaryView Person, bool HasU
 public sealed record SecurityUserListItemView(UserView Account, PersonSummaryView Person, IReadOnlyList<string> AssignedRoleTitles);
 public sealed record SecurityUserDetailView(UserView Account, PersonSummaryView Person, IReadOnlyList<UserRoleDetailView> Roles);
 public sealed record UserRoleDetailView(Guid AssignmentId, Guid RoleId, string RoleCode, string RoleTitle, RoleScope Scope, DateTimeOffset ValidFromUtc, DateTimeOffset? ValidToUtc);
-public sealed record SecurityUserQuery(string? Search = null, UserAccountState? AccountState = null, string SortBy = "person", bool Descending = false, int PageNumber = 1, int PageSize = PagedRequest.DefaultPageSize);
+// Portal filter: null = همه کاربران (رفتار پیش‌فرض فعلی)، true = فقط ثبت‌نام‌شده‌های پرتال (پیرنگ‌خان)، false = فقط کاربران داخلی ERP.
+public sealed record SecurityUserQuery(string? Search = null, UserAccountState? AccountState = null, string SortBy = "person", bool Descending = false, int PageNumber = 1, int PageSize = PagedRequest.DefaultPageSize, bool? Portal = null);
 
 public sealed record RoleView(Guid Id, string Code, string DisplayTitle, bool IsSystem, bool IsActive, long Version, string? Description = null, RoleScope Scope = RoleScope.Company, int UserCount = 0);
 public sealed record SecurityRoleQuery(string? Search = null, bool? IsActive = null, string SortBy = "title", bool Descending = false, int PageNumber = 1, int PageSize = PagedRequest.DefaultPageSize);

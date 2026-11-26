@@ -379,20 +379,24 @@ public sealed class SecurityAdministration(
         access.End(time.GetUtcNow()); Audit(AuditActions.UserCompanyRevoked, "user", userId, companyId, AuditChangeKind.Archived); return Result.Success();
     }, ct);
 
-    public async Task<Result<IReadOnlyList<UserCompanyView>>> ListCompaniesAsync(Guid userId, CancellationToken ct)
+    // خواندن‌های غیرتراکنشی روی user_companies/user_roles بدون set_config('barang.user_id'/'barang.company_id')
+    // زیرا RLS همه‌ی ردیف‌ها را می‌پوشاند و ۴۰۴ برمی‌گشت؛ مثل بقیه‌ی متدها داخل تراکنش اجرا می‌شود.
+    public Task<Result<IReadOnlyList<UserCompanyView>>> ListCompaniesAsync(Guid userId, CancellationToken ct) => transactions.ExecuteAsync(async token =>
     {
         if (!company.IsAvailable) return Result.Failure<IReadOnlyList<UserCompanyView>>(SecurityErrors.AccessDenied);
-        bool system = await IsActorSystemAdministrator(ct);
-        if (!system && !await store.UserBelongsToCompanyAsync(userId, company.RequireCompanyId(), time.GetUtcNow(), ct)) return Result.Failure<IReadOnlyList<UserCompanyView>>(SecurityErrors.NotFound);
-        IReadOnlyList<UserCompany> values = await store.ListCompanyAccessAsync(userId, ct);
+        bool system = await IsActorSystemAdministrator(token);
+        if (!system && !await store.UserBelongsToCompanyAsync(userId, company.RequireCompanyId(), time.GetUtcNow(), token)) return Result.Failure<IReadOnlyList<UserCompanyView>>(SecurityErrors.NotFound);
+        IReadOnlyList<UserCompany> values = await store.ListCompanyAccessAsync(userId, token);
         if (!system) values = values.Where(x => x.CompanyId == company.RequireCompanyId()).ToArray();
         return Result.Success<IReadOnlyList<UserCompanyView>>(values.Select(View).ToArray());
-    }
+    }, ct);
 
     public Task<Result<UserRoleView>> AssignRoleAsync(Guid userId, Guid roleId, Guid companyId, DateTimeOffset? validTo, CancellationToken ct) => transactions.ExecuteAsync(async token =>
     {
         Guid currentCompany = company.RequireCompanyId(); if (companyId != currentCompany) return Result.Failure<UserRoleView>(SecurityErrors.AccessDenied);
         if (!await store.UserBelongsToCompanyAsync(userId, currentCompany, time.GetUtcNow(), token)) return Result.Failure<UserRoleView>(SecurityErrors.NotFound);
+        // مشتری‌های ثبت‌نام‌شده پرتال برای همیشه فقط نقش Portal customer را دارند؛ هیچ نقشی به آن‌ها اضافه نمی‌شود.
+        if (await IsPortalRegisteredUserAsync(userId, token)) return Result.Failure<UserRoleView>(SecurityErrors.PortalUserRolesLocked);
         Role? role = await store.FindRoleAsync(roleId, token); if (role is not { IsActive: true }) return Result.Failure<UserRoleView>(SecurityErrors.NotFound);
         Result allowed = await CanAssignRole(role, token); if (allowed.IsFailure) return Result.Failure<UserRoleView>(allowed.Error);
         if (await store.FindOpenUserRoleAsync(userId, roleId, currentCompany, token) is not null) return Result.Failure<UserRoleView>(SecurityErrors.Conflict);
@@ -404,6 +408,8 @@ public sealed class SecurityAdministration(
     public Task<Result> RevokeRoleAsync(Guid userId, Guid roleId, Guid companyId, CancellationToken ct) => transactions.ExecuteAsync(async token =>
     {
         Guid currentCompany = company.RequireCompanyId(); if (companyId != currentCompany) return Result.Failure(SecurityErrors.AccessDenied);
+        // لغو نقش Portal customer هم برای مشتری پرتال ممنوع است؛ این نقش بخشی از هویت اوست.
+        if (await IsPortalRegisteredUserAsync(userId, token)) return Result.Failure(SecurityErrors.PortalUserRolesLocked);
         UserRole? link = await store.FindOpenUserRoleAsync(userId, roleId, currentCompany, token); Role? role = await store.FindRoleAsync(roleId, token);
         if (link is null || role is null) return Result.Failure(SecurityErrors.NotFound);
         Result allowed = await CanAssignRole(role, token); if (allowed.IsFailure) return allowed;
@@ -412,11 +418,11 @@ public sealed class SecurityAdministration(
         Audit(AuditActions.UserRoleRevoked, "user", userId, currentCompany, AuditChangeKind.Archived, new Dictionary<string, object?> { ["roleId"] = roleId, ["roleCode"] = role.Code }); return Result.Success();
     }, ct);
 
-    public async Task<Result<IReadOnlyList<UserRoleView>>> ListUserRolesAsync(Guid userId, CancellationToken ct)
+    public Task<Result<IReadOnlyList<UserRoleView>>> ListUserRolesAsync(Guid userId, CancellationToken ct) => transactions.ExecuteAsync(async token =>
     {
-        if (!company.IsAvailable || !await store.UserBelongsToCompanyAsync(userId, company.RequireCompanyId(), time.GetUtcNow(), ct)) return Result.Failure<IReadOnlyList<UserRoleView>>(SecurityErrors.NotFound);
-        return Result.Success<IReadOnlyList<UserRoleView>>((await store.ListUserRolesAsync(userId, ct)).Where(x => x.CompanyId == company.RequireCompanyId()).Select(View).ToArray());
-    }
+        if (!company.IsAvailable || !await store.UserBelongsToCompanyAsync(userId, company.RequireCompanyId(), time.GetUtcNow(), token)) return Result.Failure<IReadOnlyList<UserRoleView>>(SecurityErrors.NotFound);
+        return Result.Success<IReadOnlyList<UserRoleView>>((await store.ListUserRolesAsync(userId, token)).Where(x => x.CompanyId == company.RequireCompanyId()).Select(View).ToArray());
+    }, ct);
 
     public async Task<Result<LoginResult>> LoginAsync(string username, string password, CancellationToken ct)
     {
@@ -493,6 +499,15 @@ public sealed class SecurityAdministration(
         ApplicationUser? user = await store.FindUserAsync(id, ct); return user is null ? Result.Failure<ApplicationUser>(SecurityErrors.NotFound) : Result.Success(user);
     }
 
+    // آیا این کاربر از طریق ثبت‌نام پرتال (پیرنگ‌خان) ساخته شده است؟ ملاک، یادداشت Person در لحظه‌ی ثبت‌نام است.
+    private async Task<bool> IsPortalRegisteredUserAsync(Guid userId, CancellationToken token)
+    {
+        ApplicationUser? user = await store.FindUserAsync(userId, token);
+        if (user?.PersonId is not { } personId) return false;
+        Person? person = await chart.FindPersonAsync(personId, token);
+        return string.Equals(person?.Notes, PortalRegistrationNote, StringComparison.Ordinal);
+    }
+
     private async Task<PersonSummaryView> PersonSummary(ApplicationUser user, CancellationToken ct)
     {
         Person? person = user.PersonId is { } id ? await chart.FindPersonAsync(id, ct) : null;
@@ -545,6 +560,9 @@ public sealed class SecurityAdministration(
     // ------------------------------------------------------------------
     public const string PortalOtpMockCode = "1111";
     public const string PortalCustomerRoleCode = "portal.customer";
+    // نشانگر ثبت‌نام خودکار پرتال؛ یادداشت Person که هنگام ثبت‌نام پرتال (پیرنگ‌خان) نوشته می‌شود
+    // و مبنای تفکیک «مشتری‌های پرتال» از «کاربران داخلی ERP» در جستجوی کاربران است.
+    public const string PortalRegistrationNote = "Self registration (Pirang Khan)";
     private static readonly string[] PortalRolePermissions =
     [
         SecurityPermissions.ClientCustomerRead, SecurityPermissions.ClientCustomerWrite,
@@ -598,7 +616,7 @@ public sealed class SecurityAdministration(
         string personnelCode = await chart.AllocateNextPersonnelCodeAsync(companyId, token);
         string? email = target.Contains('@') ? target.Trim() : null;
         string? mobile = target.Contains('@') ? null : target.Trim();
-        Result<Person> person = Person.Create(Guid.NewGuid(), companyId, personnelCode, firstName, lastName, null, null, email, mobile, null, "Self registration (Pirang Khan)", time.GetUtcNow());
+        Result<Person> person = Person.Create(Guid.NewGuid(), companyId, personnelCode, firstName, lastName, null, null, email, mobile, null, PortalRegistrationNote, time.GetUtcNow());
         if (person.IsFailure) return Result.Failure<LoginResult>(person.Error);
         chart.Add(person.Value);
         Result<ApplicationUser> made = ApplicationUser.CreateIdentity(Guid.NewGuid(), person.Value.Id, username, firstName + " " + lastName, email, time.GetUtcNow());

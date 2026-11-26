@@ -46,6 +46,17 @@ public sealed class SecurityStore(CoreDbContext db, ICompanyContext company, Tim
              select user).Distinct();
 
         if (query.AccountState is { } state) users = users.Where(x => x.AccountState == state);
+        if (query.Portal is { } portalOnly)
+        {
+            // تفکیک مشتری‌های پرتال (یادداشت Person = نشانگر ثبت‌نام پیرنگ‌خان) از کاربران داخلی ERP.
+            string note = SecurityAdministration.PortalRegistrationNote;
+            IQueryable<Guid> portalPeople = db.Persons.IgnoreQueryFilters().AsNoTracking()
+                .Where(x => x.CompanyId == companyId && x.Notes == note)
+                .Select(x => x.Id);
+            users = portalOnly
+                ? users.Where(x => x.PersonId != null && portalPeople.Contains(x.PersonId.Value))
+                : users.Where(x => x.PersonId == null || !portalPeople.Contains(x.PersonId.Value));
+        }
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             string term = query.Search.Trim();

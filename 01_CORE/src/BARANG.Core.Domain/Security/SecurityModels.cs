@@ -21,6 +21,8 @@ public static class SecurityErrors
     public static Error SystemRoleProtected => Error.BusinessRule("security.system_role.protected");
     public static Error PrivilegeEscalation => Error.Authorization("security.permission.delegation_denied");
     public static Error AccountLocked => Error.Authentication("security.login.account_locked");
+    // مشتریان ثبت‌نام‌شده‌ی پرتال (پیرنگ‌خان) تا ابد فقط نقش Portal customer دارند؛ افزودن/لغو هر نقش دیگری برایشان ممنوع است.
+    public static Error PortalUserRolesLocked => Error.Authorization("security.portal_user_roles_locked");
 }
 
 public sealed class ApplicationUser

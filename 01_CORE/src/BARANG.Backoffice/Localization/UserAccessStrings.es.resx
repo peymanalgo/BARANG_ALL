@@ -580,4 +580,28 @@
   <data name="ViewUser" xml:space="preserve">
     <value>Ver usuario</value>
   </data>
+  <data name="Customers" xml:space="preserve">
+    <value>Clientes</value>
+  </data>
+  <data name="CustomersIntro" xml:space="preserve">
+    <value>Estos clientes se registraron por sí mismos en la tienda Peyrang y conservan únicamente el rol «Portal customer».</value>
+  </data>
+  <data name="SearchCustomers" xml:space="preserve">
+    <value>Buscar por nombre, móvil o correo del cliente</value>
+  </data>
+  <data name="NoCustomers" xml:space="preserve">
+    <value>No hay clientes que coincidan con los filtros.</value>
+  </data>
+  <data name="RegistrationDate" xml:space="preserve">
+    <value>Fecha de registro</value>
+  </data>
+  <data name="EditCustomer" xml:space="preserve">
+    <value>Editar cliente</value>
+  </data>
+  <data name="PortalCustomerRolesLocked" xml:space="preserve">
+    <value>Los clientes del portal conservan únicamente el rol «Portal customer»; no se pueden añadir ni revocar roles.</value>
+  </data>
+  <data name="PasswordResetDone" xml:space="preserve">
+    <value>La contraseña se ha restablecido correctamente.</value>
+  </data>
 </root>
