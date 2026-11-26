@@ -138,8 +138,8 @@
             }
         </nav>
     </div>
-    @* جستجو در صفحه اول وسط هیرو است؛ بقیه صفحات نوار جستجوی هدر را دارند *@
-    @if (route.Length > 0)
+    @* جستجو فقط در صفحه طرح‌ها (کاتالوگ) بالای صفحه است؛ صفحه اول جستجوی داخل هیرو دارد و بقیه صفحات نوار جستجو ندارند *@
+    @if (route.StartsWith("catalog", StringComparison.OrdinalIgnoreCase))
     {
         <div class="container header-searchbar">
             <form class="header-search" action="/catalog" method="get" role="search">
