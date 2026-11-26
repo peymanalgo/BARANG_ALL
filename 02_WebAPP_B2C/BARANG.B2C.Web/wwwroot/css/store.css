@@ -877,23 +877,10 @@ a.brand .brand-name { color: var(--text); }
 .hs-go:hover { filter: brightness(1.08); transform: translateY(-1px); }
 [dir="rtl"] .hs-field { padding: 6px 18px 6px 8px; }
 
-/* ---------- hero: تیتر + CTA + عکس تیشرت‌ها + جستجوی شیشه‌ای ---------- */
+/* ---------- hero: عکس تیشرت‌ها (۷۵٪ عرض) + جستجوی شیشه‌ای تمام‌عرض ---------- */
 .hero2 { min-height: 0; display: block; }
-.hero2-inner {
-    position: relative; display: grid; gap: clamp(1.2rem, 3vw, 2.4rem); align-items: center;
-    grid-template-columns: minmax(300px, 5fr) minmax(0, 7fr);
-    padding: clamp(1.4rem, 3vw, 2.6rem) 0 clamp(1.4rem, 3vw, 2.6rem);
-}
-@media (max-width: 980px) { .hero2-inner { grid-template-columns: 1fr; } }
-.hero-copy { display: flex; flex-direction: column; gap: .9rem; color: #fff; }
-.hero-copy h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.3rem); font-weight: 850; line-height: 1.35; }
-.hero-copy h1::after { content: ""; display: block; width: 64px; height: 4px; border-radius: 4px; background: var(--primary); margin-top: .7rem; }
-.hero-copy p { margin: 0; color: #cfd2dc; font-size: clamp(.95rem, 1.6vw, 1.08rem); line-height: 1.9; }
-.hero-ctas { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: .3rem; }
-.hero-trust { list-style: none; display: flex; gap: 1.1rem; flex-wrap: wrap; margin: .4rem 0 0; padding: 0; color: #aeb3c2; font-size: .82rem; }
-.hero-trust li { display: flex; align-items: center; gap: .35rem; }
-.hero-trust li::before { content: "✓"; color: var(--primary); font-weight: 800; }
-.hero-frame { position: relative; width: 100%; margin-inline: auto; }
+.hero2-inner { position: relative; display: block; padding: clamp(1rem, 2.5vw, 2rem) 0 clamp(1.2rem, 3vw, 2.4rem); }
+.hero-frame { position: relative; width: 75%; margin-inline: auto; }
 .hero2-photo { display: block; width: 100%; height: auto; border-radius: 22px; box-shadow: 0 26px 60px rgba(17, 17, 20, .38); }
 .hero-frame::before { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: 22px; background: linear-gradient(180deg, rgba(17,17,20,.16), rgba(17,17,20,.42)); }
 .hero2-search { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: clamp(.8rem, 2vw, 1.6rem); pointer-events: none; }

@@ -8,25 +8,13 @@
     // شعار از CMS (تنظیمات سایت در ERP)؛ در نبودش متن پیش‌فرض
     var cmsSlogan = Site.LoadAsync().GetAwaiter().GetResult().Settings?.Slogan;
 }
-@* ---------- HERO: تیتر و ارزش پیشنهادی + CTA + عکس تیشرت‌ها + جستجو ---------- *@
+@* ---------- HERO: عکس تیشرت‌ها (۷۵٪) + جستجوی شیشه‌ای تمام‌عرض ---------- *@
 <section class="hero2">
     <div class="hero2-inner">
-        <div class="hero-copy">
-            <h1>@T("طرح دلخواهت را روی تیشرت چاپ کن", "Print your favourite design on a t-shirt", "اطبع تصميمك المفضل على التيشرت", "Imprime tu diseño favorito en una camiseta")</h1>
-            <p>@T("هزاران طرح آماده چاپ — انتخاب کن، سایز و رنگ را بزن، ۳ تا ۵ روز کاری بعد در خانه‌ات.", "Thousands of print-ready designs — pick one, choose size & color, delivered in 3–5 business days.", "آلاف التصاميم الجاهزة — اختر وحدد المقاس واللون، يصلك خلال ٣-٥ أيام عمل.", "Miles de diseños listos: elige, escoge talla y color, y recíbelo en 3-5 días hábiles.")</p>
-            <div class="hero-ctas">
-                <a class="btn btn-primary btn-lg btn-shine" href="/order/wizard">@T("شروع طراحی تیشرت ←", "Start designing →", "ابدأ التصميم ←", "Empezar a diseñar →")</a>
-                <a class="btn btn-light btn-lg" href="/catalog">@T("مشاهده طرح‌ها", "Browse designs", "استعرض التصاميم", "Ver diseños")</a>
-            </div>
-            <ul class="hero-trust" aria-label="@T("مزایا", "Benefits", "المزايا", "Beneficios")">
-                <li>@T("تضمین کیفیت چاپ", "Print quality guarantee", "ضمان جودة الطباعة", "Garantía de impresión")</li>
-                <li>@T("لغو رایگان تا شروع چاپ", "Free cancellation before printing", "إلغاء مجاني قبل الطباعة", "Cancelación gratis antes de imprimir")</li>
-                <li>@T("پرداخت امن", "Secure payment", "دفع آمن", "Pago seguro")</li>
-            </ul>
-        </div>
         <div class="hero-frame">
             <img class="hero2-photo" src="~/images/hero-shirts.jpg" width="1200" height="800" loading="eager" fetchpriority="high"
                  alt="@T("تیشرت‌های چاپ‌شده با طرح‌های دلخواه روی چوب‌لباسی، بسته‌بندی و تیشرت روی زمین", "Printed custom t-shirts on hangers, packaging and a shirt on the floor", "تيشرتات مطبوعة بالتصاميم المخصصة على الشماعات والعبوة والتيشرت على الأرض", "Camisetas personalizadas impresas en perchas, embalaje y una camiseta en el suelo")" />
+        <h1 class="sr-only">@T("پی‌رنگ — فروشگاه طرح‌های چاپی", "Peyrang — print designs store", "پی‌رنگ — متجر التصاميم الجاهزة للطباعة", "Peyrang — tienda de diseños para impresión")</h1>
         <div class="hero2-search reveal">
             <form class="header-search" action="/catalog" method="get" role="search">
                 <div class="hs-field">
