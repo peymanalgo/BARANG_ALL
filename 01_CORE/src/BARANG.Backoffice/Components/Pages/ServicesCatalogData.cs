@@ -40,6 +40,7 @@ public static class ServicesCatalogData
         new("public", "کاتالوگ عمومی (B2C)", "Public Catalog (B2C)", "الكتالوج العام"),
         new("notifications", "اعلان‌ها", "Notifications", "الإشعارات"),
         new("auth", "احراز هویت و حساب کاربری", "Auth & Account", "المصادقة والحساب"),
+        new("designaudit", "ممیزی طراحی", "Design audit", "تدقيق التصميم"),
         new("ai", "دستیار هوش مصنوعی", "AI Assistant", "المساعد الذكي"),
         new("features", "فیچرهای سیستم", "System Features", "ميزانيات النظام"),
     ];
@@ -636,6 +637,28 @@ public static class ServicesCatalogData
                 In("target", "string", "Body", true),
                 In("password", "string", "Body", true)),
             "JSON: کاربر + توکن Bearer", "بدون هدر", true),
+
+        N("designaudit", "45", "POST", "/design-audit/evaluate", "—", "عمومی — RateLimiter client-read",
+            "ارزیابی قوانین ممیزی طراحی", "Evaluate design audit rules", "تقييم قواعد تدقيق التصميم",
+            "وضعیت طراحی سایت پی‌رنگ (طرح، متن، اندازه چاپ، رنگ پارچه) را به‌ازای هر قانون ممیزی می‌سنجد و نتیجه rule-by-rule با پیام بومی‌شده برمی‌گرداند؛ پاسخ کلی سبز/قرمز تعیین می‌کند سفارش قابل ادامه است یا نه. قوانین از «قوانین ممیزی» در ERP می‌آیند.",
+            "Evaluates the Peyrang design state (artwork, text, print size, fabric color) against each audit rule and returns rule-by-rule results with localized messages plus an overall green/red verdict that gates order continuation. Rules come from the ERP Design audit rules module.",
+            "يقيم حالة تصميم موقع بي‌رنگ (التصميم والنص ومقاس الطباعة ولون القماش) مقابل كل قاعدة تدقيق ويعيد النتائج قاعدةً بقاعدة مع رسائل مترجمة وحكمًا عامًا أخضر/أحمر يمنع أو يسمح بمتابعة الطلب. تأتي القواعد من وحدة قواعد التدقيق في ERP.",
+            Inputs(
+                In("printSizeCode", "string", "Body", true),
+                In("fabricHex", "string", "Body", false),
+                In("artworkId", "Guid", "Body", false),
+                In("designWidthPx", "int", "Body", false),
+                In("designHeightPx", "int", "Body", false),
+                In("text", "object", "Body", false)),
+            "JSON: { passed, results[] }", "بدون هدر", true),
+
+        N("designaudit", "46", "GET", "/system/design-audit-rules", "DesignAuditManage", "—",
+            "مدیریت قوانین ممیزی", "Manage design audit rules", "إدارة قواعد تدقيق التصميم",
+            "CRUD قوانین ممیزی طراحی در ERP (لیست/ایجاد/ویرایش/حذف) با مجوز designaudit.manage؛ هر قانون نوع (رزولوشن/متن/کنتراست)، اندازه چاپ و پارامتر دارد.",
+            "CRUD for design audit rules in the ERP (list/create/update/delete) guarded by designaudit.manage; each rule carries a type (resolution/text/contrast), a print size and parameters.",
+            "إدارة قواعد تدقيق التصميم في ERP (قائمة/إنشاء/تحديث/حذف) بصلاحية designaudit.manage؛ كل قاعدة لها نوع (دقة/نص/تباين) ومقاس طباعة ومعاملات.",
+            Inputs(),
+            "JSON: آرایه قوانین", "Authorization: Bearer Token + X-Company-ID", false, true),
 
         N("customers", "41", "GET", "/client/customers/{customerId}/favorites", "ClientCustomerRead", "client-read",
             "طرح‌های مورد علاقه مشتری", "Customer favorite designs", "تصاميم العميل المفضلة",

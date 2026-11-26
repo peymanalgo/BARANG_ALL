@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="da_title"><value>قوانین ممیزی طراحی</value></data>
+  <data name="da_sub"><value>قوانین چاپ که سایت پی‌رنگ در استودیوی طراحی رعایت می‌کند؛ هر قانون نوع، اندازه چاپ و پارامتر دارد.</value></data>
+  <data name="da_new"><value>قانون جدید</value></data>
+  <data name="da_code"><value>کد</value></data>
+  <data name="da_type"><value>نوع قانون</value></data>
+  <data name="da_type_res"><value>حداقل رزولوشن</value></data>
+  <data name="da_type_text"><value>متن داخل ناحیه چاپ</value></data>
+  <data name="da_type_contrast"><value>کنتراست متن با پارچه</value></data>
+  <data name="da_size"><value>اندازه چاپ</value></data>
+  <data name="da_all"><value>همه</value></data>
+  <data name="da_minpx"><value>حداقل پیکسل</value></data>
+  <data name="da_margin"><value>حاشیه امن (میلی‌متر)</value></data>
+  <data name="da_delta"><value>حداقل اختلاف کنتراست</value></data>
+  <data name="da_params"><value>پارامترها</value></data>
+  <data name="da_active"><value>فعال</value></data>
+  <data name="da_title_fa"><value>عنوان (فارسی)</value></data>
+  <data name="da_title_en"><value>عنوان (انگلیسی)</value></data>
+  <data name="da_save"><value>ذخیره</value></data>
+  <data name="da_cancel"><value>انصراف</value></data>
+  <data name="da_saved"><value>قانون ذخیره شد.</value></data>
+  <data name="da_error"><value>ذخیره انجام نشد؛ ورودی‌ها را بررسی کن.</value></data>
+  <data name="da_empty"><value>هنوز قانونی ثبت نشده است.</value></data>
+  <data name="da_confirm_del"><value>این قانون حذف شود؟</value></data>
+  <data name="da_deleted"><value>قانون حذف شد.</value></data>
+</root>

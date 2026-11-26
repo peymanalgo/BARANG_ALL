@@ -1,4 +1,6 @@
-// ویزارد سفارش چاپ (۴ فاز) — پیاده‌سازی مطابق پروتوتایپ؛ همه داده‌ها و قیمت‌ها از Core.
+// ویزارد سفارش چاپ نسخه ۳ — استودیوی طراحی: تیشرت همیشه مرکز، ابزارها آیکن‌های شناور
+// دور صحنه که با کلیک پنل می‌دهند؛ لایه‌های طرح/متن مستقل با درگ و سنترینگ؛ موتور ممیزی
+// ERP (قوانین ممیزی) قبل از ادامه اجرا می‌شود؛ همه داده‌ها و قیمت‌ها از Core.
 (() => {
     "use strict";
     const $ = (id) => document.getElementById(id);
@@ -10,12 +12,9 @@
     const CULTURE = root.dataset.culture || "fa";
     const FA = CULTURE === "fa";
     const fa = (n) => String(n).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
-    // digit policy shared with store.js: fa/ar → Persian digits, en → Latin
     const num = (n) => (CULTURE === "fa" || CULTURE === "ar" ? fa(n) : String(n));
-    // جداکننده هزارگان یکدست با بقیه سایت: ٬ (U+066C) در fa/ar، کاما در en/es
     const SEP = (FA || CULTURE === "ar") ? "\u066C" : ",";
     const money = (n) => num(String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, SEP));
-    // توکن antiforgery برای POSTهای AJAX (هدر استاندارد RequestVerificationToken)
     const AF = (() => {
         const el = document.querySelector("#wz-af input[name='__RequestVerificationToken']");
         return el ? el.value : "";
@@ -26,13 +25,11 @@
         body: JSON.stringify(body),
     });
 
-    // ابعاد فیزیکی استاندارد کاغذ (برچسب‌ها و برش سفارش)؛ قیمت‌ها از سرور می‌آیند
+    // ابعاد فیزیکی/نمایشی ناحیه چاپ؛ قیمت‌ها از سرور
     const SZ = { A3: { w: 30, h: 42 }, A4: { w: 21, h: 29.7 }, A5: { w: 14, h: 21 } };
     const szCm = (code) => SZ[(code || "").toUpperCase()] || SZ.A4;
-    // ابعاد نمایشی ناحیه چاپ روی ویوباکس 300×340 تیشرت (مطابق پروتوتایپ)
     const SZPX = { A3: { w: 116, h: 164 }, A4: { w: 82, h: 116 }, A5: { w: 56, h: 79 } };
     const szPx = (code) => SZPX[(code || "").toUpperCase()] || SZPX.A4;
-    // رنگ نمایشی تیشرت بر اساس نام رنگ (فقط ظاهر پیش‌نمایش)
     const HEX = [
         [/سفید|أبيض|white|blanco/i, "#f2f3f1"], [/مشکی|سیاه|أسود|black|negro/i, "#1a1a1a"], [/شیری|کرم|cream|beige|crema/i, "#e8ddc8"],
         [/قرمز|زرشکی|أحمر|red|crimson|burgundy|rojo/i, "#8e2323"], [/آبی|أزرق|blue|azul/i, "#3f6d9e"], [/سبز|أخضر|green|verde/i, "#2d5a3d"],
@@ -43,7 +40,6 @@
         for (const [re, hex] of HEX) if (re.test(name || "") || re.test(code || "")) return hex;
         return "#9aa2ad";
     };
-    // نام نمایشی رنگ: کانفیگ برای برخی کدها فقط نام لاتین دارد (BLACK/BLUE…) — به زبان کاربر برمی‌گردانیم
     const COLOR_NAMES = {
         black: { fa: "مشکی", ar: "أسود", en: "Black", es: "Negro" }, blue: { fa: "آبی", ar: "أزرق", en: "Blue", es: "Azul" },
         red: { fa: "قرمز", ar: "أحمر", en: "Red", es: "Rojo" }, white: { fa: "سفید", ar: "أبيض", en: "White", es: "Blanco" },
@@ -61,15 +57,16 @@
     };
     const TEXT_COLORS = ["#1c1917", "#ffffff", "#f6b23c", "#e11d48", "#2563eb", "#16a34a", "#8b5cf6", "#e879f9"];
 
-    // ── وضعیت ویزارد ──
+    // ── وضعیت ──
     let CONFIG = null;
     const W = {
         phase: 1,
-        mode: null,            // bank | upload | text
-        bank: null,            // {id,title,preview}
-        file: null, fileMeta: null,
+        mode: null,             // bank | upload | text
+        bank: null,             // {id,title,preview,code,widthPx,heightPx}
+        file: null, fileMeta: null, // fileMeta {url,width,height}
         text: "", font: 1, textColor: "#1c1917", textSize: 100,
-        overlayOn: false,      // لایه متن روی طرح (حالت بانک/آپلود/هوش مصنوعی)
+        textX: 0.5, textY: 0.5,
+        audit: null,            // null=بررسی‌نشده | {passed,results} | {running:true} | {empty:true}
         position: "FRONT", printSize: null,
         product: null, variant: null, colorCode: null, sizeCode: null,
         packaging: null, addressId: null, newAddress: false, gift: false,
@@ -80,15 +77,12 @@
         if (q.get("new") === "1" || (!q.get("design") && !location.pathname.includes("design"))) sessionStorage.removeItem("wz.state");
         else Object.assign(W, JSON.parse(sessionStorage.getItem("wz.state") || "{}"));
     } catch { /* شروع تازه */ }
-    // فیچرهای خاموش: حالت ذخیره‌شدهٔ غیرمجاز (تب آپلود/متن یا هدیه) پاک می‌شود
     if (BOOT.flags) {
         if (BOOT.flags.upload === false && W.mode === "upload") W.mode = null;
-        if (BOOT.flags.text === false && W.mode === "text") W.mode = null;
         if (BOOT.flags.gift === false) W.gift = false;
     }
     const save = () => {
         try { sessionStorage.setItem("wz.state", JSON.stringify(W)); } catch { /* private mode */ }
-        // نشانگر «ذخیره خودکار» — فلش کوتاه کنار نوار مراحل
         const chip = $("w-autosave");
         if (chip) {
             chip.hidden = false;
@@ -96,17 +90,17 @@
             window.__wzAutosave = setTimeout(() => { chip.hidden = true; }, 1600);
         }
     };
+    const invalidateAudit = () => { W.audit = null; updateAuditUI(); };
 
-    // ── تصاویر واقعی تیشرت (۴ رنگ × جلو/پشت) ──
+    // ── تصاویر واقعی تیشرت ──
     const TEE_IMAGES = {
         black: { FRONT: "/images/tee/black-front.jpg", BACK: "/images/tee/black-back.jpg", teeC: "#1a1a1a" },
         white: { FRONT: "/images/tee/white-front.jpg", BACK: "/images/tee/white-back.jpg", teeC: "#f2f3f1" },
         red: { FRONT: "/images/tee/red-front.jpg", BACK: "/images/tee/red-back.jpg", teeC: "#8e2323" },
         blue: { FRONT: "/images/tee/blue-front.jpg", BACK: "/images/tee/blue-back.jpg", teeC: "#2c4e7e" },
     };
-    const teeKey = () => { if (!CONFIG) return null; const n = colorName(W.colorCode) + " " + (W.colorCode || ""); const m = /آبی|أزرق|blue|azul|ابو/i.test(n) ? "blue" : /سفید|أبيض|white|blanco/i.test(n) ? "white" : /قرمز|سرخ|أحمر|red|rojo/i.test(n) ? "red" : /مشکی|سیاه|أسود|black|negro/i.test(n) ? "black" : null; return m; };
+    const teeKey = () => { if (!CONFIG) return null; const n = colorName(W.colorCode) + " " + (W.colorCode || ""); const m = /آبی|أزرق|blue|azul/i.test(n) ? "blue" : /سفید|أبيض|white|blanco/i.test(n) ? "white" : /قرمز|سرخ|أحمر|red|rojo/i.test(n) ? "red" : /مشکی|سیاه|أسود|black|negro/i.test(n) ? "black" : null; return m; };
     function tee(side) {
-        // ترجیح اول: تصویر واقعی واریانت انتخاب‌شده از ERP (imageUrl در کانفیگ ویزارد)
         const curVariant = (CONFIG && (CONFIG.products || []).flatMap(p => p.variants || []).find(v => v.id === (W.variant && W.variant.id)));
         if (side === "FRONT" && curVariant && curVariant.imageUrl) return '<img class="tee-img" src="' + curVariant.imageUrl + '" alt="" draggable="false">';
         const k = teeKey();
@@ -118,16 +112,19 @@
         const seam = side === "BACK" ? '<line x1="150" y1="44" x2="150" y2="326" stroke="' + col + '" stroke-width="1.4" stroke-dasharray="3 5" opacity=".3"/>' : "";
         return '<svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="' + collar + ' L236 36 L294 94 L256 130 L228 108 L228 318 Q150 342 72 318 L72 108 L44 130 L6 94 L64 36 Z" fill="var(--teeC)" stroke="' + col + '" stroke-width="2.4"/>' + band + seams + seam + '</svg>';
     }
-    const EMPTY_HTML = '<div class="empty">✨<br>' + T("emptyStage") + '</div>';
+    const EMPTY_HTML = '<div class="empty"><span class="eic"></span><br>' + T("emptyStage") + '</div>';
+
     function buildFace(el, side) {
-        el.innerHTML = tee(side) + '<div class="prect" data-lbl=""></div><div class="awrap">' + EMPTY_HTML + '</div>';
-        return { el: el, side: side, rect: el.querySelector(".prect"), wrap: el.querySelector(".awrap") };
+        el.innerHTML = tee(side) + '<div class="prect" data-lbl=""></div>' +
+            '<div class="laywrap lay-design" data-lay="design"></div>' +
+            '<div class="laywrap lay-text" data-lay="text"></div>' +
+            '<div class="selbox" data-sel hidden><span class="tag"></span></div>';
+        return { el, side, rect: el.querySelector(".prect"), dWrap: el.querySelector(".lay-design"), tWrap: el.querySelector(".lay-text"), sel: el.querySelector(".selbox") };
     }
     const fF = buildFace($("w-ff"), "FRONT"), fB = buildFace($("w-fb"), "BACK");
     const setTeeColor = (hex) => { $("w-ff").style.setProperty("--teeC", hex); $("w-fb").style.setProperty("--teeC", hex); };
-    // با تغییر واریانت/رنگ، تصویر تیشرت روی صفحه تازه شود (تصویر واریانت از ERP یا استاتیک رنگ)
     const refreshTee = () => {
-        applyGarmScale();
+        applyGarmTransform();
         for (const f of [fF, fB]) {
             const cur = f.el.querySelector(".tee-img") || f.el.querySelector("svg");
             if (!cur) continue;
@@ -137,93 +134,115 @@
             if (next) cur.replaceWith(next);
         }
     };
-
-    // مقیاس نمایشی تیشرت روی صحنه با سایز انتخاب‌شده (S کوچک‌تر … XXL بزرگ‌تر)
     const SIZE_SCALE = { s: .82, m: .9, l: 1, xl: 1.08, xxl: 1.16 };
     const sizeScale = () => SIZE_SCALE[String((W.variant && W.variant.sizeCode) || "").trim().toLowerCase()] || 1;
-    const applyGarmScale = () => {
+    let zoomLevel = 1;
+    const applyGarmTransform = () => {
         const g = $("w-garm");
         if (!g) return;
         const s = sizeScale();
-        g.style.width = (82 * s) + "%";                 // پایه ۸۲٪ عرض صحنه (مطابق CSS .garm)
-        g.style.maxWidth = Math.round(380 * s) + "px";  // سقف ۳۸۰px پایه × مقیاس
+        g.style.width = (82 * s) + "%";
+        g.style.maxWidth = Math.round(380 * s) + "px";
+        const flip = W.position === "BACK" ? "rotateY(180deg) " : "";
+        g.style.transform = flip + "scale(" + zoomLevel + ")";
+        g.style.transition = "transform .3s cubic-bezier(.25,1,.3,1)";
     };
+    window.addEventListener("resize", () => { clearTimeout(window.__wrz); window.__wrz = setTimeout(() => { applyGarmTransform(); renderPreview(); }, 150); });
 
-    function place(f, code, html) {
-        const box = f.wrap.parentElement.getBoundingClientRect();
-        if (box.width < 10) return;
-        const G = { w: box.width / 300, h: box.height / 340 }, S = szPx(code), C = szCm(code), px = S.w * G.w, py = S.h * G.h;
-        const L = (150 * G.w - px / 2) + "px", Tp = ((118 + S.h / 2) * G.h - py / 2) + "px";
-        f.rect.style.left = L; f.rect.style.top = Tp; f.rect.style.width = px + "px"; f.rect.style.height = py + "px";
-        f.rect.setAttribute("data-lbl", code + " · " + (FA ? fa(C.w) + "×" + fa(C.h) : C.w + "×" + C.h) + " " + T("cm"));
-        f.wrap.style.left = L; f.wrap.style.top = Tp; f.wrap.style.width = px + "px"; f.wrap.style.height = py + "px";
-        if (html !== undefined) {
-            f.wrap.innerHTML = html || EMPTY_HTML;
-            if (html) { f.wrap.classList.remove("pop"); void f.wrap.offsetWidth; f.wrap.classList.add("pop"); }
-        }
-    }
-    // استایل لایه متن — مشترک بین پیش‌نمایش و فایل چاپ نهایی
-    function overlayTextStyle() {
-        const size = Math.round(W.textSize / 100 * szPx(W.printSize).w * 0.26);
-        return "color:" + W.textColor + ";font-size:" + size + "px;" +
-            (W.font === 3 ? "font-style:italic;" : "") + (W.font === 2 ? "letter-spacing:.08em;font-weight:500;" : W.font === 4 ? "letter-spacing:.25em;" : "font-weight:900;");
-    }
-    function overlayActive() {
-        return W.overlayOn && (W.text || "").trim().length > 0;
-    }
-    function designHTML() {
-        // ترکیب لایه‌ای: طرح (بانک/آپلود) + لایه متن روی آن — یا متن تنها
-        const designImg = W.mode === "bank" && W.bank
-            ? '<img src="' + W.bank.preview + '" alt="" style="max-width:100%;max-height:100%;object-fit:contain">'
-            : W.mode === "upload" && W.fileMeta
-                ? '<img src="' + W.fileMeta.url + '" alt="" style="max-width:100%;max-height:100%;object-fit:contain">'
-                : null;
-        if (designImg) {
-            if (overlayActive()) {
-                return '<div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center">' +
-                    designImg +
-                    '<div class="t" dir="auto" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:92%;text-align:center;line-height:1.3;' + overlayTextStyle() + '">' + W.text.replace(/</g, "&lt;") + '</div>' +
-                    "</div>";
-            }
-            return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">' + designImg + "</div>";
-        }
-        if (W.mode === "text" && W.text) {
-            const size = Math.round(W.textSize / 100 * (szPx(W.printSize).w * 0.42));
-            const style = "color:" + W.textColor + ";font-size:" + size + "px;" +
-                (W.font === 3 ? "font-style:italic;" : "") + (W.font === 2 ? "letter-spacing:.08em;font-weight:500;" : W.font === 4 ? "letter-spacing:.25em;" : "font-weight:900;");
-            return '<div class="t" dir="auto" style="' + style + '">' + W.text.replace(/</g, "&lt;") + '</div>';
-        }
+    const activeFace = () => W.position === "FRONT" ? fF : fB;
+    const hasDesign = () => W.mode === "bank" ? !!W.bank : W.mode === "upload" ? !!W.fileMeta : false;
+    const hasText = () => (W.text || "").trim().length > 0;
+    const overlayText = () => W.mode !== "text" && hasText();
+    function designName() {
+        if (W.mode === "bank" && W.bank) return shortTitle(W.bank.title);
+        if (W.mode === "upload" && W.fileMeta) return T("yourDesign");
+        if (W.mode === "text" && W.text) return "«" + W.text.slice(0, 14) + "»";
         return null;
     }
     function renderPreview() {
-        const html = designHTML();
-        const front = W.position === "FRONT" ? fF : fB;
-        place(front, W.printSize, html !== null ? html : undefined);
-        if (html === null) front.wrap.innerHTML = EMPTY_HTML;
-        const other = W.position === "FRONT" ? fB : fF;
-        place(other, W.printSize, undefined);
-        // اندازه باکس متن با اندازه چاپ عوض می‌شود
-        if (html !== null) place(front, W.printSize, html);
+        const S = szPx(W.printSize), C = szCm(W.printSize);
+        const short = FA ? fa(C.w) + "×" + fa(C.h) : C.w + "×" + C.h;
+        for (const f of [fF, fB]) {
+            const active = f.side === W.position;
+            f.el.style.visibility = active ? "visible" : "hidden";
+            if (!active) continue;
+            f.rect.style.left = (150 - S.w / 2) + "px";
+            f.rect.style.top = (118 - S.h / 2) + "px";
+            f.rect.style.width = S.w + "px";
+            f.rect.style.height = S.h + "px";
+            f.rect.setAttribute("data-lbl", (W.printSize || "") + " · " + short + " " + T("cm"));
+            // لایه طرح
+            const d = f.dWrap;
+            if (hasDesign()) {
+                const src = W.mode === "bank" ? W.bank.preview : W.fileMeta.url;
+                d.style.display = "";
+                d.style.left = f.rect.style.left; d.style.top = f.rect.style.top;
+                d.style.width = S.w + "px"; d.style.height = S.h + "px";
+                d.innerHTML = '<div class="artbox"><img src="' + src + '" alt="" draggable="false"></div>';
+            } else { d.style.display = "none"; d.innerHTML = ""; }
+            // لایه متن
+            const t = f.tWrap;
+            if (overlayText()) {
+                const sizePx = Math.max(12, Math.round(W.textSize / 100 * S.w * 0.30));
+                const style = "color:" + W.textColor + ";font-size:" + sizePx + "px;" +
+                    (W.font === 3 ? "font-style:italic;" : "") + (W.font === 2 ? "letter-spacing:.08em;font-weight:500;" : W.font === 4 ? "letter-spacing:.25em;" : "font-weight:900;");
+                t.style.display = "";
+                t.style.left = (150 - S.w / 2 + W.textX * S.w) + "px";
+                t.style.top = (118 - S.h / 2 + W.textY * S.h) + "px";
+                t.style.width = S.w * 0.92 + "px";
+                t.innerHTML = '<div class="txt" dir="auto" style="' + style + '"><span class="tt">' + escapeHtml(W.text) + "</span></div>";
+            } else { t.style.display = "none"; t.innerHTML = ""; }
+        }
+        renderSelection();
+        renderLayers();
     }
-    window.addEventListener("resize", () => { clearTimeout(window.__wrz); window.__wrz = setTimeout(() => { applyGarmScale(); renderPreview(); }, 150); });
+    function renderSelection() {
+        for (const f of [fF, fB]) {
+            if (f.side !== W.position) { f.sel.hidden = true; continue; }
+            const sel = window.__psSel;
+            const wrap = sel === "design" ? f.dWrap : sel === "text" ? f.tWrap : null;
+            if (!wrap || wrap.style.display === "none") { f.sel.hidden = true; continue; }
+            f.sel.hidden = false;
+            f.sel.style.left = wrap.style.left; f.sel.style.top = wrap.style.top;
+            f.sel.style.width = wrap.style.width; f.sel.style.height = wrap.style.height;
+            f.sel.querySelector(".tag").textContent = sel === "text" ? T("layersText") : T("layersDesign");
+        }
+    }
 
-    // درگ طرح روی ناحیه چاپ (از پروتوتایپ)
+    // ── درگ لایه متن با سنترینگ به مرکز ──
     (function () {
-        let down = false, sx = 0, sy = 0, ox = 0, oy = 0, dx = 0, dy = 0;
-        const wrapOf = () => (W.position === "FRONT" ? fF : fB).wrap;
+        let drag = null;
         root.addEventListener("pointerdown", (e) => {
-            const wrap = wrapOf();
-            if (!wrap || wrap.querySelector(".empty")) return;
-            if (!e.target.closest(".awrap")) return;
-            down = true; sx = e.clientX; sy = e.clientY; ox = dx; oy = dy;
+            const wrap = e.target.closest(".laywrap");
+            if (!wrap || wrap.style.display === "none") return;
+            const kind = wrap.classList.contains("lay-text") ? "text" : "design";
+            const face = wrap.parentElement === fF.el ? fF : fB;
+            if (face.side !== W.position) return;
+            window.__psSel = kind;
+            renderSelection();
+            if (kind !== "text") return;
+            drag = { face, sx: e.clientX, sy: e.clientY, ox: W.textX, oy: W.textY, moved: false };
+            e.preventDefault();
         });
         window.addEventListener("pointermove", (e) => {
-            if (!down) return;
-            dx = Math.max(-70, Math.min(70, ox + (e.clientX - sx)));
-            dy = Math.max(-90, Math.min(90, oy + (e.clientY - sy)));
-            wrapOf().style.transform = "translate(" + dx + "px," + dy + "px)";
+            if (!drag) return;
+            const S = szPx(W.printSize);
+            const stage = drag.face.rect.getBoundingClientRect();
+            if (stage.width < 10) return;
+            let nx = drag.ox + (e.clientX - drag.sx) / stage.width;
+            let ny = drag.oy + (e.clientY - drag.sy) / stage.height;
+            nx = Math.max(0.08, Math.min(0.92, nx));
+            ny = Math.max(0.08, Math.min(0.92, ny));
+            if (Math.abs(nx - 0.5) < 0.03) nx = 0.5;
+            if (Math.abs(ny - 0.5) < 0.03) ny = 0.5;
+            W.textX = nx; W.textY = ny;
+            renderPreview();
+            drag.moved = true;
         });
-        window.addEventListener("pointerup", () => { down = false; });
+        window.addEventListener("pointerup", () => {
+            if (drag && drag.moved) { save(); invalidateAudit(); }
+            drag = null;
+        });
     })();
 
     // ── پیکربندی از سرور ──
@@ -231,7 +250,6 @@
         const r = await fetch("/order/wizard?handler=Config", { headers: { "Accept": "application/json" } });
         CONFIG = await r.json();
         if (!CONFIG || !Array.isArray(CONFIG.products)) CONFIG = { products: [], printSizes: [], packaging: [], colors: [], shipping: 0, currencyCode: "IRT" };
-        // پیش‌انتخاب پیش‌فرض‌ها: اولین محصول و بسته‌بندی استاندارد تا جمع سفارش از ابتدا زنده باشد
         if (!W.product && CONFIG.products.length) {
             W.product = CONFIG.products[0].id;
             const colors = productVariants(CONFIG.products[0]).map((v) => v.colorCode).filter(Boolean);
@@ -242,11 +260,13 @@
         renderPrintSizes(); renderPackaging(); renderProducts(); renderSizes(); renderQty();
         if (!W.printSize && CONFIG.printSizes.length) W.printSize = CONFIG.printSizes[Math.min(1, CONFIG.printSizes.length - 1)].code;
         renderPrintSizes();
-        renderSum(); renderPreview(); quote();
+        invalidateAudit();
+        renderBar(); renderPreview(); quote();
     }
 
     function renderPrintSizes() {
         const box = $("w-code");
+        if (!box) return;
         box.innerHTML = "";
         (CONFIG.printSizes || []).forEach((s) => {
             const b = document.createElement("button");
@@ -256,13 +276,14 @@
                 W.printSize = s.code;
                 box.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
                 b.classList.add("on");
-                renderPreview(); renderSum(); quote();
+                renderPreview(); renderBar(); quote(); invalidateAudit();
             });
             box.appendChild(b);
         });
     }
     function renderPackaging() {
         const box = $("w-pack");
+        if (!box) return;
         box.innerHTML = "";
         (CONFIG.packaging || []).forEach((p) => {
             const c = document.createElement("div");
@@ -274,7 +295,6 @@
             box.appendChild(c);
         });
     }
-    // رنگ تیشرت دیگر با دات‌های جدا انتخاب نمی‌شود — همیشه از واریانت انتخاب‌شده (محصول×سایز) می‌آید
     function productVariants(p) { return (p && p.variants) ? p.variants : []; }
     function pickVariant() {
         const p = (CONFIG.products || []).find((x) => x.id === W.product);
@@ -293,7 +313,6 @@
         setTeeColor(hexOf(colorName(W.colorCode), W.colorCode));
         refreshTee();
     }
-    // آیکون تیشرت CSS/SVG برای کارت محصول — رنگ از اولین واریانت محصول می‌آید
     const SHIRT_PATH = "M96 24 Q150 62 204 24 L236 36 L294 94 L256 130 L228 108 L228 318 Q150 342 72 318 L72 108 L44 130 L6 94 L64 36 Z";
     const shirtIcon = (hex) => '<svg viewBox="0 0 300 340" class="teeic" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
         '<path d="' + SHIRT_PATH + '" fill="' + hex + '" stroke="rgba(255,255,255,.30)" stroke-width="8"/>' +
@@ -305,23 +324,22 @@
     };
     function renderProducts() {
         const box = $("w-products");
+        if (!box) return;
         box.innerHTML = "";
         (CONFIG.products || []).forEach((p) => {
             const prices = productVariants(p).map((v) => v.price).filter((x) => x != null);
             const price = p.salesPrice ?? (prices.length ? Math.min(...prices) : null);
             const c = document.createElement("div");
             c.className = "pcard" + (W.product === p.id ? " on" : "");
-            // کد فنی محصول (RAWTEE-BLACK/PRD-DEV-001…) به مشتری نشان داده نمی‌شود — نام تجاری + قیمت
             c.innerHTML = '<span class="ic">' + shirtIcon(productHex(p)) + "</span><b></b>" +
                 '<div class="pr">' + (price != null ? money(price) + " " + T("toman") : "—") + "</div>";
             c.querySelector("b").textContent = p.name;
             c.addEventListener("click", () => {
                 W.product = p.id;
                 W.sizeCode = null;
-                // رنگ از محصول انتخاب‌شده می‌آید: اولین رنگ موجود در واریانت‌ها
                 const colors = productVariants(p).map((v) => v.colorCode).filter(Boolean);
                 if (colors.length) W.colorCode = colors[0];
-                pickVariant(); renderSizes(); renderProducts(); renderSum(); quote();
+                pickVariant(); renderSizes(); renderProducts(); renderBar(); quote(); invalidateAudit();
             });
             box.appendChild(c);
         });
@@ -330,10 +348,10 @@
         const stockOf = (sz) => { const p = (CONFIG.products || []).find(x => x.id === W.product); const v = (p && p.variants || []).find(v => (v.sizeCode || "").toUpperCase() === String(sz).toUpperCase()); return v ? (v.stock ?? null) : null; };
         const p = (CONFIG.products || []).find((x) => x.id === W.product);
         const box = $("w-ssize");
+        if (!box) return;
         box.innerHTML = "";
         let vs = productVariants(p);
         if (W.colorCode) { const byColor = vs.filter((v) => (v.colorCode || "").toUpperCase() === W.colorCode.toUpperCase()); if (byColor.length) vs = byColor; }
-        // سایزها به‌ترتیب استاندارد S M L XL XXL (حروف اضافه/کمتر در انتها) — دکمه بی‌معنای «—» حذف شد
         const ORDER = ["S", "M", "L", "XL", "XXL"];
         const sizes = [...new Set(vs.map((v) => (v.sizeCode || "").trim()).filter(Boolean))]
             .sort((a, b) => {
@@ -347,122 +365,109 @@
             const b = document.createElement("button");
             b.type = "button"; b.textContent = s;
             const st = stockOf(s);
-            if (st != null) { b.title = (st > 0 ? T("stockAvail") + ": " + num(st) + " " + T("stockUnit") : T("stockOut")); if (st <= 0) { b.disabled = true; b.style.opacity = ".45"; } }
+            if (st != null) { b.title = (st > 0 ? T("stockAvail") + ": " + num(st) + " " + T("qtyUnit") : T("stockOut")); if (st <= 0) { b.disabled = true; b.style.opacity = ".45"; } }
             if (s === (W.variant && W.variant.sizeCode)) b.classList.add("on");
-            b.addEventListener("click", () => { if (b.disabled) return; W.sizeCode = s; pickVariant(); renderSizes(); renderQty(); renderSum(); quote(); renderPreview(); });
+            b.addEventListener("click", () => { if (b.disabled) return; W.sizeCode = s; pickVariant(); renderSizes(); renderQty(); renderBar(); quote(); invalidateAudit(); });
             box.appendChild(b);
         });
-        box.parentElement.querySelectorAll(".stock-chip").forEach(x => x.remove());
+        const chip = $("w-stockchip");
         const cur = W.variant;
-        const chip = document.createElement("span");
-        chip.className = "stock-chip" + (cur && cur.stock === 0 ? " out" : "");
-        chip.textContent = !cur || cur.stock == null ? "" : (cur.stock > 0 ? T("stockAvail") + ": " + num(cur.stock) + " " + T("stockUnit") : T("stockOut"));
-        if (cur && cur.stock != null) box.parentElement.appendChild(chip);
+        if (chip) {
+            chip.className = "stock-chip" + (cur && cur.stock === 0 ? " out" : "");
+            chip.hidden = !cur || cur.stock == null;
+            chip.textContent = cur && cur.stock != null ? (cur.stock > 0 ? T("stockAvail") + ": " + num(cur.stock) + " " + T("qtyUnit") : T("stockOut")) : "";
+        }
     }
-
-    // ── تعداد/تیراژ هر طرح (سفارش تیمی/عمده) — قیمت سمت سرور با همین تعداد صدا زده می‌شود ──
     W.qty = W.qty && W.qty > 0 ? Math.min(W.qty, 50) : 1;
-    const qtyMax = () => {
-        const st = W.variant && W.variant.stock;
-        return st != null && st > 0 ? Math.min(st, 50) : 50;
-    };
+    const qtyMax = () => { const st = W.variant && W.variant.stock; return st != null && st > 0 ? Math.min(st, 50) : 50; };
     function renderQty() {
         const out = $("w-qty-out"), hint = $("w-qty-stock");
         if (!out) return;
         W.qty = Math.max(1, Math.min(W.qty, qtyMax()));
         out.textContent = num(W.qty);
         const st = W.variant && W.variant.stock;
-        hint.textContent = st != null && st > 0 ? "(" + num(st) + " " + T("stockUnit") + ")" : "";
+        hint.textContent = st != null && st > 0 ? "(" + num(st) + " " + T("qtyUnit") + ")" : "";
     }
-    const qtyBtn = (delta) => $("w-qty-" + delta);
-    const qtyMinus = qtyBtn("minus"), qtyPlus = qtyBtn("plus");
-    if (qtyMinus) qtyMinus.addEventListener("click", () => { W.qty--; renderQty(); renderSum(); quote(); save(); });
-    if (qtyPlus) qtyPlus.addEventListener("click", () => { W.qty++; renderQty(); renderSum(); quote(); save(); });
+    const qtyMinus = $("w-qty-minus"), qtyPlus = $("w-qty-plus");
+    if (qtyMinus) qtyMinus.addEventListener("click", () => { W.qty--; renderQty(); renderBar(); quote(); save(); });
+    if (qtyPlus) qtyPlus.addEventListener("click", () => { W.qty++; renderQty(); renderBar(); quote(); save(); });
 
-    // ── خلاصه و قیمت زنده (سمت سرور) ──
+    // ── قیمت زنده (سمت سرور) ──
     let quoteTimer = null, quoteSeq = 0;
     function quote() {
         clearTimeout(quoteTimer);
         const priceEl = $("w-price");
-        if (!W.variant || !W.printSize) { priceEl.textContent = "—"; return; }
+        if (!W.variant || !W.printSize) { if (priceEl) priceEl.textContent = "—"; return; }
         quoteTimer = setTimeout(async () => {
             const seq = ++quoteSeq;
             try {
                 const r = await postJson("/order/wizard?handler=Quote", { productVariantId: W.variant.id, printSizeCode: W.printSize, printPosition: W.position, packagingTypeCode: W.packaging, quantity: W.qty || 1 });
                 const data = await r.json();
                 if (seq !== quoteSeq) return;
-                if (!data.ok) {
-                    // خطای محاسبه قیمت: دکمه تلاش دوباره کنار قیمت
-                    priceEl.innerHTML = "";
-                    const b = document.createElement("button");
-                    b.type = "button"; b.className = "btn btn-ghost btn-sm"; b.textContent = T("priceRetry");
-                    b.addEventListener("click", quote);
-                    priceEl.appendChild(b);
-                    return;
-                }
+                if (!data.ok) { if (seq === quoteSeq) priceEl.textContent = "—"; return; }
                 priceEl.textContent = money(data.quote.total);
-            } catch {
-                if (seq === quoteSeq) priceEl.textContent = "—";
-            }
+            } catch { if (seq === quoteSeq) priceEl.textContent = "—"; }
         }, 320);
     }
-    function designName() {
-        if (W.mode === "bank" && W.bank) return shortTitle(W.bank.title);
-        if (W.mode === "upload" && W.fileMeta) return T("yourDesign");
-        if (W.mode === "text" && W.text) return "«" + W.text.slice(0, 14) + "»";
-        return null;
-    }
-    function renderSum() {
-        const chips = [];
-        chips.push([T("noDesign"), designName() || "—"]);
-        chips.push([T("printSide"), W.position === "FRONT" ? T("front") : T("back")]);
-        chips.push([T("size"), W.printSize || "—"]);
-        const p = (CONFIG.products || []).find((x) => x.id === W.product);
-        chips.push([T("product"), p ? p.name : "—"]);
-        chips.push([T("shirtSize"), (W.variant && W.variant.sizeCode) || "—"]);
-        chips.push([T("color"), W.colorCode ? colorName(W.colorCode) : "—"]);
-        if (overlayActive()) chips.push([T("overlayTextToggle"), "«" + W.text.slice(0, 12) + "»"]);
-        if ((W.qty || 1) > 1) chips.push([T("qty"), num(W.qty) + " " + T("qtyUnit")]);
-        const html = chips.map((c) => '<span class="schip"></span>').join("");
-        const targets = [$("w-sumchips"), $("w-paysumchips")];
-        targets.forEach((box) => {
-            if (!box) return;
-            box.innerHTML = html;
-            box.querySelectorAll(".schip").forEach((el, i) => {
-                const [k, v] = chips[i]; el.textContent = ""; el.append(k + ": ");
-                const b = document.createElement("b"); b.textContent = v; el.appendChild(b);
-            });
-        });
-        $("w-next1").disabled = !(designName() && W.product && W.variant && W.printSize);
-    }
-
-    // ── فاز ۱: بانک طرح‌ها (جستجوی مفهومی از Core) ──
-    const CHIPS = FA ? ["شیر اسطوره‌ای", "گربه فضایی", "دریا و موج", "کوه دماوند", "کهکشان", "غروب نارنجی"]
-        : CULTURE === "ar" ? ["أسد أسطوري", "قطة فضائية", "البحر والموج", "جبل", "مجرة", "غروب"]
-        : CULTURE === "es" ? ["león mitológico", "gato espacial", "mar y olas", "montaña", "galaxia", "atardecer"]
-        : ["mythical lion", "space cat", "sea and waves", "mountain", "galaxy", "sunset"];
-    CHIPS.forEach((c) => {
-        const b = document.createElement("button");
-        b.type = "button"; b.textContent = c;
-        b.addEventListener("click", () => { $("w-q").value = c; runSearch(); });
-        $("w-chips").appendChild(b);
-    });
-
-
-    // نام نمایشی کوتاه طرح (قرینه‌ی Display.Title سمت سرور):
-    // «سینما — طرح 18742651» → «سینما · #۲۶۵۱» — عدد ۹-۱۰ رقمی خام به مشتری نشان داده نمی‌شود
     const shortTitle = (raw) => {
-        const s = String(raw || "");
-        const m = s.match(/^(.*?)\s*[—–-]+\s*طرح\s*(\d{4,})$/);
-        if (!m) return s;
+        const str = String(raw || "");
+        const m = str.match(/^(.*?)\s*[—–-]+\s*طرح\s*(\d{4,})$/);
+        if (!m) return str;
         const digits = m[2];
         const tail = digits.length > 4 ? digits.slice(-4) : digits;
         return m[1].trim() + " · " + num("#" + tail);
     };
+    const escapeHtml = (v) => String(v).replace(/</g, "&lt;").replace(/&/g, "&amp;");
+    function renderBar() {
+        const sum = $("w-sum");
+        if (!sum) return;
+        const parts = [];
+        const dn = designName();
+        if (dn) parts.push(T("noDesign") + ": <b>" + escapeHtml(dn) + "</b>");
+        if (overlayText()) parts.push(T("layersText") + ": <b>«" + escapeHtml(W.text.slice(0, 12)) + "»</b>");
+        const p = (CONFIG.products || []).find((x) => x.id === W.product);
+        if (p) parts.push(T("product") + ": <b>" + escapeHtml(p.name) + "</b>");
+        if (W.variant && W.variant.sizeCode) parts.push(T("shirtSize") + ": <b>" + W.variant.sizeCode + "</b>");
+        if (W.colorCode) parts.push(T("color") + ": <b>" + escapeHtml(colorName(W.colorCode)) + "</b>");
+        if ((W.qty || 1) > 1) parts.push(T("qty") + ": <b>" + num(W.qty) + " " + T("qtyUnit") + "</b>");
+        sum.innerHTML = parts.length ? parts.join('<span class="v3sep">·</span>') : T("sumEmpty");
+        $("w-next1").disabled = !(dn && W.product && W.variant && W.printSize);
+        updateAuditUI();
+    }
+
+    // ── بانک طرح‌ها ──
+    const CHIPS = FA ? ["شیر اسطوره‌ای", "گربه فضایی", "دریا و موج", "کوه دماوند", "کهکشان", "غروب نارنجی"]
+        : CULTURE === "ar" ? ["أسد أسطوري", "قطة فضائية", "البحر والموج", "جبل", "مجرة", "غروب"]
+        : CULTURE === "es" ? ["león mitológico", "gato espacial", "mar y olas", "montaña", "galaxia", "atardecer"]
+        : ["mythical lion", "space cat", "sea and waves", "mountain", "galaxy", "sunset"];
+    const chipsBox = $("w-chips");
+    if (chipsBox) CHIPS.forEach((c) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.textContent = c;
+        b.addEventListener("click", () => { $("w-q").value = c; runSearch(); });
+        chipsBox.appendChild(b);
+    });
+
+    function measureImage(url) {
+        return new Promise((resolve) => {
+            const im = new Image();
+            im.onload = () => resolve({ w: im.naturalWidth, h: im.naturalHeight });
+            im.onerror = () => resolve({ w: 0, h: 0 });
+            im.src = url;
+        });
+    }
+    function pickBankDesign(d) {
+        W.mode = "bank";
+        W.bank = { id: d.id, title: d.title || d.code, preview: d.previewUrl || d.thumbnailUrl, code: d.code };
+        invalidateAudit();
+        save(); renderPreview(); renderBar(); quote();
+        measureImage(W.bank.preview).then((dims) => { W.bank.widthPx = dims.w; W.bank.heightPx = dims.h; save(); });
+    }
 
     async function runSearch() {
-        const q = ($("w-q").value || "").trim();
-        $("w-pulse").hidden = false;
+        const q = (($("w-q").value || "").trim());
+        const pulse = $("w-pulse");
+        if (pulse) pulse.hidden = false;
         const grid = $("w-grid");
         grid.innerHTML = "";
         for (let i = 0; i < 6; i++) { const sk = document.createElement("div"); sk.className = "sk"; grid.appendChild(sk); }
@@ -471,9 +476,8 @@
             const r = await fetch("/order/wizard?handler=Concept&q=" + encodeURIComponent(q) + "&limit=18", { headers: { "Accept": "application/json" } });
             const res = await r.json();
             const items = (res && (Array.isArray(res) ? res : res.items)) || [];
-            $("w-pulse").hidden = true;
+            if (pulse) pulse.hidden = true;
             $("w-status").textContent = items.length ? num(items.length) + " " + T("searchOf") + " — " + (q ? "«" + q + "»" : T("entryStore")) : T("noResults");
-            // تنوع نتایج: حداکثر ۶ نتیجه از هر دسته تا یک دسته همه گرید را نگیرد
             const byCat = {};
             const diverse = items.filter((d) => {
                 const c = d.categoryName || d.categoryCode || "";
@@ -490,20 +494,17 @@
                     '<span class="match-meter ' + mm + '"><span class="bar" aria-hidden="true"><i style="width:' + pct + '%"></i></span><b class="pct">' + num(pct) + (CULTURE === "fa" || CULTURE === "ar" ? "٪" : "%") + "</b></span>";
                 fig.querySelector("figcaption").textContent = shortTitle(d.title || d.code || "");
                 fig.addEventListener("click", () => {
-                    W.mode = "bank";
-                    W.bank = { id: d.id, title: d.title || d.code, preview: d.previewUrl || d.thumbnailUrl, code: d.code };
+                    pickBankDesign(d);
                     grid.querySelectorAll(".cardart").forEach((x) => x.classList.remove("on"));
                     fig.classList.add("on");
-                    save(); renderPreview(); renderSum(); quote();
                 });
                 grid.appendChild(fig);
             });
-        } catch { $("w-pulse").hidden = true; $("w-status").textContent = T("noResults"); }
+        } catch { if (pulse) pulse.hidden = true; $("w-status").textContent = T("noResults"); }
     }
     let stimer = null;
     $("w-q").addEventListener("input", () => { clearTimeout(stimer); stimer = setTimeout(runSearch, 380); });
 
-    // ورود از صفحه طرح: پیش‌انتخاب طرح
     async function preselectEntryDesign() {
         const id = BOOT.entryDesign || "";
         if (!id) return;
@@ -511,22 +512,23 @@
             const r = await fetch("/order/wizard?handler=Design&id=" + id, { headers: { "Accept": "application/json" } });
             const d = await r.json();
             if (d && d.id) {
-                W.mode = "bank";
-                W.bank = { id: d.id, title: d.title || d.code, preview: d.previewUrl || d.thumbnailUrl, code: d.code };
-                $("w-entrynote").hidden = false;
+                pickBankDesign(d);
+                const note = $("w-entrynote");
+                if (note) note.hidden = false;
                 save();
             }
-        } catch { /* طرح ورودی در دسترس نیست — حالت خنثی */ }
+        } catch { /* طرح ورودی در دسترس نیست */ }
     }
 
-    // ── فاز ۱: آپلود ──
+    // ── آپلود ──
     function filePicked(file) {
         if (!file || !/^image\//.test(file.type)) return;
         W.file = file;
-        W.fileMeta = { url: URL.createObjectURL(file), width: 0 };
+        W.fileMeta = { url: URL.createObjectURL(file), width: 0, height: 0 };
         const im = new Image();
         im.onload = () => {
             W.fileMeta.width = im.naturalWidth;
+            W.fileMeta.height = im.naturalHeight;
             let msg, bp, best;
             if (im.naturalWidth >= 1400) { msg = T("qExcellent"); bp = 100; best = "A3"; }
             else if (im.naturalWidth >= 800) { msg = T("qGood"); bp = 72; best = "A4"; }
@@ -534,8 +536,8 @@
             $("w-check").hidden = false; $("w-checkmsg").textContent = msg;
             $("w-meter").style.width = bp + "%"; $("w-best").textContent = best;
             W.mode = "upload";
-            placeEditor();
-            save(); renderPreview(); renderSum(); quote();
+            invalidateAudit();
+            save(); renderPreview(); renderBar(); quote();
         };
         im.src = W.fileMeta.url;
     }
@@ -548,7 +550,7 @@
         });
     });
 
-    // ── فاز ۱: طراحی با هوش مصنوعی (پاپ‌آپ) — پرامپت → تصویر → استفاده روی تیشرت ──
+    // ── هوش مصنوعی ──
     let aiUrl = null;
     const aiMsg = (text, kind) => {
         const el = $("w-ai-msg");
@@ -570,9 +572,8 @@
         try {
             const r = await fetch("/order/wizard?handler=AiQuota", { headers: { "Accept": "application/json" } });
             const d = await r.json();
-            // رکورد سهمیه: {quotaUsed, quotaLimit, remaining, ...} — مرجع تشخیص، وجود quotaLimit است
             if (d && typeof d.quotaLimit === "number") { aiQuotaRender(d); return d; }
-        } catch { /* نمایش سهمیه اختیاری است */ }
+        } catch { /* اختیاری */ }
         return null;
     }
     const aiBusy = (on) => {
@@ -583,11 +584,10 @@
     };
     const aiOpen = async () => { $("w-ai").hidden = false; aiMsg(null); await aiQuota(); };
     const aiClose = () => { $("w-ai").hidden = true; };
-    // فیچر «طراحی با هوش مصنوعی» خاموش باشد، دکمه اصلاً رندر نمی‌شود — بایند نال‌امن است
-    const aiBtn = $("w-ai-btn"); if (aiBtn) aiBtn.addEventListener("click", aiOpen);
+    const aiBtn = $("w-ai-dock"); if (aiBtn) aiBtn.addEventListener("click", aiOpen);
     $("w-ai-close").addEventListener("click", aiClose);
     $("w-ai").addEventListener("click", (e) => { if (e.target === $("w-ai")) aiClose(); });
-    window.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("w-ai").hidden) aiClose(); });
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (!$("w-ai").hidden) aiClose(); else closeAllPo(); } });
 
     async function aiGenerate() {
         const prompt = ($("w-ai-prompt").value || "").trim();
@@ -622,16 +622,11 @@
     }
     $("w-ai-gen").addEventListener("click", aiGenerate);
 
-    // اعمال طرح AI روی تیشرت: دانلود تصویر → File → همان مسیر آپلود مشتری (filePicked)
-    // تا در پرداخت، فایل مثل آپلود شخصی مشتری به سفارش برود و برای تولید ثبت شود.
     function aiDesignApply(imageUrl) {
         return fetch(imageUrl)
             .then((r) => { if (!r.ok) throw new Error("image fetch failed"); return r.blob(); })
             .then((blob) => {
                 const file = new File([blob], "ai-design.png", { type: "image/png" });
-                // میزبان نمایش طرح تولیدشده تب «طرح خودم» است (قرارداد checkout: mode=upload + file)
-                document.querySelectorAll(".mode").forEach((b) => b.classList.toggle("on", b.dataset.mode === "upload"));
-                ["bank", "upload", "text"].forEach((m) => { $("w-pan-" + m).hidden = m !== "upload"; });
                 filePicked(file);
             });
     }
@@ -641,8 +636,7 @@
         aiDesignApply(aiUrl).catch(() => aiMsg(T("aiErrorGeneric"), "")).finally(() => { $("w-ai-use").disabled = false; aiClose(); });
     });
 
-    // ── فاز ۱: متن ──
-    // نام‌های رنگ برای aria-label متمایز هر دکمه (همه «رنگ متن» نباشند)
+    // ── متن ──
     const COLOR_ARIA = ["مشکی", "سفید", "نارنجی", "قرمز", "آبی", "سبز", "بنفش", "صورتی"];
     const COLOR_ARIA_I18N = {
         fa: COLOR_ARIA,
@@ -660,10 +654,9 @@
         d.addEventListener("click", () => {
             $("w-tdots").querySelectorAll(".dot").forEach((x) => x.classList.remove("on"));
             d.classList.add("on");
-            if (!designContext()) W.mode = "text";
             W.textColor = c;
-            if (!W.text) W.text = T("sampleText");
-            save(); renderPreview(); renderSum(); quote();
+            if (!W.text) { W.text = T("sampleText"); $("w-textin").value = W.text; }
+            invalidateAudit(); save(); renderPreview(); renderBar(); quote();
         });
         $("w-tdots").appendChild(d);
     });
@@ -671,86 +664,22 @@
         b.addEventListener("click", () => {
             document.querySelectorAll(".fbtn").forEach((x) => x.classList.remove("on"));
             b.classList.add("on");
-            if (!designContext()) W.mode = "text";
             W.font = +b.dataset.f;
-            if (!W.text) W.text = T("sampleText");
-            save(); renderPreview(); renderSum(); quote();
+            if (!W.text) { W.text = T("sampleText"); $("w-textin").value = W.text; }
+            invalidateAudit(); save(); renderPreview(); renderBar(); quote();
         });
     });
-    $("w-textin").addEventListener("input", (e) => { W.text = e.target.value; save(); renderPreview(); renderSum(); quote(); });
-    $("w-tsz").addEventListener("input", (e) => { W.textSize = +e.target.value; $("w-tsout").textContent = num(W.textSize); renderPreview(); });
+    $("w-textin").addEventListener("input", (e) => { W.text = e.target.value; invalidateAudit(); save(); renderPreview(); renderBar(); quote(); });
+    $("w-tsz").addEventListener("input", (e) => { W.textSize = +e.target.value; $("w-tsout").textContent = num(W.textSize); renderPreview(); invalidateAudit(); });
 
-    // ── ویرایشگر متن تک‌نمونه: در پنل «متن» یا لایه «متن روی طرح» جابجا می‌شود ──
-    // هر تغییر (متن/فونت/رنگ/اندازه) بلافاصله روی تیشرت اعمال می‌شود؛ ترکیب طرح + متن پشتیبانی می‌شود.
-    const editor = $("w-texteditor");
-    const ovsec = $("w-ovsec"), ovtoggle = $("w-ovtoggle"), ovslot = $("w-ov-slot"), ovstate = $("w-ovstate");
-    const designContext = () => W.mode === "bank" || W.mode === "upload";
-    function placeEditor() {
-        const designOn = designContext();
-        if (ovsec) ovsec.hidden = !designOn;
-        if (!designOn) {
-            const panText = $("w-pan-text");
-            if (editor && panText && editor.parentElement !== panText) panText.appendChild(editor);
-            return;
-        }
-        if (W.overlayOn) {
-            ovslot.hidden = false;
-            ovslot.appendChild(editor);
-            ovstate.textContent = T("overlayOn");
-            ovstate.classList.add("on");
-            ovtoggle.setAttribute("aria-expanded", "true");
-        } else {
-            ovslot.hidden = true;
-            const panText = $("w-pan-text");
-            if (editor && panText && editor.parentElement !== panText) panText.appendChild(editor);
-            ovstate.textContent = T("overlayAdd");
-            ovstate.classList.remove("on");
-            ovtoggle.setAttribute("aria-expanded", "false");
-        }
-    }
-    if (ovtoggle) ovtoggle.addEventListener("click", () => {
-        W.overlayOn = !W.overlayOn;
-        if (W.overlayOn && !W.text) { W.text = T("sampleText"); $("w-textin").value = W.text; }
-        placeEditor(); save(); renderPreview(); renderSum(); quote();
-    });
-
-    // ── فاز ۱: کنترل‌ها ──
-    document.querySelectorAll(".mode").forEach((b) => {
-        b.addEventListener("click", () => {
-            document.querySelectorAll(".mode").forEach((x) => x.classList.remove("on"));
-            b.classList.add("on");
-            W.mode = b.dataset.mode;
-            ["bank", "upload", "text"].forEach((m) => { $("w-pan-" + m).hidden = m !== W.mode; });
-            // راهنمای صلب «فقط همان مسیر» بعد از انتخاب کاربر مخفی می‌شود
-            const rule = $("w-srcrule");
-            if (rule) rule.hidden = true;
-            placeEditor();
-            if (W.mode === "bank" && !$("w-grid").children.length) runSearch();
-            if (W.mode !== "bank") W.bank = W.mode === "bank" ? W.bank : (W.mode === "text" ? null : W.bank);
-            save(); renderPreview(); renderSum(); quote();
-        });
-    });
+    // ── سوییچر جلو/پشت + زوم ──
     $("w-side").addEventListener("click", (e) => {
         const b = e.target.closest("button"); if (!b) return;
         W.position = b.dataset.side;
         $("w-side").querySelectorAll("button").forEach((x) => x.classList.remove("on"));
         b.classList.add("on");
-        applyGarmTransform();
-        save(); renderPreview(); renderSum(); quote();
+        applyGarmTransform(); save(); renderPreview(); renderBar(); quote(); invalidateAudit();
     });
-    $("w-center").addEventListener("click", () => {
-        (W.position === "FRONT" ? fF : fB).wrap.style.transform = "";
-        renderPreview();
-    });
-    // بزرگ‌نمایی + چرخش جلو/پشت — یک ترنسفورم ترکیبی تا زوم، فلپ را خنثی نکند
-    let zoomLevel = 1;
-    const applyGarmTransform = () => {
-        const g = $("w-garm");
-        if (!g) return;
-        const flip = W.position === "BACK" ? "rotateY(180deg) " : "";
-        g.style.transform = flip + "scale(" + zoomLevel + ")";
-        g.style.transition = "transform .3s cubic-bezier(.25,1,.3,1)";
-    };
     document.querySelectorAll("#w-zoom button").forEach((b) => {
         b.addEventListener("click", () => {
             document.querySelectorAll("#w-zoom button").forEach((x) => x.classList.remove("on"));
@@ -759,49 +688,167 @@
             applyGarmTransform();
         });
     });
-    // فیچر «بسته هدیه» خاموش باشد، بخش هدیه رندر نمی‌شود — بایند نال‌امن است
-    const giftToggle = $("w-gift"); if (giftToggle) giftToggle.addEventListener("change", (e) => { W.gift = e.target.checked; $("w-giftbox").hidden = !W.gift; save(); });
 
-    // ── فاز ۲: آدرس‌ها (ورود از قبل تضمین شده — گیت در شروع ویزارد) ──
-    async function loadAddresses() {
-        try {
-            const r = await fetch("/order/wizard?handler=Addresses", { headers: { "Accept": "application/json" } });
-            const data = await r.json();
-            if (!data.ok) return;
-            const box = $("w-addrs");
-            box.innerHTML = "";
-            data.addresses.forEach((a) => {
-                const c = document.createElement("div");
-                c.className = "arow" + (W.addressId === a.id ? " on" : "");
-                c.innerHTML = "<b>📍 </b><small>" + a.line + "</small>";
-                c.querySelector("b").append(a.title);
-                c.addEventListener("click", () => {
-                    W.addressId = a.id; W.newAddress = false;
-                    box.querySelectorAll(".arow,.pick").forEach((x) => x.classList.remove("on"));
-                    c.classList.add("on");
-                    $("w-newaddr").hidden = true;
-                    save();
-                });
-                box.appendChild(c);
-            });
-            const nu = document.createElement("div");
-            nu.className = "pick";
-            // بدون «＋» تکراری — برچسب ترجمه‌شده خودش علامت دارد
-            nu.innerHTML = "<b>" + T("newAddress") + "</b><small>" + T("newAddressHint") + "</small>";
-            nu.addEventListener("click", () => {
-                W.addressId = null; W.newAddress = true;
-                box.querySelectorAll(".arow,.pick").forEach((x) => x.classList.remove("on"));
-                nu.classList.add("on");
-                $("w-newaddr").hidden = false;
-                save();
-            });
-            box.appendChild(nu);
-            if (!W.addressId && !W.newAddress && data.addresses.length) {
-                const def = data.addresses.find((a) => a.isDefault) || data.addresses[0];
-                W.addressId = def.id;
-                box.querySelector(".arow").classList.add("on");
+    // ── داک‌ها و پاپ‌اورها ──
+    const POPS = ["w-po-bank", "w-po-upload", "w-po-text", "w-po-audit", "w-po-layers", "w-po-product", "w-po-info"];
+    function closeAllPo() {
+        POPS.forEach((pid) => { const el = $(pid); if (el) { el.hidden = true; el.classList.remove("open"); } });
+        document.querySelectorAll(".v3ic.on").forEach((b) => b.classList.remove("on"));
+    }
+    function openPo(id) {
+        const target = $(id);
+        if (!target) return;
+        const wasOpen = target.classList.contains("open");
+        closeAllPo();
+        if (!wasOpen) {
+            target.hidden = false;
+            target.classList.add("open");
+            const btn = document.querySelector('.v3ic[data-po="' + id + '"]');
+            if (btn) btn.classList.add("on");
+            if (id === "w-po-bank" && !$("w-grid").children.length) runSearch();
+            if (id === "w-po-layers") renderLayers();
+        }
+    }
+    document.querySelectorAll(".v3ic[data-po], .v3auditpill[data-po]").forEach((b) => {
+        b.addEventListener("click", (e) => {
+            const id = b.getAttribute("data-po");
+            if (id && id.startsWith("w-po")) openPo(id);
+        });
+    });
+    document.querySelectorAll("[data-po-close]").forEach((x) => x.addEventListener("click", closeAllPo));
+
+    // ── ممیزی طراحی ──
+    const I_CHECK = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg>';
+    const I_X = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+    const I_WAND = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M3 21l9-9M12.2 6.2 11 5"/></svg>';
+    function auditPayload() {
+        let dw = 0, dh = 0;
+        if (W.mode === "upload" && W.fileMeta) { dw = W.fileMeta.width; dh = W.fileMeta.height; }
+        else if (W.mode === "bank" && W.bank) { dw = W.bank.widthPx || 0; dh = W.bank.heightPx || 0; }
+        let text = null;
+        if (overlayText() && W.printSize) {
+            const textEl = activeFace().tWrap.querySelector(".txt .tt");
+            const prect = activeFace().rect.getBoundingClientRect();
+            if (textEl && prect.width > 10) {
+                const trect = textEl.getBoundingClientRect();
+                text = {
+                    cxPct: +((trect.left + trect.width / 2 - prect.left) / prect.width).toFixed(3),
+                    cyPct: +((trect.top + trect.height / 2 - prect.top) / prect.height).toFixed(3),
+                    wPct: +(trect.width / prect.width).toFixed(3),
+                    hPct: +(trect.height / prect.height).toFixed(3),
+                    hex: W.textColor,
+                };
             }
-        } catch { /* بعداً تلاش می‌شود */ }
+        }
+        return {
+            printSizeCode: W.printSize || "",
+            fabricHex: hexOf(colorName(W.colorCode), W.colorCode),
+            source: W.mode || "",
+            artworkId: W.mode === "bank" && W.bank ? W.bank.id : null,
+            designWidthPx: dw || null,
+            designHeightPx: dh || null,
+            text,
+            culture: CULTURE,
+        };
+    }
+    async function runAudit() {
+        if (!hasDesign() && !hasText()) {
+            W.audit = { empty: true };
+            updateAuditUI();
+            return W.audit;
+        }
+        W.audit = { running: true };
+        updateAuditUI();
+        try {
+            const r = await postJson("/order/wizard?handler=Audit", auditPayload());
+            const data = await r.json();
+            if (!data || !data.ok) { W.audit = null; updateAuditUI(); return null; }
+            const res = data.result || {};
+            W.audit = { passed: !!res.passed, results: res.results || [] };
+        } catch { W.audit = null; }
+        updateAuditUI();
+        save();
+        return W.audit;
+    }
+    function renderAudit() {
+        const list = $("w-audit-list");
+        if (!list) return;
+        if (!W.audit || W.audit.running) { list.innerHTML = ""; return; }
+        if (W.audit.empty) { list.innerHTML = '<p class="status">' + T("auditEmpty") + "</p>"; return; }
+        list.innerHTML = (W.audit.results || []).map((r) =>
+            '<div class="ps3rule' + (r.passed ? " ok" : " bad") + '"><span class="ri">' + (r.passed ? I_CHECK : I_X) + '</span><span><b>' + escapeHtml(r.title || "") + "</b><small>" + escapeHtml(r.message || "") + "</small></span>" +
+            (!r.passed && r.fixHint ? '<button type="button" class="v3fix" data-code="' + escapeHtml(r.code || "") + '" title="' + escapeHtml(r.fixHint) + '">' + I_WAND + T("fix") + "</button>" : "") + "</div>"
+        ).join("");
+        list.querySelectorAll(".v3fix").forEach((b) => b.addEventListener("click", () => {
+            const code = b.getAttribute("data-code") || "";
+            if (code.startsWith("text") || code.startsWith("contrast")) openPo("w-po-text");
+            else openPo(hasDesign() && W.mode === "upload" ? "w-po-upload" : "w-po-bank");
+        }));
+    }
+    function updateAuditUI() {
+        const cls = !W.audit || W.audit.running || W.audit.empty ? "none" : W.audit.passed ? "ok" : "bad";
+        for (const led of [$("w-audit-led"), $("w-audit-led2")]) if (led) led.className = "v3led " + cls;
+        let label = T("auditPending");
+        let badCount = 0;
+        if (W.audit && !W.audit.running && !W.audit.empty && W.audit.results) {
+            badCount = W.audit.results.filter((x) => !x.passed).length;
+            label = W.audit.passed ? T("auditOk") : T("auditBad") + " (" + num(badCount) + ")";
+        }
+        const pill = $("w-audit-pill-t");
+        if (pill) pill.textContent = label;
+        const title = $("w-audit-title");
+        if (title) title.textContent = label;
+        const sub = $("w-audit-sub");
+        if (sub) sub.textContent = cls === "ok" ? T("auditOkHint") : cls === "bad" ? T("auditBadHint") : T("auditPendingHint");
+        const sh = $("w-audit-sh");
+        if (sh) sh.className = "v3aud-sh " + cls;
+        // دکمه ادامه: ممیزی قرمز = قفل
+        const next = $("w-next1");
+        if (next) next.disabled = !(designName() && W.product && W.variant && W.printSize) || cls === "bad";
+        const runBtn = $("w-audit-run");
+        if (runBtn) runBtn.disabled = !!(W.audit && W.audit.running);
+        renderAudit();
+    }
+    const auditRunBtn = $("w-audit-run");
+    if (auditRunBtn) auditRunBtn.addEventListener("click", async () => {
+        if (!hasDesign() && !hasText()) { W.audit = { empty: true }; updateAuditUI(); return; }
+        await runAudit();
+    });
+
+    // ── لایه‌ها ──
+    function renderLayers() {
+        const list = $("w-layers-list");
+        if (!list) return;
+        const eyeSvg = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+        const rows = [];
+        if (hasDesign()) rows.push({ kind: "design", th: '<span class="th g"></span>', name: T("layersDesign") + ": " + escapeHtml(designName() || "") });
+        if (overlayText()) rows.push({ kind: "text", th: '<span class="th">T</span>', name: T("layersText") + ": «" + escapeHtml(W.text.slice(0, 12)) + "»" });
+        const n = $("w-layer-n");
+        if (n) { n.hidden = rows.length === 0; if (rows.length) n.textContent = num(rows.length); }
+        if (!rows.length) { list.innerHTML = '<p class="status">' + T("layersEmpty") + "</p>"; return; }
+        list.innerHTML = rows.map((r) =>
+            '<div class="ps3layer' + (window.__psSel === r.kind ? " sel" : "") + '" data-kind="' + r.kind + '">' + r.th + "<b>" + r.name + "</b>" +
+            '<button type="button" data-eye aria-label="eye">' + eyeSvg + "</button>" +
+            '<button type="button" data-del aria-label="del">' + I_X + "</button></div>").join("");
+        list.querySelectorAll(".ps3layer").forEach((row) => {
+            row.addEventListener("click", (e) => {
+                if (e.target.closest("button")) return;
+                window.__psSel = row.getAttribute("data-kind");
+                renderSelection(); renderLayers();
+            });
+        });
+        list.querySelectorAll("[data-eye]").forEach((b) => b.addEventListener("click", () => {
+            const kind = b.closest(".ps3layer").getAttribute("data-kind");
+            if (kind === "text") { W.textHidden = !W.textHidden; renderPreview(); }
+            save();
+        }));
+        list.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => {
+            const kind = b.closest(".ps3layer").getAttribute("data-kind");
+            if (kind === "text") { W.text = ""; $("w-textin").value = ""; }
+            else { W.bank = null; W.file = null; W.fileMeta = null; if (W.mode !== "text") W.mode = null; }
+            window.__psSel = null;
+            invalidateAudit(); save(); renderPreview(); renderBar(); renderLayers(); quote();
+        }));
     }
 
     // ── ناوبری فازها ──
@@ -819,16 +866,20 @@
         if (n === 4) renderPay();
         window.scrollTo({ top: 0, behavior: "smooth" });
     }
-    $("w-next1").addEventListener("click", () => { if (!$("w-next1").disabled) goPhase(2); });
+    $("w-next1").addEventListener("click", async () => {
+        if ($("w-next1").disabled) return;
+        const res = await runAudit();
+        if (res && !res.empty && !res.passed) { openPo("w-po-audit"); return; }
+        goPhase(2);
+    });
     $("w-back2").addEventListener("click", () => goPhase(1));
     $("w-back3").addEventListener("click", () => goPhase(2));
     $("w-back4").addEventListener("click", () => goPhase(3));
-    // تیک قوانین: تا پذیرش شرایط، ادامه به پرداخت فعال نیست
     const terms = $("w-terms"), termsMsg = $("w-terms-msg");
     if (terms) {
         terms.addEventListener("change", () => {
             $("w-confirm").disabled = !terms.checked;
-            if (terms.checked) termsMsg.hidden = true;
+            if (terms.checked && termsMsg) termsMsg.hidden = true;
         });
     }
     $("w-confirm").addEventListener("click", () => {
@@ -844,7 +895,7 @@
         goPhase(3);
     });
 
-    // ── فاز ۳: ساخت سفارش + قیمت قطعی سرور ──
+    // ── فاز ۳ ──
     let lastTotal = 0;
     function checkoutState() {
         const p = (CONFIG.products || []).find((x) => x.id === W.product);
@@ -860,14 +911,15 @@
             mode: W.mode,
             designId: W.bank ? W.bank.id : null,
             designCode: W.bank ? W.bank.code : null,
-            text: W.mode === "text" || overlayActive() ? W.text : null,
-            overlay: overlayActive(),
+            designTitle: W.bank ? W.bank.title : null,
+            designShortTitle: W.bank ? shortTitle(W.bank.title) : null,
+            text: W.mode === "text" || overlayText() ? W.text : null,
+            overlay: overlayText(),
+            textX: W.textX, textY: W.textY,
             font: W.font, textColor: W.textColor, textSize: W.textSize,
             productId: W.variant ? W.variant.productId || W.product : W.product,
             productVariantId: W.variant ? W.variant.id : null,
             quantity: W.qty || 1,
-            designTitle: W.bank ? W.bank.title : null,
-            designShortTitle: W.bank ? shortTitle(W.bank.title) : null,
             printSizeCode: W.printSize, printSizeName: size ? size.name : W.printSize,
             printPosition: W.position,
             shirtColorCode: W.colorCode, shirtColorName: W.colorCode ? colorName(W.colorCode) : null,
@@ -878,7 +930,8 @@
             gift,
         };
     }
-    // کامپوزیت طرح + لایه متن — متن دقیقاً وسطِ طرح کشیده می‌شود (مطابق پیش‌نمایش)، نه پایین بوم
+
+    // کامپوزیت طرح + لایه متن — متن در موقعیت انتخابی کاربر کشیده می‌شود (مطابق پیش‌نمایش)
     function bankTextCompositeFile() {
         return new Promise(function (resolve) {
             const c = document.createElement("canvas");
@@ -893,15 +946,17 @@
                 const dw = img.width * sc, dh = img.height * sc;
                 const dx = (c.width - dw) / 2, dy = c.height * 0.06;
                 ctx.drawImage(img, dx, dy, dw, dh);
-                if (overlayActive()) {
-                    const sizePx = Math.max(48, Math.round(W.textSize / 100 * dw * 0.30));
-                    ctx.fillStyle = W.textColor || "#1c1917"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                if (overlayText()) {
+                    const sizePx = Math.max(48, Math.round(W.textSize / 100 * dw * 0.26));
+                    ctx.fillStyle = W.textColor; ctx.textAlign = "center"; ctx.textBaseline = "middle";
                     ctx.font = (W.font === 3 ? "italic " : W.font === 2 ? "500 " : "700 ") + sizePx + "px Vazirmatn, Tahoma, sans-serif";
                     const words = String(W.text).split(/\s+/); const lines = []; let line = "";
-                    words.forEach(function (w) { const t = line ? line + " " + w : w; if (ctx.measureText(t).width > dw * 0.9 && line) { lines.push(line); line = w; } else line = t; });
+                    words.forEach(function (w2) { const t = line ? line + " " + w2 : w2; if (ctx.measureText(t).width > dw * 0.9 && line) { lines.push(line); line = w2; } else line = t; });
                     lines.push(line);
-                    const cy = dy + dh / 2, lh = sizePx * 1.35, y0 = cy - (lines.length - 1) * lh / 2;
-                    lines.forEach(function (l, i) { ctx.fillText(l, c.width / 2, y0 + i * lh); });
+                    const cx = dx + dw * Math.max(0.08, Math.min(0.92, W.textX));
+                    const cy = dy + dh * Math.max(0.08, Math.min(0.92, W.textY));
+                    const lh = sizePx * 1.35, y0 = cy - (lines.length - 1) * lh / 2;
+                    lines.forEach(function (l, i) { ctx.fillText(l, cx, y0 + i * lh); });
                 }
                 c.toBlob(function (b) { resolve(b ? new File([b], "bank-text-design.png", { type: "image/png" }) : null); }, "image/png");
             };
@@ -913,14 +968,14 @@
     function textDesignFile() {
         return new Promise(function (resolve) {
             const c = document.createElement("canvas");
-            c.width = 1240; c.height = 1754; // A4 150dpi
+            c.width = 1240; c.height = 1754;
             const ctx = c.getContext("2d");
             ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
             const sizePx = Math.max(48, Math.round(W.textSize / 100 * c.width * 0.14));
             ctx.fillStyle = W.textColor; ctx.textAlign = "center"; ctx.textBaseline = "middle";
             ctx.font = (W.font === 3 ? "italic " : W.font === 2 ? "500 " : "700 ") + sizePx + "px Vazirmatn, Tahoma, sans-serif";
-            const words = String(W.text).split(/s+/); const lines = []; let line = "";
-            words.forEach(function (w) { const t = line ? line + " " + w : w; if (ctx.measureText(t).width > c.width * 0.82 && line) { lines.push(line); line = w; } else line = t; });
+            const words = String(W.text).split(/\s+/); const lines = []; let line = "";
+            words.forEach(function (w2) { const t = line ? line + " " + w2 : w2; if (ctx.measureText(t).width > c.width * 0.82 && line) { lines.push(line); line = w2; } else line = t; });
             lines.push(line);
             const lh = sizePx * 1.45; const y0 = c.height / 2 - (lines.length - 1) * lh / 2;
             lines.forEach(function (l, i) { ctx.fillText(l, c.width / 2, y0 + i * lh); });
@@ -931,11 +986,11 @@
     async function checkout() {
         const list = $("w-revlist"), lines = $("w-pricelines"), totalEl = $("w-total");
         list.innerHTML = '<p class="status">' + T("loading") + "</p>"; lines.innerHTML = ""; totalEl.textContent = "—";
-        $("w-confirm").disabled = true;
+        const confirmBtn = $("w-confirm");
+        if (confirmBtn) confirmBtn.disabled = true;
         try {
             let r;
-            if ((W.mode === "upload" && W.file) || (W.mode === "text" && W.text) || (W.mode === "bank" && W.bank && overlayActive())) {
-                // فایل چاپ: آپلود مشتری یا رندر متن به PNG (فایل واقعی برای مرحله چاپ)
+            if ((W.mode === "upload" && W.file) || (W.mode === "text" && W.text) || (W.mode === "bank" && W.bank && overlayText())) {
                 const file = W.mode === "text" ? await textDesignFile() : W.mode === "bank" ? await bankTextCompositeFile() : W.file;
                 const fd = new FormData();
                 fd.append("state", JSON.stringify(checkoutState()));
@@ -953,11 +1008,9 @@
             }
             W.orderId = data.orderId;
             save();
-            // قلم جدید به سبد اضافه شد → بج هدر به‌روز شود
             if (typeof window.barangRefreshCart === "function") window.barangRefreshCart();
             renderReview(data.pricing);
-            const terms = $("w-terms");
-            $("w-confirm").disabled = !(terms && terms.checked);
+            if (confirmBtn) confirmBtn.disabled = !!(terms && !terms.checked);
         } catch { list.innerHTML = '<p class="status">' + T("errorGeneric") + "</p>"; }
     }
     function renderReview(pricing) {
@@ -972,11 +1025,16 @@
         if (W.colorCode) rtee.style.setProperty("--teeC", hexOf(colorName(W.colorCode), W.colorCode));
         const holder = document.createElement("div");
         holder.style.cssText = "position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);width:120px;height:150px;display:flex;align-items:center;justify-content:center";
-        holder.innerHTML = designHTML() || '<span style="color:#94a1b8;font-size:12px">—</span>';
+        const dh = designPreviewHTML();
+        holder.innerHTML = dh || '<span style="color:#94a1b8;font-size:12px">—</span>';
         $("w-revtee").appendChild(holder);
 
+        const designLine = W.mode === "bank"
+            ? T("sourceBank") + ": " + (W.bank ? shortTitle(W.bank.title) : "—") + (overlayText() ? " + «" + W.text + "»" : "")
+            : W.mode === "upload" ? T("yourFile") + (overlayText() ? " + «" + W.text + "»" : "")
+            : T("textQuote") + ": «" + W.text + "»";
         const kv = [
-            [T("noDesign"), W.mode === "bank" ? (T("sourceBank") + ": " + (W.bank ? W.bank.title : "—")) : W.mode === "upload" ? T("yourFile") : T("textQuote") + ": «" + W.text + "»"],
+            [T("noDesign"), designLine],
             [T("printSide"), W.position === "FRONT" ? T("front") : T("back")],
             [T("printSize"), (size ? size.name : W.printSize) + (size && size.description ? " · " + size.description : "")],
             [T("product"), p ? p.name : "—"],
@@ -1010,12 +1068,25 @@
         $("w-total").textContent = money(total) + " " + T("toman");
         $("w-paytotal").textContent = money(total);
     }
+    function designPreviewHTML() {
+        if (W.mode === "bank" && W.bank) {
+            const txt = overlayText()
+                ? '<div class="t" dir="auto" style="position:absolute;left:' + (W.textX * 100) + '%;top:' + (W.textY * 100) + '%;transform:translate(-50%,-50%);width:88%;text-align:center;line-height:1.3;color:' + W.textColor + ';font-size:' + Math.max(11, Math.round(W.textSize / 100 * 19)) + 'px;' + (W.font === 3 ? "font-style:italic;" : "") + 'font-weight:900">' + escapeHtml(W.text) + "</div>"
+                : "";
+            return '<div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center"><img src="' + W.bank.preview + '" alt="" style="max-width:100%;max-height:100%;object-fit:contain">' + txt + "</div>";
+        }
+        if (W.mode === "upload" && W.fileMeta) return '<img src="' + W.fileMeta.url + '" alt="" style="max-width:100%;max-height:100%;object-fit:contain">';
+        if (W.mode === "text" && W.text) {
+            const size = Math.round(W.textSize / 100 * 24);
+            return '<div class="t" dir="auto" style="color:' + W.textColor + ';font-size:' + size + 'px;font-weight:900;text-align:center">' + escapeHtml(W.text) + "</div>";
+        }
+        return null;
+    }
 
-    // ── فاز ۴: پرداخت ──
+    // ── فاز ۴ ──
     async function renderPay() {
         $("w-payarea").hidden = false;
         $("w-success").hidden = true;
-        renderSum(); // خلاصه سفارش در مرحله پرداخت هم دیده شود
         try {
             const r = await fetch("/order/wizard?handler=Wallet", { headers: { "Accept": "application/json" } });
             const data = await r.json();
@@ -1038,7 +1109,6 @@
                 (data.paidWith === "wallet" ? T("paidViaWallet") : T("paidViaGateway")) + " · " + T("successNote");
             $("w-success").hidden = false;
             sessionStorage.removeItem("wz.state");
-            // بج سبد خرید هدر باید خالی شود (این سفارش از پیش‌نویس خارج شد)
             if (typeof window.barangRefreshCart === "function") window.barangRefreshCart();
         } catch { alert(T("errorGeneric")); $("w-payarea").hidden = false; }
     }
@@ -1049,31 +1119,61 @@
     $("w-track").addEventListener("click", () => { location.href = "/account/order/" + (W.orderId || ""); });
     $("w-again").addEventListener("click", () => { location.href = "/order/wizard?new=1"; });
 
+    // ── فاز ۲: آدرس‌ها ──
+    async function loadAddresses() {
+        try {
+            const r = await fetch("/order/wizard?handler=Addresses", { headers: { "Accept": "application/json" } });
+            const data = await r.json();
+            if (!data.ok) return;
+            const box = $("w-addrs");
+            box.innerHTML = "";
+            data.addresses.forEach((a) => {
+                const c = document.createElement("div");
+                c.className = "arow" + (W.addressId === a.id ? " on" : "");
+                c.innerHTML = "<b>📍 </b><small>" + a.line + "</small>";
+                c.querySelector("b").append(a.title);
+                c.addEventListener("click", () => {
+                    W.addressId = a.id; W.newAddress = false;
+                    box.querySelectorAll(".arow,.pick").forEach((x) => x.classList.remove("on"));
+                    c.classList.add("on");
+                    $("w-newaddr").hidden = true;
+                    save();
+                });
+                box.appendChild(c);
+            });
+            const nu = document.createElement("div");
+            nu.className = "pick";
+            nu.innerHTML = "<b>" + T("newAddress") + "</b><small>" + T("newAddressHint") + "</small>";
+            nu.addEventListener("click", () => {
+                W.addressId = null; W.newAddress = true;
+                box.querySelectorAll(".arow,.pick").forEach((x) => x.classList.remove("on"));
+                nu.classList.add("on");
+                $("w-newaddr").hidden = false;
+                save();
+            });
+            box.appendChild(nu);
+            if (!W.addressId && !W.newAddress && data.addresses.length) {
+                const def = data.addresses.find((a) => a.isDefault) || data.addresses[0];
+                W.addressId = def.id;
+                box.querySelector(".arow").classList.add("on");
+            }
+        } catch { /* بعداً تلاش می‌شود */ }
+    }
+    const giftToggle = $("w-gift"); if (giftToggle) giftToggle.addEventListener("change", (e) => { W.gift = e.target.checked; $("w-giftbox").hidden = !W.gift; save(); });
+
     // ── راه‌اندازی ──
-    goPhase(W.phase || 1); // فاز فعال را نمایان می‌کند (بخش‌ها به‌صورت پیش‌فرض hidden هستند)
-    // حالت اولیه: ورود مستقیم (فاز ۱)؛ تب بانک فقط وقتی فعال شود که طرح ورودی یا انتخاب کاربر باشد
-    const hasBankDesign = W.mode === "bank" && W.bank;
-    document.querySelectorAll(".mode").forEach((b) => { if (W.mode && b.dataset.mode === W.mode) b.classList.add("on"); });
-    if (W.mode) ["bank", "upload", "text"].forEach((m) => { $("w-pan-" + m).hidden = m !== W.mode; });
+    goPhase(W.phase || 1);
     if (W.text) $("w-textin").value = W.text;
     $("w-tsout").textContent = num(W.textSize);
     applyGarmTransform();
-    placeEditor();
     document.querySelectorAll("#w-side button").forEach((b) => b.classList.toggle("on", b.dataset.side === W.position));
+    document.querySelectorAll("#w-zoom button").forEach((b) => b.classList.toggle("on", parseFloat(b.dataset.zoom) === zoomLevel));
     if (W.gift && $("w-gift") && $("w-giftbox")) { $("w-gift").checked = true; $("w-giftbox").hidden = false; }
 
     (async () => {
         await loadConfig();
-        if (!hasBankDesign && !BOOT.entryDesign) {
-            // حالت خنثی: هیچ تب فعالی تا انتخاب کاربر — اما برای شروع، بانک طرح‌ها پیشنهاد می‌شود
-            if (!W.mode) { /* خنثی: همه پنل‌ها بسته */ }
-        }
         if (BOOT.entryDesign && !(W.bank && W.bank.id === BOOT.entryDesign)) await preselectEntryDesign();
-        if (W.mode === "bank" && W.bank) {
-            document.querySelector('.mode[data-mode="bank"]').classList.add("on");
-            $("w-pan-bank").hidden = false;
-            if (!$("w-grid").children.length) runSearch();
-        }
-        renderSum(); renderPreview(); quote();
+        if (W.bank && !W.bank.widthPx) { const dims = await measureImage(W.bank.preview); W.bank.widthPx = dims.w; W.bank.heightPx = dims.h; save(); }
+        renderBar(); renderPreview(); renderLayers(); updateAuditUI(); quote();
     })();
 })();

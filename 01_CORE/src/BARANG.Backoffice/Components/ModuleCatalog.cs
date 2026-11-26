@@ -56,7 +56,7 @@ public static class ModuleCatalog
                 Item("Nav_Products","/manage/products","product.read","products"),
                 Item("Nav_UserAccessManagement","/admin/user-access","security.user.read"),
                 Item("Nav_AI_ModelManagement","/master/ai-models","ai.settings.read"),
-                Item("Nav_SystemFeatures","/system/features","features.manage"),
+                Item("Nav_SystemFeatures","/system/features","features.manage"), Item("Nav_DesignAuditRules","/system/design-audit","designaudit.manage"),
                 Item("Nav_Workflow","/workspace/workflow","workflow.read","workflow.bpms"),
                 Item("Nav_Services","/master/services","lookup.read")),
         Direct("Nav_Customers","users","/manage/customers","customer.read"),

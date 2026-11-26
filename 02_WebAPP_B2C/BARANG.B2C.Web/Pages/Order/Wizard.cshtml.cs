@@ -403,6 +403,29 @@ public sealed class WizardModel(CoreApiClient core, CustomerContext customers, S
         return new JsonResult(quota is JsonElement q ? q : new { ok = false });
     }
 
+    // ── ممیزی طراحی: وضعیت طراحی کاربر به موتور قوانین ممیزی ERP ارسال می‌شود ──
+    // قوانین از «قوانین ممیزی» در مدیریت سیستم ERP می‌آیند؛ نتیجه rule-by-rule برمی‌گردد.
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> OnPostAuditAsync([FromBody] JsonElement body)
+    {
+        if (core.SawUnauthorized) return new JsonResult(new { ok = false, problem = "auth" });
+        string culture = Culture();
+        object payload = new
+        {
+            printSizeCode = Text(body, "printSizeCode"),
+            fabricHex = Text(body, "fabricHex"),
+            source = Text(body, "source"),
+            artworkId = Guid.TryParse(Text(body, "artworkId"), out Guid aid) ? (Guid?)aid : null,
+            designWidthPx = body.TryGetProperty("designWidthPx", out JsonElement w) && w.TryGetInt32(out int ww) ? ww : 0,
+            designHeightPx = body.TryGetProperty("designHeightPx", out JsonElement h) && h.TryGetInt32(out int hh) ? hh : 0,
+            culture,
+            text = body.TryGetProperty("text", out JsonElement t) && t.ValueKind == JsonValueKind.Object ? t : (JsonElement?)null,
+        };
+        (bool ok, JsonElement? value, string? problem) = await core.PostRawWithBodyAsync("api/v1/public/design-audit/evaluate", payload, $"audit-{Guid.NewGuid():N}");
+        if (!ok) return new JsonResult(new { ok = false, problem = problem ?? "audit-failed" });
+        return new JsonResult(new { ok = true, result = value });
+    }
+
     // ── پرداخت (فاز ۴): کیف پول واقعی؛ درگاه فعلاً ماکِ همیشه‌موفق ──
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> OnPostPayAsync([FromBody] JsonElement body)

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="da_title"><value>Design audit rules</value></data>
+  <data name="da_sub"><value>Print rules the Peyrang studio enforces while customers design; each rule has a type, print size and parameters.</value></data>
+  <data name="da_new"><value>New rule</value></data>
+  <data name="da_code"><value>Code</value></data>
+  <data name="da_type"><value>Rule type</value></data>
+  <data name="da_type_res"><value>Min resolution</value></data>
+  <data name="da_type_text"><value>Text inside print area</value></data>
+  <data name="da_type_contrast"><value>Text contrast with fabric</value></data>
+  <data name="da_size"><value>Print size</value></data>
+  <data name="da_all"><value>All</value></data>
+  <data name="da_minpx"><value>Min pixels</value></data>
+  <data name="da_margin"><value>Safe margin (mm)</value></data>
+  <data name="da_delta"><value>Min contrast delta</value></data>
+  <data name="da_params"><value>Parameters</value></data>
+  <data name="da_active"><value>Active</value></data>
+  <data name="da_title_fa"><value>Title (Persian)</value></data>
+  <data name="da_title_en"><value>Title (English)</value></data>
+  <data name="da_save"><value>Save</value></data>
+  <data name="da_cancel"><value>Cancel</value></data>
+  <data name="da_saved"><value>Rule saved.</value></data>
+  <data name="da_error"><value>Save failed; check the inputs.</value></data>
+  <data name="da_empty"><value>No rules yet.</value></data>
+  <data name="da_confirm_del"><value>Delete this rule?</value></data>
+  <data name="da_deleted"><value>Rule deleted.</value></data>
+</root>

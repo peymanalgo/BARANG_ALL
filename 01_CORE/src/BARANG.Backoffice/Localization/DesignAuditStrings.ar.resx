@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="da_title"><value>قواعد تدقيق التصميم</value></data>
+  <data name="da_sub"><value>قواعد الطباعة التي يفرضها استوديو بي‌رنگ أثناء التصميم؛ كل قاعدة لها نوع ومقاس طباعة ومعاملات.</value></data>
+  <data name="da_new"><value>قاعدة جديدة</value></data>
+  <data name="da_code"><value>الرمز</value></data>
+  <data name="da_type"><value>نوع القاعدة</value></data>
+  <data name="da_type_res"><value>الحد الأدنى للدقة</value></data>
+  <data name="da_type_text"><value>النص داخل منطقة الطباعة</value></data>
+  <data name="da_type_contrast"><value>تباين النص مع القماش</value></data>
+  <data name="da_size"><value>مقاس الطباعة</value></data>
+  <data name="da_all"><value>الكل</value></data>
+  <data name="da_minpx"><value>الحد الأدنى للبكسل</value></data>
+  <data name="da_margin"><value>الهامش الآمن (مم)</value></data>
+  <data name="da_delta"><value>الحد الأدنى للتباين</value></data>
+  <data name="da_params"><value>المعاملات</value></data>
+  <data name="da_active"><value>مفعل</value></data>
+  <data name="da_title_fa"><value>العنوان (فارسي)</value></data>
+  <data name="da_title_en"><value>العنوان (إنجليزي)</value></data>
+  <data name="da_save"><value>حفظ</value></data>
+  <data name="da_cancel"><value>إلغاء</value></data>
+  <data name="da_saved"><value>تم حفظ القاعدة.</value></data>
+  <data name="da_error"><value>فشل الحفظ؛ تحقق من المدخلات.</value></data>
+  <data name="da_empty"><value>لا قواعد بعد.</value></data>
+  <data name="da_confirm_del"><value>حذف هذه القاعدة؟</value></data>
+  <data name="da_deleted"><value>تم حذف القاعدة.</value></data>
+</root>
