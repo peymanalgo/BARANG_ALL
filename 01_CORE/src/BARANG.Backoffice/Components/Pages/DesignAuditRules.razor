@@ -10,7 +10,6 @@
 @inject ICoreApiClient Core
 @inject IStringLocalizer<NavigationStrings> Navi
 @inject IStringLocalizer<DesignAuditStrings> D
-@inject Microsoft.JSInterop.IJSRuntime Js
 
 <PageTitle>@D["da_title"] · BARANG</PageTitle>
 <main class="page-shell design-audit-page">
@@ -20,7 +19,7 @@
             <h1>@D["da_title"]</h1>
             <p>@D["da_sub"]</p>
         </div>
-        <button type="button" class="btn btn-primary" @onclick="OpenNew"><span class="btn-ic">＋</span>@D["da_new"]</button>
+        <button type="button" class="btn btn-primary" @onclick="OpenNew"><span aria-hidden="true">＋</span>@D["da_new"]</button>
     </header>
 
     @if (Denied)
@@ -29,18 +28,18 @@
     }
     else if (Loading)
     {
-        <section class="panel"><p class="muted">…</p></section>
+        <section class="panel"><div class="crud-loading"><span></span>@D["da_loading"]</div></section>
     }
     else
     {
-        <section class="panel">
+        <section class="panel crud-card">
             @if (Toast is not null)
             {
                 <div class="alert @(ToastOk ? "alert-ok" : "alert-error")" role="status">@Toast</div>
             }
             @if (Rules.Count == 0)
             {
-                <p class="muted">@D["da_empty"]</p>
+                <div class="crud-empty"><span>🛡</span><strong>@D["da_empty"]</strong><p>@D["da_sub"]</p></div>
             }
             else
             {
@@ -64,22 +63,18 @@
                             {
                                 <tr>
                                     <td>@(row++)</td>
-                                    <td dir="ltr">@r.Code</td>
-                                    <td>@Title(r)</td>
+                                    <td dir="ltr"><span class="code-pill">@r.Code</span></td>
+                                    <td><strong>@Title(r)</strong></td>
                                     <td>@TypeLabel(r.RuleType)</td>
                                     <td>@(r.PrintSizeCode ?? D["da_all"])</td>
-                                    <td dir="ltr" class="params-cell">@ParamsText(r)</td>
-                                    <td><span class="chip @(r.IsActive ? "chip-ok" : null)">@(r.IsActive ? D["da_active"] : "—")</span></td>
+                                    <td dir="ltr"><span class="code-pill">@ParamsText(r)</span></td>
+                                    <td><span class="status-badge @(r.IsActive ? "status-active" : "status-inactive")"><span></span>@(r.IsActive ? D["da_active"] : "—")</span></td>
                                     <td>
-                                        <div class="row-actions-menu">
-                                            <details class="row-overflow">
-                                                <summary aria-label="@L["Actions"]">⋮</summary>
-                                                <div class="row-menu">
-                                                    <button type="button" @onclick='() => OpenEdit(r)'>@L["Edit"]</button>
-                                                    <button type="button" class="danger" @onclick='() => DeleteAsync(r)'>@L["Delete"]</button>
-                                                </div>
-                                            </details>
-                                        </div>
+                                        <BarangActionMenu>
+                                            <BarangIconButton Icon="eye" Label="@D["da_view"]" Clicked="() => OpenView(r)" />
+                                            <BarangIconButton Icon="edit" Label="@D["da_edit"]" Clicked="() => OpenEdit(r)" />
+                                            <BarangIconButton Icon="trash" Semantic="danger" Label="@L["Delete"]" Clicked="() => AskDelete(r)" />
+                                        </BarangActionMenu>
                                     </td>
                                 </tr>
                             }
@@ -91,18 +86,33 @@
     }
 </main>
 
+@* پاپ‌آپ مشاهده *@
+@if (Viewing is not null)
+{
+    <BarangModal Open Size="medium" Title="@D["da_view"]" Description="@Viewing.Code" CloseRequested="CloseDialog">
+        <ChildContent>
+        <div class="form-grid da-grid">
+            <label class="form-field"><span>@D["da_code"]</span><input dir="ltr" value="@Viewing.Code" readonly /></label>
+            <label class="form-field"><span>@D["da_type"]</span><input value="@TypeLabel(Viewing.RuleType)" readonly /></label>
+            <label class="form-field"><span>@D["da_size"]</span><input value="@(Viewing.PrintSizeCode ?? D["da_all"])" readonly /></label>
+            <label class="form-field"><span>@D["da_active"]</span><input value="@(Viewing.IsActive ? D["da_active"] : "—")" readonly /></label>
+            <label class="form-field span-2"><span>@CultureTitle</span><input value="@Title(Viewing)" readonly /></label>
+            <label class="form-field span-2"><span>@D["da_title_en"]</span><input dir="ltr" value="@Viewing.TitleEn" readonly /></label>
+            <label class="form-field span-2"><span>@D["da_params"]</span><input dir="ltr" value="@ParamsText(Viewing)" readonly /></label>
+        </div>
+        </ChildContent>
+    </BarangModal>
+}
+
+@* پاپ‌آپ ایجاد/ویرایش *@
 @if (Editing is not null)
 {
-    <div class="modal-backdrop" @onclick="CloseDialog"></div>
-    <div class="modal dialog" role="dialog" aria-modal="true">
-        <header class="modal-head">
-            <h2>@(IsNew ? D["da_new"] : (Editing.Code ?? ""))</h2>
-            <button type="button" class="modal-x" @onclick="CloseDialog">✕</button>
-        </header>
-        <div class="modal-body">
+    <BarangModal Open Size="medium" Title="@(IsNew ? D["da_new"] : D["da_edit"])" Description="@(IsNew ? "" : Editing.Code)" CloseRequested="CloseDialog">
+        <ChildContent>
+        <div class="form-grid da-grid">
             @if (IsNew)
             {
-                <label class="form-field"><span>@D["da_code"]</span><input dir="ltr" @bind="EditCode" /></label>
+                <label class="form-field"><span>@D["da_code"]</span><input dir="ltr" @bind="EditCode" placeholder="res-a4" /></label>
             }
             <label class="form-field"><span>@D["da_type"]</span>
                 <select @bind="EditType">
@@ -111,12 +121,10 @@
                     <option value="contrast">@D["da_type_contrast"]</option>
                 </select>
             </label>
-            <div class="form-grid">
-                <label class="form-field"><span>@D["da_title_fa"]</span><input @bind="EditTitleFa" /></label>
-                <label class="form-field"><span>@D["da_title_en"]</span><input dir="ltr" @bind="EditTitleEn" /></label>
-                <label class="form-field"><span>عنوان (عربی)</span><input dir="rtl" @bind="EditTitleAr" /></label>
-                <label class="form-field"><span>عنوان (اسپانیایی)</span><input dir="ltr" @bind="EditTitleEs" /></label>
-            </div>
+            <label class="form-field"><span>@D["da_title_fa"]</span><input @bind="EditTitleFa" /></label>
+            <label class="form-field"><span>@D["da_title_en"]</span><input dir="ltr" @bind="EditTitleEn" /></label>
+            <label class="form-field"><span>عنوان (عربی)</span><input dir="rtl" @bind="EditTitleAr" /></label>
+            <label class="form-field"><span>عنوان (اسپانیایی)</span><input dir="ltr" @bind="EditTitleEs" /></label>
             <label class="form-field"><span>@D["da_size"]</span>
                 <select @bind="EditPrintSize">
                     <option value="">@D["da_all"]</option>
@@ -125,37 +133,50 @@
                     <option value="A5">A5</option>
                 </select>
             </label>
-            <div class="form-grid">
+            <div class="form-grid da-grid">
                 @if (EditType == "min_resolution")
                 {
-                    <label class="form-field"><span>@D["da_minpx"]</span><input type="number" dir="ltr" @bind="EditMinPx" /></label>
+                    <label class="form-field"><span>@D["da_minpx"]</span><input type="number" dir="ltr" min="100" @bind="EditMinPx" /></label>
                 }
                 else if (EditType == "text_in_bounds")
                 {
-                    <label class="form-field"><span>@D["da_margin"]</span><input type="number" step="0.5" dir="ltr" @bind="EditMargin" /></label>
+                    <label class="form-field"><span>@D["da_margin"]</span><input type="number" step="0.5" dir="ltr" min="0" @bind="EditMargin" /></label>
                 }
                 else
                 {
-                    <label class="form-field"><span>@D["da_delta"]</span><input type="number" step="0.05" dir="ltr" @bind="EditDelta" /></label>
+                    <label class="form-field"><span>@D["da_delta"]</span><input type="number" step="0.05" dir="ltr" min="0" max="1" @bind="EditDelta" /></label>
                 }
             </div>
             <label class="form-check"><input type="checkbox" @bind="EditActive" /><span>@D["da_active"]</span></label>
         </div>
-        <footer class="modal-foot">
-            <button type="button" class="btn btn-ghost" @onclick="CloseDialog">@D["da_cancel"]</button>
+        </ChildContent>
+        <Footer>
+            <button type="button" class="btn btn-secondary" @onclick="CloseDialog" disabled="@Saving">@D["da_cancel"]</button>
             <button type="button" class="btn btn-primary" disabled="@Saving" @onclick="SaveAsync">@D["da_save"]</button>
-        </footer>
-    </div>
+        </Footer>
+    </BarangModal>
+}
+
+@* پاپ‌آپ تأیید حذف *@
+@if (Deleting is not null)
+{
+    <BarangModal Open Size="small" Title="@D["da_delete_title"]" Description="@D["da_confirm_del"]" CloseRequested="CloseDelete">
+        <Footer>
+            <button type="button" class="btn btn-secondary" @onclick="CloseDelete" disabled="@Saving">@D["da_cancel"]</button>
+            <button type="button" class="btn btn-primary" style="background:#8a453b;border-color:#8a453b" disabled="@Saving" @onclick="DeleteAsync">@L["Delete"]</button>
+        </Footer>
+    </BarangModal>
 }
 
 @code {
     [Inject] IStringLocalizer<AppStrings> L { get; set; } = default!;
+    [Inject] Microsoft.JSInterop.IJSRuntime Js { get; set; } = default!;
 
     private bool Denied, Loading = true;
     private string? ProblemText, Toast;
     private bool ToastOk;
     private IReadOnlyList<RuleRow> Rules = [];
-    private RuleRow? Editing;
+    private RuleRow? Viewing, Editing, Deleting;
     private bool IsNew, Saving;
 
     private string EditCode = "", EditType = "min_resolution", EditTitleFa = "", EditTitleEn = "", EditTitleAr = "", EditTitleEs = "", EditPrintSize = "";
@@ -177,6 +198,12 @@
             Denied = true; ProblemText = D["da_sub"].Value; Loading = false; return;
         }
         await LoadAsync();
+    }
+
+    private async Task<(string Token, Guid Company)?> Session()
+    {
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
     }
 
     private async Task LoadAsync()
@@ -217,20 +244,15 @@
         "contrast" => D["da_type_contrast"],
         _ => D["da_type_res"]
     };
-    private async Task<(string Token, Guid Company)?> Session()
-    {
-        var user = (await AuthState.GetAuthenticationStateAsync()).User;
-        return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out var c) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t ? (t, c) : null;
-    }
-
     private string ParamsText(RuleRow r)
     {
-        if (r.RuleType == "min_resolution" && r.Params.TryGetProperty("minPx", out var px)) return "minPx=" + px.GetRawText();
-        if (r.RuleType == "text_in_bounds" && r.Params.TryGetProperty("safeMarginMm", out var mm)) return "margin=" + mm.GetRawText() + "mm";
-        if (r.RuleType == "contrast" && r.Params.TryGetProperty("minDelta", out var d)) return "delta=" + d.GetRawText();
+        if (r.RuleType == "min_resolution" && r.Params.TryGetProperty("minPx", out var px)) return D["da_minpx"] + "=" + px.GetRawText();
+        if (r.RuleType == "text_in_bounds" && r.Params.TryGetProperty("safeMarginMm", out var mm)) return D["da_margin"] + "=" + mm.GetRawText();
+        if (r.RuleType == "contrast" && r.Params.TryGetProperty("minDelta", out var d)) return D["da_delta"] + "=" + d.GetRawText();
         return "{}";
     }
 
+    private void OpenView(RuleRow r) { Viewing = r; Toast = null; }
     private void OpenNew()
     {
         IsNew = true; Editing = new(Guid.Empty, "", "min_resolution", "", "", "", "", null, JsonSerializer.SerializeToElement(new { }), true, 0);
@@ -248,7 +270,9 @@
         EditDelta = r.Params.TryGetProperty("minDelta", out var d) ? d.GetDouble() : 0.3;
         Toast = null;
     }
-    private void CloseDialog() { Editing = null; }
+    private void AskDelete(RuleRow r) { Deleting = r; Toast = null; }
+    private void CloseDialog() { Editing = null; Viewing = null; }
+    private void CloseDelete() { Deleting = null; }
 
     private string ParamsJson() => EditType switch
     {
@@ -260,11 +284,14 @@
     private async Task SaveAsync()
     {
         if (Editing is null) return;
+        if (IsNew && string.IsNullOrWhiteSpace(EditCode)) { ToastOk = false; Toast = D["da_error"]; return; }
+        if (string.IsNullOrWhiteSpace(EditTitleFa)) { ToastOk = false; Toast = D["da_error"]; return; }
         Saving = true; Toast = null;
         object body = IsNew
             ? new { code = EditCode.Trim(), ruleType = EditType, titleFa = EditTitleFa.Trim(), titleEn = EditTitleEn.Trim(), titleAr = EditTitleAr.Trim(), titleEs = EditTitleEs.Trim(), @params = JsonSerializer.Deserialize<JsonElement>(ParamsJson()), printSizeCode = string.IsNullOrWhiteSpace(EditPrintSize) ? null : EditPrintSize, isActive = EditActive }
             : new { ruleType = EditType, titleFa = EditTitleFa.Trim(), titleEn = EditTitleEn.Trim(), titleAr = EditTitleAr.Trim(), titleEs = EditTitleEs.Trim(), @params = JsonSerializer.Deserialize<JsonElement>(ParamsJson()), printSizeCode = string.IsNullOrWhiteSpace(EditPrintSize) ? null : EditPrintSize, isActive = EditActive, version = EditVersion };
         var s2 = await Session();
+        if (s2 is null || !s2.HasValue) { Saving = false; return; }
         ApiResult<JsonElement> res = IsNew
             ? await Core.SendAsync(HttpMethod.Post, "api/v1/system/design-audit-rules", body, s2!.Value.Token, s2!.Value.Company, default)
             : await Core.SendAsync(HttpMethod.Put, $"api/v1/system/design-audit-rules/{Editing.Id}", body, s2!.Value.Token, s2!.Value.Company, default);
@@ -273,13 +300,15 @@
         else { ToastOk = false; Toast = D["da_error"]; }
     }
 
-    private async Task DeleteAsync(RuleRow r)
+    private async Task DeleteAsync()
     {
-        if (!await Js.InvokeAsync<bool>("confirm", D["da_confirm_del"])) return;
-        Toast = null;
+        if (Deleting is null) return;
+        Saving = true;
         var s2 = await Session();
-        ApiResult<JsonElement> res = await Core.SendAsync(HttpMethod.Delete, $"api/v1/system/design-audit-rules/{r.Id}", null, s2!.Value.Token, s2!.Value.Company, default);
-        if (res.IsSuccess || res.StatusCode == 204) { ToastOk = true; Toast = D["da_deleted"]; await LoadAsync(); }
+        if (s2 is null || !s2.HasValue) { Saving = false; return; }
+        ApiResult<JsonElement> res = await Core.SendAsync(HttpMethod.Delete, $"api/v1/system/design-audit-rules/{Deleting.Id}", null, s2!.Value.Token, s2!.Value.Company, default);
+        Saving = false;
+        if (res.IsSuccess || res.StatusCode == 204) { Deleting = null; ToastOk = true; Toast = D["da_deleted"]; await LoadAsync(); }
         else { ToastOk = false; Toast = D["da_error"]; }
     }
 }

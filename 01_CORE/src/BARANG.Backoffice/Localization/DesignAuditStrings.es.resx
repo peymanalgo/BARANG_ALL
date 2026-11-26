@@ -36,4 +36,8 @@
   <data name="da_empty"><value>Aún no hay reglas.</value></data>
   <data name="da_confirm_del"><value>¿Eliminar esta regla?</value></data>
   <data name="da_deleted"><value>Regla eliminada.</value></data>
+  <data name="da_view"><value>Ver</value></data>
+  <data name="da_edit"><value>Editar</value></data>
+  <data name="da_delete_title"><value>Eliminar regla</value></data>
+  <data name="da_loading"><value>Cargando reglas…</value></data>
 </root>

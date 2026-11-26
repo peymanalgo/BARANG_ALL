@@ -36,4 +36,8 @@
   <data name="da_empty"><value>No rules yet.</value></data>
   <data name="da_confirm_del"><value>Delete this rule?</value></data>
   <data name="da_deleted"><value>Rule deleted.</value></data>
+  <data name="da_view"><value>View</value></data>
+  <data name="da_edit"><value>Edit</value></data>
+  <data name="da_delete_title"><value>Delete rule</value></data>
+  <data name="da_loading"><value>Loading rules…</value></data>
 </root>

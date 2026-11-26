@@ -36,4 +36,8 @@
   <data name="da_empty"><value>لا قواعد بعد.</value></data>
   <data name="da_confirm_del"><value>حذف هذه القاعدة؟</value></data>
   <data name="da_deleted"><value>تم حذف القاعدة.</value></data>
+  <data name="da_view"><value>عرض</value></data>
+  <data name="da_edit"><value>تحرير</value></data>
+  <data name="da_delete_title"><value>حذف القاعدة</value></data>
+  <data name="da_loading"><value>جارٍ تحميل القواعد…</value></data>
 </root>

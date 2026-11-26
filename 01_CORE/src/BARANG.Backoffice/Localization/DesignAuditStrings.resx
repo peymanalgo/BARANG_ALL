@@ -36,4 +36,8 @@
   <data name="da_empty"><value>هنوز قانونی ثبت نشده است.</value></data>
   <data name="da_confirm_del"><value>این قانون حذف شود؟</value></data>
   <data name="da_deleted"><value>قانون حذف شد.</value></data>
+  <data name="da_view"><value>مشاهده</value></data>
+  <data name="da_edit"><value>ویرایش</value></data>
+  <data name="da_delete_title"><value>حذف قانون</value></data>
+  <data name="da_loading"><value>در حال بارگذاری قوانین…</value></data>
 </root>
