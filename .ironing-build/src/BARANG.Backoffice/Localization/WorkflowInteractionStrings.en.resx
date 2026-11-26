@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Undo"><value>Undo</value></data>
+  <data name="Redo"><value>Redo</value></data>
+  <data name="Duplicate"><value>Duplicate</value></data>
+  <data name="Cancel"><value>Cancel</value></data>
+  <data name="DeleteConfirmation"><value>This element and its attached connections will be removed from the working graph.</value></data>
+  <data name="Outcome"><value>Path outcome</value></data><data name="Approve"><value>Approve</value></data><data name="Reject"><value>Reject</value></data><data name="AuditReject"><value>Audit Reject</value></data><data name="SourceAnchor"><value>Source anchor</value></data><data name="TargetAnchor"><value>Target anchor</value></data><data name="Auto"><value>Automatic</value></data><data name="Top"><value>Top</value></data><data name="Right"><value>Right</value></data><data name="Bottom"><value>Bottom</value></data><data name="Left"><value>Left</value></data>
+  <data name="ConditionOnlyFromGateway"><value>Conditions and outcomes are only allowed on Exclusive Gateway exits.</value></data><data name="DuplicateNodeKey"><value>Node stable keys must be unique.</value></data><data name="InvalidTransition"><value>The connection is invalid.</value></data><data name="InvalidOutcome"><value>The path outcome is invalid.</value></data><data name="InvalidAnchor"><value>The connection anchor is invalid for this node type.</value></data>
+</root>

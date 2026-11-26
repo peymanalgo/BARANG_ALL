@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Companies">
+    <value>الشركات</value>
+  </data>
+  <data name="Branches">
+    <value>الفروع</value>
+  </data>
+  <data name="Products">
+    <value>المنتجات والمتغيرات</value>
+  </data>
+  <data name="Customers">
+    <value>العملاء</value>
+  </data>
+  <data name="Add">
+    <value>إضافة</value>
+  </data>
+  <data name="AddCompany">
+    <value>شركة جديدة</value>
+  </data>
+  <data name="AddBranch">
+    <value>فرع جديد</value>
+  </data>
+  <data name="AddProduct">
+    <value>منتج جديد</value>
+  </data>
+  <data name="AddCustomer">
+    <value>عميل جديد</value>
+  </data>
+  <data name="Edit">
+    <value>تحرير</value>
+  </data>
+  <data name="View">
+    <value>عرض</value>
+  </data>
+  <data name="Save">
+    <value>حفظ التغييرات</value>
+  </data>
+  <data name="Cancel">
+    <value>إلغاء</value>
+  </data>
+  <data name="Search">
+    <value>بحث</value>
+  </data>
+  <data name="SearchHint">
+    <value>بحث بالرمز أو الاسم أو المعرف</value>
+  </data>
+  <data name="Refresh">
+    <value>تحديث</value>
+  </data>
+  <data name="Reset"><value>إعادة ضبط</value></data>
+  <data name="Code">
+    <value>الرمز</value>
+  </data>
+  <data name="Name">
+    <value>الاسم</value>
+  </data>
+  <data name="Type">
+    <value>النوع</value>
+  </data>
+  <data name="Unit">
+    <value>الوحدة</value>
+  </data>
+  <data name="Status">
+    <value>الحالة</value>
+  </data>
+  <data name="Actions">
+    <value>الإجراءات</value>
+  </data>
+  <data name="Active">
+    <value>نشط</value>
+  </data>
+  <data name="Inactive">
+    <value>غير نشط</value>
+  </data>
+  <data name="Activate">
+    <value>تفعيل</value>
+  </data>
+  <data name="Deactivate">
+    <value>تعطيل</value>
+  </data>
+  <data name="NoRecords">
+    <value>لا توجد سجلات مطابقة</value>
+  </data>
+  <data name="NoRecordsHelp">
+    <value>غيّر المرشحات أو أضف السجل الأول.</value>
+  </data>
+  <data name="Loading">
+    <value>جارٍ تحميل البيانات…</value>
+  </data>
+  <data name="Description">
+    <value>الوصف</value>
+  </data>
+  <data name="ProductType">
+    <value>نوع المنتج</value>
+  </data>
+  <data name="Uom">
+    <value>وحدة القياس</value>
+  </data>
+  <data name="Variants">
+    <value>المتغيرات وSKU</value>
+  </data>
+  <data name="AddVariant">
+    <value>متغير جديد</value>
+  </data>
+  <data name="Sku">
+    <value>SKU</value>
+  </data>
+  <data name="Barcode">
+    <value>الباركود</value>
+  </data>
+  <data name="Size">
+    <value>المقاس</value>
+  </data>
+  <data name="Color">
+    <value>اللون</value>
+  </data>
+  <data name="Details">
+    <value>التفاصيل</value>
+  </data>
+  <data name="Person">
+    <value>فرد</value>
+  </data>
+  <data name="Organization">
+    <value>منظمة</value>
+  </data>
+  <data name="CustomerNumber">
+    <value>رقم العميل</value>
+  </data>
+  <data name="DisplayName">
+    <value>اسم العرض</value>
+  </data>
+  <data name="FirstName">
+    <value>الاسم الأول</value>
+  </data>
+  <data name="LastName">
+    <value>اسم العائلة</value>
+  </data>
+  <data name="LegalName">
+    <value>الاسم القانوني</value>
+  </data>
+  <data name="NationalId">
+    <value>المعرف الوطني</value>
+  </data>
+  <data name="RegistrationNo">
+    <value>رقم التسجيل</value>
+  </data>
+  <data name="TaxId">
+    <value>المعرف الاقتصادي / الضريبي</value>
+  </data>
+  <data name="Mobile">
+    <value>الجوال</value>
+  </data>
+  <data name="Phone">
+    <value>الهاتف</value>
+  </data>
+  <data name="Email">
+    <value>البريد الإلكتروني</value>
+  </data>
+  <data name="Notes">
+    <value>ملاحظات</value>
+  </data>
+  <data name="ContactsAddresses">
+    <value>جهات الاتصال والعناوين</value>
+  </data>
+  <data name="BusinessProfile">
+    <value>الملف المالي والتجاري</value>
+  </data>
+  <data name="Contact">
+    <value>جهة اتصال</value>
+  </data>
+  <data name="Address">
+    <value>عنوان</value>
+  </data>
+  <data name="AddContact">
+    <value>جهة اتصال جديدة</value>
+  </data>
+  <data name="AddAddress">
+    <value>عنوان جديد</value>
+  </data>
+  <data name="ContactType">
+    <value>نوع الاتصال</value>
+  </data>
+  <data name="AddressType">
+    <value>نوع العنوان</value>
+  </data>
+  <data name="Title">
+    <value>العنوان</value>
+  </data>
+  <data name="Country">
+    <value>الدولة</value>
+  </data>
+  <data name="City">
+    <value>المدينة</value>
+  </data>
+  <data name="AddressLine">
+    <value>العنوان الكامل</value>
+  </data>
+  <data name="OperationSucceeded">
+    <value>تم حفظ التغييرات بنجاح.</value>
+  </data>
+  <data name="ValidationError">
+    <value>راجع حقول الأعمال المطلوبة.</value>
+  </data>
+  <data name="ConcurrencyConflict">
+    <value>غيّر مستخدم آخر هذا السجل؛ حدّث الصفحة.</value>
+  </data>
+  <data name="Forbidden">
+    <value>ليس لديك إذن لهذا الإجراء.</value>
+  </data>
+  <data name="LastActiveCompanyRequired"><value>يجب أن تبقى شركة واحدة نشطة على الأقل.</value></data>
+  <data name="NoOptions"><value>لا توجد خيارات مطابقة.</value></data>
+  <data name="SearchOptions"><value>اكتب للبحث في الخيارات</value></data>
+  <data name="Previous"><value>السابق</value></data>
+  <data name="Next"><value>التالي</value></data>
+  <data name="PageOf"><value>الصفحة {0} من {1}</value></data>
+  <data name="Close"><value>إغلاق</value></data>
+  <data name="Saving"><value>جارٍ الحفظ…</value></data>
+  <data name="PrimaryContact"><value>جهة الاتصال الرئيسية</value></data>
+  <data name="FinanceContact"><value>جهة الاتصال المالية</value></data>
+  <data name="ShippingAddress"><value>عنوان الشحن</value></data>
+  <data name="BillingAddress"><value>عنوان الفاتورة</value></data>
+  <data name="Pricing"><value>التسعير</value></data>
+  <data name="NewPrice"><value>سعر بيع جديد</value></data>
+  <data name="CurrentPrice"><value>السعر الحالي</value></data>
+  <data name="FuturePrice"><value>السعر المستقبلي</value></data>
+  <data name="PriceHistory"><value>سجل الأسعار</value></data>
+  <data name="RawProductSalesPriceSubtitle"><value>سعر بيع المنتج الخام للعميل؛ تكلفة المورد منفصلة.</value></data>
+  <data name="ProductLevel"><value>مستوى المنتج</value></data>
+  <data name="Amount"><value>المبلغ</value></data>
+  <data name="Currency"><value>العملة</value></data>
+  <data name="ValidFrom"><value>تاريخ البدء</value></data>
+  <data name="ValidTo"><value>تاريخ الانتهاء</value></data>
+  <data name="NoPricing"><value>لم تُسجل أسعار بيع.</value></data>
+  <data name="SaveSuccess"><value>تم حفظ السعر بنجاح.</value></data>
+  <data name="SaveFailed"><value>تعذر حفظ السعر.</value></data>
+  <data name="DeleteConfirm"><value>هل تريد حذف هذا السعر؟</value></data>
+  <data name="DeleteSuccess"><value>تم حذف السعر بنجاح.</value></data>
+  <data name="DeleteBlocked"><value>هذا السعر محمي بسجل أو تبعية ولا يمكن حذفه.</value></data>
+  <data name="ActivateConfirm"><value>هل تريد تفعيل هذا السعر؟</value></data>
+  <data name="DeactivateConfirm"><value>هل تريد تعطيل هذا السعر؟</value></data>
+  <data name="DisplayOrder"><value>ترتيب العرض</value></data>
+</root>

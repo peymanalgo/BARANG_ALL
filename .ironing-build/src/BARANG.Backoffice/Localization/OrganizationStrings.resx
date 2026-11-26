@@ -1,0 +1,289 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Chart">
+    <value>چارت سازمانی</value>
+  </data>
+  <data name="Persons">
+    <value>اشخاص</value>
+  </data>
+  <data name="AddCompany">
+    <value>افزودن شرکت</value>
+  </data>
+  <data name="AddBranch">
+    <value>افزودن شعبه</value>
+  </data>
+  <data name="AddUnit">
+    <value>افزودن واحد سازمانی</value>
+  </data>
+  <data name="AddPerson">
+    <value>افزودن شخص</value>
+  </data>
+  <data name="Company">
+    <value>شرکت</value>
+  </data>
+  <data name="Branch">
+    <value>شعبه</value>
+  </data>
+  <data name="Office">
+    <value>دفتر</value>
+  </data>
+  <data name="OrganizationalUnit">
+    <value>واحد سازمانی</value>
+  </data>
+  <data name="Unit">
+    <value>واحد سازمانی</value>
+  </data>
+  <data name="Person">
+    <value>شخص</value>
+  </data>
+  <data name="Position">
+    <value>سمت</value>
+  </data>
+  <data name="SemanticRole"><value>نقش سازمانی</value></data>
+  <data name="ReportsToPosition"><value>گزارش به سمت</value></data>
+  <data name="Vacant">
+    <value>بدون متصدی</value>
+  </data>
+  <data name="Manager">
+    <value>مدیر مستقیم</value>
+  </data>
+  <data name="FullInformation">
+    <value>اطلاعات کامل</value>
+  </data>
+  <data name="OrganizationalChart">
+    <value>چارت سازمانی</value>
+  </data>
+  <data name="UserInformation">
+    <value>اطلاعات کاربری</value>
+  </data>
+  <data name="RolesPermissions">
+    <value>نقش‌ها و مجوزهای مؤثر</value>
+  </data>
+  <data name="NoAccount">
+    <value>برای این شخص حساب کاربری ثبت نشده است.</value>
+  </data>
+  <data name="ReadOnly">
+    <value>این بخش فقط خواندنی است.</value>
+  </data>
+  <data name="PersonnelCode">
+    <value>کد پرسنلی</value>
+  </data>
+  <data name="FirstName">
+    <value>نام</value>
+  </data>
+  <data name="LastName">
+    <value>نام خانوادگی</value>
+  </data>
+  <data name="BirthDate">
+    <value>تاریخ تولد</value>
+  </data>
+  <data name="NationalId">
+    <value>شناسه ملی</value>
+  </data>
+  <data name="Email">
+    <value>ایمیل</value>
+  </data>
+  <data name="Phone">
+    <value>تلفن</value>
+  </data>
+  <data name="Address">
+    <value>نشانی</value>
+  </data>
+  <data name="Notes">
+    <value>یادداشت</value>
+  </data>
+  <data name="EmptyChart">
+    <value>هنوز ساختار سازمانی ثبت نشده است.</value>
+  </data>
+  <data name="SearchPerson">
+    <value>جستجوی نام یا کد پرسنلی</value>
+  </data>
+  <data name="AssignedRoles">
+    <value>نقش‌های تخصیص‌یافته</value>
+  </data>
+  <data name="EffectivePermissions">
+    <value>مجوزهای مؤثر</value>
+  </data>
+  <data name="ResetPassword">
+    <value>بازنشانی گذرواژه</value>
+  </data>
+  <data name="Website">
+    <value>وب‌سایت</value>
+  </data>
+  <data name="AddressSection">
+    <value>نشانی</value>
+  </data>
+  <data name="ContactInformation">
+    <value>اطلاعات تماس</value>
+  </data>
+  <data name="CreateUserAccount">
+    <value>ایجاد حساب کاربری</value>
+  </data>
+  <data name="SaveSuccess">
+    <value>اطلاعات با موفقیت ذخیره شد</value>
+  </data>
+  <data name="Deactivate">
+    <value>غیرفعال‌سازی</value>
+  </data>
+  <data name="View">
+    <value>مشاهده</value>
+  </data>
+  <data name="EconomicCode">
+    <value>کد اقتصادی</value>
+  </data>
+  <data name="Mobile">
+    <value>تلفن همراه</value>
+  </data>
+  <data name="Close">
+    <value>بستن</value>
+  </data>
+  <data name="StartDate">
+    <value>تاریخ شروع</value>
+  </data>
+  <data name="DisplayName">
+    <value>نام نمایشی/تجاری</value>
+  </data>
+  <data name="City">
+    <value>شهر</value>
+  </data>
+  <data name="Province">
+    <value>استان</value>
+  </data>
+  <data name="BusinessInformation">
+    <value>اطلاعات کسب‌وکار و سیستم</value>
+  </data>
+  <data name="RegistrationNumber">
+    <value>شماره ثبت</value>
+  </data>
+  <data name="Edit">
+    <value>ویرایش</value>
+  </data>
+  <data name="LegalName">
+    <value>نام قانونی</value>
+  </data>
+  <data name="TaxId">
+    <value>شناسه مالیاتی</value>
+  </data>
+  <data name="Username">
+    <value>نام کاربری</value>
+  </data>
+  <data name="GeneralInformation">
+    <value>اطلاعات عمومی</value>
+  </data>
+  <data name="PrimaryAssignment">
+    <value>تخصیص اصلی</value>
+  </data>
+  <data name="EndDate">
+    <value>تاریخ پایان</value>
+  </data>
+  <data name="PostalCode">
+    <value>کد پستی</value>
+  </data>
+  <data name="AddSubordinate">
+    <value>افزودن زیردست</value>
+  </data>
+  <data name="ConfirmPassword">
+    <value>تکرار گذرواژه</value>
+  </data>
+  <data name="Description">
+    <value>توضیحات</value>
+  </data>
+  <data name="CountryCode">
+    <value>کشور</value>
+  </data>
+  <data name="SelectPerson">
+    <value>انتخاب شخص</value>
+  </data>
+  <data name="Assignment">
+    <value>تخصیص سازمانی</value>
+  </data>
+  <data name="Activate">
+    <value>فعال‌سازی</value>
+  </data>
+  <data name="DefaultCurrency">
+    <value>ارز پیش‌فرض</value>
+  </data>
+  <data name="ParentUnit">
+    <value>واحد بالادست</value>
+  </data>
+  <data name="Enabled">
+    <value>فعال</value>
+  </data>
+  <data name="NewPassword">
+    <value>گذرواژه جدید</value>
+  </data>
+  <data name="LegalInformation">
+    <value>اطلاعات ثبتی و قانونی</value>
+  </data>
+  <data name="AccountCreated">
+    <value>حساب کاربری ایجاد شد</value>
+  </data>
+  <data name="Locked">
+    <value>قفل‌شده</value>
+  </data>
+  <data name="Calendar"><value>تقویم</value></data>
+  <data name="PreviousMonth"><value>ماه قبل</value></data>
+  <data name="NextMonth"><value>ماه بعد</value></data>
+  <data name="SelectMonth"><value>انتخاب ماه</value></data>
+  <data name="SelectYear"><value>انتخاب سال</value></data>
+  <data name="PreviousYears"><value>سال‌های قبل</value></data>
+  <data name="NextYears"><value>سال‌های بعد</value></data>
+  <data name="AllStatuses"><value>همه وضعیت‌ها</value></data>
+  <data name="Page"><value>صفحه</value></data>
+  <data name="UnsavedChangesTitle"><value>تغییرات ذخیره‌نشده</value></data>
+  <data name="UnsavedChangesMessage"><value>تغییرات انجام‌شده در این فرم کنار گذاشته شود؟</value></data>
+  <data name="DiscardChanges"><value>کنار گذاشتن تغییرات</value></data>
+  <data name="InvalidDate"><value>تاریخ واردشده معتبر نیست.</value></data>
+  <data name="RequiredFields"><value>فیلدهای الزامی را تکمیل کنید.</value></data>
+  <data name="OperationFailed"><value>عملیات انجام نشد. اطلاعات را بررسی و دوباره تلاش کنید.</value></data>
+  <data name="SearchFailed"><value>جستجوی اشخاص انجام نشد.</value></data>
+  <data name="DuplicateAssignment"><value>این شخص قبلاً در این واحد انتساب فعال دارد.</value></data>
+  <data name="ReportingCycle"><value>این مدیر باعث ایجاد چرخه گزارش‌دهی نامعتبر می‌شود.</value></data>
+  <data name="InvalidScope"><value>رابطه سازمانی انتخاب‌شده در محدوده شرکت معتبر نیست.</value></data>
+  <data name="DatePlaceholder"><value>سال/ماه/روز (شمسی)</value></data>
+  <data name="AddChildUnit"><value>افزودن واحد زیرمجموعه</value></data>
+  <data name="Move"><value>انتقال</value></data>
+  <data name="ChangeManager"><value>تغییر مدیر</value></data>
+  <data name="Delete"><value>حذف</value></data>
+  <data name="RemoveAssignment"><value>حذف انتساب</value></data>
+  <data name="Expand"><value>باز کردن</value></data>
+  <data name="Collapse"><value>بستن</value></data>
+  <data name="More"><value>عملیات بیشتر</value></data>
+  <data name="ViewPerson"><value>مشاهده شخص</value></data>
+  <data name="DeleteConfirmTitle"><value>تأیید حذف</value></data>
+  <data name="DeleteConfirmMessage"><value>آیا از حذف {0} «{1}» مطمئن هستید؟</value></data>
+  <data name="DeleteBlockedChildren"><value>حذف ممکن نیست؛ این مورد دارای زیرمجموعه سازمانی است.</value></data>
+  <data name="DeleteProtectedDependency"><value>حذف ممکن نیست؛ سوابق یا وابستگی‌های محافظت‌شده وجود دارد. برای حفظ تاریخچه از غیرفعال‌سازی استفاده کنید.</value></data>
+  <data name="DeleteSuccess"><value>مورد با موفقیت حذف شد.</value></data>
+  <data name="PositionArchived"><value>سمت به‌دلیل سوابق وابسته حذف فیزیکی نشد و برای حفظ تاریخچه غیرفعال شد.</value></data>
+  <data name="AssignedAutomatically"><value>هنگام ذخیره به‌صورت خودکار تخصیص می‌یابد</value></data>
+  <data name="MoveUnitTitle"><value>انتقال به واحد سازمانی</value></data>
+  <data name="NoManager"><value>بدون مدیر مستقیم</value></data>
+  <data name="SearchChart"><value>جستجوی شرکت، شعبه، واحد یا شخص</value></data>
+  <data name="SearchChartNoResults"><value>نتیجه‌ای برای «{0}» در چارت پیدا نشد.</value></data>
+  <data name="PrintChart"><value>چاپ چارت سازمانی</value></data>
+  <data name="SelectPrintCompany"><value>انتخاب شرکت</value></data>
+  <data name="Print"><value>چاپ</value></data>
+  <data name="SavePdf"><value>ذخیره به صورت PDF</value></data>
+  <data name="PrintDate"><value>تاریخ چاپ (UTC)</value></data>
+  <data name="PrintError"><value>چارت شرکت بارگذاری نشد. دسترسی شرکت را بررسی و دوباره تلاش کنید.</value></data>
+  <data name="PrintManager"><value>مدیر</value></data>
+  <data name="PrintEmployee"><value>کارمند</value></data>
+  <data name="PrintContinuation"><value>ادامه در بخش</value></data>
+  <data name="ManageCompanies"><value>مدیریت شرکت‌ها</value></data>
+  <data name="CurrentCompanyChart"><value>چارت شرکت جاری</value></data>
+  <data name="CompanyAdministrationDenied"><value>برای مدیریت این شرکت دسترسی یا مجوز معتبر ندارید.</value></data>
+  <data name="DisplayOrderInvalid"><value>ترتیب نمایش باید عدد صحیح صفر یا بزرگ‌تر باشد.</value></data>
+</root>

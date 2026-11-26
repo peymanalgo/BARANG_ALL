@@ -1,0 +1,232 @@
+@page "/workspace/logistics"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@using System.Globalization
+@using System.Text.Json
+@inject IStringLocalizer<AppStrings> L
+@inject IStringLocalizer<CrudStrings> T2
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+<PageTitle>@T("لجستیک","Logistics","اللوجستيات")</PageTitle>
+<header class="crud-header logistics-hero"><div><span class="eyebrow logistics-kicker"><span class="logistics-ink-dot" aria-hidden="true"></span>@L["OperationalWorkspace"]</span><h1>@T("لجستیک","Logistics","اللوجستيات")</h1><p>@T("بسته‌بندی، تحویل به انبار ارسال، مرسولات و پیگیری تحویل","Packaging, handoff, shipments and delivery tracking","التغليف والتسليم والشحنات وتتبع التوصيل")</p></div><div class="row-actions"><button type="button" class="btn btn-secondary" @onclick="Load"><BarangIcon Name="reset" /> @L["Refresh"]</button></div></header>
+
+<div class="production-kpis">
+ <button type="button" class="kpi-card kpi-indigo" @onclick="@(async()=>{PackageStatusFilter="Draft";PackagePage=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="box" /></span><span class="kpi-body"><strong>@DraftPackages</strong><small>@T("در بسته‌بندی","Packaging","في التغليف")</small></span></button>
+ <button type="button" class="kpi-card kpi-teal" @onclick="@(async()=>{PackageStatusFilter="AtShippingWarehouse";PackagePage=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="warehouse" /></span><span class="kpi-body"><strong>@AtWarehousePackages</strong><small>@T("انبار ارسال","Shipping wh.","مستودع الشحن")</small></span></button>
+ <button type="button" class="kpi-card kpi-amber" @onclick="@(async()=>{PackageStatusFilter="";ShipmentStatusFilter="Shipped";ShipmentPage=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="truck" /></span><span class="kpi-body"><strong>@InTransitShipments</strong><small>@T("مرسولات در راه","In transit","في الطريق")</small></span></button>
+ <button type="button" class="kpi-card kpi-green" @onclick="@(async()=>{ShipmentStatusFilter="Delivered";ShipmentPage=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="check" /></span><span class="kpi-body"><strong>@DeliveredShipments</strong><small>@T("تحویل‌شده","Delivered","تم التسليم")</small></span></button>
+ <button type="button" class="kpi-card kpi-coral" @onclick="@(async()=>{ShipmentStatusFilter="FailedDelivery";ShipmentPage=1;await Load();})"><span class="kpi-icon"><BarangIcon Name="close" /></span><span class="kpi-body"><strong>@ProblemShipments</strong><small>@T("ناموفق/برگشتی","Failed/Returned","فاشل/مرجع")</small></span></button>
+</div>
+
+@if(!Dialog&&ActionError.Length>0){<div class="inline-error" role="alert" style="margin:.5rem 0">@ActionError</div>}
+
+<section class="prod-panel prod-tint-indigo prod-full">
+ <header class="prod-panel-head"><span class="prod-panel-icon chip-indigo"><BarangIcon Name="box" /></span><div><h2>@T("بسته‌ها","Packages","الطرود")</h2><small>@T("بسته‌بندی سفارش‌های تأییدشده","Packaging of approved orders","تغليف الطلبات المعتمدة")</small></div><button type="button" class="prod-chart-btn" title="@T("توزیع وضعیت بسته‌ها","Package status mix","توزيع حالات الطرود")" @onclick="@(()=>OpenChart("packageStatus",@T("توزیع وضعیت بسته‌ها","Package status mix","توزيع حالات الطرود")))"><BarangIcon Name="chart" /></button></header>
+ <div class="prod-panel-body">
+  <div class="crud-toolbar compact"><label class="compact-filter"><span>@L["Status"]</span><select @bind="PackageStatusFilter" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="Draft">@PkSt("Draft")</option><option value="Completed">@PkSt("Completed")</option><option value="AtShippingWarehouse">@PkSt("AtShippingWarehouse")</option><option value="ReleasedToShipment">@PkSt("ReleasedToShipment")</option></select></label><button type="button" class="btn btn-primary btn-small" @onclick="OpenNewPackage"><BarangIcon Name="plus" /> @T("بسته جدید","New package","طرد جديد")</button></div>
+  @if(Busy){<BarangLoadingState Text="@L["Loading"]" />}
+  else if(PackageRows.Count==0){<CrudEmptyState Title="@L["NoRecords"]" Description="@T("برای سفارش‌های تأییدشده، از دکمه «بسته جدید» بسته بسازید.","Create packages for approved orders via New package.","أنشئ طروداً للطلبات المعتمدة عبر زر طرد جديد.")" />}
+  else{
+   <div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("شماره بسته","Package no.","رقم الطرد")</th><th>@L["Module_orders"]</th><th>@T("نوع","Type","النوع")</th><th>@T("وزن (kg)","Weight","الوزن")</th><th>@T("ابعاد (cm)","Dims","الأبعاد")</th><th>@T("اقلام","Items","الأصناف")</th><th>@L["Status"]</th><th class="actions-column">@L["Actions"]</th></tr></thead><tbody>
+    @foreach(var row in PackageRows){
+     <tr class="@(SelectedPackageId==row.Id?"is-selected":null)">
+      <td dir="ltr"><span class="code-pill">@row.PackageNumber</span></td>
+      <td dir="ltr"><span class="code-pill">@(row.OrderNumber.Length==0?"—":row.OrderNumber)</span></td>
+      <td>@(row.PackageTypeCode.Length==0?"—":row.PackageTypeCode)</td>
+      <td>@row.WeightKg.ToString("0.#",CultureInfo.InvariantCulture)</td>
+      <td dir="ltr">@row.LengthCm.ToString("0.#")×@row.WidthCm.ToString("0.#")×@row.HeightCm.ToString("0.#")</td>
+      <td>@row.ItemsCount</td>
+      <td><span class="status-dot pkst-@row.Status.ToLowerInvariant()"></span><span>@PkSt(row.Status)</span></td>
+      <td><BarangActionMenu><BarangIconButton Icon="eye" Semantic="info" Label="@L["View"]" Clicked="@(()=>SelectPackage(row))" />@if(row.Status=="Draft"){<BarangIconButton Icon="check" Semantic="success" Label="@T("تکمیل بسته","Complete","إكمال")" Clicked="@(()=>PackageComplete(row))" /><BarangIconButton Icon="truck" Semantic="info" Label="@T("تحویل به انبار ارسال","Handoff","تسليم")" Clicked="@(()=>OpenHandoff(row))" />}</BarangActionMenu></td>
+     </tr>
+    }
+   </tbody></table></div>
+   <BarangPagination Page="@PackagePage" HasNext="@(PackagePage*PageSize<PackageTotal)" Disabled="@Busy" PageLabel="@L["Page"]" PreviousText="@L["Previous"]" NextText="@L["Next"]" Previous="@PreviousPackagePage" Next="@NextPackagePage" />
+  }
+  </div>
+</section>
+
+<section class="prod-panel prod-tint-teal prod-full">
+ <header class="prod-panel-head"><span class="prod-panel-icon chip-teal"><BarangIcon Name="truck" /></span><div><h2>@T("مرسولات","Shipments","الشحنات")</h2><small>@T("ارسال، حمل و تحویل به مشتری","Shipment, transit and delivery","الشحن والنقل والتسليم")</small></div><button type="button" class="prod-chart-btn" title="@T("توزیع وضعیت مرسولات","Shipment status mix","توزيع حالات الشحنات")" @onclick="@(()=>OpenChart("shipmentStatus",@T("توزیع وضعیت مرسولات","Shipment status mix","توزيع حالات الشحنات")))"><BarangIcon Name="chart" /></button></header>
+ <div class="prod-panel-body">
+  <div class="crud-toolbar compact"><label class="compact-filter"><span>@L["Status"]</span><select @bind="ShipmentStatusFilter" @bind:after="FilterChanged"><option value="">@L["All"]</option><option value="Ready">@ShSt("Ready")</option><option value="Shipped">@ShSt("Shipped")</option><option value="InTransit">@ShSt("InTransit")</option><option value="Delivered">@ShSt("Delivered")</option><option value="FailedDelivery">@ShSt("FailedDelivery")</option><option value="Returned">@ShSt("Returned")</option></select></label><button type="button" class="btn btn-primary btn-small" @onclick="OpenNewShipment"><BarangIcon Name="plus" /> @T("مرسوله جدید","New shipment","شحنة جديدة")</button></div>
+  @if(Busy){<BarangLoadingState Text="@L["Loading"]" />}
+  else if(ShipmentRows.Count==0){<CrudEmptyState Title="@L["NoRecords"]" Description="@T("پس از آماده شدن بسته‌ها، مرسوله جدید بسازید.","Create shipments once packages are ready.","أنشئ شحنات عند جهوزية الطرود.")" />}
+  else{
+   <div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("شماره مرسوله","Shipment no.","رقم الشحنة")</th><th>@L["Module_orders"]</th><th>@T("حمل‌کننده","Carrier","الناقل")</th><th>@T("روش ارسال","Method","الطريقة")</th><th>@T("کد رهگیری","Tracking","التتبع")</th><th>@T("بسته‌ها","Pkgs","الطرود")</th><th>@T("تحویل برنامه‌ای","Expected","المتوقع")</th><th>@L["Status"]</th><th class="actions-column">@L["Actions"]</th></tr></thead><tbody>
+    @foreach(var row in ShipmentRows){
+     <tr class="@(SelectedShipmentId==row.Id?"is-selected":null)">
+      <td dir="ltr"><span class="code-pill">@row.ShipmentNumber</span></td>
+      <td dir="ltr"><span class="code-pill">@(row.OrderNumber.Length==0?"—":row.OrderNumber)</span></td>
+      <td>@CarrierLabel(row.CarrierCode)</td>
+      <td>@row.ShippingMethodCode</td>
+      <td dir="ltr">@(row.TrackingCode.Length==0?"—":row.TrackingCode)</td>
+      <td>@row.PackagesCount</td>
+      <td>@(row.ExpectedDelivery is null?"—":Dates.Format(row.ExpectedDelivery.Value.ToDateTime(TimeOnly.MinValue),CultureInfo.CurrentUICulture.TwoLetterISOLanguageName))</td>
+      <td><span class="status-dot shst-@row.Status.ToLowerInvariant()"></span><span>@ShSt(row.Status)</span></td>
+      <td><BarangActionMenu><BarangIconButton Icon="eye" Semantic="info" Label="@L["View"]" Clicked="@(()=>SelectShipment(row))" />@ShipmentActions(row)</BarangActionMenu></td>
+     </tr>
+    }
+   </tbody></table></div>
+   <BarangPagination Page="@ShipmentPage" HasNext="@(ShipmentPage*PageSize<ShipmentTotal)" Disabled="@Busy" PageLabel="@L["Page"]" PreviousText="@L["Previous"]" NextText="@L["Next"]" Previous="@PreviousShipmentPage" Next="@NextShipmentPage" />
+  }
+  </div>
+</section>
+
+@if(SelectedShipment is not null){
+<BarangModal Open="true" Title="@(T("مرسوله","Shipment","الشحنة") + " · " + SelectedShipment.ShipmentNumber)" Size="large" ShowCloseButton="true" CloseRequested="CloseShipmentDetail">
+ <ChildContent>
+  <div class="form-grid production-spec">
+  <label><span>@T("وضعیت","Status","الحالة")</span><input value="@ShSt(SelectedShipment.Status)" readonly /></label>
+  <label><span>@L["Module_orders"]</span><input value="@SelectedShipment.OrderNumber" readonly /></label>
+  <label><span>@T("حمل‌کننده","Carrier","الناقل")</span><input value="@CarrierLabel(SelectedShipment.CarrierCode)" readonly /></label>
+  <label><span>@T("روش ارسال","Method","الطريقة")</span><input value="@SelectedShipment.ShippingMethodCode" readonly /></label>
+  <label><span>@T("کد رهگیری","Tracking","التتبع")</span><input value="@(SelectedShipment.TrackingCode.Length==0?"—":SelectedShipment.TrackingCode)" readonly /></label>
+  <label><span>@T("تاریخ ارسال","Shipped at","تاريخ الشحن")</span><input value="@(SelectedShipment.ShipmentDate is null?"—":Dates.Format(SelectedShipment.ShipmentDate.Value,CultureInfo.CurrentUICulture.TwoLetterISOLanguageName))" readonly /></label>
+  <label><span>@T("تحویل در","Delivered at","التسليم في")</span><input value="@(SelectedShipment.DeliveredAt is null?"—":Dates.Format(SelectedShipment.DeliveredAt.Value,CultureInfo.CurrentUICulture.TwoLetterISOLanguageName))" readonly /></label>
+  @if(!string.IsNullOrWhiteSpace(SelectedShipment.LastReason)){<label class="span-2"><span>@T("آخرین علت","Last reason","آخر سبب")</span><input value="@SelectedShipment.LastReason" readonly /></label>}
+ </div>
+ <h3>@T("تاریخچه وضعیت‌ها","Status history","سجل الحالات")</h3>
+ @if(ShipmentHistory.Count==0){<p class="field-help">@L["NoRecords"]</p>}else{<div class="data-grid-wrap"><table class="data-grid"><thead><tr><th>@T("وضعیت","Status","الحالة")</th><th>@T("زمان","When","الوقت")</th><th>@T("منبع","Source","المصدر")</th><th>@T("دلیل","Reason","السبب")</th></tr></thead><tbody>@foreach(var h in ShipmentHistory){<tr><td>@ShSt(h.Status)</td><td>@Dates.Format(h.At,CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)</td><td dir="ltr">@h.Source</td><td>@(h.Reason??"—")</td></tr>}</tbody></table></div>}
+ </ChildContent>
+ <Footer><button type="button" class="btn btn-secondary" @onclick="CloseShipmentDetail">@L["Cancel"]</button></Footer>
+</BarangModal>
+}
+
+@if(SelectedPackage is not null){
+<BarangModal Open="true" Title="@(T("بسته","Package","الطرد") + " · " + SelectedPackage.PackageNumber)" Size="large" ShowCloseButton="true" CloseRequested="ClosePackageDetail">
+ <ChildContent>
+  <div class="form-grid production-spec">
+  <label><span>@T("وضعیت","Status","الحالة")</span><input value="@PkSt(SelectedPackage.Status)" readonly /></label>
+  <label><span>@L["Module_orders"]</span><input value="@SelectedPackage.OrderNumber" readonly /></label>
+  <label><span>@T("نوع","Type","النوع")</span><input value="@(SelectedPackage.PackageTypeCode.Length==0?"—":SelectedPackage.PackageTypeCode)" readonly /></label>
+  <label><span>@T("وزن (kg)","Weight","الوزن")</span><input value="@SelectedPackage.WeightKg.ToString("0.#",CultureInfo.InvariantCulture)" readonly /></label>
+  <label><span>@T("ابعاد (cm)","Dims","الأبعاد")</span><input dir="ltr" value="@SelectedPackage.LengthCm.ToString("0.#",CultureInfo.InvariantCulture)×@SelectedPackage.WidthCm.ToString("0.#",CultureInfo.InvariantCulture)×@SelectedPackage.HeightCm.ToString("0.#",CultureInfo.InvariantCulture)" readonly /></label>
+  <label><span>@T("اقلام","Items","الأصناف")</span><input value="@SelectedPackage.ItemsCount" readonly /></label>
+  <label><span>@T("مقدار اقلام","Items quantity","كمية الأصناف")</span><input value="@SelectedPackage.ItemsQuantity.ToString("0.#",CultureInfo.InvariantCulture)" readonly /></label>
+ </div>
+ </ChildContent>
+ <Footer><button type="button" class="btn btn-secondary" @onclick="ClosePackageDetail">@L["Cancel"]</button></Footer>
+</BarangModal>
+}
+
+<BarangModal Open="@Dialog" Title="@DialogTitle" Size="medium" ShowCloseButton="true" CloseRequested="()=>Dialog=false">
+ <ChildContent><div class="form-grid single">
+  @if(DialogKind=="newPackage"){<label><span>@T("سفارش تأییدشده","Submitted order","طلب معتمد")</span><SearchableSelect Name="log-order" Options="@SubmittedOrderOptions" @bind-Value="FormOrder" Placeholder="@SelectPlaceholder" /></label><label><span>@T("نوع بسته","Package type","نوع الطرد")</span><ReferenceSelect Name="log-package-type" TypeCode="packaging.type" UseCode="true" @bind-Value="FormPackageType" Placeholder="@SelectPlaceholder" /></label><label><span>@T("وزن (kg)","Weight (kg)","الوزن")</span><input type="number" step="0.01" min="0.01" @bind="FormWeight" /></label><label><span>@T("ابعاد L/W/H (cm)","L/W/H (cm)","الأبعاد")</span><div class="dims-row"><input type="number" step="0.1" min="0.1" @bind="FormLength" /><input type="number" step="0.1" min="0.1" @bind="FormWidth" /><input type="number" step="0.1" min="0.1" @bind="FormHeight" /></div></label>}
+  @if(DialogKind=="handoff"){<label><span>@T("انبار ارسال (Shipping)","Shipping warehouse","مستودع الشحن")</span><SearchableSelect Name="log-warehouse" Options="@WarehouseOptions" @bind-Value="FormWarehouse" Placeholder="@SelectPlaceholder" /></label>}
+  @if(DialogKind=="newShipment"){<label><span>@T("بسته آماده","Ready package","طرد جاهز")</span><SearchableSelect Name="log-ship-pkg" Options="@ReadyPackageOptions" @bind-Value="FormPackageId" Placeholder="@SelectPlaceholder" /></label><label><span>@T("حمل‌کننده","Carrier","الناقل")</span><SearchableSelect Name="log-carrier" Options="@CarrierOptions" @bind-Value="FormCarrier" Placeholder="@SelectPlaceholder" /></label><label><span>@T("روش ارسال","Shipping method","طريقة الشحن")</span><ReferenceSelect Name="log-method" TypeCode="shipping.method" UseCode="true" @bind-Value="FormMethod" Placeholder="@SelectPlaceholder" /></label><label><span>@T("تحویل برنامه‌ای","Expected delivery","التوصيل المتوقع")</span><LocaleDateInput Name="log-expected" Value="@FormExpected" ValueChanged="FormExpectedChanged" /></label>}
+  @if(DialogKind=="tracking"){<label><span>@T("کد رهگیری","Tracking code","رمز التتبع")</span><input dir="ltr" @bind="FormTracking" /></label>}
+  @if(DialogKind=="reason"){<label><span>@T("کد دلیل","Reason code","رمز السبب")</span><input dir="ltr" @bind="FormReasonCode" /></label><label><span>@T("شرح دلیل","Reason text","شرح السبب")</span><input @bind="FormReasonText" /></label>}
+  @if(!string.IsNullOrWhiteSpace(ActionError)){<div class="inline-error" role="alert">@ActionError</div>}
+ </div></ChildContent>
+ <Footer><button type="button" class="btn btn-secondary" @onclick="()=>Dialog=false">@L["Cancel"]</button><button type="button" class="btn btn-primary" disabled="@Busy" @onclick="SubmitDialog">@L["Save"]</button></Footer>
+</BarangModal>
+
+<BarangModal Open="@ChartOpen" Title="@ChartTitle" Size="large" CssClass="chart-popup-modal" ShowCloseButton="true" CloseRequested="()=>ChartOpen=false">
+ <ChildContent><div class="chart-body-inline popup-chart">
+  @if(ChartKind=="packageStatus"){
+   <div class="chart-flex">
+    <div class="donut-wrap"><div class="donut" style="@PackageDonutStyle()"><div class="donut-hole"><strong>@PackageStatusTotal</strong><small>@T("بسته","packages","طرد")</small></div></div></div>
+    <ul class="chart-legend">
+     @foreach(var seg in PackageSegments){<li><span class="legend-dot" style="background:@seg.Color"></span><span class="legend-label">@seg.Label</span><strong dir="ltr">@seg.Count</strong></li>}
+    </ul>
+   </div>
+  }
+  else if(ChartKind=="shipmentStatus"){
+   <div class="chart-flex">
+    <div class="donut-wrap"><div class="donut" style="@ShipmentDonutStyle()"><div class="donut-hole"><strong>@ShipmentStatusTotal</strong><small>@T("مرسوله","shipments","شحنة")</small></div></div></div>
+    <ul class="chart-legend">
+     @foreach(var seg in ShipmentSegments){<li><span class="legend-dot" style="background:@seg.Color"></span><span class="legend-label">@seg.Label</span><strong dir="ltr">@seg.Count</strong></li>}
+    </ul>
+   </div>
+  }
+ </div></ChildContent>
+ <Footer><button type="button" class="btn btn-secondary" @onclick="()=>ChartOpen=false">@L["Cancel"]</button></Footer>
+</BarangModal>
+
+@code {
+ private void CloseShipmentDetail(){SelectedShipment=null;ShipmentHistory.Clear();}
+ private Task FormExpectedChanged(DateOnly? v){FormExpected=v;return Task.CompletedTask;}
+ private const int PageSize=20;
+ private bool Busy,Dialog; private string PackageStatusFilter="",ShipmentStatusFilter="",ActionError="",DialogKind="",DialogTitle="";
+ private int PackagePage=1,ShipmentPage=1; private long PackageTotal,ShipmentTotal,PackageStatusTotal,ShipmentStatusTotal;
+ private List<QPkg> PackageRows=[]; private List<QShp> ShipmentRows=[];
+ private string? SelectedPackageId,SelectedShipmentId; private QShp? SelectedShipment; private QPkg? SelectedPackage;
+ private int DraftPackages,AtWarehousePackages,InTransitShipments,DeliveredShipments,ProblemShipments;
+ private Dictionary<string,long> PackageCounts=new(); private Dictionary<string,long> ShipmentCounts=new();
+ private bool ChartOpen; private string ChartKind="",ChartTitle="";
+ private string FormOrder="",FormPackageType="",FormWarehouse="",FormCarrier="",FormMethod="",FormTracking="",FormReasonCode="",FormReasonText="",FormPackageId=""; private decimal FormWeight=1,FormLength=25,FormWidth=20,FormHeight=5; private DateOnly? FormExpected;
+ private Guid ActionPackageId; private string ActionShipmentId="" ; private long ActionPackageVersion;
+ private List<SearchableSelectOption> SubmittedOrderOptions=[],WarehouseOptions=[],CarrierOptions=[],ReadyPackageOptions=[];
+ private string? Token; private Guid Company;
+ private string SelectPlaceholder=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>"Select","es"=>"Select","ar"=>"اختر",_=>"انتخاب کنید"};
+ protected override async Task OnInitializedAsync(){var u=(await AuthState.GetAuthenticationStateAsync()).User;Token=u.FindFirst(AuthClaimTypes.AccessToken)?.Value;Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Company);await Load();}
+ private string T(string fa,string en,string ar)=>CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch{"en"=>en,"es"=>EsGlossary.Tr(en),"ar"=>ar,_=>fa};
+ private string PkSt(string s)=>s switch{"Draft"=>T("در بسته‌بندی","Packaging","في التغليف"),"Completed"=>T("بسته‌بندی‌شده","Packaged","معبأ"),"AtShippingWarehouse"=>T("انبار ارسال","At shipping wh.","مستودع الشحن"),"ReleasedToShipment"=>T("آزاد برای ارسال","Released","مفرج للشحن"),_=>s};
+ private string ShSt(string s)=>s switch{"Ready"=>T("آماده ارسال","Ready to ship","جاهز للشحن"),"Shipped"=>T("ارسال‌شده","Shipped","مشحون"),"InTransit"=>T("در حال حمل","In transit","في الطريق"),"Delivered"=>T("تحویل‌شده","Delivered","تم التسليم"),"FailedDelivery"=>T("ارسال ناموفق","Failed delivery","فشل التسليم"),"Returned"=>T("برگشتی","Returned","مرتجع"),_=>s};
+ private string CarrierLabel(string code)=>code.Length==0?"—":char.ToUpperInvariant(code[0])+code[1..];
+ private List<(string Label,long Count,string Color)> PackageSegments=>new(){(PkSt("Draft"),PackageCounts.GetValueOrDefault("Draft",0),"#6c8cff"),(PkSt("Completed"),PackageCounts.GetValueOrDefault("Completed",0),"#06b6d4"),(PkSt("AtShippingWarehouse"),PackageCounts.GetValueOrDefault("AtShippingWarehouse",0),"#f59e0b"),(PkSt("ReleasedToShipment"),PackageCounts.GetValueOrDefault("ReleasedToShipment",0),"#22c55e")};
+ private List<(string Label,long Count,string Color)> ShipmentSegments=>new(){(ShSt("Ready"),ShipmentCounts.GetValueOrDefault("Ready",0),"#6c8cff"),(ShSt("Shipped"),ShipmentCounts.GetValueOrDefault("Shipped",0),"#f59e0b"),(ShSt("InTransit"),ShipmentCounts.GetValueOrDefault("InTransit",0),"#06b6d4"),(ShSt("Delivered"),ShipmentCounts.GetValueOrDefault("Delivered",0),"#22c55e"),(ShSt("FailedDelivery"),ShipmentCounts.GetValueOrDefault("FailedDelivery",0),"#ef6b63"),(ShSt("Returned"),ShipmentCounts.GetValueOrDefault("Returned",0),"#8b5cf6")};
+ private string PackageDonutStyle()=>DonutCore(PackageSegments,ref _pkgTotal); private long _pkgTotal;
+ private string ShipmentDonutStyle()=>DonutCore(ShipmentSegments,ref _shpTotal); private long _shpTotal;
+ private string DonutCore(List<(string Label,long Count,string Color)> segs,ref long store){long total=segs.Sum(x=>x.Count);store=total;if(total==0)return "background:conic-gradient(#e2e0ee 0turn 1turn)";double acc=0;var parts=new List<string>();foreach(var seg in segs){if(seg.Count<=0)continue;double from=acc/(double)total,to=(acc+seg.Count)/(double)total;parts.Add($"{seg.Color} {from:0.####}turn {to:0.####}turn");acc+=seg.Count;}if(parts.Count==0)return "background:conic-gradient(#e2e0ee 0turn 1turn)";return $"background:conic-gradient({string.Join(',',parts)})";}
+ private void OpenChart(string kind,string title){ChartKind=kind;ChartTitle=title;ChartOpen=true;}
+ private async Task<(string Token,Guid Company)?> Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out Guid c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t?(t,c):null;}
+ private async Task Load(){if(await Session() is not (string token,Guid company))return;Busy=true;await InvokeAsync(StateHasChanged);try{
+  string pq=$"api/v1/logistics/packages?page={PackagePage}&pageSize={PageSize}"+(string.IsNullOrWhiteSpace(PackageStatusFilter)?"":$"&status={PackageStatusFilter}");
+  var pr=await Core.GetAsync(pq,token,company,default);PackageRows.Clear();PackageTotal=0;if(pr.IsSuccess&&pr.Value.TryGetProperty("items",out var pi)&&pi.ValueKind==JsonValueKind.Array){PackageRows=pi.EnumerateArray().Select(ParsePackage).ToList();PackageTotal=pr.Value.TryGetProperty("total",out var pt)?pt.GetInt64():PackageRows.Count;}
+  string sq=$"api/v1/logistics/shipments?page={ShipmentPage}&pageSize={PageSize}"+(string.IsNullOrWhiteSpace(ShipmentStatusFilter)?"":$"&status={ShipmentStatusFilter}");
+  var sr=await Core.GetAsync(sq,token,company,default);ShipmentRows.Clear();ShipmentTotal=0;if(sr.IsSuccess&&sr.Value.TryGetProperty("items",out var si)&&si.ValueKind==JsonValueKind.Array){ShipmentRows=si.EnumerateArray().Select(ParseShipment).ToList();ShipmentTotal=sr.Value.TryGetProperty("total",out var stt)?stt.GetInt64():ShipmentRows.Count;}
+  await LoadCounts(token,company);
+ }finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private async Task LoadCounts(string token,Guid company){DraftPackages=AtWarehousePackages=InTransitShipments=DeliveredShipments=ProblemShipments=0;PackageCounts=new();ShipmentCounts=new();
+  foreach(string st in new[]{"Draft","Completed","AtShippingWarehouse","ReleasedToShipment"}){var r=await Core.GetAsync($"api/v1/logistics/packages?status={st}&page=1&pageSize=1",token,company,default);long n=r.IsSuccess&&r.Value.TryGetProperty("total",out var t)?t.GetInt64():0;PackageCounts[st]=n;if(st=="Draft")DraftPackages=(int)n;if(st=="AtShippingWarehouse")AtWarehousePackages=(int)n;}
+  foreach(string st in new[]{"Ready","Shipped","InTransit","Delivered","FailedDelivery","Returned"}){var r=await Core.GetAsync($"api/v1/logistics/shipments?status={st}&page=1&pageSize=1",token,company,default);long n=r.IsSuccess&&r.Value.TryGetProperty("total",out var t)?t.GetInt64():0;ShipmentCounts[st]=n;if(st=="Shipped"||st=="InTransit")InTransitShipments+=(int)n;if(st=="Delivered")DeliveredShipments=(int)n;if(st=="FailedDelivery"||st=="Returned")ProblemShipments+=(int)n;}
+  PackageStatusTotal=PackageCounts.Values.Sum();ShipmentStatusTotal=ShipmentCounts.Values.Sum();}
+ private Task FilterChanged(){PackagePage=1;ShipmentPage=1;return Load();}
+ private async Task PreviousPackagePage(){if(PackagePage>1){PackagePage--;await Load();}}
+ private async Task NextPackagePage(){if(PackagePage*PageSize<PackageTotal){PackagePage++;await Load();}}
+ private async Task PreviousShipmentPage(){if(ShipmentPage>1){ShipmentPage--;await Load();}}
+ private async Task NextShipmentPage(){if(ShipmentPage*PageSize<ShipmentTotal){ShipmentPage++;await Load();}}
+ private void SelectPackage(QPkg row){SelectedPackageId=row.Id;SelectedPackage=row;}
+ private void ClosePackageDetail(){SelectedPackage=null;SelectedPackageId=null;}
+ private void SelectShipment(QShp row){SelectedShipmentId=row.Id;SelectedShipment=row;_ = LoadShipmentHistory(row.Id);}
+ private async Task LoadShipmentHistory(string id){if(await Session() is not (string token,Guid company))return;ShipmentHistory.Clear();var r=await Core.GetAsync($"api/v1/logistics/shipments/{id}/history",token,company,default);if(r.IsSuccess&&r.Value.ValueKind==JsonValueKind.Array)foreach(var x in r.Value.EnumerateArray())ShipmentHistory.Add((Text(x,"status"),x.GetProperty("occurredAtUtc").GetDateTimeOffset(),Text(x,"sourceCode"),Text(x,"reasonText").Length>0?Text(x,"reasonText"):Text(x,"reasonCode")));}
+ private List<(string Status,DateTimeOffset At,string Source,string? Reason)> ShipmentHistory=[];
+ private void OpenNewPackage(){DialogKind="newPackage";DialogTitle=T("بسته جدید","New package","طرد جديد");FormOrder="";FormPackageType="";FormWeight=1;FormLength=25;FormWidth=20;FormHeight=5;ActionError="";Dialog=true;_ = LoadSubmittedOrders();}
+ private async Task LoadSubmittedOrders(){if(await Session() is not (string token,Guid company))return;var r=await Core.GetAsync("api/v1/orders?status=Submitted&pageSize=100",token,company,default);SubmittedOrderOptions.Clear();if(r.IsSuccess&&r.Value.TryGetProperty("items",out var items))foreach(var x in items.EnumerateArray())SubmittedOrderOptions.Add(new SearchableSelectOption(x.GetProperty("id").GetGuid().ToString(),Text(x,"orderNumber")+" · "+Text(x,"customerName")));}
+ private void OpenHandoff(QPkg row){ActionPackageId=Guid.Parse(row.Id);ActionPackageVersion=row.Version;DialogKind="handoff";DialogTitle=T("تحویل به انبار ارسال","Handoff to shipping","تسليم لمستودع الشحن");FormWarehouse="";ActionError="";Dialog=true;_ = LoadWarehouses();}
+ private async Task LoadWarehouses(){if(await Session() is not (string token,Guid company))return;if(WarehouseOptions.Count>0)return;var r=await Core.GetAsync("api/v1/inventory/warehouses",token,company,default);if(!r.IsSuccess)return;WarehouseOptions.Clear();foreach(var x in r.Value.EnumerateArray()){string wid=Text(x,"id");string nm=Text(x,"name");if(!string.IsNullOrWhiteSpace(wid))WarehouseOptions.Add(new SearchableSelectOption(wid,nm));}}
+ private void OpenNewShipment(){DialogKind="newShipment";DialogTitle=T("مرسوله جدید","New shipment","شحنة جديدة");FormPackageId="";FormCarrier="";FormMethod="";FormExpected=null;ActionError="";Dialog=true;_ = LoadShipmentSources();}
+ private async Task LoadShipmentSources(){if(await Session() is not (string token,Guid company))return;ReadyPackageOptions.Clear();foreach(string st in new[]{"Completed","AtShippingWarehouse"}){var pr=await Core.GetAsync($"api/v1/logistics/packages?status={st}&page=1&pageSize=100",token,company,default);if(pr.IsSuccess&&pr.Value.TryGetProperty("items",out var items))foreach(var x in items.EnumerateArray())ReadyPackageOptions.Add(new SearchableSelectOption(x.GetProperty("id").GetGuid().ToString(),Text(x,"packageNumber")+" · "+Text(x,"orderNumber")));}
+  var cr=await Core.GetAsync("api/v1/lookups/shipping.carrier/options?culture="+CultureInfo.CurrentUICulture.TwoLetterISOLanguageName+"&activeOnly=true",token,company,default);CarrierOptions.Clear();if(cr.IsSuccess&&cr.Value.ValueKind==JsonValueKind.Array)foreach(var x in cr.Value.EnumerateArray())CarrierOptions.Add(new SearchableSelectOption(Text(x,"code"),Text(x,"displayName")));}
+ private async Task PackageComplete(QPkg row){if(await Session() is not (string token,Guid company))return;Busy=true;ActionError="";await InvokeAsync(StateHasChanged);try{var r=await Core.SendAsync(HttpMethod.Post,$"api/v1/logistics/packages/{row.Id}/complete",new{version=row.Version},token,company,default);if(!r.IsSuccess)ActionError=T("تکمیل انجام نشد؛ اقلام باید از کیفیت تأیید شده باشند.","Complete failed; items must be QC-approved.","فشل الإكمال؛ يجب اعتماد الأصناف من الجودة.");else ActionError="";await Load();}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private async Task SubmitDialog(){if(await Session() is not (string token,Guid company))return;ActionError="";Busy=true;await InvokeAsync(StateHasChanged);try{ApiResult<JsonElement> r;switch(DialogKind){
+  case "newPackage":{if(!Guid.TryParse(FormOrder,out Guid order)){ActionError=T("انتخاب سفارش الزامی است.","Select an order.","اختيار الطلب إلزامي.");return;}if(string.IsNullOrWhiteSpace(FormPackageType)){ActionError=T("نوع بسته الزامی است.","Package type is required.","نوع الطرد إلزامي.");return;}if(FormWeight<=0||FormLength<=0||FormWidth<=0||FormHeight<=0){ActionError=T("وزن و ابعاد باید مثبت باشند.","Weight and dims must be positive.","يجب أن تكون الوزن والأبعاد موجبة.");return;}r=await Core.SendAsync(HttpMethod.Post,"api/v1/logistics/packages",new{orderId=order,packageTypeCode=FormPackageType,weightKg=FormWeight,lengthCm=FormLength,widthCm=FormWidth,heightCm=FormHeight},token,company,default);break;}
+  case "handoff":{if(!Guid.TryParse(FormWarehouse,out Guid wh)){ActionError=T("انتخاب انبار الزامی است.","Select a warehouse.","اختيار المستودع إلزامي.");return;}r=await Core.SendAsync(HttpMethod.Post,$"api/v1/logistics/packages/{ActionPackageId}/handoff",new{warehouseId=wh,packageVersion=ActionPackageVersion},token,company,default);break;}
+  case "newShipment":{if(!Guid.TryParse(FormPackageId,out Guid pkg)){ActionError=T("انتخاب بسته الزامی است.","Select a package.","اختيار الطرد إلزامي.");return;}if(string.IsNullOrWhiteSpace(FormCarrier)||string.IsNullOrWhiteSpace(FormMethod)){ActionError=T("حمل‌کننده و روش ارسال الزامی است.","Carrier and method are required.","الناقل والطريقة إلزاميان.");return;}Guid orderId=await PackageOrder(pkg,token,company);r=await Core.SendAsync(HttpMethod.Post,"api/v1/logistics/shipments",new{orderId=orderId,packageIds=new[]{pkg},carrierCode=FormCarrier,shippingMethodCode=FormMethod,expectedDeliveryDate=FormExpected},token,company,default);break;}
+  case "tracking":{if(string.IsNullOrWhiteSpace(FormTracking)){ActionError=T("کد رهگیری الزامی است.","Tracking code is required.","رمز التتبع إلزامي.");return;}r=await Core.SendAsync(HttpMethod.Put,$"api/v1/logistics/shipments/{ActionShipmentId}/tracking",new{trackingCode=FormTracking,version=0},token,company,default);break;}
+  default:{if(string.IsNullOrWhiteSpace(FormReasonCode)||string.IsNullOrWhiteSpace(FormReasonText)){ActionError=T("کد و شرح دلیل الزامی است.","Reason code and text are required.","رمز السبب وشرحه إلزاميان.");return;}string path=ReasonKind=="return"?"return":"failed-delivery";object body=ReasonKind=="return"?new{warehouseId=b7efbe32Fallback,reasonCode=FormReasonCode,reasonText=FormReasonText,version=0}:new{reasonCode=FormReasonCode,reasonText=FormReasonText,version=0};r=await Core.SendAsync(HttpMethod.Post,$"api/v1/logistics/shipments/{ActionShipmentId}/{path}",body,token,company,default);break;}}
+  if(!r.IsSuccess)ActionError=T("عملیات انجام نشد؛ قواعد لجستیک (وضعیت بسته/انبار/تکراری) را بررسی کنید.","Operation failed; check logistics rules (package status/warehouse/duplicate).","فشلت العملية؛ تحقق من قواعد اللوجستيات.");else{Dialog=false;await Load();}}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private Guid b7efbe32Fallback=Guid.Parse("b7efbe32-21f6-451b-806c-e50effa28b86");
+ private async Task<Guid> PackageOrder(Guid packageId,string token,Guid company){var r=await Core.GetAsync($"api/v1/logistics/packages/{packageId}",token,company,default);return r.IsSuccess&&r.Value.TryGetProperty("orderId",out var o)?o.GetGuid():Guid.Empty;}
+ private string ReasonKind="";
+ private void OpenTracking(QShp row){ActionShipmentId=row.Id;DialogKind="tracking";DialogTitle=T("ثبت کد رهگیری","Register tracking","تسجيل رمز التتبع");FormTracking="";ActionError="";Dialog=true;}
+ private void OpenShipmentReason(QShp row,string kind,string title){ActionShipmentId=row.Id;ReasonKind=kind;DialogTitle=title;FormReasonCode=kind=="failed-delivery"?"FAILED":"RETURNED";FormReasonText="";ActionError="";Dialog=true;}
+ private RenderFragment ShipmentActions(QShp row)=>@<text>
+  @if(row.Status=="Ready"&&row.TrackingCode.Length==0){<BarangIconButton Icon="key" Semantic="info" Label="@T("ثبت رهگیری","Tracking","التتبع")" Clicked="@(()=>OpenTracking(row))" />}
+  @if(row.Status=="Ready"){<BarangIconButton Icon="print" Semantic="success" Label="@T("ارسال","Ship","شحن")" Clicked="@(()=>ShipmentSimple(row,"ship"))" />}
+  @if(row.Status=="Shipped"){<BarangIconButton Icon="truck" Semantic="info" Label="@T("در حال حمل","In transit","في الطريق")" Clicked="@(()=>ShipmentSimple(row,"in-transit"))" />}
+  @if(row.Status=="InTransit"){<BarangIconButton Icon="check" Semantic="success" Label="@T("تحویل شد","Deliver","تسليم")" Clicked="@(()=>ShipmentSimple(row,"deliver"))" />}
+  @if(row.Status is "Shipped" or "InTransit"){<BarangIconButton Icon="minus" Semantic="warning" Label="@T("ارسال ناموفق","Fail delivery","فشل التسليم")" Clicked="@(()=>OpenShipmentReason(row,"failed-delivery",@T("ارسال ناموفق","Failed delivery","فشل التسليم")))" />}
+  @if(row.Status=="FailedDelivery"){<BarangIconButton Icon="restore" Semantic="warning" Label="@T("برگشت به انبار","Return to warehouse","إرجاع للمستودع")" Clicked="@(()=>OpenShipmentReason(row,"return",@T("برگشت به انبار","Return to warehouse","إرجاع للمستودع")))" />}
+ </text>;
+ private async Task ShipmentSimple(QShp row,string action){if(await Session() is not (string token,Guid company))return;Busy=true;ActionError="";await InvokeAsync(StateHasChanged);try{var r=await Core.SendAsync(HttpMethod.Post,$"api/v1/logistics/shipments/{row.Id}/{action}",new{version=row.Version},token,company,default);if(!r.IsSuccess)ActionError=T("عملیات انجام نشد.","Operation failed.","فشلت العملية.");else ActionError="";await Load();}finally{Busy=false;await InvokeAsync(StateHasChanged);}}
+ private static string Text(JsonElement x,string n)=>x.TryGetProperty(n,out var p)&&p.ValueKind!=JsonValueKind.Null?p.ToString():"";
+ private static Guid NullG(JsonElement x,string n)=>x.TryGetProperty(n,out var p)&&p.ValueKind==JsonValueKind.String&&Guid.TryParse(p.GetString(),out var g)?g:Guid.Empty;
+ private QPkg ParsePackage(JsonElement x)=>new(x.GetProperty("id").GetGuid().ToString(),NullG(x,"orderId"),Text(x,"orderNumber"),Text(x,"packageNumber"),Text(x,"packageTypeCode"),x.TryGetProperty("weightKg",out var w)&&w.ValueKind==JsonValueKind.Number?w.GetDecimal():0,x.TryGetProperty("lengthCm",out var l)&&l.ValueKind==JsonValueKind.Number?l.GetDecimal():0,x.TryGetProperty("widthCm",out var wd)&&wd.ValueKind==JsonValueKind.Number?wd.GetDecimal():0,x.TryGetProperty("heightCm",out var h)&&h.ValueKind==JsonValueKind.Number?h.GetDecimal():0,Text(x,"status"),x.TryGetProperty("itemsCount",out var ic)?ic.GetInt32():0,x.TryGetProperty("itemsQuantity",out var iq)&&iq.ValueKind==JsonValueKind.Number?iq.GetDecimal():0,x.TryGetProperty("version",out var v)?v.GetInt64():0);
+ private QShp ParseShipment(JsonElement x)=>new(x.GetProperty("id").GetGuid().ToString(),NullG(x,"orderId"),Text(x,"orderNumber"),Text(x,"shipmentNumber"),Text(x,"carrierCode"),Text(x,"shippingMethodCode"),Text(x,"trackingCode"),Text(x,"status"),x.TryGetProperty("expectedDeliveryDate",out var ed)&&ed.ValueKind==JsonValueKind.String?DateOnly.Parse(ed.GetString()!,CultureInfo.InvariantCulture):(DateOnly?)null,x.TryGetProperty("shipmentDateUtc",out var sd)&&sd.ValueKind==JsonValueKind.String?sd.GetDateTimeOffset():(DateTimeOffset?)null,x.TryGetProperty("deliveredAtUtc",out var da)&&da.ValueKind==JsonValueKind.String?da.GetDateTimeOffset():(DateTimeOffset?)null,Text(x,"lastReason"),x.TryGetProperty("packagesCount",out var pc)?pc.GetInt32():0,x.TryGetProperty("version",out var v)?v.GetInt64():0);
+ private sealed record QPkg(string Id,Guid OrderId,string OrderNumber,string PackageNumber,string PackageTypeCode,decimal WeightKg,decimal LengthCm,decimal WidthCm,decimal HeightCm,string Status,int ItemsCount,decimal ItemsQuantity,long Version);
+ private sealed record QShp(string Id,Guid OrderId,string OrderNumber,string ShipmentNumber,string CarrierCode,string ShippingMethodCode,string TrackingCode,string Status,DateOnly? ExpectedDelivery,DateTimeOffset? ShipmentDate,DateTimeOffset? DeliveredAt,string LastReason,int PackagesCount,long Version);
+}

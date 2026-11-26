@@ -1,0 +1,12 @@
+<article class="kpi-card barang-kpi-card @Class">
+    @if (!string.IsNullOrWhiteSpace(Icon)) { <span class="kpi-icon"><BarangIcon Name="@Icon" /></span> }
+    <span class="kpi-label">@Label</span><strong>@Value</strong>
+    @if (!string.IsNullOrWhiteSpace(Hint)) { <small>@Hint</small> }
+</article>
+@code {
+    [Parameter] public string? Icon { get; set; }
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? Class { get; set; }
+}

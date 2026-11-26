@@ -1,0 +1,31 @@
+@if (Open)
+{
+    <div class="dialog-backdrop barang-modal-backdrop @BackdropClass" @onclick="RequestCloseFromClick" @onkeydown="HandleKey" @onkeydown:stopPropagation>
+        <section class="crud-dialog barang-modal @SizeClass @(ReserveSelectorSpace ? "modal-with-selector" : null) @CssClass" role="dialog" aria-modal="true" aria-labelledby="@TitleId" @attributes="AdditionalAttributes" @onclick:stopPropagation>
+            <header><div><h2 id="@TitleId">@Title</h2>@if (!string.IsNullOrWhiteSpace(Description)) { <p>@Description</p> }</div>@if (ShowCloseButton) { <BarangIconButton Icon="close" Label="@CloseLabel" Clicked="RequestCloseFromClick" /> }</header>
+            <div class="dialog-body">@ChildContent</div>
+            @if (Footer is not null) { <footer>@Footer</footer> }
+        </section>
+    </div>
+}
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public string? BackdropClass { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string CloseLabel { get; set; } = "Close";
+    [Parameter] public string Size { get; set; } = "medium";
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public bool ReserveSelectorSpace { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public bool ShowCloseButton { get; set; } = true;
+    [Parameter] public EventCallback CloseRequested { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    private readonly string TitleId = $"modal-{Guid.NewGuid():N}";
+    private string SizeClass => $"modal-{Size}";
+    private Task RequestClose() => Busy ? Task.CompletedTask : CloseRequested.InvokeAsync();
+    private Task RequestCloseFromClick(MouseEventArgs _) => RequestClose();
+    private Task HandleKey(KeyboardEventArgs args) => args.Key == "Escape" ? RequestClose() : Task.CompletedTask;
+}

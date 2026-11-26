@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ProductsServices" xml:space="preserve"><value>محصولات و خدمات</value></data>
+  <data name="PricesAndLists" xml:space="preserve"><value>قیمت‌ها و فهرست‌های قیمت</value></data>
+  <data name="PriceHistory" xml:space="preserve"><value>تاریخچه قیمت</value></data>
+  <data name="PriceLists" xml:space="preserve"><value>فهرست‌های قیمت</value></data>
+  <data name="Lines" xml:space="preserve"><value>اقلام فهرست قیمت</value></data>
+  <data name="Product" xml:space="preserve"><value>محصول</value></data>
+  <data name="Sku" xml:space="preserve"><value>شناسه کالا (SKU)</value></data>
+  <data name="ProductSku" xml:space="preserve"><value>محصول / شناسه کالا</value></data>
+  <data name="SupplierItemCode" xml:space="preserve"><value>کد کالای تأمین‌کننده</value></data>
+  <data name="SupplierItemName" xml:space="preserve"><value>نام کالای تأمین‌کننده</value></data>
+  <data name="SupplierBrand" xml:space="preserve"><value>برند اختصاصی تأمین‌کننده</value></data>
+  <data name="Description" xml:space="preserve"><value>شرح</value></data>
+  <data name="PurchaseUnit" xml:space="preserve"><value>واحد خرید</value></data>
+  <data name="PackagingType" xml:space="preserve"><value>نوع بسته‌بندی</value></data>
+  <data name="MOQ" xml:space="preserve"><value>حداقل مقدار سفارش</value></data>
+  <data name="MinimumOrderAmount" xml:space="preserve"><value>حداقل مبلغ سفارش</value></data>
+  <data name="LeadTimeDays" xml:space="preserve"><value>زمان تأمین (روز)</value></data>
+  <data name="PreferredForItem" xml:space="preserve"><value>تأمین‌کننده ترجیحی این کالا</value></data>
+  <data name="Availability" xml:space="preserve"><value>قابلیت تأمین</value></data>
+  <data name="Available" xml:space="preserve"><value>قابل تأمین</value></data>
+  <data name="OnRequest" xml:space="preserve"><value>با درخواست</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>غیرقابل تأمین</value></data>
+  <data name="Preferred" xml:space="preserve"><value>ترجیحی</value></data>
+  <data name="SetPreferred" xml:space="preserve"><value>انتخاب تأمین‌کننده ترجیحی</value></data>
+  <data name="UnsetPreferred" xml:space="preserve"><value>لغو تأمین‌کننده ترجیحی</value></data>
+  <data name="CurrentPrice" xml:space="preserve"><value>قیمت جاری</value></data>
+  <data name="NoCurrentPrice" xml:space="preserve"><value>بدون قیمت معتبر</value></data>
+  <data name="Currency" xml:space="preserve"><value>ارز</value></data>
+  <data name="UnitPrice" xml:space="preserve"><value>قیمت واحد</value></data>
+  <data name="MinimumQuantity" xml:space="preserve"><value>مقدار پلکان قیمت</value></data>
+  <data name="DiscountPercent" xml:space="preserve"><value>درصد تخفیف</value></data>
+  <data name="TaxTreatment" xml:space="preserve"><value>وضعیت مالیاتی</value></data>
+  <data name="TaxRatePercent" xml:space="preserve"><value>درصد مالیات اعلام‌شده</value></data>
+  <data name="FreightPerUnit" xml:space="preserve"><value>هزینه حمل اضافی هر واحد</value></data>
+  <data name="NetUnitCost" xml:space="preserve"><value>بهای محاسبه‌شده واحد</value></data>
+  <data name="EffectiveFrom" xml:space="preserve"><value>معتبر از</value></data>
+  <data name="EffectiveTo" xml:space="preserve"><value>معتبر تا</value></data>
+  <data name="PriceListCode" xml:space="preserve"><value>کد فهرست قیمت</value></data>
+  <data name="PriceListTitle" xml:space="preserve"><value>عنوان فهرست قیمت</value></data>
+  <data name="Draft" xml:space="preserve"><value>پیش‌نویس</value></data>
+  <data name="Published" xml:space="preserve"><value>منتشرشده</value></data>
+  <data name="Current" xml:space="preserve"><value>جاری</value></data>
+  <data name="EndPrice" xml:space="preserve"><value>تعیین پایان اعتبار قیمت</value></data>
+  <data name="PreferredRule" xml:space="preserve"><value>در هر شرکت برای هر محصول یا شناسه کالای دقیق، یک تأمین‌کننده فعال ترجیحی وجود دارد. انتخاب جدید به‌صورت اتمیک جایگزین می‌شود.</value></data>
+  <data name="PublishedRule" xml:space="preserve"><value>پیش‌نویس قابل ویرایش است. قیمت‌ها و اقلام منتشرشده به‌عنوان تاریخچه تغییرناپذیر می‌مانند؛ آن‌ها را غیرفعال یا جایگزین کنید.</value></data>
+  <data name="CostRule" xml:space="preserve"><value>بهای واحد برابر قیمت پس از تخفیف، به‌علاوه مالیات اعلام‌شده و حمل اضافی هر واحد است. تبدیل ارز یا واحد انجام نمی‌شود.</value></data>
+  <data name="PriceOverlap" xml:space="preserve"><value>برای این کالا، واحد، ارز، پلکان مقدار و بازه زمانی، قیمت فعال وجود دارد. ابتدا اعتبار قبلی را پایان دهید یا غیرفعال کنید.</value></data>
+  <data name="PublishedImmutable" xml:space="preserve"><value>قیمت منتشرشده تغییرناپذیر است. از پیش‌نویس جایگزین، غیرفعال‌سازی یا پایان اعتبار مجاز استفاده کنید.</value></data>
+  <data name="DeleteProtected" xml:space="preserve"><value>این رکورد تأمین دارای وابستگی حفاظت‌شده یا تاریخچه منتشرشده است و حذف نمی‌شود. آن را غیرفعال کنید.</value></data>
+  <data name="InvalidReference" xml:space="preserve"><value>کالا و مقادیر مرجع فعال و معتبر شرکت جاری را انتخاب کنید. واحد قیمت باید با واحد خرید رابطه تأمین یکسان باشد.</value></data>
+  <data name="Ineligible" xml:space="preserve"><value>تأمین‌کننده، کالا، رابطه تأمین یا واحد خرید غیرفعال، مسدود یا غیرقابل تأمین است.</value></data>
+  <data name="EmptyList" xml:space="preserve"><value>پیش از فعال‌سازی فهرست قیمت، دست‌کم یک قلم معتبر اضافه کنید.</value></data>
+  <data name="Currency_IRR" xml:space="preserve"><value>ریال ایران</value></data>
+  <data name="Currency_IQD" xml:space="preserve"><value>دینار عراق</value></data>
+  <data name="Currency_USD" xml:space="preserve"><value>دلار آمریکا</value></data>
+  <data name="Currency_EUR" xml:space="preserve"><value>یورو</value></data>
+</root>

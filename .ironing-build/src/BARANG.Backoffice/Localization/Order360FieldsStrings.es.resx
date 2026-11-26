@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="CustomerCode" xml:space="preserve">
+    <value>Código de cliente</value>
+  </data>
+  <data name="CustomerType" xml:space="preserve">
+    <value>Tipo de cliente</value>
+  </data>
+  <data name="Size" xml:space="preserve">
+    <value>Talla</value>
+  </data>
+  <data name="Color" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="PrintMethod" xml:space="preserve">
+    <value>Método de impresión</value>
+  </data>
+  <data name="ComponentType" xml:space="preserve">
+    <value>Tipo de componente</value>
+  </data>
+  <data name="Unknown" xml:space="preserve">
+    <value>Información adicional</value>
+  </data>
+  <data name="CustomerTypeIndividual" xml:space="preserve">
+    <value>Persona física</value>
+  </data>
+  <data name="CustomerTypeLegalEntity" xml:space="preserve">
+    <value>Persona jurídica</value>
+  </data>
+</root>

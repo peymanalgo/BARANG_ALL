@@ -1,0 +1,8 @@
+@page "/inventory/shortages"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@inject IStringLocalizer<AppStrings> L
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+<PageTitle>@L["Module_inventory"]</PageTitle><nav class="breadcrumbs"><a href="/workspace/inventory">@L["Module_inventory"]</a><span>/</span><span>@L["Action_Request"]</span></nav><header class="page-heading"><div><h1>@L["Action_Request"]</h1></div></header><section class="panel"><div class="crud-toolbar"><label class="search-box"><span class="sr-only">@L["Search"]</span><input @bind="Search" placeholder="@L["Search"]" /></label><button type="button" class="btn btn-secondary" @onclick="Reset">@L["Reset"]</button></div><BarangJsonGrid Json="@Rows" /></section>
+@code{private string Search="",Rows="";protected override async Task OnInitializedAsync()=>await Load();private Task Reset(){Search="";return Load();}private async Task Load(){var u=(await AuthState.GetAuthenticationStateAsync()).User;if(!Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)||u.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string t)return;var q=string.IsNullOrWhiteSpace(Search)?"":"&search="+Uri.EscapeDataString(Search);var r=await Core.GetAsync($"api/v1/inventory/shortages?includeClosed=false&limit=200{q}",t,c,default);Rows=r.IsSuccess?r.Value.ToString():L[r.Failure==ApiFailure.Forbidden?"Unauthorized":"GenericError"];} }

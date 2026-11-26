@@ -1,0 +1,13 @@
+<nav class="breadcrumbs barang-breadcrumb" aria-label="@AriaLabel">
+    @for (int index = 0; index < Items.Count; index++)
+    {
+        BarangBreadcrumbItem item = Items[index];
+        @if (!string.IsNullOrWhiteSpace(item.Href) && index < Items.Count - 1) { <a href="@item.Href">@item.Label</a> }
+        else { <span aria-current="@(index == Items.Count - 1 ? "page" : null)">@item.Label</span> }
+        @if (index < Items.Count - 1) { <span class="breadcrumb-separator" aria-hidden="true">/</span> }
+    }
+</nav>
+@code {
+    [Parameter] public IReadOnlyList<BarangBreadcrumbItem> Items { get; set; } = [];
+    [Parameter] public string AriaLabel { get; set; } = "Breadcrumb";
+}

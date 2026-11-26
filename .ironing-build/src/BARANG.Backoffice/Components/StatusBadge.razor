@@ -1,0 +1,7 @@
+@inject IStringLocalizer<CrudStrings> C
+<span class="status-badge @(Active ? "status-active" : "status-inactive")"><span aria-hidden="true"></span>@(Active ? ActiveText ?? C["Active"] : InactiveText ?? C["Inactive"])</span>
+@code {
+ [Parameter] public bool Active { get; set; }
+ [Parameter] public string? ActiveText { get; set; }
+ [Parameter] public string? InactiveText { get; set; }
+}

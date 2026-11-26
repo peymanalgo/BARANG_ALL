@@ -1,0 +1,215 @@
+using System.Text.RegularExpressions;
+using BARANG.Core.Application.Background;
+using System.Security.Cryptography;
+using System.Text;
+using BARANG.Core.Application.Abstractions.Actors;
+using BARANG.Core.Application.Abstractions.Companies;
+using BARANG.Core.Application.Abstractions.Transactions;
+using BARANG.Core.Application.Auditing;
+using BARANG.Core.Application.Files;
+using BARANG.Core.Application.Pagination;
+using BARANG.Core.Domain.Common;
+using BARANG.Core.Domain.Files;
+using BARANG.Core.Domain.Orders;
+using BARANG.Core.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+#pragma warning disable CA1725
+
+namespace BARANG.Core.Infrastructure.Files;
+
+public sealed class ArtworkFileAdministration(CoreDbContext db, ITransactionExecutor tx, ICompanyContext company, ICurrentActor actor, IAuditWriter audit, IAuditReader auditReader, IObjectStorage storage, IFileProcessingQueue processingQueue, IOptions<FileStorageOptions> options, TimeProvider time, IApplicationCache cache) : IArtworkFileAdministration
+{
+    private Guid Company => company.RequireCompanyId(); private Guid Actor => Guid.TryParse(actor.Actor.UserId, out Guid id) ? id : throw new InvalidOperationException("An authenticated user is required."); private DateTimeOffset Now => time.GetUtcNow();
+    public Task<Result<ArtworkView>> CreateArtworkAsync(ArtworkCommand c, CancellationToken ct) => tx.ExecuteAsync(async t => { Result<Artwork> x = Artwork.Create(Guid.NewGuid(), Company, c.Code, c.Title, c.Description, c.CategoryCode, c.DesignerUserId, Now, c.Classification); if (x.IsFailure) return Result.Failure<ArtworkView>(x.Error); if (await db.Artworks.AnyAsync(a => a.Code == x.Value.Code, t)) return Result.Failure<ArtworkView>(FileErrors.DuplicateCode); db.Artworks.Add(x.Value); ApplyTranslations(db, x.Value.Id, Company, c.Translations, x.Value, Now); Log("artwork.created", "artwork", x.Value.Id); return Result.Success(A(x.Value, TranslationsOf(db, x.Value.Id))); }, ct);
+    public Task<Result<ArtworkView>> GetArtworkAsync(Guid id, CancellationToken ct) => tx.ExecuteAsync(async t => { Artwork? x = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(a => a.Id == id, t); if (x is null) return Result.Failure<ArtworkView>(FileErrors.NotFound); Dictionary<Guid, IReadOnlyList<ArtworkTranslation>> trs = await TranslationsMapAsync(db, new[] { id }, t); return Result.Success(A(x, trs.GetValueOrDefault(id))); }, ct);
+    public Task<Result<ArtworkPageView>> SearchArtworksAsync(string? search, string? category, bool archived, int pageNumber, int pageSize, CancellationToken ct) => tx.ExecuteAsync(async t => { if (pageSize is < 1 or > 100) return Result.Failure<ArtworkPageView>(FileErrors.InvalidData); int page = pageNumber < 1 ? 1 : pageNumber; IQueryable<Artwork> q = db.Artworks.AsNoTracking().Where(x => archived || !x.IsArchived); string s = search?.Trim() ?? ""; if (s.Length > 0) q = q.Where(x => EF.Functions.ILike(x.Code, $"%{s}%") || EF.Functions.ILike(x.Title, $"%{s}%")); if (!string.IsNullOrWhiteSpace(category)) { string c = category.Trim().ToUpperInvariant(); q = q.Where(x => x.CategoryCode == c); } long total = await q.LongCountAsync(t); List<Artwork> pageItems = await q.OrderBy(x => x.Code).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(t); Dictionary<Guid, IReadOnlyList<ArtworkTranslation>> trs = await TranslationsMapAsync(db, pageItems.Select(x => x.Id).ToList(), t); List<ArtworkView> items = pageItems.Select(x => A(x, trs.GetValueOrDefault(x.Id))).ToList(); return Result.Success(new ArtworkPageView(total, page, pageSize, items)); }, ct);
+    public Task<Result<IReadOnlyList<ArtworkConceptMatch>>> ConceptSearchArtworksAsync(string? query, int limit, string? culture, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        if (limit is < 1 or > 100) return Result.Failure<IReadOnlyList<ArtworkConceptMatch>>(FileErrors.InvalidData);
+        string phrase = ConceptNormalize(query ?? ""); string[] terms = phrase.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(x => x.Length >= 2).Distinct().Take(8).ToArray();
+        if (terms.Length == 0) return Result.Success<IReadOnlyList<ArtworkConceptMatch>>([]);
+        // کل بانک طرح (پروجکشن سبک) — جستجو روی همه متادیتا، نه فقط ۸۰۰ ردیف اول
+        var slim = await db.Artworks.AsNoTracking().Select(x => new { x.Id, x.Code, x.Title, x.Description, x.CategoryCode, x.SubcategoryId, x.TypeId, x.StyleId, x.ThemeId, x.AudienceId, x.UsageId, x.IsArchived, x.LifecycleStatus, x.CurrentVersionId }).ToListAsync(t);
+        Guid[] ids = slim.Select(x => x.Id).ToArray();
+        // نام‌های نمایشی همه مراجع طبقه‌بندی (دسته/زیرگروه/نوع/سبک/تم/مخاطب/کاربرد) در هر سه زبان
+        Dictionary<Guid, string> lookupNames = (await (from v in db.LookupValues.AsNoTracking() join tr in db.LookupValueTranslations.AsNoTracking() on v.Id equals tr.LookupValueId select new { v.Id, tr.DisplayName }).ToListAsync(t)).GroupBy(x => x.Id).ToDictionary(g => g.Key, g => string.Join(' ', g.Select(x => x.DisplayName)));
+        Dictionary<string, string> categoryNames = (await (from v in db.LookupValues.AsNoTracking() join ty in db.LookupTypes.AsNoTracking() on v.LookupTypeId equals ty.Id where ty.Code == "artwork.category" join tr in db.LookupValueTranslations.AsNoTracking() on v.Id equals tr.LookupValueId select new { v.Code, tr.Culture, tr.DisplayName }).ToListAsync(t)).GroupBy(x => x.Code, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => string.Join(' ', g.Select(x => x.DisplayName)), StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, string> categoryDisplay = (await (from v in db.LookupValues.AsNoTracking() join ty in db.LookupTypes.AsNoTracking() on v.LookupTypeId equals ty.Id where ty.Code == "artwork.category" join tr in db.LookupValueTranslations.AsNoTracking() on v.Id equals tr.LookupValueId select new { v.Code, tr.Culture, tr.DisplayName }).ToListAsync(t)).GroupBy(x => x.Code, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => BARANG.Core.Domain.Lookups.LookupText.PickTranslation(g.Select(x => (x.Culture, x.DisplayName)), culture), StringComparer.OrdinalIgnoreCase);
+        Dictionary<Guid, string> tags = (await (from a in db.ArtworkTagAssignments.AsNoTracking().Where(x => ids.Contains(x.ArtworkId) && x.IsActive) join g in db.ArtworkTags.AsNoTracking() on a.TagId equals g.Id select new { a.ArtworkId, g.Code, g.DisplayName }).ToListAsync(t)).GroupBy(x => x.ArtworkId).ToDictionary(g => g.Key, g => string.Join(' ', g.Select(x => x.DisplayName + " " + x.Code)));
+        Dictionary<Guid, List<string>> formats = (await (from av in db.ArtworkVersions.AsNoTracking().Where(x => ids.Contains(x.ArtworkId)) join fv in db.FileVersions.AsNoTracking() on av.FileVersionId equals fv.Id select new { av.ArtworkId, fv.Extension }).Distinct().ToListAsync(t)).GroupBy(x => x.ArtworkId).ToDictionary(g => g.Key, g => g.Select(x => x.Extension.ToUpperInvariant()).Distinct().OrderBy(x => x).ToList());
+        Dictionary<Guid, string> translationText = (await db.ArtworkTranslations.AsNoTracking().Where(x => ids.Contains(x.ArtworkId)).ToListAsync(t)).GroupBy(x => x.ArtworkId).ToDictionary(g => g.Key, g => ConceptNormalize(string.Join(" ", g.Select(x => x.Title + " " + (x.Description ?? "")))));
+        List<ArtworkConceptMatch> matches = [];
+        foreach (var a in slim)
+        {
+            string title = ConceptNormalize(a.Title), code = ConceptNormalize(a.Code), description = ConceptNormalize(a.Description ?? "");
+            tags.TryGetValue(a.Id, out string? tagText); tagText = ConceptNormalize(tagText ?? "");
+            translationText.TryGetValue(a.Id, out string? trText); trText ??= "";
+            string category = ConceptNormalize(a.CategoryCode is { Length: > 0 } cc ? categoryNames.GetValueOrDefault(cc, "") : "");
+            // زیرگروه/نوع/سبک/تم/مخاطب/کاربرد — قلب تطابق معنایی
+            string ClassText(Guid? id) => id is { } g && lookupNames.TryGetValue(g, out string? n) ? ConceptNormalize(n) : "";
+            string subcategory = ClassText(a.SubcategoryId), typeText = ClassText(a.TypeId), style = ClassText(a.StyleId), theme = ClassText(a.ThemeId), audience = ClassText(a.AudienceId), usage = ClassText(a.UsageId);
+            int matched = 0; double raw = 0;
+            foreach (string term in terms)
+            {
+                int hit = 0;
+                if (title.Contains(term)) hit = Math.Max(hit, 45);
+                if (trText.Length > 0 && trText.Contains(term)) hit = Math.Max(hit, 38);
+                if (tagText.Contains(term)) hit = Math.Max(hit, 30);
+                if (subcategory.Contains(term)) hit = Math.Max(hit, 26);
+                if (category.Contains(term)) hit = Math.Max(hit, 22);
+                if (style.Contains(term) || theme.Contains(term) || audience.Contains(term) || typeText.Contains(term) || usage.Contains(term)) hit = Math.Max(hit, 18);
+                if (description.Contains(term)) hit = Math.Max(hit, 10);
+                if (code.Contains(term)) hit = Math.Max(hit, 8);
+                if (hit > 0) { matched++; raw += hit; }
+            }
+            if (matched == 0) continue;
+            double coverage = terms.Length == 0 ? 0 : matched / (double)terms.Length;
+            double score = raw * (0.65 + 0.35 * coverage);
+            if (phrase.Length >= 3 && (title.Contains(phrase) || subcategory.Contains(phrase) || tagText.Contains(phrase))) score += 25;
+            int final = Math.Clamp((int)Math.Round(score), 1, 100);
+            matches.Add(new ArtworkConceptMatch(a.Id, a.Code, a.Title, a.CategoryCode is { Length: > 0 } cCode ? categoryDisplay.GetValueOrDefault(cCode, cCode) : "", a.LifecycleStatus.ToString(), a.IsArchived, formats.GetValueOrDefault(a.Id, []), final));
+        }
+        return Result.Success<IReadOnlyList<ArtworkConceptMatch>>(matches.OrderByDescending(x => x.Score).ThenBy(x => x.Code).Take(limit).ToList());
+    }, ct);
+    internal static string ConceptNormalize(string value) { if (string.IsNullOrWhiteSpace(value)) return ""; string lowered = value.ToLowerInvariant(); foreach ((char from, string to) in new[] { ('\u064a', "\u06cc"), ('\u0643', "\u06a9"), ('\u0623', "\u0627"), ('\u0625', "\u0627"), ('\u0622', "\u0627"), ('\u0629', "\u0647"), ('\u200c', " ") }) lowered = lowered.Replace(from.ToString(), to); return Regex.Replace(lowered, @"[^\p{L}\p{N} ]+", " ").Trim(); }
+    public Task<Result<IReadOnlyList<ArtworkOption>>> ArtworkOptionsAsync(string? search, int limit, CancellationToken ct) => tx.ExecuteAsync(async t => { if (limit is < 1 or > 100) return Result.Failure<IReadOnlyList<ArtworkOption>>(FileErrors.InvalidData); IQueryable<Artwork> q = db.Artworks.AsNoTracking().Where(x => x.IsActive && !x.IsArchived); string s = search?.Trim() ?? ""; if (s.Length > 0) q = q.Where(x => EF.Functions.ILike(x.Code, $"%{s}%") || EF.Functions.ILike(x.Title, $"%{s}%")); return Result.Success<IReadOnlyList<ArtworkOption>>((await q.OrderBy(x => x.Title).Take(limit).ToListAsync(t)).Select(x => new ArtworkOption(x.Id, x.Code, x.Title, x.CategoryCode, x.CurrentVersionId)).ToArray()); }, ct);
+    public Task<Result<ArtworkView>> UpdateArtworkAsync(Guid id, ArtworkCommand c, CancellationToken ct) => tx.ExecuteAsync(async t => { Artwork? x = await db.Artworks.SingleOrDefaultAsync(a => a.Id == id, t); if (x is null) return Result.Failure<ArtworkView>(FileErrors.NotFound); if (x.Version != c.Version) return Result.Failure<ArtworkView>(FileErrors.Concurrency); if (!Enum.TryParse(c.LifecycleStatus, true, out ArtworkLifecycle lifecycle)) return Result.Failure<ArtworkView>(FileErrors.InvalidData); Result r = x.Update(c.Title, c.Description, c.CategoryCode, c.DesignerUserId, lifecycle, Now, c.Classification); if (r.IsFailure) return Result.Failure<ArtworkView>(r.Error); ApplyTranslations(db, id, Company, c.Translations, x, Now); Log("artwork.updated", "artwork", id); return Result.Success(A(x, TranslationsOf(db, id))); }, ct);
+    public Task<Result<ArtworkView>> ArchiveArtworkAsync(Guid id, bool archived, long version, CancellationToken ct) => tx.ExecuteAsync(async t => { Artwork? x = await db.Artworks.SingleOrDefaultAsync(a => a.Id == id, t); if (x is null) return Result.Failure<ArtworkView>(FileErrors.NotFound); if (x.Version != version) return Result.Failure<ArtworkView>(FileErrors.Concurrency); if (archived) x.Archive(Now); else x.Restore(Now); Log(archived ? "artwork.archived" : "artwork.restored", "artwork", id); return Result.Success(A(x)); }, ct);
+    public Task<Result<ArtworkVersionView>> CreateArtworkVersionAsync(Guid artworkId, Guid fileVersionId, string? notes, CancellationToken ct) => tx.ExecuteAsync(async t => { Artwork? art = await db.Artworks.SingleOrDefaultAsync(x => x.Id == artworkId, t); FileVersion? file = await db.FileVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == fileVersionId, t); if (art is null || file is null) return Result.Failure<ArtworkVersionView>(FileErrors.CrossCompany); if (art.IsArchived || file.IsArchived) return Result.Failure<ArtworkVersionView>(FileErrors.Archived); int number = (await db.ArtworkVersions.Where(x => x.ArtworkId == artworkId).MaxAsync(x => (int?)x.VersionNumber, t) ?? 0) + 1; Result<ArtworkVersion> x = ArtworkVersion.Create(Guid.NewGuid(), Company, artworkId, number, fileVersionId, notes, Actor, Now); if (x.IsFailure) return Result.Failure<ArtworkVersionView>(x.Error); db.ArtworkVersions.Add(x.Value); art.SetCurrentVersion(x.Value.Id, Now); Log("artwork.version.created", "artwork_version", x.Value.Id); return Result.Success(AV(x.Value)); }, ct);
+    public Task<Result<IReadOnlyList<ArtworkVersionView>>> ListArtworkVersionsAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t => await db.Artworks.AnyAsync(x => x.Id == artworkId, t) ? Result.Success<IReadOnlyList<ArtworkVersionView>>((await db.ArtworkVersions.AsNoTracking().Where(x => x.ArtworkId == artworkId).OrderBy(x => x.VersionNumber).ToListAsync(t)).Select(AV).ToArray()) : Result.Failure<IReadOnlyList<ArtworkVersionView>>(FileErrors.NotFound), ct);
+    public Task<Result<IReadOnlyList<ArtworkHistoryView>>> ListArtworkHistoryAsync(Guid artworkId, int pageNumber, int pageSize, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        if (pageNumber < 1 || pageSize is < 1 or > 100) return Result.Failure<IReadOnlyList<ArtworkHistoryView>>(FileErrors.InvalidData);
+        if (!await db.Artworks.AsNoTracking().AnyAsync(x => x.Id == artworkId, t)) return Result.Failure<IReadOnlyList<ArtworkHistoryView>>(FileErrors.NotFound);
+        PagedResult<AuditEventView> events = await auditReader.ListAsync(new AuditQuery(EntityType: "artwork", EntityId: artworkId.ToString(), PageNumber: pageNumber, PageSize: pageSize), t);
+        return Result.Success<IReadOnlyList<ArtworkHistoryView>>(events.Items.Select(x => new ArtworkHistoryView(x.Action, x.OccurredAtUtc, x.ActorUsername)).ToArray());
+    }, ct);
+    public Task<Result<DownloadFile>> GetThumbnailAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        Artwork? artwork = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(x => x.Id == artworkId, t);
+        if (artwork?.CurrentVersionId is not Guid currentVersionId) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        ArtworkVersion? version = await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentVersionId && x.ArtworkId == artworkId, t);
+        FileDerivative? derivative = version is null ? null : await db.FileDerivatives.AsNoTracking().SingleOrDefaultAsync(x => x.SourceFileVersionId == version.FileVersionId && x.DerivativeType == FileDerivativeType.Thumbnail, t);
+        if (derivative is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t, string.IsNullOrWhiteSpace(options.Value.PublicBucket)?null:options.Value.PublicBucket);
+        return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.png", derivative.MediaType, derivative.SizeBytes, content, derivative.Sha256Hash));
+    }, ct);
+    public Task<Result<DownloadFile>> GetWebVariantAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        Artwork? artwork = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(x => x.Id == artworkId, t);
+        if (artwork?.CurrentVersionId is not Guid currentVersionId) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        ArtworkVersion? version = await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentVersionId && x.ArtworkId == artworkId, t);
+        FileDerivative? derivative = version is null ? null : await db.FileDerivatives.AsNoTracking().SingleOrDefaultAsync(x => x.SourceFileVersionId == version.FileVersionId && x.DerivativeType == FileDerivativeType.Web, t);
+        if (derivative is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        Stream? content = await storage.OpenReadAsync(derivative.StorageKey, t, string.IsNullOrWhiteSpace(options.Value.PublicBucket)?null:options.Value.PublicBucket);
+        return content is null ? Result.Failure<DownloadFile>(FileErrors.NotFound) : Result.Success(new DownloadFile($"{artwork.Code}.webp", derivative.MediaType, derivative.SizeBytes, content, derivative.Sha256Hash));
+    }, ct);
+    public Task<Result<DerivativeUrlView>> GetDerivativeUrlAsync(Guid artworkId, string variant, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        bool web = string.Equals(variant, "web", StringComparison.OrdinalIgnoreCase);
+        Artwork? artwork = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(x => x.Id == artworkId, t);
+        if (artwork?.CurrentVersionId is not Guid currentVersionId) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        ArtworkVersion? version = await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentVersionId && x.ArtworkId == artworkId, t);
+        FileDerivative? derivative = version is null ? null : await db.FileDerivatives.AsNoTracking().SingleOrDefaultAsync(x => x.SourceFileVersionId == version.FileVersionId && x.DerivativeType == (web ? FileDerivativeType.Web : FileDerivativeType.Thumbnail), t);
+        if (derivative is null) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        string bucket = (DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 600L).ToString("D10",System.Globalization.CultureInfo.InvariantCulture);
+        CacheKey cacheKey = new(company.RequireCompanyId(), string.Empty, $"artwork-image-url:{artworkId:N}:{(web ? "web" : "thumb")}:{bucket}");
+        DerivativeUrlView? cached = await cache.GetAsync<DerivativeUrlView>(cacheKey, t);
+        if (cached is not null) return Result.Success(cached);
+        int expiry = Math.Clamp(options.Value.DerivativeUrlExpirySeconds, 600, 604800);
+        string? url = await storage.GetPresignedReadUrlAsync(derivative.StorageKey, expiry, t, string.IsNullOrWhiteSpace(options.Value.PublicBucket)?null:options.Value.PublicBucket);
+        if (url is null) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        DerivativeUrlView view = new(url, derivative.MediaType, expiry, derivative.Sha256Hash);
+        await cache.SetAsync(cacheKey, view, TimeSpan.FromMinutes(9), t);
+        return Result.Success(view);
+    }, ct);
+    public Task<Result<DerivativeUrlView>> GetOriginalUrlAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        Artwork? artwork = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(x => x.Id == artworkId, t);
+        if (artwork?.CurrentVersionId is not Guid currentVersionId) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        ArtworkVersion? version = await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentVersionId && x.ArtworkId == artworkId, t);
+        FileVersion? file = version is null ? null : await db.FileVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == version.FileVersionId, t);
+        if (file is null || !file.MediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        string bucket = (DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 300L).ToString("D10",System.Globalization.CultureInfo.InvariantCulture);
+        CacheKey cacheKey = new(company.RequireCompanyId(), string.Empty, $"artwork-original-url:{artworkId:N}:{bucket}");
+        DerivativeUrlView? cached = await cache.GetAsync<DerivativeUrlView>(cacheKey, t);
+        if (cached is not null) return Result.Success(cached);
+        int expiry = Math.Clamp(options.Value.OriginalUrlExpirySeconds, 300, 604800);
+        string? url = await storage.GetPresignedReadUrlAsync(file.StorageKey, expiry, t);
+        if (url is null) return Result.Failure<DerivativeUrlView>(FileErrors.NotFound);
+        DerivativeUrlView view = new(url, file.MediaType, expiry, file.Sha256Hash);
+        await cache.SetAsync(cacheKey, view, TimeSpan.FromMinutes(4), t);
+        return Result.Success(view);
+    }, ct);
+    public Task<Result<DownloadFile>> GetOriginalArtworkAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t =>
+    {
+        Artwork? artwork = await db.Artworks.AsNoTracking().SingleOrDefaultAsync(x => x.Id == artworkId, t);
+        if (artwork is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        Guid? fileVersionId = artwork.CurrentVersionId is Guid currentId ? (await db.ArtworkVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == currentId && x.ArtworkId == artworkId, t))?.FileVersionId : null;
+        fileVersionId ??= await db.ArtworkVersions.AsNoTracking().Where(x => x.ArtworkId == artworkId).OrderByDescending(x => x.VersionNumber).Select(x => x.FileVersionId).FirstOrDefaultAsync(t);
+        if (fileVersionId is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        FileVersion? file = await db.FileVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == fileVersionId, t);
+        if (file is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        Stream? content = await storage.OpenReadAsync(file.StorageKey, t);
+        if (content is null) return Result.Failure<DownloadFile>(FileErrors.NotFound);
+        return Result.Success(new DownloadFile(file.OriginalFileName, file.MediaType, file.SizeBytes, content, file.Sha256Hash));
+    }, ct);
+    public Task<Result<ArtworkTagView>> CreateTagAsync(string code, string name, CancellationToken ct) => tx.ExecuteAsync(async t => { Result<ArtworkTag> x = ArtworkTag.Create(Guid.NewGuid(), Company, code, name, Now); if (x.IsFailure) return Result.Failure<ArtworkTagView>(x.Error); if (await db.ArtworkTags.AnyAsync(a => a.Code == x.Value.Code, t)) return Result.Failure<ArtworkTagView>(FileErrors.DuplicateCode); db.ArtworkTags.Add(x.Value); Log("artwork.tag.created", "artwork_tag", x.Value.Id); return Result.Success(T(x.Value)); }, ct);
+    public Task<Result<ArtworkTagView>> UpdateTagAsync(Guid id, string name, bool active, long version, CancellationToken ct) => tx.ExecuteAsync(async t => { ArtworkTag? x = await db.ArtworkTags.SingleOrDefaultAsync(a => a.Id == id, t); if (x is null) return Result.Failure<ArtworkTagView>(FileErrors.NotFound); if (x.Version != version) return Result.Failure<ArtworkTagView>(FileErrors.Concurrency); Result r = x.Update(name, active, Now); return r.IsFailure ? Result.Failure<ArtworkTagView>(r.Error) : Result.Success(T(x)); }, ct);
+    public Task<Result<ArtworkTagAssignmentView>> AssignTagAsync(Guid artworkId, Guid tagId, CancellationToken ct) => tx.ExecuteAsync(async t => { if (!await db.Artworks.AnyAsync(x => x.Id == artworkId, t) || !await db.ArtworkTags.AnyAsync(x => x.Id == tagId, t)) return Result.Failure<ArtworkTagAssignmentView>(FileErrors.CrossCompany); if (await db.ArtworkTagAssignments.AnyAsync(x => x.ArtworkId == artworkId && x.TagId == tagId, t)) return Result.Failure<ArtworkTagAssignmentView>(FileErrors.DuplicateAssignment); ArtworkTagAssignment x = ArtworkTagAssignment.Create(Company, artworkId, tagId, Actor, Now); db.ArtworkTagAssignments.Add(x); Log("artwork.tag.assigned", "artwork", artworkId); return Result.Success(new ArtworkTagAssignmentView(x.Id, x.ArtworkId, x.TagId, x.IsActive)); }, ct);
+    public Task<Result<IReadOnlyList<ArtworkTagAssignmentView>>> ListArtworkTagsAsync(Guid artworkId, CancellationToken ct) => tx.ExecuteAsync(async t => { if (!await db.Artworks.AnyAsync(x => x.Id == artworkId, t)) return Result.Failure<IReadOnlyList<ArtworkTagAssignmentView>>(FileErrors.NotFound); List<ArtworkTagAssignment> rows = await db.ArtworkTagAssignments.AsNoTracking().Where(x => x.ArtworkId == artworkId && x.IsActive).OrderBy(x => x.CreatedAtUtc).ToListAsync(t); return Result.Success<IReadOnlyList<ArtworkTagAssignmentView>>(rows.Select(x => new ArtworkTagAssignmentView(x.Id, x.ArtworkId, x.TagId, x.IsActive)).ToList()); }, ct);
+    public Task<Result<bool>> RemoveTagAsync(Guid artworkId, Guid tagId, CancellationToken ct) => tx.ExecuteAsync(async t => { ArtworkTagAssignment? x = await db.ArtworkTagAssignments.SingleOrDefaultAsync(a => a.ArtworkId == artworkId && a.TagId == tagId && a.IsActive, t); if (x is null) return Result.Failure<bool>(FileErrors.NotFound); x.Remove(); Log("artwork.tag.removed", "artwork", artworkId); return Result.Success(true); }, ct);
+    public Task<Result<FileLinkView>> LinkFileAsync(Guid fileId, Guid? versionId, FileLinkEntityType entityType, Guid entityId, FileLinkPurpose purpose, CancellationToken ct) => tx.ExecuteAsync(async t => { StoredFile? file = await db.StoredFiles.AsNoTracking().SingleOrDefaultAsync(x => x.Id == fileId, t); bool exactVersion = versionId is not null && await db.FileVersions.AnyAsync(x => x.Id == versionId && x.FileId == fileId && !x.IsArchived, t); bool entityExists = entityType switch { FileLinkEntityType.Artwork => await db.Artworks.AnyAsync(x => x.Id == entityId, t), FileLinkEntityType.Order => await db.Orders.AnyAsync(x => x.Id == entityId && x.Status == OrderStatus.Draft, t), FileLinkEntityType.OrderItem => await db.OrderItems.AnyAsync(x => x.Id == entityId && x.IsActive && db.Orders.Any(o => o.Id == x.OrderId && o.Status == OrderStatus.Draft), t), FileLinkEntityType.OrderPrintOperation => await db.OrderPrintOperations.AnyAsync(x => x.Id == entityId && x.IsActive && db.Orders.Any(o => o.Id == x.OrderId && o.Status == OrderStatus.Draft), t), _ => false }; if (file is null || entityType != FileLinkEntityType.Artwork && !exactVersion || versionId is not null && !exactVersion || !entityExists) return Result.Failure<FileLinkView>(FileErrors.CrossCompany); if (await db.FileLinks.AnyAsync(x => x.FileId == fileId && x.EntityType == entityType && x.EntityId == entityId && x.Purpose == purpose, t)) return Result.Failure<FileLinkView>(FileErrors.DuplicateAssignment); FileLink x = FileLink.Create(Company, fileId, versionId, entityType, entityId, purpose, Actor, Now); db.FileLinks.Add(x); Log("file.link.created", "file_link", x.Id); return Result.Success(L(x)); }, ct);
+    public async Task<Result<UploadView>> UploadAsync(UploadCommand c, CancellationToken ct)
+    {
+        FileStorageOptions limits = options.Value; if (c.DeclaredLength < 1) return Result.Failure<UploadView>(FileErrors.Empty); if (c.DeclaredLength > limits.MaximumUploadBytes) return Result.Failure<UploadView>(FileErrors.TooLarge); Result<(string Name, string Media, string Ext)> meta = ValidateMetadata(c.FileName, c.DeclaredMediaType); if (meta.IsFailure) return Result.Failure<UploadView>(meta.Error);
+        string temp = Path.GetTempFileName(); try
+        {
+            long size; string hash; byte[] prefix = new byte[16]; await using (FileStream output = new(temp, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan)) { using IncrementalHash sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256); byte[] buffer = new byte[81920]; int read; size = 0; int prefixCount = 0; while ((read = await c.Content.ReadAsync(buffer, ct)) > 0) { size += read; if (size > limits.MaximumUploadBytes) return Result.Failure<UploadView>(FileErrors.TooLarge); int take = Math.Min(read, prefix.Length - prefixCount); if (take > 0) { buffer.AsSpan(0, take).CopyTo(prefix.AsSpan(prefixCount)); prefixCount += take; } sha.AppendData(buffer, 0, read); await output.WriteAsync(buffer.AsMemory(0, read), ct); } if (size < 1) return Result.Failure<UploadView>(FileErrors.Empty); hash = Convert.ToHexString(sha.GetHashAndReset()).ToLowerInvariant(); if (SignatureKnownMediaTypes.Contains(meta.Value.Media) && !Signature(meta.Value.Media, prefix)) return Result.Failure<UploadView>(FileErrors.UnsupportedContent); }
+            Result<bool> duplicate = await tx.ExecuteAsync(async t => Result.Success(await db.FileVersions.AnyAsync(x => x.Sha256Hash == hash, t)), ct); if (duplicate.IsFailure) return Result.Failure<UploadView>(duplicate.Error); if (duplicate.Value) return Result.Failure<UploadView>(FileErrors.Duplicate);
+            Guid fileId = c.FileId ?? Guid.NewGuid(), versionId = Guid.NewGuid(); int number = 1; if (c.FileId is not null) { Result<int> next = await tx.ExecuteAsync(async t => { if (!await db.StoredFiles.AnyAsync(x => x.Id == fileId, t)) return Result.Failure<int>(FileErrors.NotFound); return Result.Success((await db.FileVersions.Where(x => x.FileId == fileId).MaxAsync(x => (int?)x.VersionNumber, t) ?? 0) + 1); }, ct); if (next.IsFailure) return Result.Failure<UploadView>(next.Error); number = next.Value; }
+            string key = storage.CreateKey(Company, fileId, versionId, meta.Value.Ext);
+            await using (FileStream input = new(temp, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan)) await storage.PutAsync(new(key, input, size, meta.Value.Media, "private,max-age=31536000,immutable"), ct);
+            Result<UploadView> saved = await tx.ExecuteAsync(async t => { StoredFile file; if (c.FileId is null) { file = StoredFile.Create(fileId, Company, Actor, Now); db.StoredFiles.Add(file); } else file = (await db.StoredFiles.SingleAsync(x => x.Id == fileId, t)); Result<FileVersion> v = FileVersion.Create(versionId, Company, fileId, number, storage.Provider, storage.Bucket, key, meta.Value.Name, meta.Value.Media, meta.Value.Ext, size, hash, Actor, Now); if (v.IsFailure) return Result.Failure<UploadView>(v.Error); db.FileVersions.Add(v.Value); file.SetCurrent(versionId, Now); db.FileProcessingJobs.Add(FileProcessingJob.Create(Company, versionId, Now)); Log("file.uploaded", "file", fileId); Log("file.version.created", "file_version", versionId); Log("file.processing.requested", "file_version", versionId); return Result.Success(new UploadView(fileId, versionId, number, meta.Value.Name, meta.Value.Media, size, hash, FileProcessingStatus.Pending.ToString(), false)); }, ct); if (saved.IsFailure) await storage.RemoveUncommittedAsync(key, CancellationToken.None); else processingQueue.Enqueue(Company, versionId); return saved;
+        }
+        catch { throw; }
+        finally { try { File.Delete(temp); } catch (IOException) { } }
+    }
+    public Task<Result<StoredFileView>> GetFileAsync(Guid id, CancellationToken ct) => tx.ExecuteAsync(async t => { StoredFile? f = await db.StoredFiles.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, t); if (f is null) return Result.Failure<StoredFileView>(FileErrors.NotFound); return Result.Success(F(f, await db.FileVersions.AsNoTracking().Where(x => x.FileId == id).OrderBy(x => x.VersionNumber).ToListAsync(t))); }, ct);
+    public Task<Result<DownloadFile>> DownloadAsync(Guid fileId, Guid versionId, CancellationToken ct) => tx.ExecuteAsync(async t => { FileVersion? v = await db.FileVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == versionId && x.FileId == fileId, t); if (v is null) return Result.Failure<DownloadFile>(FileErrors.NotFound); Stream? stream = await storage.OpenReadAsync(v.StorageKey, t); if (stream is null) return Result.Failure<DownloadFile>(FileErrors.NotFound); Log("file.downloaded", "file_version", versionId); return Result.Success(new DownloadFile(v.OriginalFileName, v.MediaType, v.SizeBytes, stream)); }, ct);
+    public Task<Result<StoredFileView>> ArchiveFileAsync(Guid id, long version, CancellationToken ct) => tx.ExecuteAsync(async t => { StoredFile? f = await db.StoredFiles.SingleOrDefaultAsync(x => x.Id == id, t); if (f is null) return Result.Failure<StoredFileView>(FileErrors.NotFound); if (f.Version != version) return Result.Failure<StoredFileView>(FileErrors.Concurrency); f.Archive(Now); Log("file.archived", "file", id); return Result.Success(F(f, await db.FileVersions.AsNoTracking().Where(x => x.FileId == id).ToListAsync(t))); }, ct);
+    private static readonly HashSet<string> SignatureKnownMediaTypes = new(StringComparer.OrdinalIgnoreCase) { "image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/tiff", "application/pdf" };
+    private static readonly HashSet<string> AllowedUploadMediaTypes = new(StringComparer.OrdinalIgnoreCase) { "image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/tiff", "application/pdf" };
+    private static readonly Dictionary<string, string> ExtensionMediaTypes = new(StringComparer.OrdinalIgnoreCase) { ["png"] = "image/png", ["jpg"] = "image/jpeg", ["jpeg"] = "image/jpeg", ["gif"] = "image/gif", ["webp"] = "image/webp", ["bmp"] = "image/bmp", ["tif"] = "image/tiff", ["tiff"] = "image/tiff", ["pdf"] = "application/pdf" };
+    private static Result<(string Name, string Media, string Ext)> ValidateMetadata(string name, string media) { string normalized = name.Normalize(NormalizationForm.FormC).Trim(); if (normalized != name.Trim() || normalized.Length is < 1 or > 255 || normalized.Any(char.IsControl) || normalized.Contains('/') || normalized.Contains('\\') || Path.IsPathRooted(normalized) || normalized is "." or "..") return Result.Failure<(string, string, string)>(FileErrors.InvalidData); string ext = Path.GetExtension(normalized).TrimStart('.').ToLowerInvariant(); string m = media.Trim().ToLowerInvariant(); if (ext.Length is < 1 or > 32 || m.Length is < 3 or > 100 || !m.Contains('/') || !AllowedUploadMediaTypes.Contains(m) || !ExtensionMediaTypes.TryGetValue(ext, out string? expected) || !string.Equals(expected, m, StringComparison.OrdinalIgnoreCase)) return Result.Failure<(string, string, string)>(FileErrors.UnsupportedContent); return Result.Success((normalized, m, ext)); }
+    private static bool Signature(string media, byte[] p) => media switch { "image/png" => p.AsSpan().StartsWith(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }), "image/jpeg" => p.Length >= 3 && p[0] == 255 && p[1] == 216 && p[2] == 255, "image/gif" => p.AsSpan().StartsWith("GIF87a"u8) || p.AsSpan().StartsWith("GIF89a"u8), "image/webp" => p.Length >= 12 && p.AsSpan(0, 4).SequenceEqual("RIFF"u8) && p.AsSpan(8, 4).SequenceEqual("WEBP"u8), "image/bmp" => p.AsSpan().StartsWith("BM"u8), "image/tiff" => p.AsSpan().StartsWith(new byte[] { 73, 73, 42, 0 }) || p.AsSpan().StartsWith(new byte[] { 77, 77, 0, 42 }), "application/pdf" => p.AsSpan().StartsWith("%PDF-"u8), _ => false };
+    private void Log(string action, string type, Guid id) => audit.Write(new(action, type, id.ToString(), ChangeKind: AuditChangeKind.Modified)); private static ArtworkView A(Artwork x, IReadOnlyList<ArtworkTranslation>? translations = null) => new(x.Id, x.Code, x.Title, x.Description, x.CategoryCode, x.DesignerUserId, x.LifecycleStatus.ToString(), x.CurrentVersionId, x.IsActive, x.IsArchived, x.Version, translations is null ? null : translations.Select((ArtworkTranslation t) => new ArtworkTranslationView(t.Culture, t.Title, t.Description)).ToArray(), x.SubcategoryId, x.TypeId, x.StyleId, x.ThemeId, x.AudienceId, x.LicenseId, x.UsageId);
+private static ArtworkTranslationView TV(ArtworkTranslation x) => new(x.Culture, x.Title, x.Description);
+internal static async Task<Dictionary<Guid, IReadOnlyList<ArtworkTranslation>>> TranslationsMapAsync(CoreDbContext db, IReadOnlyCollection<Guid> artworkIds, CancellationToken ct)
+    {
+        List<ArtworkTranslation> rows = await db.ArtworkTranslations.AsNoTracking().Where(x => artworkIds.Contains(x.ArtworkId)).OrderBy(x => x.Culture).ToListAsync(ct);
+        return rows.GroupBy(x => x.ArtworkId).ToDictionary(g => g.Key, g => (IReadOnlyList<ArtworkTranslation>)g.ToList());
+    }
+
+internal static IReadOnlyList<ArtworkTranslation> TranslationsOf(CoreDbContext db, Guid artworkId) => db.ArtworkTranslations.AsNoTracking().Where(x => x.ArtworkId == artworkId).OrderBy(x => x.Culture).ToList();
+internal static void ApplyTranslations(CoreDbContext db, Guid artworkId, Guid companyId, IReadOnlyList<ArtworkTranslationInput>? translations, Artwork artwork, DateTimeOffset now)
+    {
+        if (translations is null || translations.Count == 0) return;
+        foreach (ArtworkTranslationInput input in translations)
+        {
+            string culture = (input.Culture ?? "").Trim().ToLowerInvariant();
+            if (!ArtworkTranslation.SupportedCultures.Contains(culture)) continue;
+            string title = (input.Title ?? "").Trim();
+            if (title.Length == 0) continue;
+            ArtworkTranslation? existing = db.ArtworkTranslations.SingleOrDefault(x => x.ArtworkId == artworkId && x.Culture == culture);
+            if (existing is null)
+            {
+                Result<ArtworkTranslation> made = ArtworkTranslation.Create(Guid.NewGuid(), companyId, artworkId, culture, title, input.Description, now);
+                if (made.IsSuccess) db.Add(made.Value);
+            }
+            else existing.Update(title, input.Description, now);
+            if (culture == "fa") { artwork.Update(title, input.Description, artwork.CategoryCode, artwork.DesignerUserId, artwork.LifecycleStatus, now); }
+        }
+    } private static ArtworkVersionView AV(ArtworkVersion x) => new(x.Id, x.ArtworkId, x.VersionNumber, x.FileVersionId, x.Notes, x.CreatedByUserId, x.CreatedAtUtc); private static ArtworkTagView T(ArtworkTag x) => new(x.Id, x.Code, x.DisplayName, x.IsActive, x.Version); private static FileLinkView L(FileLink x) => new(x.Id, x.FileId, x.FileVersionId, x.EntityType.ToString(), x.EntityId, x.Purpose.ToString(), x.IsActive); private static FileVersionView V(FileVersion x) => new(x.Id, x.FileId, x.VersionNumber, x.OriginalFileName, x.MediaType, x.Extension, x.SizeBytes, x.Sha256Hash, x.ProcessingStatus.ToString(), x.IsArchived, x.CreatedAtUtc); private static StoredFileView F(StoredFile f, IReadOnlyList<FileVersion> v) => new(f.Id, f.CurrentVersionId, f.IsArchived, f.Version, v.Select(V).ToArray());
+}

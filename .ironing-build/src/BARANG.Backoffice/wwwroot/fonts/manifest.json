@@ -1,0 +1,74 @@
+[
+  {
+    "family": "Inter",
+    "subset": "latin-ext",
+    "version": "v20",
+    "filename": "inter-v20-latin-ext-variable.woff2",
+    "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7SUc.woff2",
+    "bytes": 85068,
+    "sha256": "34b9c504cab7a73e37b746343a449132e56cf7b5481af2cb81dc74dcff25c956"
+  },
+  {
+    "family": "Inter",
+    "subset": "latin",
+    "version": "v20",
+    "filename": "inter-v20-latin-variable.woff2",
+    "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
+    "bytes": 48256,
+    "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62"
+  },
+  {
+    "family": "Noto Sans Arabic",
+    "subset": "arabic",
+    "version": "v33",
+    "filename": "noto-sans-arabic-v33-arabic-variable.woff2",
+    "source": "https://fonts.gstatic.com/s/notosansarabic/v33/nwpCtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlj4wv4r4xA.woff2",
+    "bytes": 165960,
+    "sha256": "ce85091f020920b65762b387b194ef59457ea5b25b760f2dcc35240a94bb8669"
+  },
+  {
+    "family": "Noto Sans Arabic",
+    "subset": "latin-ext",
+    "version": "v33",
+    "filename": "noto-sans-arabic-v33-latin-ext-variable.woff2",
+    "source": "https://fonts.gstatic.com/s/notosansarabic/v33/nwpCtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlj47v4r4xA.woff2",
+    "bytes": 16816,
+    "sha256": "27fe6458d54bcf13a2fe92228dd932ef3de9439267ca214e5c9f6bb02659e614"
+  },
+  {
+    "family": "Noto Sans Arabic",
+    "subset": "latin",
+    "version": "v33",
+    "filename": "noto-sans-arabic-v33-latin-variable.woff2",
+    "source": "https://fonts.gstatic.com/s/notosansarabic/v33/nwpCtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlj41v4o.woff2",
+    "bytes": 31416,
+    "sha256": "fed070abc960c5f214fcb02b7b178cdab751ef7facd79a899f571bc21d38b8f8"
+  },
+  {
+    "family": "Vazirmatn",
+    "subset": "arabic",
+    "version": "v16",
+    "filename": "vazirmatn-v16-arabic-variable.woff2",
+    "source": "https://fonts.gstatic.com/s/vazirmatn/v16/Dxxo8j6PP2D_kU2muijlGMWWMmk.woff2",
+    "bytes": 46308,
+    "sha256": "84a382e46c30fb4f73d0e3800c16d0af15888e2731e57fa5f93e2c29a2c6a957"
+  },
+  {
+    "family": "Vazirmatn",
+    "subset": "latin-ext",
+    "version": "v16",
+    "filename": "vazirmatn-v16-latin-ext-variable.woff2",
+    "source": "https://fonts.gstatic.com/s/vazirmatn/v16/Dxxo8j6PP2D_kU2muijlE8WWMmk.woff2",
+    "bytes": 21860,
+    "sha256": "21529facfd236f6be527e4353623bdb889c96a7ebb7db1e148e28406be0ea004"
+  },
+  {
+    "family": "Vazirmatn",
+    "subset": "latin",
+    "version": "v16",
+    "filename": "vazirmatn-v16-latin-variable.woff2",
+    "source": "https://fonts.gstatic.com/s/vazirmatn/v16/Dxxo8j6PP2D_kU2muijlHcWW.woff2",
+    "bytes": 34524,
+    "sha256": "d29c041cd4294af893cf3c01dfab6d47202c667ab55d702f68782599918c651d"
+  }
+]

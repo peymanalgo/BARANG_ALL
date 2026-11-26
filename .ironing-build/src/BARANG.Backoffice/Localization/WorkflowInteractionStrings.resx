@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Undo"><value>واگردانی</value></data>
+  <data name="Redo"><value>بازانجام</value></data>
+  <data name="Duplicate"><value>تکثیر</value></data>
+  <data name="Cancel"><value>انصراف</value></data>
+  <data name="DeleteConfirmation"><value>این عنصر و اتصال‌های متصل به آن از نمودار کاری فعلی حذف می‌شوند.</value></data>
+  <data name="Outcome"><value>نتیجه مسیر</value></data>
+  <data name="Approve"><value>تأیید</value></data>
+  <data name="Reject"><value>عدم تأیید</value></data>
+  <data name="AuditReject"><value>رد ممیزی</value></data>
+  <data name="SourceAnchor"><value>لنگر مبدأ</value></data>
+  <data name="TargetAnchor"><value>لنگر مقصد</value></data>
+  <data name="Auto"><value>خودکار</value></data>
+  <data name="Top"><value>بالا</value></data>
+  <data name="Right"><value>راست</value></data>
+  <data name="Bottom"><value>پایین</value></data>
+  <data name="Left"><value>چپ</value></data>
+  <data name="ConditionOnlyFromGateway"><value>شرط و نتیجه فقط برای خروجی دروازه انتخابی مجاز است.</value></data><data name="DuplicateNodeKey"><value>شناسه پایدار گره‌ها باید یکتا باشد.</value></data><data name="InvalidTransition"><value>اتصال انتخاب‌شده معتبر نیست.</value></data><data name="InvalidOutcome"><value>نتیجه مسیر معتبر نیست.</value></data><data name="InvalidAnchor"><value>لنگر اتصال برای این نوع گره معتبر نیست.</value></data>
+</root>

@@ -1,0 +1,10 @@
+<section class="barang-form-section @Class">
+    @if (!string.IsNullOrWhiteSpace(Title)) { <header><h3>@Title</h3>@if (!string.IsNullOrWhiteSpace(Description)) { <p>@Description</p> }</header> }
+    <div class="form-grid">@ChildContent</div>
+</section>
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

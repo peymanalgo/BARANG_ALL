@@ -1,0 +1,4 @@
+storage/*
+!storage/barang-public.tar.gz.part-aa
+!storage/barang-public.tar.gz.part-ab
+.tmp-*

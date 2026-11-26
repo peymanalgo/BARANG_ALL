@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ReturnStatusNone" xml:space="preserve">
+    <value>Sin devolución</value>
+  </data>
+  <data name="ReturnStatusPartial" xml:space="preserve">
+    <value>Devolución parcial</value>
+  </data>
+  <data name="ReturnStatusFull" xml:space="preserve">
+    <value>Devolución total</value>
+  </data>
+  <data name="DeliveredQuantity" xml:space="preserve">
+    <value>Cantidad entregada</value>
+  </data>
+  <data name="RemainingReturnable" xml:space="preserve">
+    <value>Restante devolvable</value>
+  </data>
+  <data name="ReturnHistory" xml:space="preserve">
+    <value>Historial de devoluciones</value>
+  </data>
+</root>

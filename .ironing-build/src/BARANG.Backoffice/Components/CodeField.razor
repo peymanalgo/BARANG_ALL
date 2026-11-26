@@ -1,0 +1,9 @@
+<label><span>@Label</span>@if(TypeCode is not null){<ReferenceSelect TypeCode="@TypeCode" UseCode="true" Value="@Value" ValueChanged="ValueChanged" Placeholder="@Label" />}else{<SearchableSelect Options="Options" Value="Value" ValueChanged="ValueChanged" Placeholder="@Label" />}</label>
+@code {
+    [Parameter] public string? TypeCode { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public IEnumerable<dynamic> Values { get; set; } = [];
+    private IReadOnlyList<SearchableSelectOption> Options => Values.Select(item => new SearchableSelectOption(item.Id?.ToString() ?? "", item.Name?.ToString() ?? "")).ToArray();
+}

@@ -1,0 +1,134 @@
+/* Operational cartable contract: grid first, selected order panel below it at every width. */
+.cartable-workbench,
+[dir="rtl"] .cartable-workbench {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: none !important;
+  grid-template-areas: none !important;
+  width: 100% !important;
+  gap: 1rem !important;
+}
+.cartable-workbench-grid,
+.cartable-workbench-detail {
+  grid-area: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+.cartable-operational-popup {
+  width: min(30rem, calc(100vw - 2rem));
+  max-height: min(80vh, 34rem);
+  overflow: auto;
+  margin: auto;
+}
+.cartable-v5-stepper {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+}
+.cartable-v5-step {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .7rem;
+  min-width: 0;
+  padding: .75rem;
+  border: 1px solid var(--border-subtle, #d9dee8);
+  border-radius: .75rem;
+}
+.cartable-v5-step::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: -.55rem;
+  top: 50%;
+  width: 1.1rem;
+  border-top: 1px solid var(--border-subtle, #d9dee8);
+}
+.cartable-v5-step:last-child::after { display: none; }
+.cartable-v5-step-body { display: grid; gap: .2rem; min-width: 0; }
+.cartable-v5-step-label,
+.cartable-v5-step-stage,
+.cartable-v5-step-position { display: block; overflow-wrap: anywhere; }
+.cartable-v5-step-label { color: var(--text-muted, #667085); font-size: .8rem; }
+.cartable-v5-step-position { color: var(--text-muted, #667085); font-style: normal; }
+@media (max-width: 820px) {
+  .cartable-v5-stepper { grid-template-columns: 1fr; }
+  .cartable-v5-step::after { inset-inline: 50% auto; inset-block: auto -.6rem; width: 0; height: 1.1rem; border-top: 0; border-inline-start: 1px solid var(--border-subtle, #d9dee8); }
+  .cartable-v5-step:last-child::after { display: none; }
+}
+/* Received operational surface exposes only claim/decision. Legacy auxiliary controls remain available only in their legitimate non-Received areas. */
+.cartable-detail-page .cartable-claimed-actions,
+.cartable-detail-page .cartable-follow-up-panel,
+.cartable-detail-page .cartable-messages-panel { display: none !important; }
+@media (max-width: 820px) {
+  .cartable-workbench,
+  [dir="rtl"] .cartable-workbench { grid-template-columns: none !important; }
+}
+.cartable-search-accordion {
+  width: 100%;
+  margin-block-end: 1rem;
+  border: 1px solid var(--border-color, #d9dee7);
+  border-radius: .75rem;
+  background: var(--surface, #fff);
+  overflow: hidden;
+}
+
+.cartable-search-accordion-header {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  width: 100%;
+  min-height: 3rem;
+  padding: .7rem 1rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.cartable-search-accordion-header:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary, #2563eb) 45%, transparent);
+  outline-offset: -3px;
+}
+
+.cartable-search-accordion-title {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  flex: 1;
+  font-weight: 700;
+}
+
+.cartable-search-filter-count {
+  display: inline-grid;
+  min-width: 1.45rem;
+  min-height: 1.45rem;
+  place-items: center;
+  padding-inline: .35rem;
+  border-radius: 999px;
+  background: var(--primary, #2563eb);
+  color: #fff;
+  font-size: .78rem;
+  line-height: 1;
+}
+
+.cartable-search-chevron {
+  display: inline-block;
+  font-size: 1.25rem;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform .16s ease;
+}
+
+.cartable-search-chevron.open { transform: rotate(180deg); }
+
+.cartable-search-accordion > .cartable-v2-toolbar {
+  border-block-start: 1px solid var(--border-color, #d9dee7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cartable-search-chevron { transition: none; }
+}
+

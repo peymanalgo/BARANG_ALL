@@ -1,0 +1,40 @@
+@using System.Globalization
+@using System.Text.Json
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject IStringLocalizer<SupplierStrings> S
+
+<div class="reference-multi-select" data-reference-multi="@TypeCode">
+    @if(!Disabled){<SearchableSelect Name="@Name" Options="@Available" Value="" ValueChanged="Add" Disabled="@(Loading||Failed)" Placeholder="@Placeholder" />}
+    <div>
+    @foreach(string id in Values){
+        <div class="row-actions"><span class="status-badge" data-reference-id="@id">@Caption(id)</span>
+            @if(!Disabled){<BarangIconButton Icon="close" Label="@(S["RemoveCategory"]+": "+Caption(id))" Clicked="()=>Remove(id)" />}
+        </div>
+    }
+    </div>
+    @if(Failed){<p class="inline-error" role="alert">@S["ReferenceUnavailable"]</p>}
+</div>
+@code{
+    [Parameter,EditorRequired]public string TypeCode{get;set;}="";
+    [Parameter]public string?Name{get;set;}
+    [Parameter]public string?Placeholder{get;set;}
+    [Parameter]public string[]Values{get;set;}=[];
+    [Parameter]public EventCallback<string[]>ValuesChanged{get;set;}
+    [Parameter]public bool Disabled{get;set;}
+    private string LoadedKey="";
+    private bool Loading=true,Failed;
+    private sealed record Option(string Id,string DisplayName,bool IsActive);
+    private List<Option>Options=[];
+    private IReadOnlyList<SearchableSelectOption>Available=>Options.Where(x=>x.IsActive&&!Values.Contains(x.Id)).Select(x=>new SearchableSelectOption(x.Id,x.DisplayName)).ToArray();
+    private string Caption(string id){var value=Options.FirstOrDefault(x=>x.Id==id);return value is null?S["ReferenceUnavailable"]:value.DisplayName+(value.IsActive?"":" ("+S["InactiveHistorical"]+")");}
+    protected override async Task OnParametersSetAsync(){
+        var user=(await AuthState.GetAuthenticationStateAsync()).User;
+        if(user.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string token||!Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var company))return;
+        string key=$"{company}:{TypeCode}:{CultureInfo.CurrentUICulture.Name}";if(LoadedKey==key)return;Loading=true;
+        var result=TypeCode=="artwork.tag"?await Core.GetAsync("api/v1/reference-entities/artwork.tag/values",token,company,default):await Core.GetAsync($"api/v1/lookups/{TypeCode}/options?culture={CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}&activeOnly=false",token,company,default);
+        Failed=!result.IsSuccess;Loading=false;if(result.IsSuccess){Options=result.Value.EnumerateArray().Select(x=>TypeCode=="artwork.tag"?new Option(SupplierUiSchema.Text(x,"id"),x.GetProperty("translations").EnumerateArray().FirstOrDefault(t=>SupplierUiSchema.Text(t,"culture")==CultureInfo.CurrentUICulture.TwoLetterISOLanguageName).GetProperty("displayName").GetString()??SupplierUiSchema.Text(x,"code"),x.GetProperty("isActive").GetBoolean()):new Option(SupplierUiSchema.Text(x,"id"),SupplierUiSchema.Text(x,"displayName"),x.GetProperty("isActive").GetBoolean())).ToList();LoadedKey=key;}
+    }
+    private async Task Add(string value){if(Disabled||Values.Contains(value)||!Available.Any(x=>x.Value==value))return;Values=[..Values,value];await ValuesChanged.InvokeAsync(Values);}
+    private async Task Remove(string value){if(Disabled)return;Values=Values.Where(x=>x!=value).ToArray();await ValuesChanged.InvokeAsync(Values);}
+}

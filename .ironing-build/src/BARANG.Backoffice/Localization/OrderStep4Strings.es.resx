@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="AdditionalServicesPackaging" xml:space="preserve">
+    <value>Servicios adicionales y embalaje</value>
+  </data>
+  <data name="OrderStep4Description" xml:space="preserve">
+    <value>Seleccione los servicios opcionales y el requisito de embalaje del pedido.</value>
+  </data>
+  <data name="AdditionalServices" xml:space="preserve">
+    <value>Servicios adicionales</value>
+  </data>
+  <data name="SelectedServicesOnly" xml:space="preserve">
+    <value>Solo los servicios seleccionados explícitamente se incluyen en el precio.</value>
+  </data>
+  <data name="Scope" xml:space="preserve">
+    <value>Ámbito</value>
+  </data>
+  <data name="ItemLevel" xml:space="preserve">
+    <value>Nivel de línea</value>
+  </data>
+  <data name="Packaging" xml:space="preserve">
+    <value>Embalaje</value>
+  </data>
+  <data name="IncludeInvoice" xml:space="preserve">
+    <value>Incluir factura en el bulto</value>
+  </data>
+  <data name="NoSelectedAdditionalServices" xml:space="preserve">
+    <value>Sin servicios adicionales seleccionados.</value>
+  </data>
+  <data name="AdditionalServiceRequired" xml:space="preserve">
+    <value>Seleccione un servicio válido.</value>
+  </data>
+  <data name="AdditionalServiceQuantityInvalid" xml:space="preserve">
+    <value>La cantidad del servicio debe ser mayor que cero.</value>
+  </data>
+  <data name="AdditionalServiceItemRequired" xml:space="preserve">
+    <value>Seleccione una línea del pedido para este servicio.</value>
+  </data>
+  <data name="ServiceSelectionFailed" xml:space="preserve">
+    <value>No se pudo seleccionar el servicio.</value>
+  </data>
+  <data name="ServiceRemovalFailed" xml:space="preserve">
+    <value>No se pudo quitar el servicio.</value>
+  </data>
+  <data name="PackagingSaveFailed" xml:space="preserve">
+    <value>No se pudo guardar el embalaje.</value>
+  </data>
+  <data name="PackagingInvalid" xml:space="preserve">
+    <value>El embalaje seleccionado no es válido.</value>
+  </data>
+  <data name="ProtectedOrder" xml:space="preserve">
+    <value>Este pedido ya no es editable.</value>
+  </data>
+  <data name="AdditionalServiceDuplicate" xml:space="preserve">
+    <value>Este servicio ya está seleccionado para el mismo ámbito.</value>
+  </data>
+  <data name="AdditionalServiceInvalidScope" xml:space="preserve">
+    <value>El ámbito seleccionado no es válido para este servicio.</value>
+  </data>
+  <data name="AdditionalServiceInvalid" xml:space="preserve">
+    <value>El servicio seleccionado está inactivo o no es válido para este pedido.</value>
+  </data>
+</root>

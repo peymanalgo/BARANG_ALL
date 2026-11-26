@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../BARANG.Core.Domain/BARANG.Core.Domain.csproj" />
+  </ItemGroup>
+</Project>

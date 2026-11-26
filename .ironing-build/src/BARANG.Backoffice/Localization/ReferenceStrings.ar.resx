@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+<resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+<resheader name="version"><value>2.0</value></resheader>
+<data name="ReferenceTypes" xml:space="preserve"><value>أنواع البيانات المرجعية</value></data>
+<data name="CompanyScope" xml:space="preserve"><value>بيانات الشركة الحالية</value></data>
+<data name="GlobalScope" xml:space="preserve"><value>بيانات عامة: الإدارة لمسؤولي النظام فقط</value></data>
+<data name="NoConfigurableTypes" xml:space="preserve"><value>لا توجد قوائم مرجعية قابلة للتحرير في هذا المجال. أنواع المهام وأولوياتها قواعد نظام؛ وتبقى سياسات SLA ضمن سير العمل.</value></data>
+<data name="Referenced" xml:space="preserve"><value>هذه القيمة مستخدمة. عطّلها بدلاً من حذفها.</value></data>
+<data name="Protected" xml:space="preserve"><value>هذا السجل محمي أو يتطلب مسؤول النظام.</value></data>
+<data name="ConfirmDelete" xml:space="preserve"><value>هل تريد حذف هذا السجل؟ لا يمكن حذف السجلات المستخدمة.</value></data>
+<data name="AccountName" xml:space="preserve"><value>اسم الحساب</value></data>
+<data name="AccountType" xml:space="preserve"><value>نوع الحساب</value></data>
+<data name="OwnershipType" xml:space="preserve"><value>نوع الملكية</value></data>
+<data name="IndividualOwnership" xml:space="preserve"><value>فردي</value></data>
+<data name="JointOwnership" xml:space="preserve"><value>مشترك</value></data>
+<data name="CardNumber" xml:space="preserve"><value>رقم البطاقة</value></data>
+<data name="BranchCode" xml:space="preserve"><value>رمز الفرع</value></data>
+<data name="ContactRole" xml:space="preserve"><value>دور جهة الاتصال</value></data>
+<data name="LegalContactsOnly" xml:space="preserve"><value>جهات الاتصال متاحة للعملاء الاعتباريين فقط.</value></data>
+<data name="DefaultAddressRule" xml:space="preserve"><value>حذف العنوان الافتراضي أو تعطيله يلغي الافتراضي. اختر عنواناً نشطاً آخر صراحة.</value></data>
+<data name="InactiveHistorical" xml:space="preserve"><value>قيمة تاريخية غير نشطة</value></data>
+<data name="NamesRequired" xml:space="preserve"><value>أدخل التسميات بالفارسية والعربية والإنجليزية.</value></data>
+<data name="ReferenceLoadFailed" xml:space="preserve"><value>تعذر تحميل البيانات المرجعية. أعد المحاولة قبل الحفظ.</value></data>
+<data name="Description" xml:space="preserve"><value>الوصف</value></data>
+  <data name="DefectCategory" xml:space="preserve"><value>فئة العيب</value></data>
+  <data name="Severity" xml:space="preserve"><value>الخطورة</value></data>
+  <data name="Minor" xml:space="preserve"><value>بسيط</value></data>
+  <data name="Major" xml:space="preserve"><value>رئيسي</value></data>
+  <data name="Critical" xml:space="preserve"><value>حرج</value></data>
+  <data name="Blocking" xml:space="preserve"><value>مانع</value></data>
+  <data name="UseDefaultAddress" xml:space="preserve"><value>استخدام عنوان العميل الافتراضي</value></data>
+  <data name="NoDefaultAddress" xml:space="preserve"><value>لم يتم تحديد عنوان افتراضي نشط.</value></data>
+</root>

@@ -1,0 +1,284 @@
+# بازبینی آمادگی STEP 3 — BARANG
+
+تاریخ بازبینی: ۱۴۰۵/۰۷/۲۲ برابر با ۲۰۲۶-۱۰-۱۴
+
+## نتیجهٔ اجرایی
+
+**STEP 3: CONDITIONAL GO**
+
+کد و schema فعلیِ checkout reviewed از نظر build، unit، Backoffice و integration ایزوله سبز است. blockerهای deployment/browser رفع شدند: API و Backoffice از یک checkout و commit کامل ساخته و با provenance قابل‌مشاهده deploy شدند و چهار browser check اکنون سبز هستند. وضعیت همچنان **Conditional** است چون تصمیم‌های business مربوط به reservation در بخش جداگانه هنوز تصویب نشده‌اند؛ این گزارش آن‌ها را تأیید یا پیاده‌سازی نمی‌کند.
+
+خطای `helper_unknown_error: setup refresh had errors` در این بازبینی مشاهده نشد.
+
+## بررسی read-only محیط
+
+| بررسی | نتیجه |
+|---|---|
+| دسترسی به `D:\00_BARANG` | موفق |
+| دسترسی به `D:\00_BARANG\step2-clean\01_CORE` | موفق |
+| Git | `git version 2.55.0.windows.3` |
+| .NET | SDK `10.0.400` |
+| checkout reviewed | شاخه `codex/step2-inventory-unit-contracts`، commit نهایی `618a34c91a098a73d09d04f01993be120dd2c604` |
+| working tree checkout | فقط `src/BARANG.Backoffice/.keys/` به‌صورت untracked؛ تغییرات این review فقط commitهای مستندشده هستند |
+| repository root | `D:\00_BARANG`، شاخه `main`، commit `09afbe3a60ba7e12bdb2e01edf5228e9f5269a37` و از قبل بسیار dirty؛ دست‌نخورده ماند |
+| branch relation | پس از push، branch remote با commit `618a34c...` هم‌راستا می‌شود؛ branch از main جلوتر و ۲ commit عقب‌تر است |
+
+## منابع بازبینی‌شده
+
+این موارد کامل خوانده و با source/tests تطبیق داده شدند:
+
+- `docs/ORDER_LIFECYCLE_INTEGRATION_CONTRACT_FA.md`
+- `docs/INTEGRATION_IMPLEMENTATION_PLAN_FA.md`
+- `docs/REGRESSION_RECOVERY_REPORT_FA.md`
+- migrationهای EF، مدل‌های Order/Inventory/Purchasing، API و Backoffice، و تست‌های جاری checkout.
+
+گزارش recovery صراحتاً browser visual/circuit و بخشی از Workflow/Cartable و endpointهای generationهای مختلف را در زمان خود pending یا blocker اعلام کرده است؛ نتایج تاریخی آن برای جایگزینی verification جاری استفاده نشد.
+
+## تست‌های جاری و failureهای دقیق
+
+### Build
+
+پس از اجرای sequential برای جلوگیری از file-lock ناشی از build موازی:
+
+- `dotnet build BARANG.Core.slnx --configuration Release --no-restore`: **موفق، ۰ warning، ۰ error**.
+- `dotnet build BARANG.Backoffice.slnx --configuration Release --no-restore`: **موفق، ۰ warning، ۰ error**.
+
+یک اجرای موازی اولیه با `MSB3554` روی فایل‌های `.resources` fail شد؛ علت file-lock هم‌زمان بین دو build بود و اجرای sequential آن را بازتولید نکرد.
+
+### Unit و Backoffice
+
+- Core solution: Architecture **۴/۴** و Unit **۲۲۲/۲۲۲ موفق**.
+- Backoffice tests: **۱۸۴/۱۸۴ موفق**.
+
+### PostgreSQL integration ایزوله
+
+database جدید و ایزولهٔ `barang_step3_review_20261014_test` ساخته شد و fixture آن full migration chain را اعمال و reset کرد. `barang_core` target تست/reset نبود.
+
+- `BARANG.Core.IntegrationTests`: **۱۲۶/۱۲۶ موفق**.
+- اجرای قبلی بدون `BARANG_TEST_DB_CONNECTION`: **۱۰۶ failure از ۱۲۶**، همگی با علت مشترک `Set BARANG_TEST_DB_CONNECTION to an isolated PostgreSQL test database` در `PostgreSqlDatabaseFixture.InitializeAsync:22`. این failure پیکربندی تست بود و با اجرای واقعی روی DB ایزوله رفع شد.
+
+### Browser E2E — failure اولیه و rerun پس از رفع blocker
+
+فقط سناریوهای read-only مربوط به login، shell، زبان/RTL و responsive اجرا شدند؛ سناریوهای create/edit روی دادهٔ توسعه اجرا نشدند.
+
+- failure اولیهٔ `GlobalDesignSystemShellUsesLoginPaletteAndRemainsCompactResponsive`: timeout ۳۰ ثانیه در `Locator("a.primary-link")`; source جاری روی Home از `a.home-shortcut` استفاده می‌کند. علت: stale test expectation، نه authentication/company failure.
+- failure اولیهٔ `GlobalLanguageSwitchUpdatesLocalizedShellAndDirection(en)`: انتظار `Dashboard`، مقدار واقعی `Hello, پیمان خوشه چین`.
+- همان تست برای `ar`: انتظار `لوحة المعلومات`، مقدار واقعی `مرحباً، پیمان خوشه چین`.
+- همان تست برای `fa`: انتظار `داشبورد`، مقدار واقعی `سلام، پیمان خوشه چین`.
+- بررسی source نشان داد `Home.razor` contract فعلی greeting شخصی‌سازی‌شده دارد؛ بنابراین انتظار Dashboard stale بود. assertionها به greeting محلی‌شدهٔ non-empty و `home-shortcut` هم‌تراز شدند، بدون حذف assertionهای direction، language، shell، responsive یا no-overflow.
+- URL هر چهار تست: `http://localhost:5100/culture?culture={fa|ar|en}&returnUrl=%2F`.
+- evidence تصویری/trace پس از deploy معتبر: `D:\00_BARANG\step2-clean\artifacts\step3-readiness-browser\shell.png/.trace.zip` و فایل‌های `culture-fa|ar|en.png/.trace.zip`. این تست diagnostics فقط read-only است.
+- rerun پس از deploy coherent: `GlobalDesignSystemShell...` **موفق**؛ `GlobalLanguageSwitch...` برای fa/ar/en **۳/۳ موفق**؛ مجموع **۴/۴ موفق**.
+
+در اجرای قبلی E2E بدون target صریح نیز runner با `Test process did not return valid JSON (non-object)` و `No test is available` برگشت؛ این نتیجه جایگزین اجرای جاری محسوب نشد.
+
+## source در برابر deployed API/Backoffice و migration
+
+### source reviewed
+
+- branch/HEAD: `codex/step2-inventory-unit-contracts` / `618a34c91a098a73d09d04f01993be120dd2c604`.
+- branch remote با همین HEAD موجود است.
+- source شامل migration `20261012100553_Step2InventoryUnitContracts` و migrationهای بعدی تا `20261013070735_EquipmentMappingMetadataAlignment` است.
+
+### deployment تأییدشدهٔ فعلی
+
+- Compose project: `barang-core`; context/config: `D:\00_BARANG\step2-clean\01_CORE\compose.yaml`.
+- API: `barang-core-api-1`, image `sha256:a420f95884743be4ff526d573ecdfec575236607535c77f2c4ce78ccb4d515ef`, build `2026-10-14T08:05:50Z`.
+- Backoffice: `barang-core-backoffice-1`, image `sha256:298c84de7da08716a5f40b7205af94e1aff2531d82701999eba006da2562eee9`, build `2026-10-14T08:05:22Z`.
+- هر دو image دارای `BARANG_BUILD_COMMIT=618a34c91a098a73d09d04f01993be120dd2c604` هستند و همین SHA در log startup هر دو سرویس ثبت شده است.
+- API روی `127.0.0.1:8080` و Backoffice روی `0.0.0.0:5100` منتشر است؛ Backoffice از `CoreApi__BaseUrl=http://api:8080` استفاده می‌کند.
+- PostgreSQL/Redis/MinIO و volumeهای `barang-core_barang_postgres_data`، `barang-core_barang_api_keys` و `barang-core_barang_backoffice_keys` حفظ شدند؛ فقط API و Backoffice با `up -d --no-deps` recreate شدند.
+- API `/health/ready` و `/health`: HTTP 200 / `Healthy`؛ Backoffice `/login`: HTTP 200. این فقط readiness است، نه پذیرش UI.
+- migration history توسعه، read-only، تا `20261013070735_EquipmentMappingMetadataAlignment` است و شامل `20261012100553_Step2InventoryUnitContracts` و `20261012115004_AlignTariffCompatibilityColumns` است.
+
+نتیجهٔ تطبیق: source، imageها، startup logs، context Compose، address داخلی API و browser runtime اکنون هم‌راستا و قابل‌اثبات هستند. migration history توسعه read-only همچنان تا `20261013070735_EquipmentMappingMetadataAlignment` است؛ دادهٔ توسعه reset نشد و شمارش جاری `orders=60` و `order_items=65` باقی ماند.
+
+## بررسی رفتار حوزه‌ها
+
+| حوزه | شواهد جاری | نتیجه |
+|---|---|---|
+| Base Data و Lookup | `LookupFoundationTests` در suite integration؛ API/authorization/RLS و catalogهای جاری | API/persistence سبز؛ browser readiness pair سبز |
+| Login/Admin و Customer/Supplier | `IdentityAndRbacTests`، `UserAccessManagementTests`، `CustomerNormalizedApiTests`، `SupplierCoreApiTests` و Backoffice suite | source/test host و browser login/shell سبز |
+| Design Bank | `ArtworkFileFoundationTests` و `ArtworkFileE2ETests` | API/persistence ایزوله سبز؛ browser visual/modal CRUD جاری تأیید نشد |
+| Order/Print/Pricing/Submit | `OrderFoundationTests`، `OrderE2ETests`، `PricingFoundationTests`، `PricingE2ETests` و business-profile tests | current isolated suite سبز؛ browser blocker deployment رفع شد |
+| Workflow/Cartable | `WorkflowFoundationTests` و unit workflow tests | foundation/schema/auth سبز؛ owner-service completion، full graph journey و deployed Cartable browser هنوز evidence کافی ندارد |
+| Inventory/Purchasing | `InventoryFoundationTests` و تست‌های sourcing/purchase-related در suite | identity/unit/schema و API foundation سبز؛ reservation lifecycle و shortage-to-purchasing end-to-end هنوز تصمیم/پذیرش نشده |
+
+## پذیرش baseline recovery
+
+**قبول baseline recovery: بله، با شرط تصمیم‌های business STEP 3.**
+
+بخش source recovery فعلی قابل‌ساخت و قابل‌آزمون است و تست‌های ایزوله و browser readiness جاری سبز هستند. شرط باقی‌مانده خارج از deployment/browser، تصویب تصمیم‌های reservation است:
+
+1. deployment pair اکنون به commit reviewed قابل انتساب است؛
+2. browser E2E پایه اکنون ۴/۴ سبز است؛
+3. trace/screenshot واقعی از همین deployment ثبت شده است؛
+4. فقط health/HTTP 200 مبنای پذیرش نیست و به‌همراه browser و test evidence استفاده شد.
+
+## وضعیت STEP 2 — هویت و UOM
+
+### معیارهای جداگانه
+
+- **Exact `OrderItemId`:** در `StockReservation` نگهداری می‌شود و unit test جاری distinct بودن دو item و persistence مقدار را اثبات می‌کند.
+- **Company/Warehouse/Variant identity:** مدل و migration ستون‌های company، warehouse و product variant را نگه می‌دارند؛ integration suite ایزولاسیون شرکت، FK/شناسه و RLS را سبز کرده است.
+- **Unit persistence:** `uom_code` در reservation، purchase request item و purchase order item اضافه/پر شده و در migration `20261012100553_Step2InventoryUnitContracts` non-null می‌شود؛ snapshot محصول نیز `snapshot_uom_code` دارد.
+- **Mismatch rejection:** domain/API validation واحد canonical محصول را الزام می‌کند؛ unit/integration coverage جاری سبز است و conversion ضمنی ایجاد نشده است.
+- **Schema consistency:** fresh isolated DB با full chain migrate شد و ۱۲۶ integration سبز شد؛ توسعه نیز migration history شامل migration STEP 2 است.
+
+### نتیجهٔ STEP 2
+
+از نظر source، contract، migration و verification ایزوله: **تکمیل‌شده**.
+
+از نظر operational acceptance روی deployment تأییدشده: **تکمیل‌شده**؛ image provenance و browser baseline تأیید شدند. این نتیجه به معنی تصویب تصمیم‌های reservation STEP 3 نیست.
+
+## تصمیم‌های باز STEP 3
+
+برای شروع STEP 3، بدون الزام به پیاده‌سازی integrationهای later phase، این تصمیم‌های business/contract باید صریحاً ثبت شوند:
+
+1. نقطهٔ رسمی reservation: در Submit یا task مستقل `InventoryReservation`؛ پیشنهاد contract فعلی task مستقل است.
+2. reservation کامل اجباری است یا partial reserve مجاز است؛ shortage باید structured و بدون oversell/negative availability باشد.
+3. `UomCode` در reservation immutable snapshot بماند و تغییر master بعدی روی historical reservation اثر نگذارد.
+4. idempotency scope و retry semantics برای هر `OrderItemId`، شرکت، warehouse و variant تعیین شود.
+5. warehouse inactive، variant mismatch، company mismatch و تغییر quantity بعد از reservation دقیقاً چه error/transitionی دارند.
+6. release در cancel/reject/expiry و تغییر quantity چگونه انجام شود؛ پس از consume، اصلاح از مسیر return جدا باشد.
+7. consume در چه issue point و با چه evidence مالکانه انجام شود؛ STEP 3 نباید production/QC/logistics integration را جعل یا implicitly activate کند.
+8. shortage فقط record شود یا پیشنهاد/درخواست خرید دستی و approval داشته باشد؛ auto-PO فعلاً مجاز نیست.
+9. اتصال workflow به owner service باید idempotent و evidence-based باشد؛ graph transition تنها بعد از موفقیت owner command مجاز است.
+
+## GitHub و merge status
+
+- `origin/codex/step2-inventory-unit-contracts` پس از push باید به HEAD `618a34c91a098a73d09d04f01993be120dd2c604` اشاره کند.
+- `origin/main` روی `09afbe3...` است؛ branch برابر ۲۹ commit جلو و ۲ commit عقب است.
+- remote: `https://github.com/peymanalgo/BARANG_ALL.git`.
+- `gh` نصب نیست و token احراز‌شدهٔ GitHub در محیط موجود نبود؛ Git refs نشان می‌دهند branch remote وجود دارد و merge به main انجام نشده/قابل ادعا نیست. API unauthenticated قبلی 404 داده بود، اما آن پاسخ به‌تنهایی proof نیست. **Merge status: از refs قابل‌تأیید نیست؛ merged فرض نمی‌شود.**
+
+## محدودیت و اقدام بعدی مجاز
+
+منطق business application و operational data/migration تغییر نکرد. دو Dockerfile برای provenance، assertionهای stale E2E و تست diagnostics evidence تغییر کردند. deployment فقط pair محلی API/Backoffice را با volumeهای موجود recreate کرد؛ credentialها حفظ شدند. database ایزولهٔ `barang_step3_review_20261014_test` برای تست استفاده شد.
+
+برای تبدیل CONDITIONAL GO به GO، فقط تصمیم‌های بخش STEP 3 باید توسط مالک business تصویب و ثبت شوند؛ هیچ reservation integration جدیدی در این کار پیاده‌سازی نشد.
+
+## الحاقیه اجرای STEP 3 — وضعیت جاری این checkout
+
+### پیاده‌سازی واقعی
+
+- `InventoryAdministration.ReserveOrderAsync` و `ReserveOrderInsideTransactionAsync` به implementation canonical reservation اضافه شدند؛ سیستم موازی ساخته نشد.
+- `WorkflowDefinitionRuntime` در node دارای کلید `InventoryReservation` ابتدا warehouse و idempotency را از command می‌خواند، سپس همان سرویس را داخل transaction جاری اجرا می‌کند و فقط پس از موفقیت task را complete/advance می‌کند.
+- demand برای stock keyهای همسان تجمیع و lockها به ترتیب variant انجام می‌شوند؛ reservationهای distinct `OrderItemId` جدا هستند. کمبود با `inventory.reservation.shortage` و شرح ساختاریافتهٔ required/available/missing/UOM برمی‌گردد و هیچ row جدیدی ایجاد نمی‌شود.
+- retry با کلید durable به reservationهای قبلی بازمی‌گردد؛ warehouse، quantity یا variant ناسازگار با `inventory.reservation.request_mismatch` رد می‌شود. physical stock در reservation تغییر نمی‌کند.
+- Backoffice Cartable در stage رزرو، warehouse فعال را از API همان شرکت نشان می‌دهد و command را با loading/duplicate prevention موجود ارسال می‌کند؛ خطای shortage task را باز نگه می‌دارد. Order 360 از همان reservation read model استفاده می‌کند.
+- migration جدید اضافه نشد؛ زنجیرهٔ schema فعلی و UOM/identity STEP 2 بدون تغییر باقی ماند.
+
+### بررسی و تست جاری
+
+این نتایج مربوط به source جاری است، نه baseline تاریخی: branch `codex/step2-inventory-unit-contracts` در شروع روی `a35017aae256e5617768dd65725942673d92b4d0` بود و working tree فقط `.keys` نامرتبط و تغییرات این implementation را داشت. Release buildهای API و Backoffice هر دو ۰ warning/۰ error شدند؛ Unit **۲۲۲/۲۲۲** و Backoffice **۱۸۴/۱۸۴** سبز شدند. Integration با `BARANG_TEST_DB_CONNECTION` صریح روی `barang_step3_review_20261014_test` اجرا شد و **۱۲۶/۱۲۶** سبز شد؛ مدت اجرا ۳:۰۸ بود. اجرای بدون متغیر اتصال که پیش‌تر ۱۰۶ failure داده بود، failure پیکربندی محسوب می‌شود و جایگزین این نتیجه نیست.
+
+### Backup، migration و deployment
+
+قبل از تغییر source، backup موجود recovery بررسی شد: archive `D:\00_BARANG\barang_core_recovery_stopplan_20261012162450.backup` با `pg_restore --list` و ۱۷۲۵ TOC entry معتبر بود. این implementation migration جدید ندارد؛ plan recovery همان restore به DB ایزوله و اجرای full chain تا `20261013070735_EquipmentMappingMetadataAlignment` است. deployment توسعه باید فقط با compose project `barang-core`، volumeهای موجود و یک pair واحد API/Backoffice انجام شود؛ `barang_core` reset نمی‌شود.
+
+### تصمیم‌های باز
+
+مصرف فیزیکی، release در cancellation/reject/expiry، change بعد از consume، اتصال shortage به procurement، و gateهای production/QC/logistics عمداً STEP 4 یا later phase هستند و در STEP 3 تأیید نشده‌اند. تا اجرای browser authenticated روی دادهٔ ایزوله و ثبت digest/provenance pair جدید، نتیجهٔ STEP 3 **CONDITIONAL GO** است.
+
+## شواهد نهایی deployment و browser
+
+- commit کامل source/deployed: `810b9c089cb2f2357c3e28cb31603a0009cfc5ba`؛ image API: `sha256:7aa15cc8f60c634dbf9ab4f0cbdad02bcc11df75335fe6636a9182486bf67e38`؛ image Backoffice: `sha256:c1e051f3c4591e08439dcb322e615a53fd42f28c5e2c849935b6258092990961`. هر دو container environment و startup log همین SHA را نشان دادند.
+- Compose project/context: `barang-core` / `D:\00_BARANG\step2-clean\01_CORE\compose.yaml`. API واقعی `barang-core-api-1` روی `127.0.0.1:8080` و Backoffice واقعی `barang-core-backoffice-1` روی `0.0.0.0:5100` است؛ Backoffice به `http://api:8080` متصل است. postgres/redis/minio سالم و volumeهای موجود حفظ شدند.
+- `GET /health/ready` API و `/login` Backoffice هر دو HTTP 200/healthy بودند. هیچ migration جدیدی اعمال نشد و history توسعه تا `20261013070735_EquipmentMappingMetadataAlignment` باقی ماند.
+- browser readiness با `BARANG_E2E_BASE_URL=http://localhost:5100` و Chrome سیستم اجرا شد: shell **موفق**؛ culture برای fa، ar و en **۳/۳ موفق**؛ مجموع **۴/۴ موفق**. screenshot و traceهای هر چهار سناریو در `D:\00_BARANG\step2-clean\artifacts\step3-readiness-browser` ثبت شدند. اجرای اول با Chromium bundle ناموجود ۴ failure محیطی داشت؛ CDN آن HTTP 403 منطقه‌ای داد، اما اجرای Chrome path همان تست‌ها را سبز کرد.
+- baseline regression gate پس از implementation: API/Backoffice Release build **۰ warning/۰ error**، Unit **۲۲۲/۲۲۲**، Backoffice **۱۸۴/۱۸۴**، isolated PostgreSQL integration **۱۲۶/۱۲۶**. هیچ assertion تضعیف نشد.
+
+### نتیجهٔ پذیرش STEP 3
+
+**CONDITIONAL GO** برای reservation اتمیک مصوب: مسیر actual workflow، rollback اتمیک، deterministic locking، retry identity، انتخاب warehouse و UI failure behavior پیاده شده و baseline regression ندارد. تأیید GO نهایی به acceptance authenticated داده‌محور روی رکوردهای کاملاً ایزوله برای success/shortage/retry نیاز دارد؛ برای جلوگیری از mutation رکوردهای موجود، این سناریو در DB توسعه اجرا نشد.
+
+### اصلاح provenance نهایی پس از تکمیل نمایش shortage
+
+آخرین commit و pair واقعاً running اکنون `cfc8e786e97d99b42172b1e776a195ab513929d6` است. digest نهایی API `sha256:ac02d5b4d5037b29b317c0d99fafea582885f6a2a6918a2511f5b8e07de39ccd` و Backoffice `sha256:67b578bac309a23636ed165f83c2d97404a212656c22e72d61109b50a710c059` است؛ هر دو `BARANG_BUILD_COMMIT` یکسان دارند و هر دو healthy هستند. browser gate دوباره روی همین pair اجرا شد و **۴/۴ موفق** ماند. نسخهٔ قبلی `810b9c...` فقط provenance intermediate بود و ملاک نهایی نیست.
+
+## الحاقیهٔ پذیرش نهایی در محیط disposable — ۱۴۰۵/۰۷/۲۲
+
+### هویت محیط
+
+- Compose project: `barang-step3-acceptance` با overlay موقت روی `compose.yaml`؛ API روی `127.0.0.1:58081`، Backoffice روی `127.0.0.1:55101` و PostgreSQL روی `127.0.0.1:55432`.
+- database: `barang_step3_acceptance_test` و volumeهای جداگانهٔ `barang-step3-acceptance_*`. هیچ اتصال یا volume مربوط به `barang-core`/`barang_core` استفاده نشد.
+- seed فقط شامل company/user/warehouse/product/variant/stock/workflow/orderهای STEP3 و هویت `step3.admin` بود؛ credential و data توسعه تغییر نکرد.
+- API image deployment نهایی: `sha256:d25dbf22f499c8b33c492b52972dcd1db41f97a57831ec2413c247539cdb2d6d`; Backoffice image deployment نهایی: `sha256:2b0abd6a57f0b7873be9734760141c87a6dc6d41f904ae8f421b2b1121b24752`؛ هر دو `BARANG_BUILD_COMMIT=647eebe` و Backoffice با `CoreApi__BaseUrl=http://api:8080` هستند.
+
+### آزمون‌های feature و نتیجهٔ واقعی
+
+1. `Step3ReservationAcceptanceE2ETests.InventoryReservationTaskCanBeCompletedThroughAuthenticatedUi`: **PASS**؛ login واقعی، Cartable task واقعی و stage `InventoryReservation`، انتخاب warehouse و ثبت تصمیم تا `/cartable`.
+2. persistence بعد از UI: **PASS**؛ دو reservation مستقل برای دو `OrderItemId` متفاوت و یک `ProductVariantId` مشترک، هر دو `PCS`، مجموع ۵، task `Completed/version=3`.
+3. physical stock: **PASS**؛ `on_hand=10`، `reserved=5`، `available=5`؛ reservation مقدار `on_hand` را کم نکرد.
+4. concurrency HTTP harness روی PostgreSQL ایزوله: **PASS**؛ دو سفارش رقیب با demandهای ۵ و ۶ روی یک stock key، یکی `201` و دیگری `422 inventory.reservation.shortage`; فقط reservation پذیرفته‌شده باقی ماند و `reserved=6`، `on_hand=10` شد.
+5. retry: **PASS**؛ همان order و idempotency key نتیجهٔ persisted را با همان cardinality برگرداند و row جدید نساخت.
+6. تغییر quantity پس از reservation: **PASS**؛ retry همان key با quantity تغییرکرده `409` داد.
+7. تغییر UOM پس از reservation: **PASS**؛ تغییر موقت `PCS` به `KG` در DB disposable و retry همان key `409 inventory.reservation.request_mismatch` داد؛ UOM برگردانده شد.
+8. failure بین reservation و completion: **PASS**؛ trigger خطای عمدی فقط در DB disposable، complete را `500` کرد اما task در `Claimed/version=2` ماند، reservation count صفر و `reserved=0` شد؛ trigger حذف شد.
+9. isolated foundation integration: `InventoryFoundationTests|WorkflowFoundationTests`، **۵/۵ PASS**.
+10. Order 360/task: **PASS**؛ endpoint Order 360 با `200` و صفحهٔ task با read model reservation بارگذاری شد. خطای seed اولیهٔ `source=Manual` دادهٔ نامعتبر تست بود و به `Internal` اصلاح شد.
+
+اسکریپت retry قابل تکرار در `tests/Acceptance/Step3ReservationAcceptance.ps1` اضافه شد؛ token و URL فقط از environment می‌آیند و credential در repository نیست.
+
+### regression gate جاری
+
+- Release build: **PASS، ۰ warning/۰ error**؛ Unit **۲۲۲/۲۲۲**؛ Backoffice **۱۸۴/۱۸۴**؛ browser feature **۱/۱** و browser readiness baseline **۴/۴**.
+- full integration با connection ایزوله در retry جاری، در test-host/API factory با failureهای setup متوقف شد: چند bootstrap/login با `404` و `500` در `PricingE2ETests`، `UserAccessManagementTests`، `ArtworkFileE2ETests` و `SupplierSourcingApiTests`. این‌ها در مسیر reservation بازتولید نشدند، اما suite historical `126/126` جایگزین اجرای جاری نیست. targeted Inventory/Workflow **۵/۵ PASS**؛ global regression sign-off این اجرا به CI/test-host سالم نیاز دارد.
+
+### نتیجهٔ پذیرش STEP 3
+
+**STEP 3 feature acceptance: PASS.** رفتار مصوب reservation از UI واقعی تا service canonical و persistence اثبات شد: atomic all-items، aggregate availability برای stock key مشترک، عدم کسر physical stock، deterministic concurrency، retry idempotent، mismatch rejection و rollback failure.
+
+این PASS شامل STEP4 نیست. مصرف فیزیکی، cancellation/release/expiry integration، procurement automation، QC/logistics و سیاست مالی جدید عمداً اجرا یا تأیید نشده‌اند. blocker باقی‌مانده برای release-wide sign-off فقط بازتولید full integration suite در test-host سالم است؛ defect اپلیکیشنِ بازتولیدشده در مسیر STEP3 باقی نمانده است.
+
+## بسته‌شدن regression و development deployment — current source
+
+### علت و رفع failureهای full integration
+
+اولین اجرای current-source روی PostgreSQL تازه `106/126` failure و `20/126` pass داشت. هر ۱۰۶ failure در `PostgreSqlDatabaseFixture.InitializeAsync`، هنگام `Database.MigrateAsync` و قبل از اجرای endpoint تست بود؛ exception مشترک `Npgsql.PostgresException 42704: role "barang_test_app" does not exist` بود، endpoint status نداشت (`N/A`) و هیچ failure application-level نبود. نام کامل ۱۰۶ تست در `TestResults/step3-full.trx` ثبت شده؛ دسته‌ها شامل Lookup، MultiCompany، Artwork، Audit، BusinessProfile، Catalog، Customer، Database، Finance، Identity/RBAC، Inventory، Logistics، Pricing، Order، Production، Quality، PublicClient، Supplier/Sourcing و Workflow بودند. بنابراین 404/500 گزارش قبلی ناشی از test-host ناقص بود و با application regression اشتباه نشد.
+
+ریشهٔ قابل‌بازدید: `docker/postgres/init-app-role.sh` در checkout ویندوز CRLF می‌شد، اما PostgreSQL entrypoint فایل `.sh` را با shebang مستقیم اجرا می‌کند؛ role ساخته نمی‌شد و migration به role ناموجود ارجاع می‌داد. `.gitattributes` با `docker/postgres/init-app-role.sh text eol=lf` اضافه شد. پس از ساخت role در disposable PostgreSQL و سپس اصلاح دائمی EOL، full suite دوباره اجرا شد:
+
+- `BARANG.Core.IntegrationTests`: **126/126 PASS، 0 failure، 0 skipped، 3:11** (`step3-full-after-eol.trx`).
+- اجرای قبلی پس از role repair نیز **126/126 PASS، 3:08** بود.
+
+### current-source regression gate
+
+- `dotnet build BARANG.Core.slnx -c Release --no-restore`: **PASS، 0 warning/0 error**.
+- Unit: **222/222 PASS**.
+- Backoffice: **184/184 PASS**.
+- Full isolated PostgreSQL integration: **126/126 PASS**.
+- Development authenticated browser smoke: `GlobalLanguageSwitchUpdatesLocalizedShellAndDirection` (fa/ar/en)، `GlobalDesignSystemShellUsesLoginPaletteAndRemainsCompactResponsive` و `LoginPageE2ETests`: **10/10 PASS**.
+- STEP3 isolated feature acceptance قبلی روی source implementation commit `647eebe` و گزارش‌شده در commit `2e81664` سبز بود؛ تغییر current فقط `.gitattributes` است و atomicity/concurrency/retry/rollback/UOM implementation دست‌نخورده باقی ماند.
+
+### development deployment پذیرش‌شده
+
+- Checkout/source commit: `f31900eeae016ea3e7eaef29afd9d146a5470363`.
+- Compose project/context: `barang-core` / `D:\00_BARANG\step2-clean\01_CORE\compose.yaml`.
+- API container `barang-core-api-1`: image `sha256:9015f6633afe21c291c52dcdcfc97fc6686784eb8dd2918830dbed0c5bf8f106`، `BARANG_BUILD_COMMIT=f31900eeae016ea3e7eaef29afd9d146a5470363`.
+- Backoffice container `barang-core-backoffice-1`: image `sha256:c0021b785ea3e644d94b19e734d786fff17a482f34f9f22dde1e743215188229`، همان provenance و `CoreApi__BaseUrl=http://api:8080`.
+- API `http://localhost:8080/health/ready` و Backoffice `http://localhost:5100/login`: هر دو HTTP 200؛ هر پنج container توسعه healthy هستند.
+- volumeهای PostgreSQL/Redis/MinIO/keys حفظ شدند؛ شمارش read-only سفارش‌ها پس از deploy `orders=60` و `order_items=65` باقی ماند. admin credentials و local keys تغییر نکردند.
+- backup توسعه با `pg_restore --list` معتبر و دارای **1735** خط TOC بود؛ migration history توسعه بدون تغییر تا `20261013070735_EquipmentMappingMetadataAlignment` و **81** migration باقی ماند.
+
+### نتیجه نهایی
+
+- **STEP3 feature acceptance: PASS**؛ شواهد isolated atomicity، deterministic concurrency، retry، rollback، UOM mismatch و UI قبلی حفظ شد.
+- **Full baseline regression acceptance: PASS**؛ full suite current-source اکنون 126/126 است.
+- **Development-deployment acceptance: PASS**؛ pair coherent با provenance کامل و smoke/browser سبز است.
+- Remaining failures: **هیچ failure جاری شناخته‌شده‌ای وجود ندارد**. failureهای 106تایی قبلی با علت test-host اصلاح و با full rerun تأیید شدند.
+- **STEP4 می‌تواند آغاز شود**، مشروط به ثبت تصمیم شروع مرحلهٔ بعد؛ این turn هیچ consumption، cancellation release، procurement automation یا تغییر مالی STEP4 را اجرا نکرد.
+
+### الحاقیهٔ اجرای STEP 4 در source فعلی
+
+این گزارش readiness تاریخی است؛ پس از آن source فعلی issue واقعی، release هنگام Cancel، workflow `InventoryIssue` و return قابل‌ردیابی را روی همان InventoryAdministration/ledger اضافه کرده است. در این الحاقیه ادعای acceptance نهایی STEP 4 داده نمی‌شود تا current-source full integration و isolated mutation tests تکمیل شوند. baseline STEP 3 همچنان مرجع پذیرفته‌شده است و هیچ migration جدیدی برای این تغییر لازم نشده است.
+
+### شواهد current-source STEP 4
+
+- source commit هنگام بررسی: `1a88ef344fb19dcf2eb83a43353726b8559c4e72`؛ working tree فقط `.keys` نامرتبط را دارد.
+- `dotnet build BARANG.Core.slnx -c Release --no-restore`: PASS، ۰ warning/۰ error؛ Unit `222/222 PASS`؛ Backoffice `184/184 PASS`.
+- isolated PostgreSQL `barang_step4_test` روی `127.0.0.1:55432` و roleهای disposable: full current integration `127/127 PASS`، و `Step4InventoryIssueE2ETests.WarehouseIssueIsAtomicAndRetrySafeWithoutDuplicatingLedgerEntries`: PASS. این تست دو OrderItem مستقل با یک stock key را reserve/issue می‌کند، on-hand را از ۱۰ به ۵ و reserved را به صفر می‌رساند، retry را بدون transaction تکراری می‌پذیرد، retry با payload متفاوت را `409` می‌گیرد، و در سفارش دوم Cancel قبل از issue، reserved را بدون افزایش on-hand آزاد می‌کند. منابع isolated پس از ثبت نتیجه حذف شدند.
+- authenticated development browser smoke فعلی: `LoginPageE2ETests` به‌همراه دو smoke اصلی طراحی/زبان `10/10 PASS`. broad suite بیست‌تایی `4` failure دارد (صفحه Notifications بدون heading؛ دو سناریوی create در Organization chart/Persons با پیام «عملیات انجام نشد»؛ و User Access بدون action icon View). این failureها در صفحات نامرتبط با STEP4 و داده/پیش‌شرط development هستند؛ assertion ضعیف نشده و برای پذیرش broad UI به بررسی جداگانه نیاز دارند.
+- deployment فعلی Compose project `barang-core`: API image `sha256:9d0c67eb904a7444acfeda8c5e3319cfd46168b372ae1428819bc6e257587cc8` و Backoffice image `sha256:25a9c390366eb6e29f86d0bcbc83ea5e124c42cdfe443fc4330da32c8545b012`؛ هر دو `BARANG_BUILD_COMMIT=1a88ef344fb19dcf2eb83a43353726b8559c4e72`، API روی `8080` و Backoffice روی `5100` healthy هستند. حجم‌ها، کلیدها و `barang_core` توسعه حفظ شدند؛ migration جدیدی اضافه نشد.
+- current published workflow definition در این checkout stage کلیددار `InventoryIssue` ندارد؛ runtime و UI پشتیبانی آن را اضافه کرده‌اند، اما ایجاد/تغییر definition published بدون تصمیم owner انجام نشده است. بنابراین STEP4 از نظر backend/API و persistence ایزوله اثبات شده، ولی UI workflow issue تا وجود stage واقعی و تست Cartable آن **بلاک** است. adjustment اتمیک quantity/variant پس از reservation نیز به change-request/pricing process نیاز دارد و هنوز تأیید نهایی نشده است.

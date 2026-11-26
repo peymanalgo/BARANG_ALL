@@ -1,0 +1,44 @@
+@using System
+@using System.Text.Json
+@inject ICoreApiClient Core
+@inject IStringLocalizer<DesignBankStrings> D
+
+@if (Source is null)
+{
+    <span class="design-thumb-placeholder" role="img" aria-label="@D["Thumbnail"]">◈</span>
+}
+else
+{
+    <button type="button" class="design-thumb-button" @onclick="Open" aria-label="@D["OpenViewer"]"><img class="design-thumb" loading="lazy" src="@Source" alt="@D["Thumbnail"]" /></button>
+}
+
+@code {
+    [Parameter, EditorRequired] public Guid DesignId { get; set; }
+    [Parameter, EditorRequired] public string Token { get; set; } = "";
+    [Parameter, EditorRequired] public Guid CompanyId { get; set; }
+    [Parameter] public EventCallback Clicked { get; set; }
+    private string? Source;
+    private Task Open()=>Clicked.InvokeAsync();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DesignId == Guid.Empty || string.IsNullOrWhiteSpace(Token)) return;
+        Source = null;
+        // Thumbnail generation is an asynchronous, persisted derivative.  After
+        // an upload the grid is reloaded before the worker necessarily finishes;
+        // retry briefly so the row reflects the result.  The browser fetches the
+        // image itself from object storage via a presigned URL (immutable cache
+        // headers), so the circuit only resolves the URL instead of streaming
+        // bytes through SignalR as base64.
+        for (int attempt = 0; attempt < 12; attempt++)
+        {
+            ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/artworks/{DesignId}/thumbnail-url?variant=thumb", Token, CompanyId, default);
+            if (result.IsSuccess)
+            {
+                Source = result.Value.GetProperty("url").GetString();
+                break;
+            }
+            if (attempt < 11) await Task.Delay(500);
+        }
+    }
+}

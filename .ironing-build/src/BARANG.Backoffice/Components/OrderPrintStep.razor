@@ -1,0 +1,591 @@
+@using System.Globalization
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using BARANG.Backoffice.Api
+@using BARANG.Backoffice.Auth
+@using BARANG.Backoffice.Localization
+@inject IStringLocalizer<AppStrings> L
+@inject IStringLocalizer<BusinessStrings> B
+@inject IStringLocalizer<OrderPrintStepStrings> T
+@inject IStringLocalizer<OrderPrintArtworkStrings> A
+@inject IStringLocalizer<OrderPrintValidationStrings> V
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILogger<OrderPrintStep> Logger
+
+<section class="panel order-print-step-redesign" aria-labelledby="order-print-step-title"><h2 id="order-print-step-title">@L["Wizard_Print"]</h2><p class="form-help">@T["Intro"]</p>@if(Errors.Count>0){<div class="validation-summary order-print-validation-summary" role="alert" aria-live="assertive"><strong>@V["PrintOperationValidationTitle"]</strong><ul>@foreach(string e in Errors){<li>@e</li>}</ul></div>}@if(Items.Count==0){<div class="empty-state">@L["OrderItemsEmpty"]</div>}else{<div class="print-item-grid" role="listbox" aria-label='@T["PrintItem"]'>@foreach(PrintItem item in Items){bool selected=SelectedItemId==item.Id;bool configured=ItemIsComplete(item.Id);<article @key="item.Id" class="print-item-card @(selected?"is-selected":null) @(configured?"is-configured":"is-incomplete")" role="option" tabindex="0" aria-selected="@selected" aria-label="@ItemAriaLabel(item)" @onclick="()=>SelectItem(item.Id)" @onkeydown="(e)=>SelectItemOnKeyDown(e,item.Id)"><div class="print-item-card-content"><div class="print-item-shirt" aria-hidden="true"><svg viewBox="0 0 160 180" width="50" height="60" focusable="false" aria-hidden="true"><path fill="@ColorValue(DisplayColor(item.Color),item.ColorHex)" d="M43 24 66 10h28l23 14 25 18-13 28-14-9v87c0 8-6 14-14 14H59c-8 0-14-6-14-14V61l-14 9-13-28 25-18Z"/><path d="M66 10c1 14 7 22 14 22s13-8 14-22" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="4" stroke-linecap="round"/></svg></div><div class="print-item-info"><div class="print-item-field print-item-product"><span class="print-item-label">@T["ItemProduct"]</span><strong>@DisplayProduct(item.ProductName)</strong></div><div class="print-item-field print-item-sku"><span class="print-item-label">@T["ItemSku"]</span><strong dir="ltr">@DisplaySku(item.Sku,item.ProductCode)</strong></div><div class="print-item-field print-item-color"><span class="print-item-label">@T["ItemColor"]</span><span class="print-item-color-value"><i class="print-item-color-dot" style="background:@ColorValue(DisplayColor(item.Color),item.ColorHex)" aria-hidden="true"></i>@DisplayColor(item.Color)</span></div><div class="print-item-field print-item-size"><span class="print-item-label">@T["ItemSize"]</span><span>@ValueOrDash(item.Size)</span></div><div class="print-item-field print-item-quantity"><span class="print-item-label">@L["Quantity"]</span><span dir="ltr">@ValueOrDash(item.Quantity)</span></div></div></div><span class="print-item-status @(configured?"is-configured":"is-incomplete")"><span class="print-item-status-icon" aria-hidden="true">@(configured?"✓":"!")</span>@(configured?T["ConfiguredStatus"]:T["IncompleteStatus"])</span>@if(selected){<span class="print-item-check" aria-label="@T["Selected"]">✓</span>}</article>}</div>}
+@if (CurrentItem is not null)
+{
+    <section class="order-print-editor">
+        <h3>@L["PrintOperations"] — @CurrentItem.ProductName</h3>
+        <div class="form-grid order-print-form-grid">
+            <label>
+                <span>@L["PrintLocation"] *</span>
+                <select @bind="Draft.Position">
+                    <option value="FRONT">@L["PrintFront"]</option>
+                    <option value="BACK">@L["PrintBack"]</option>
+                    <option value="SLEEVE">@L["PrintSleeve"]</option>
+                    <option value="OTHER">@L["PrintOther"]</option>
+                </select>
+            </label>
+            <label>
+                <span>@L["Method"] *</span>
+                <select name="print-method-step2" @bind="Draft.Method" disabled="@PrintMethodsLoading">
+                    <option value="">@L["Choose"]</option>
+                    @foreach (PrintMethodOption method in PrintMethods)
+                    {
+                        <option value="@method.Code">@method.Label</option>
+                    }
+                </select>
+                @if (PrintMethodsLoading)
+                {
+                    <small role="status">@L["Loading"]</small>
+                }
+                else if (!string.IsNullOrWhiteSpace(PrintMethodsError))
+                {
+                    <small class="inline-error" role="alert">@PrintMethodsError</small>
+                }
+                else if (PrintMethods.Count == 0)
+                {
+                    <small class="inline-error" role="alert">@A["NoResults"]</small>
+                }
+            </label>
+            <label>
+                <span>@L["Width"] *</span>
+                <div class="order-print-measurement"><input type="number" min="0.01" step="0.01" @bind="Draft.Width" /><span>@T["Centimeters"]</span></div>
+            </label>
+            <label>
+                <span>@L["Height"] *</span>
+                <div class="order-print-measurement"><input type="number" min="0.01" step="0.01" @bind="Draft.Height" /><span>@T["Centimeters"]</span></div>
+            </label>
+        </div>
+        <div class="order-print-artwork-row">
+            <section class="order-print-design-panel">
+                <h4>@A["DesignBank"]</h4>
+                @if (Draft.DesignId is Guid)
+                {
+                    <div class="order-print-source-card">
+                        <DesignThumbnail DesignId="@Draft.DesignId.Value" Token="@Token" CompanyId="@Company" />
+                        <span><strong>@ValueOrDash(Draft.DesignTitle)</strong><small dir="ltr">@ValueOrDash(Draft.DesignCode)</small></span>
+                    </div>
+                    <div class="order-print-source-actions">
+                        <button type="button" class="order-print-source-button" @onclick="OpenDesignBank">@A["Change"]</button>
+                        <button type="button" class="link-button danger" @onclick="RemoveDesign">@A["Remove"]</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="order-print-artwork-empty">
+                        <span class="order-print-artwork-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 5h16v14H4zM7 15l3-3 2 2 2-3 3 4M8 9h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        <p>@A["DesignBank"]</p><small>@A["DesignBankHelper"]</small>
+                        <button type="button" class="order-print-source-button" @onclick="OpenDesignBank">@A["SelectFromDesignBank"]</button>
+                    </div>
+                }
+            </section>
+            <section class="order-print-design-panel">
+                <h4>@A["Upload"]</h4>
+                @if (Draft.FileVersionId is Guid)
+                {
+                    <div class="order-print-upload-preview">
+                        @if (!string.IsNullOrWhiteSpace(Draft.UploadPreview))
+                        {
+                            <img src="@Draft.UploadPreview" alt="@ValueOrDash(Draft.UploadedFileName)" />
+                        }
+                        else
+                        {
+                            <span class="order-print-artwork-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5h14v-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        }
+                        <span><strong>@ValueOrDash(Draft.UploadedFileName)</strong><small>@A["UploadedFile"]</small></span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(UploadError))
+                    {
+                        <small class="inline-error" role="alert">@UploadError</small>
+                    }
+                    <div class="order-print-source-actions">
+                        <label class="order-print-source-button">@A["Change"]<InputFile OnChange="UploadFile" accept="image/*" /></label>
+                        <button type="button" class="link-button danger" @onclick="RemoveUpload">@A["Remove"]</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="order-print-artwork-empty">
+                        <span class="order-print-artwork-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5h14v-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        <p>@A["Upload"]</p><small>@A["UploadHelper"]</small>
+                        <label class="order-print-source-button" aria-disabled="@UploadBusy">@(UploadBusy ? L["Loading"] : A["ChooseFile"])<InputFile OnChange="UploadFile" accept="image/*" /></label>
+                        @if (UploadBusy)
+                        {
+                            <small role="status">@L["Loading"]</small>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(UploadError))
+                        {
+                            <small class="inline-error" role="alert">@UploadError</small>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+        <label class="order-print-note">
+            <span>@T["PrintNotes"]</span>
+            <textarea @bind="Draft.Note" placeholder="@T["PrintNotePlaceholder"]"></textarea>
+        </label>
+        <div class="order-print-actions">
+            <button type="button" class="order-print-purple-secondary" @onclick="CancelEdit">@A["Cancel"]</button>
+            <button type="button" class="order-print-purple-primary" data-testid="print-add-button" @onclick="OnAddClicked" @onclick:preventDefault="true" disabled="@Saving">@(Saving ? L["Saving"] : T["Add"])</button>
+        </div>
+    </section>
+    <section class="order-print-grid-section">
+        <h3>@L["PrintOperations"]</h3>
+        <div class="data-grid-wrap">
+            <table class="data-grid">
+                <thead><tr><th>@T["PrintItem"]</th><th>@T["ItemSku"]</th><th>@L["PrintLocation"]</th><th>@L["Method"]</th><th>@L["Width"]</th><th>@L["Height"]</th><th>@T["Source"]</th><th>@T["PrintNotes"]</th></tr></thead>
+                <tbody>
+                    @foreach (PrintOperation operation in Items.SelectMany(item => Operations.Where(x => x.IsActive && x.ItemId == item.Id)))
+                    {
+                        PrintItem? operationItem = Items.FirstOrDefault(x => x.Id == operation.ItemId);
+                        if (operationItem is null)
+                        {
+                            continue;
+                        }
+                        <tr @key="operation.Id">
+                            <td>@operationItem.ProductName</td><td dir="ltr">@DisplaySku(operationItem.Sku, operationItem.ProductCode)</td><td>@PositionLabel(operation.Position)</td><td dir="ltr">@MethodLabel(operation.Method)</td><td dir="ltr">@Number(operation.Width)</td><td dir="ltr">@Number(operation.Height)</td><td>@SourceLabel(operation)</td><td>@ValueOrDash(operation.Note)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+<div class="form-actions"><button type="button" class="secondary-action" @onclick="BackRequested">@T["Back"]</button><button type="button" class="primary-link" @onclick="Continue">@L["Next"]</button></div></section>
+
+@if (DesignBankOpen)
+{
+    <div class="order-print-modal-backdrop" @onclick="CloseDesignBank">
+        <section class="order-print-design-modal" role="dialog" aria-modal="true" aria-labelledby="order-print-design-modal-title" @onclick:stopPropagation="true">
+            <header class="order-print-design-modal-header">
+                <h3 id="order-print-design-modal-title">@A["DesignBank"]</h3>
+                <button type="button" class="order-print-design-modal-close" aria-label='@A["Cancel"]' @onclick="CloseDesignBank">×</button>
+            </header>
+            <div class="order-print-design-filters">
+                <label><span>@A["Search"]</span><input value="@DesignSearch" @oninput="OnDesignSearch" /></label>
+                <label><span>@A["Category"]</span><select value="@SelectedCategory" @onchange="OnCategoryChanged"><option value="">@A["Category"]</option>@foreach (CategoryOption x in Categories.Where(x => x.ParentId is null)){<option value="@x.Code">@x.Caption</option>}</select></label>
+                <label><span>@A["Subcategory"]</span><select value="@SelectedSubcategory" @onchange="OnSubcategoryChanged"><option value="">@A["Subcategory"]</option>@foreach (CategoryOption x in Categories.Where(x => x.ParentCode == SelectedCategory)){<option value="@x.Code">@x.Caption</option>}</select></label>
+            </div>
+            <div class="order-print-design-gallery" role="listbox" aria-label="@A["DesignBank"]">
+            @if (DesignBusy)
+            {
+                <p class="empty-state" role="status">@A["Loading"]</p>
+            }
+            else if (!string.IsNullOrWhiteSpace(DesignError))
+            {
+                <div class="inline-error" role="alert">@DesignError <button type="button" class="link-button" @onclick="LoadDesigns">@A["Retry"]</button></div>
+            }
+            else if (Designs.Count == 0)
+            {
+                <p class="empty-state">@A["NoResults"]</p>
+            }
+            else
+            {
+                    @foreach (DesignOption d in Designs)
+                    {
+                        bool sel = TemporaryDesignId == d.Id;
+                        <button type="button" class="order-print-design-card @(sel ? "is-selected" : null)" role="option" aria-selected="@sel" @onclick="() => SelectDesign(d)">
+                            <DesignThumbnail DesignId="@d.Id" Token="@Token" CompanyId="@Company" />
+                            <strong>@d.Title</strong>
+                            <small dir="ltr">@d.Code</small>
+                            <small>@d.CategoryCaption</small>
+                            @if (sel)
+                            {
+                                <span class="order-print-design-check" aria-hidden="true">✓</span>
+                            }
+                        </button>
+                    }
+            }
+            </div>
+            <footer class="order-print-design-modal-footer">
+                <button type="button" class="order-print-purple-secondary" @onclick="CloseDesignBank">@A["Cancel"]</button>
+                <button type="button" class="order-print-purple-primary" disabled="@(TemporaryDesignId is null)" @onclick="ConfirmDesign">@A["Confirm"]</button>
+            </footer>
+        </section>
+    </div>
+}
+@code {
+    private string SaveStage = "idle";
+    private Guid SaveCorrelationId;
+    [Parameter] public Guid? OrderId { get; set; } [Parameter] public EventCallback NextRequested { get; set; } [Parameter] public EventCallback BackRequested { get; set; }
+    private readonly List<PrintItem> Items=[]; private readonly List<PrintOperation> Operations=[]; private readonly Dictionary<Guid,PrintDraft> Drafts=[]; private readonly List<string> Errors=[]; private readonly List<DesignOption> Designs=[]; private readonly List<CategoryOption> Categories=[]; private readonly List<PrintMethodOption> PrintMethods=[]; private readonly Dictionary<string,string> ColorCaptions=new(StringComparer.OrdinalIgnoreCase); private readonly Dictionary<string,string> SkuCaptions=new(StringComparer.OrdinalIgnoreCase); private Guid? SelectedItemId,LoadedOrderId,TemporaryDesignId; private PrintDraft Draft=new(); private bool DesignBankOpen,DesignBusy,UploadBusy,Saving,PrintMethodsLoading; private string DesignSearch="",SelectedCategory="",SelectedSubcategory="",DesignError="",UploadError="",PrintMethodsError=""; private string Token=""; private Guid Company; private PrintItem? CurrentItem=>SelectedItemId is Guid id?Items.FirstOrDefault(x=>x.Id==id):null;
+    protected override async Task OnParametersSetAsync(){if(OrderId is Guid id&&LoadedOrderId!=id){LoadedOrderId=id;await Load();}}
+    private async Task Load(){var s=await Session();if(s is null||OrderId is not Guid order)return;Token=s.Value.Token;Company=s.Value.Company;await LoadPrintMethods(s.Value);await LoadColorCaptions(s.Value);var r=await Core.GetAsync($"api/v1/orders/{order}",Token,Company,default);if(!r.IsSuccess){Errors.Clear();Errors.Add(ApiError(r,L["GenericError"].Value));return;}Items.Clear();Operations.Clear();Drafts.Clear();if(r.Value.TryGetProperty("items",out var items)&&items.ValueKind==JsonValueKind.Array)foreach(var item in items.EnumerateArray()){Guid id=item.GetProperty("id").GetGuid();var snap=item.TryGetProperty("snapshot",out var ss)&&ss.ValueKind==JsonValueKind.Object?ss:default;string productCode=ItemText(item,snap,"productCode");string sku=ItemText(item,snap,"variantSku");if(sku.All(char.IsDigit)&&productCode!="—")SkuCaptions[sku]=productCode;Items.Add(new(id,productCode,ItemText(item,snap,"productName"),sku,ItemText(item,snap,"colorCode","color"),ItemText(item,snap,"sizeCode","size"),Text(item,"quantity","—"),ItemText(item,snap,"colorHex")));if(item.TryGetProperty("printOperations",out var prints)&&prints.ValueKind==JsonValueKind.Array)foreach(var p in prints.EnumerateArray())Operations.Add(new(p.GetProperty("id").GetGuid(),id,NumberInt(p,"sequence"),Text(p,"printPositionCode","FRONT"),Text(p,"printMethodCode"),Decimal(p,"width"),Decimal(p,"height"),Text(p,"notes"),NumberLong(p,"version"),GuidValue(p,"artworkVersionId"),GuidValue(p,"fileVersionId"),Bool(p,"isActive",true)));}if(SelectedItemId is null||Items.All(x=>x.Id!=SelectedItemId))SelectedItemId=Items.FirstOrDefault()?.Id;LoadDraftFromPersisted();await HydratePersistedSource(s.Value);}
+    private async Task LoadPrintMethods((string Token,Guid Company) session)
+    {
+        PrintMethods.Clear();
+        PrintMethodsLoading=true;
+        PrintMethodsError="";
+        const string path="api/v1/lookups/types/print.method/values?activeOnly=true";
+        try
+        {
+            Logger.LogInformation("Loading active print methods from {Path} for company {Company}",path,session.Company);
+            var result=await Core.GetAsync(path,session.Token,session.Company,default);
+            if(!result.IsSuccess)
+            {
+                PrintMethodsError=ApiError(result,L["GenericError"].Value);
+                Logger.LogWarning("Print method lookup failed: {Failure} {ProblemCode}",result.Failure,result.ProblemCode);
+                return;
+            }
+
+            JsonElement rows=result.Value.ValueKind==JsonValueKind.Array
+                ? result.Value
+                : result.Value.ValueKind==JsonValueKind.Object&&result.Value.TryGetProperty("items",out var items)
+                    ? items
+                    : default;
+            if(rows.ValueKind!=JsonValueKind.Array)
+            {
+                PrintMethodsError=L["GenericError"].Value;
+                Logger.LogWarning("Print method lookup returned an unsupported response shape: {ValueKind}",result.Value.ValueKind);
+                return;
+            }
+
+            foreach(JsonElement row in rows.EnumerateArray())
+            {
+                if(row.TryGetProperty("isActive",out var active)&&active.ValueKind==JsonValueKind.False)continue;
+                string code=Text(row,"code");
+                if(string.IsNullOrWhiteSpace(code))continue;
+                PrintMethods.Add(new(code,Caption(row)));
+            }
+            Logger.LogInformation("Loaded {Count} active print methods: {Codes}",PrintMethods.Count,string.Join(",",PrintMethods.Select(x=>x.Code)));
+        }
+        catch(Exception ex)
+        {
+            PrintMethodsError=L["GenericError"].Value;
+            Logger.LogError(ex,"Print method lookup could not be loaded from {Path}",path);
+        }
+        finally
+        {
+            PrintMethodsLoading=false;
+        }
+    }
+    private async Task SelectItem(Guid id){SaveDraftInMemory();bool hadDraft=Drafts.ContainsKey(id);SelectedItemId=id;LoadDraftFromPersisted();Errors.Clear();if(!hadDraft){var session=await Session();if(session is not null)await HydratePersistedSource(session.Value);}} private async Task SelectItemOnKeyDown(KeyboardEventArgs e,Guid id){if(e.Key is "Enter" or " " or "Spacebar")await SelectItem(id);} private void LoadDraftFromPersisted(){if(SelectedItemId is not Guid id){Draft=new();return;}if(Drafts.TryGetValue(id,out var d)){Draft=d;return;}var saved=Operations.FirstOrDefault(x=>x.ItemId==id);Draft=saved is null?new PrintDraft{Sequence=Operations.Where(x=>x.ItemId==id).Select(x=>x.Sequence).DefaultIfEmpty().Max()+1}:new PrintDraft(saved);}private void SaveDraftInMemory(){if(SelectedItemId is Guid id)Drafts[id]=Draft;} private void CancelEdit(){Drafts.Remove(SelectedItemId??Guid.Empty);LoadDraftFromPersisted();Errors.Clear();}
+    private async Task HydratePersistedSource((string Token,Guid Company) s){if(SelectedItemId is not Guid item)return;PrintOperation? op=Operations.FirstOrDefault(x=>x.ItemId==item);if(op is null)return;if(op.ArtworkVersionId is Guid artworkVersion){var vr=await Core.GetAsync($"api/v1/artworks/versions/{artworkVersion}",s.Token,s.Company,default);if(vr.IsSuccess){Draft.ArtworkVersionId=artworkVersion;Guid artworkId=vr.Value.GetProperty("artworkId").GetGuid();var ar=await Core.GetAsync($"api/v1/artworks/{artworkId}",s.Token,s.Company,default);if(ar.IsSuccess){Draft.DesignId=artworkId;Draft.DesignTitle=Text(ar.Value,"title");Draft.DesignCode=Text(ar.Value,"code");}}}else if(op.FileVersionId is Guid fileVersion){Draft.FileVersionId=fileVersion;var fr=await Core.GetAsync($"api/v1/files/versions/{fileVersion}",s.Token,s.Company,default);if(fr.IsSuccess){Guid? fileId=GuidValue(fr.Value,"fileId");Draft.FileId=fileId;Draft.UploadedFileName=Text(fr.Value,"originalFileName");if(fileId is Guid f){var preview=await Core.DownloadAsync($"api/v1/files/{f}/versions/{fileVersion}/thumbnail",s.Token,s.Company,default);Draft.UploadPreview=preview.IsSuccess?$"data:{preview.Value.ContentType};base64,{Convert.ToBase64String(preview.Value.Content)}":null;}}}}
+    private async Task OnAddClicked()
+    {
+        if (Saving)
+        {
+            Logger.LogDebug("Ignored duplicate Print Add click for order {OrderId}, item {OrderItemId}", OrderId, SelectedItemId);
+            return;
+        }
+
+        SaveCorrelationId = Guid.NewGuid();
+        SaveStage = "client-validation";
+        Logger.LogInformation("Print Add clicked for order {OrderId}, item {OrderItemId}, correlation {CorrelationId}", OrderId, SelectedItemId, SaveCorrelationId);
+        Errors.Clear();
+        Saving = true;
+        await InvokeAsync(StateHasChanged);
+        await Task.Yield();
+
+        try
+        {
+            await SaveOperationCore();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Print Add failed at stage {SaveStage} for order {OrderId}, item {OrderItemId}, correlation {CorrelationId}", SaveStage, OrderId, SelectedItemId, SaveCorrelationId);
+            Errors.Add(V["SaveFailedWithReference", SaveCorrelationId.ToString("N")].Value);
+        }
+        finally
+        {
+            Saving = false;
+            SaveStage = "idle";
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SaveOperationCore()
+    {
+        Logger.LogInformation("Print Add validation started for order {OrderId}, item {OrderItemId}", OrderId, SelectedItemId);
+
+        if (SelectedItemId is not Guid item)
+        {
+            Errors.Add(T["MissingItem"].Value);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Draft.Position))
+            Errors.Add(T["MissingLocation"].Value);
+
+        if (string.IsNullOrWhiteSpace(Draft.Method))
+            Errors.Add(V["MissingMethod"].Value);
+
+        if (Draft.Width is null)
+            Errors.Add(T["MissingWidth"].Value);
+        else if (Draft.Width <= 0)
+            Errors.Add(T["InvalidWidth"].Value);
+
+        if (Draft.Height is null)
+            Errors.Add(T["MissingHeight"].Value);
+        else if (Draft.Height <= 0)
+            Errors.Add(T["InvalidHeight"].Value);
+
+        if (Draft.ArtworkVersionId is null && Draft.FileVersionId is null)
+            Errors.Add(V["MissingArtwork"].Value);
+        else if (Draft.ArtworkVersionId is not null && Draft.FileVersionId is not null)
+            Errors.Add(V["BothArtworkSources"].Value);
+
+        if (Errors.Count > 0)
+            return;
+
+        SaveStage = "session";
+        var session = await Session();
+        if (session is null)
+        {
+            Errors.Add(L["SessionExpired"].Value);
+            return;
+        }
+
+        if (OrderId is not Guid order)
+        {
+            Errors.Add(T["MissingItem"].Value);
+            return;
+        }
+
+        var body = new
+        {
+            sequence = Draft.Sequence,
+            printPositionCode = Draft.Position,
+            printMethodCode = Null(Draft.Method),
+            width = Draft.Width,
+            height = Draft.Height,
+            artworkVersionId = Draft.ArtworkVersionId,
+            fileVersionId = Draft.FileVersionId,
+            notes = Null(Draft.Note),
+            version = Draft.Version
+        };
+        string path = $"api/v1/orders/{order}/items/{item}/print-operations" + (Draft.OperationId is Guid op ? $"/{op}" : "");
+        HttpMethod method = Draft.OperationId is null ? HttpMethod.Post : HttpMethod.Put;
+        SaveStage = "http-request";
+        Logger.LogInformation("Print Add API request started: {Method} {Path} for item {OrderItemId}; method={PrintMethod}; position={PrintPosition}; width={Width}; height={Height}; artwork={ArtworkVersionId}; file={FileVersionId}", method, path, item, Draft.Method, Draft.Position, Draft.Width, Draft.Height, Draft.ArtworkVersionId, Draft.FileVersionId);
+        var result = await Core.SendAsync(method, path, body, session.Value.Token, session.Value.Company, default);
+        Logger.LogInformation("Print Add API response received: success={Success}; status={StatusCode}; failure={Failure}; problemCode={ProblemCode}; problemDescription={ProblemDescription}", result.IsSuccess, result.StatusCode, result.Failure, result.ProblemCode, result.ProblemDescription);
+
+        if (!result.IsSuccess)
+        {
+            Errors.Add(ApiError(result, V["SaveFailed"].Value));
+            return;
+        }
+
+        if (Draft.FileId is Guid file)
+        {
+            SaveStage = "source-link";
+            if (result.Value.ValueKind != JsonValueKind.Object ||
+                !result.Value.TryGetProperty("id", out var operationId) ||
+                operationId.ValueKind != JsonValueKind.String)
+            {
+                Errors.Add(V["SourceLinkFailed"].Value);
+                return;
+            }
+
+            string linkPath = $"api/v1/orders/{order}/items/{item}/print-operations/{operationId.GetGuid()}/files/{file}/links";
+            Logger.LogInformation("Print Add source-link request started: POST {Path}", linkPath);
+            var link = await Core.SendAsync(
+                HttpMethod.Post,
+                linkPath,
+                new { fileVersionId = Draft.FileVersionId, purpose = "Source" },
+                session.Value.Token,
+                session.Value.Company,
+                default);
+            Logger.LogInformation("Print Add source-link response received: success={Success}", link.IsSuccess);
+
+            if (!link.IsSuccess)
+            {
+                await Load();
+                Errors.Add(ApiError(link, V["SourceLinkFailed"].Value));
+                return;
+            }
+        }
+
+        SaveStage = "reload";
+        Drafts.Remove(item);
+        await Load();
+        SaveStage = "state-updated";
+        Logger.LogInformation("Print Add completed for order {OrderId}, item {OrderItemId}", OrderId, item);
+    }
+    private void EditOperation(PrintOperation x) { Drafts[x.ItemId] = new PrintDraft(x); LoadDraftFromPersisted(); }
+    private async Task DeleteOperation(PrintOperation x)
+    {
+        var session = await Session();
+        if (session is null || OrderId is not Guid order) { Errors.Clear(); Errors.Add(L["SessionExpired"]); return; }
+        var result = await Core.SendAsync(HttpMethod.Post, $"api/v1/orders/{order}/items/{x.ItemId}/print-operations/{x.Id}/remove", new { version = x.Version }, session.Value.Token, session.Value.Company, default);
+        if (result.IsSuccess) { Drafts.Remove(x.ItemId); await Load(); }
+        else { Errors.Clear(); Errors.Add(ApiError(result, V["DeleteFailed"].Value)); }
+    }
+    private async Task Continue(){Errors.Clear();if(HasUnsavedEditorChanges()){Errors.Add(V["SaveBeforeNext"].Value);return;}var incomplete=Items.Where(x=>!ItemIsComplete(x.Id)).ToList();if(incomplete.Count>0){SelectedItemId=incomplete[0].Id;LoadDraftFromPersisted();Errors.Add(T["IncompleteItem", ItemDisplaySummary(incomplete[0])].Value);return;}await NextRequested.InvokeAsync();}
+    private bool ItemIsComplete(Guid itemId){var operations=Operations.Where(x=>x.ItemId==itemId&&x.IsActive).ToArray();return operations.Length==1&&OperationIsComplete(operations[0]);}
+    private static bool OperationIsComplete(PrintOperation x)=>!string.IsNullOrWhiteSpace(x.Position)&&!string.IsNullOrWhiteSpace(x.Method)&&x.Width is > 0&&x.Height is > 0&&((x.ArtworkVersionId is not null)^(x.FileVersionId is not null));
+    private bool HasUnsavedEditorChanges(){if(SelectedItemId is not Guid item)return false;PrintOperation? saved=Operations.FirstOrDefault(x=>x.Id==Draft.OperationId);if(Draft.OperationId is null)return Draft.Width is > 0||Draft.Height is > 0||!string.IsNullOrWhiteSpace(Draft.Method)||!string.IsNullOrWhiteSpace(Draft.Note)||Draft.Position!="FRONT"||Draft.ArtworkVersionId is not null||Draft.FileVersionId is not null;return saved is null||saved.Position!=Draft.Position||saved.Method!=Draft.Method||saved.Width!=Draft.Width||saved.Height!=Draft.Height||saved.Note!=Draft.Note||saved.ArtworkVersionId!=Draft.ArtworkVersionId||saved.FileVersionId!=Draft.FileVersionId;}
+    private async Task OpenDesignBank(){TemporaryDesignId=Draft.DesignId;DesignError="";DesignBankOpen=true;await LoadCategories();await LoadDesigns();} private void CloseDesignBank(){DesignBankOpen=false;TemporaryDesignId=null;} private void SelectDesign(DesignOption x)=>TemporaryDesignId=x.Id; private void ConfirmDesign(){if(SelectedItemId is null){DesignError=T["MissingItem"].Value;return;}var d=Designs.FirstOrDefault(x=>x.Id==TemporaryDesignId);if(d is null||d.CurrentVersionId is not Guid v){DesignError=A["InvalidSource"].Value;return;}Draft.DesignId=d.Id;Draft.DesignTitle=d.Title;Draft.DesignCode=d.Code;Draft.ArtworkVersionId=v;Draft.FileId=null;Draft.FileVersionId=null;Draft.UploadedFileName="";Draft.UploadPreview=null;SaveDraftInMemory();DesignBankOpen=false;TemporaryDesignId=null;} private void RemoveDesign(){Draft.DesignId=null;Draft.DesignTitle=Draft.DesignCode="";Draft.ArtworkVersionId=null;SaveDraftInMemory();}private void RemoveUpload(){Draft.FileId=null;Draft.FileVersionId=null;Draft.UploadedFileName="";Draft.UploadPreview=null;SaveDraftInMemory();}
+    private async Task UploadFile(InputFileChangeEventArgs e)
+    {
+        if (e.File is null)
+        {
+            return;
+        }
+
+        var session = await Session();
+        if (session is null)
+        {
+            UploadError = L["SessionExpired"].Value;
+            return;
+        }
+
+        UploadBusy = true;
+        UploadError = "";
+        try
+        {
+            string? localPreview = null;
+            if (IsSupportedRasterMedia(e.File.ContentType, e.File.Name))
+            {
+                await using Stream localStream = e.File.OpenReadStream(25 * 1024 * 1024);
+                using MemoryStream previewBuffer = new();
+                await localStream.CopyToAsync(previewBuffer);
+                localPreview = $"data:{e.File.ContentType};base64,{Convert.ToBase64String(previewBuffer.ToArray())}";
+            }
+
+            await using Stream stream = e.File.OpenReadStream(25 * 1024 * 1024);
+            var result = await Core.UploadAsync("api/v1/files/upload", e.File.Name, e.File.ContentType, stream, e.File.Size, session.Value.Token, session.Value.Company, default);
+            if (!result.IsSuccess)
+            {
+                UploadError = A["UploadFailed"].Value;
+                return;
+            }
+
+            Guid file = result.Value.GetProperty("fileId").GetGuid();
+            Guid version = result.Value.GetProperty("fileVersionId").GetGuid();
+            Draft.FileId = file;
+            Draft.FileVersionId = version;
+            Draft.UploadedFileName = Text(result.Value, "originalFileName", e.File.Name);
+            Draft.DesignId = null;
+            Draft.DesignTitle = Draft.DesignCode = "";
+            Draft.ArtworkVersionId = null;
+
+            ApiResult<FileDownload> thumbnail = await Core.DownloadAsync($"api/v1/files/{file}/versions/{version}/thumbnail", session.Value.Token, session.Value.Company, default);
+            Draft.UploadPreview = thumbnail.IsSuccess
+                ? $"data:{thumbnail.Value.ContentType};base64,{Convert.ToBase64String(thumbnail.Value.Content)}"
+                : localPreview;
+            if (!thumbnail.IsSuccess && Draft.UploadPreview is null)
+            {
+                UploadError = A["PreviewUnavailable"].Value;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Upload or preview failed for Order {OrderId}, Item {OrderItemId}", OrderId, SelectedItemId);
+            UploadError = A["UploadFailed"].Value;
+        }
+        finally
+        {
+            UploadBusy = false;
+        }
+    }
+    private async Task LoadCategories(){Categories.Clear();var s=await Session();if(s is null){DesignError=L["SessionExpired"].Value;return;}var r=await Core.GetAsync("api/v1/lookups/types/artwork.category/values?activeOnly=false",s.Value.Token,s.Value.Company,default);if(!r.IsSuccess){DesignError=ApiError(r,L["GenericError"].Value);return;}if(r.Value.ValueKind!=JsonValueKind.Array){DesignError=L["GenericError"].Value;return;}var raw=r.Value.EnumerateArray().Select(x=>new{Id=GuidValue(x,"id")??Guid.Empty,Code=Text(x,"code"),Caption=Caption(x),ParentId=GuidValue(x,"parentId")}).ToArray();foreach(var x in raw)Categories.Add(new(x.Id,x.Code,x.Caption,x.ParentId,raw.FirstOrDefault(p=>p.Id==x.ParentId)?.Code));}
+    private async Task LoadDesigns(){Designs.Clear();DesignError="";DesignBusy=true;var s=await Session();if(s is null){DesignError=L["SessionExpired"].Value;DesignBusy=false;return;}string cat=string.IsNullOrWhiteSpace(SelectedSubcategory)?SelectedCategory:SelectedSubcategory;try{var r=await Core.GetAsync($"api/v1/artworks?search={Uri.EscapeDataString(DesignSearch)}&categoryCode={Uri.EscapeDataString(cat)}&pageNumber=1&pageSize=12",s.Value.Token,s.Value.Company,default);if(!r.IsSuccess){DesignError=ApiError(r,L["GenericError"].Value);return;}var rows=r.Value.TryGetProperty("items",out var it)?it:r.Value;if(rows.ValueKind==JsonValueKind.Array)foreach(var x in rows.EnumerateArray())Designs.Add(new(x.GetProperty("id").GetGuid(),Text(x,"code"),Text(x,"title"),Text(x,"categoryCode"),GuidValue(x,"currentVersionId"),CategoryCaption(Text(x,"categoryCode"))));}finally{DesignBusy=false;}}
+    private async Task OnDesignSearch(ChangeEventArgs e){DesignSearch=e.Value?.ToString()??"";await LoadDesigns();}private async Task OnCategoryChanged(ChangeEventArgs e){SelectedCategory=e.Value?.ToString()??"";SelectedSubcategory="";await LoadDesigns();}private async Task OnSubcategoryChanged(ChangeEventArgs e){SelectedSubcategory=e.Value?.ToString()??"";await LoadDesigns();}private string CategoryCaption(string c){string caption=Categories.FirstOrDefault(x=>x.Code.Equals(c,StringComparison.OrdinalIgnoreCase))?.Caption??"";return IsInternalCode(caption)?A["Category"].Value:ValueOrDash(caption);}private static bool IsInternalCode(string value)=>Guid.TryParse(value,out _)||value.StartsWith("e2e-",StringComparison.OrdinalIgnoreCase);private string Caption(JsonElement x){if(x.TryGetProperty("translations",out var values)&&values.ValueKind==JsonValueKind.Array){string culture=CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;var m=values.EnumerateArray().FirstOrDefault(y=>Text(y,"culture")==culture);if(m.ValueKind==JsonValueKind.Object)return Text(m,"displayName",Text(m,"caption",Text(m,"name",Text(x,"displayName",Text(x,"caption",Text(x,"name",Text(x,"title",Text(x,"code"))))))));}return Text(x,"displayName",Text(x,"caption",Text(x,"name",Text(x,"title",Text(x,"code")))));}
+    private string DisplayProduct(string value) => ValueOrDash(value);
+    private string DisplaySku(string value, string productCode = "")
+    {
+        if (string.IsNullOrWhiteSpace(productCode) && SkuCaptions.TryGetValue(value.Trim(), out string? mappedCode))
+            return mappedCode;
+        if (string.IsNullOrWhiteSpace(value) || value == "—" || Guid.TryParse(value, out _))
+            return string.IsNullOrWhiteSpace(productCode) || productCode == "—" ? T["ItemSku"].Value : productCode;
+        if (value.All(char.IsDigit) && !string.IsNullOrWhiteSpace(productCode))
+            return productCode;
+        return value;
+    }
+
+    private string DisplayColor(string value)
+    {
+        if (ColorCaptions.TryGetValue(value.Trim(), out string? caption))
+            return caption;
+        string normalized = value.Trim().ToLowerInvariant();
+        string key = normalized switch
+        {
+            "white" or "سفید" => "ColorWhite",
+            "red" or "قرمز" => "ColorRed",
+            "black" or "مشکی" => "ColorBlack",
+            "blue" or "آبی" => "ColorBlue",
+            "green" or "سبز" => "ColorGreen",
+            "yellow" or "زرد" => "ColorYellow",
+            "purple" or "violet" or "بنفش" => "ColorPurple",
+            _ => ""
+        };
+        return string.IsNullOrWhiteSpace(key) ? ValueOrDash(value) : T[key].Value;
+    }
+
+    private string ItemDisplaySummary(PrintItem item)=>$"{DisplayProduct(item.ProductName)}، {T["ItemSku"]} {DisplaySku(item.Sku,item.ProductCode)}، {T["ItemColor"]} {DisplayColor(item.Color)}، {T["ItemSize"]} {ValueOrDash(item.Size)}، {L["Quantity"]} {ValueOrDash(item.Quantity)}";
+    private string ApiError(ApiResult<JsonElement> result, string fallback)
+    {
+        if (result.Failure is ApiFailure.Unauthorized or ApiFailure.Forbidden)
+            return L["Unauthorized"].Value;
+        if (result.Failure == ApiFailure.Conflict)
+            return L["ConcurrencyConflict"].Value;
+        if (result.Failure == ApiFailure.Unavailable)
+            return L["ApiUnavailable"].Value;
+
+        string? code = result.ProblemCode?.Trim().ToLowerInvariant();
+        string reason = code switch
+        {
+            "order.invalid_print_method" => V["InvalidPrintMethod"].Value,
+            "order.print_location_required" => V["MissingLocation"].Value,
+            "order.invalid_print_location" => V["InvalidLocation"].Value,
+            "order.print_method_required" => V["MissingMethod"].Value,
+            "order.print_width_required" => V["MissingWidth"].Value,
+            "order.print_width_invalid" => V["InvalidWidth"].Value,
+            "order.print_height_required" => V["MissingHeight"].Value,
+            "order.print_height_invalid" => V["InvalidHeight"].Value,
+            "order.print_source_required" => V["MissingArtwork"].Value,
+            "order.print_sources_exclusive" => V["BothArtworkSources"].Value,
+            "order.invalid_artwork_version" => V["InvalidArtworkSource"].Value,
+            "order.invalid_file_version" => V["InvalidFileSource"].Value,
+            "order.print_item_not_owned" => V["PrintItemNotOwned"].Value,
+            "order.print_operation_duplicate" => V["DuplicateOperation"].Value,
+            "order.invalid_data" => V["InvalidOperationData"].Value,
+            _ when !string.IsNullOrWhiteSpace(result.ProblemDescription) => result.ProblemDescription!.Trim(),
+            _ => fallback
+        };
+
+        return result.Failure == ApiFailure.Validation
+            ? V["SaveFailedWithReason", reason].Value
+            : reason;
+    }
+    private string SourceLabel(PrintOperation x)=>x.ArtworkVersionId is not null?A["DesignBank"].Value:x.FileVersionId is not null?A["UploadedFile"].Value:A["SourceNone"].Value;private string MethodLabel(string code)=>PrintMethods.FirstOrDefault(x=>string.Equals(x.Code,code,StringComparison.OrdinalIgnoreCase))?.Label??ValueOrDash(code);private async Task<(string Token,Guid Company)?>Session(){var u=(await AuthState.GetAuthenticationStateAsync()).User;return Guid.TryParse(u.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)&&u.FindFirst(AuthClaimTypes.AccessToken)?.Value is string t?(t,c):null;}private string ItemAriaLabel(PrintItem x)=>$"{DisplayProduct(x.ProductName)}, {DisplaySku(x.Sku,x.ProductCode)}, {T["ItemColor"]}: {DisplayColor(x.Color)}, {T["ItemSize"]}: {ValueOrDash(x.Size)}, {L["Quantity"]}: {ValueOrDash(x.Quantity)}";private string PositionLabel(string x)=>x switch{"FRONT"=>L["PrintFront"].Value,"BACK"=>L["PrintBack"].Value,"SLEEVE"=>L["PrintSleeve"].Value,_=>L["PrintOther"].Value};private static bool IsSupportedRasterMedia(string media,string fileName){string m=media.Trim().ToLowerInvariant();string ext=Path.GetExtension(fileName).ToLowerInvariant();bool mediaSupported=m is "image/png" or "image/jpeg" or "image/gif" or "image/webp" or "image/bmp" or "image/tiff";bool extensionSupported=ext is ".png" or ".jpg" or ".jpeg" or ".gif" or ".webp" or ".bmp" or ".tif" or ".tiff";return mediaSupported&&extensionSupported;}private static string ColorValue(string value,string? hex=null){string candidate=(hex??value).Trim();if(IsHexColor(candidate))return candidate;return value.Trim().ToLowerInvariant() switch{"white"or"سفید"or"02"or"#fff"=>"#f8fafc","black"or"مشکی"=>"#1f2937","red"or"قرمز"=>"#dc2626","blue"or"آبی"=>"#2563eb","green"or"سبز"=>"#16a34a","yellow"or"زرد"=>"#eab308","purple"or"violet"or"بنفش"=>"#7c3aed","orange"or"نارنجی"=>"#f97316","pink"or"صورتی"=>"#ec4899","gray"or"grey"or"خاکستری"=>"#9ca3af",_=>"#cbd5e1"};}private static bool IsHexColor(string value)=>value.Length is 4 or 7&&value[0]=='#'&&value.Skip(1).All(Uri.IsHexDigit);private static string ValueOrDash(string? x)=>string.IsNullOrWhiteSpace(x)||x=="—"?"—":x;private static string Number(decimal? x)=>x?.ToString("0.##",CultureInfo.InvariantCulture)??"—";private static string ItemText(JsonElement item,JsonElement snapshot,string primary,string? secondary=null){string value=Text(snapshot,primary);if(string.IsNullOrWhiteSpace(value)||value=="—")value=Text(item,primary);if((string.IsNullOrWhiteSpace(value)||value=="—")&&secondary is not null)value=Text(snapshot,secondary,Text(item,secondary));return ValueOrDash(value);}private static string Text(JsonElement x,string n,string f="")=>x.ValueKind==JsonValueKind.Object&&x.TryGetProperty(n,out var p)&&p.ValueKind!=JsonValueKind.Null?p.ToString():f;private static decimal? Decimal(JsonElement x,string n)=>x.ValueKind==JsonValueKind.Object&&x.TryGetProperty(n,out var p)&&p.ValueKind!=JsonValueKind.Null&&p.TryGetDecimal(out var d)?d:null;private static Guid? GuidValue(JsonElement x,string n)=>x.ValueKind==JsonValueKind.Object&&x.TryGetProperty(n,out var p)&&p.ValueKind==JsonValueKind.String&&Guid.TryParse(p.GetString(),out var id)?id:null;private static int NumberInt(JsonElement x,string n)=>int.TryParse(Text(x,n,"1"),out var v)?v:1;private static long NumberLong(JsonElement x,string n)=>long.TryParse(Text(x,n,"0"),out var v)?v:0;private static bool Bool(JsonElement x,string n,bool f=false)=>x.ValueKind==JsonValueKind.Object&&x.TryGetProperty(n,out var p)&&p.ValueKind is JsonValueKind.True or JsonValueKind.False?p.GetBoolean():f;private static string? Null(string x)=>string.IsNullOrWhiteSpace(x)?null:x;
+    private async Task LoadColorCaptions((string Token,Guid Company) session)
+    {
+        ColorCaptions.Clear();
+        const string path="api/v1/lookups/types/product.color/values?activeOnly=true";
+        var result=await Core.GetAsync(path,session.Token,session.Company,default);
+        if(!result.IsSuccess)
+        {
+            Logger.LogWarning("Color lookup failed: {Failure} {ProblemCode}",result.Failure,result.ProblemCode);
+            return;
+        }
+        JsonElement rows=result.Value.ValueKind==JsonValueKind.Array?result.Value:result.Value.ValueKind==JsonValueKind.Object&&result.Value.TryGetProperty("items",out var items)?items:default;
+        if(rows.ValueKind!=JsonValueKind.Array)return;
+        foreach(JsonElement row in rows.EnumerateArray())
+        {
+            if(row.TryGetProperty("isActive",out var active)&&active.ValueKind==JsonValueKind.False)continue;
+            string code=Text(row,"code");
+            string caption=Caption(row);
+            if(!string.IsNullOrWhiteSpace(code)&&!IsInternalCode(caption))ColorCaptions[code]=caption;
+        }
+        Logger.LogInformation("Loaded {Count} active product color captions",ColorCaptions.Count);
+    }
+    private sealed record PrintItem(Guid Id,string ProductCode,string ProductName,string Sku,string Color,string Size,string Quantity,string ColorHex);private sealed record PrintOperation(Guid Id,Guid ItemId,int Sequence,string Position,string Method,decimal? Width,decimal? Height,string Note,long Version,Guid? ArtworkVersionId,Guid? FileVersionId,bool IsActive);private sealed class PrintDraft{public Guid?OperationId,ArtworkVersionId,FileVersionId,DesignId,FileId;public long Version;public int Sequence=1;public string Position="FRONT",Method="",Note="",DesignTitle="",DesignCode="",UploadedFileName="";public decimal?Width,Height;public string?UploadPreview;public PrintDraft(){}public PrintDraft(PrintOperation x){OperationId=x.Id;Version=x.Version;Sequence=x.Sequence;Position=x.Position;Method=x.Method;Width=x.Width;Height=x.Height;Note=x.Note;ArtworkVersionId=x.ArtworkVersionId;FileVersionId=x.FileVersionId;}}private sealed record DesignOption(Guid Id,string Code,string Title,string CategoryCode,Guid?CurrentVersionId,string CategoryCaption);private sealed record PrintMethodOption(string Code,string Label);private sealed record CategoryOption(Guid Id,string Code,string Caption,Guid?ParentId,string?ParentCode);
+}
+
+
+
+
+
+
+
+
+
+

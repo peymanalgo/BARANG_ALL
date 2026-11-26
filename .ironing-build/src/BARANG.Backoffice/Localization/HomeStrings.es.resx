@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Home" xml:space="preserve">
+    <value>Inicio</value>
+  </data>
+  <data name="PersonalWorkspace" xml:space="preserve">
+    <value>Espacio de trabajo personal</value>
+  </data>
+  <data name="Greeting" xml:space="preserve">
+    <value>Hola, {0}</value>
+  </data>
+  <data name="ActionableTasks" xml:space="preserve">
+    <value>tareas que requieren atención</value>
+  </data>
+  <data name="MyWork" xml:space="preserve">
+    <value>Mi trabajo</value>
+  </data>
+  <data name="MyWorkDescription" xml:space="preserve">
+    <value>Trabajo que actualmente espera su acción.</value>
+  </data>
+  <data name="ViewAllCartable" xml:space="preserve">
+    <value>Ver todo en la bandeja</value>
+  </data>
+  <data name="NoWork" xml:space="preserve">
+    <value>No tiene trabajo pendiente</value>
+  </data>
+  <data name="NoWorkDescription" xml:space="preserve">
+    <value>No hay tareas que requieran su acción.</value>
+  </data>
+  <data name="QuickAccess" xml:space="preserve">
+    <value>Acceso rápido</value>
+  </data>
+  <data name="QuickAccessDescription" xml:space="preserve">
+    <value>Rutas autorizadas para su trabajo diario.</value>
+  </data>
+  <data name="RecentActivity" xml:space="preserve">
+    <value>Mi actividad reciente</value>
+  </data>
+  <data name="RecentActivityDescription" xml:space="preserve">
+    <value>Actividad reciente registrada para su cuenta.</value>
+  </data>
+  <data name="ActivityUnavailable" xml:space="preserve">
+    <value>El historial de actividad no está disponible para esta cuenta.</value>
+  </data>
+  <data name="NoActivity" xml:space="preserve">
+    <value>No hay actividad reciente que mostrar.</value>
+  </data>
+  <data name="RecentFollowUps" xml:space="preserve">
+    <value>Mis seguimientos recientes</value>
+  </data>
+  <data name="RecentFollowUpsDescription" xml:space="preserve">
+    <value>Sus últimas acciones del flujo de trabajo.</value>
+  </data>
+  <data name="ViewMyReferrals" xml:space="preserve">
+    <value>Ver mis derivaciones</value>
+  </data>
+  <data name="NoFollowUps" xml:space="preserve">
+    <value>Todavía no hay derivaciones históricas.</value>
+  </data>
+  <data name="RecentNotifications" xml:space="preserve">
+    <value>Notificaciones recientes</value>
+  </data>
+  <data name="RecentNotificationsDescription" xml:space="preserve">
+    <value>Sus últimas notificaciones registradas.</value>
+  </data>
+  <data name="ViewAll" xml:space="preserve">
+    <value>Ver todo</value>
+  </data>
+  <data name="NotificationReceived" xml:space="preserve">
+    <value>Notificación</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Cargando</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>Ver</value>
+  </data>
+  <data name="Stage" xml:space="preserve">
+    <value>Etapa</value>
+  </data>
+  <data name="CurrentStatus" xml:space="preserve">
+    <value>Estado actual</value>
+  </data>
+  <data name="Approved" xml:space="preserve">
+    <value>Aprobado</value>
+  </data>
+  <data name="Rejected" xml:space="preserve">
+    <value>Rechazado</value>
+  </data>
+  <data name="AuditRejected" xml:space="preserve">
+    <value>Rechazado por auditoría</value>
+  </data>
+  <data name="ActivityLogin" xml:space="preserve">
+    <value>Inicio de sesión correcto</value>
+  </data>
+  <data name="ActivityNotification" xml:space="preserve">
+    <value>Notificación vista</value>
+  </data>
+  <data name="ActivityCreated" xml:space="preserve">
+    <value>Creado</value>
+  </data>
+  <data name="ActivityUpdated" xml:space="preserve">
+    <value>Actualizado</value>
+  </data>
+  <data name="ActivityApproved" xml:space="preserve">
+    <value>Aprobado o completado</value>
+  </data>
+  <data name="ActivityRecorded" xml:space="preserve">
+    <value>Actividad registrada</value>
+  </data>
+  <data name="ActivityDetail" xml:space="preserve">
+    <value>Evento</value>
+  </data>
+</root>

@@ -1,0 +1,59 @@
+@using System.Text.Json
+@inject IStringLocalizer<OrganizationStrings> O
+@inject IStringLocalizer<CrudStrings> T
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+@if (Loading)
+{
+    <div class="crud-loading">@T["Loading"]</div>
+}
+else if (LoadError)
+{
+    <div class="inline-error">@O["OperationFailed"]</div>
+}
+else
+{
+    <OrganizationalChartTree
+        Companies="_chart.Companies"
+        Branches="_chart.Branches"
+        Units="_chart.Units"
+        Assignments="_chart.Assignments"
+        Expanded="_expanded"
+        HighlightPersonId="HighlightPersonId"
+        Editable="false" />
+}
+
+@code {
+    [Parameter] public Guid? HighlightPersonId { get; set; }
+    private OrganizationChartData _chart = OrganizationChartData.Empty;
+    private readonly HashSet<Guid> _expanded = [];
+    private bool Loading;
+    private bool LoadError;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Loading = true;
+        LoadError = false;
+        System.Security.Claims.ClaimsPrincipal user = (await AuthState.GetAuthenticationStateAsync()).User;
+        if (!Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid companyId) ||
+            user.FindFirst(AuthClaimTypes.AccessToken)?.Value is not string token)
+        {
+            LoadError = true;
+            Loading = false;
+            return;
+        }
+
+        ApiResult<JsonElement> result = await Core.GetAsync("api/v1/organization/chart", token, companyId, default);
+        if (result.IsSuccess)
+        {
+            _chart = OrganizationChartJson.ParseChart(result.Value);
+        }
+        else
+        {
+            LoadError = true;
+        }
+
+        Loading = false;
+    }
+}

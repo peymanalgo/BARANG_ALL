@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Filters" xml:space="preserve">
+    <value>Filtros</value>
+  </data>
+  <data name="StageFilter" xml:space="preserve">
+    <value>Etapa</value>
+  </data>
+  <data name="AllStages" xml:space="preserve">
+    <value>Todas las etapas</value>
+  </data>
+  <data name="CustomerFilter" xml:space="preserve">
+    <value>Cliente</value>
+  </data>
+  <data name="CustomerPlaceholder" xml:space="preserve">
+    <value>Buscar clientes</value>
+  </data>
+  <data name="FromDate" xml:space="preserve">
+    <value>Desde la fecha</value>
+  </data>
+  <data name="ToDate" xml:space="preserve">
+    <value>Hasta la fecha</value>
+  </data>
+  <data name="OutcomeFilter" xml:space="preserve">
+    <value>Resultado</value>
+  </data>
+  <data name="AllOutcomes" xml:space="preserve">
+    <value>Todos los resultados</value>
+  </data>
+  <data name="StatusFilter" xml:space="preserve">
+    <value>Estado actual</value>
+  </data>
+  <data name="AllStatuses" xml:space="preserve">
+    <value>Todos los estados</value>
+  </data>
+  <data name="Sort" xml:space="preserve">
+    <value>Ordenar</value>
+  </data>
+  <data name="Newest" xml:space="preserve">
+    <value>Más recientes primero</value>
+  </data>
+  <data name="Oldest" xml:space="preserve">
+    <value>Más antiguos primero</value>
+  </data>
+  <data name="OrderNumberSort" xml:space="preserve">
+    <value>Número de pedido</value>
+  </data>
+  <data name="CustomerSort" xml:space="preserve">
+    <value>Cliente</value>
+  </data>
+  <data name="StageSort" xml:space="preserve">
+    <value>Etapa</value>
+  </data>
+  <data name="OutcomeSort" xml:space="preserve">
+    <value>Resultado</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Aplicar</value>
+  </data>
+  <data name="ClearFilters" xml:space="preserve">
+    <value>Limpiar filtros</value>
+  </data>
+  <data name="PreviousAction" xml:space="preserve">
+    <value>Última acción del flujo</value>
+  </data>
+  <data name="ReceivedAt" xml:space="preserve">
+    <value>Recibido</value>
+  </data>
+  <data name="Destination" xml:space="preserve">
+    <value>Enviado a</value>
+  </data>
+  <data name="OrderStatus" xml:space="preserve">
+    <value>Estado actual</value>
+  </data>
+  <data name="NoFilteredResults" xml:space="preserve">
+    <value>Ningún resultado coincide con los filtros actuales.</value>
+  </data>
+  <data name="NoRows" xml:space="preserve">
+    <value>No hay registros que mostrar.</value>
+  </data>
+  <data name="Position" xml:space="preserve">
+    <value>Posición</value>
+  </data>
+  <data name="ActionDate" xml:space="preserve">
+    <value>Fecha de acción</value>
+  </data>
+  <data name="TimeInStage" xml:space="preserve">
+    <value>Tiempo en etapa</value>
+  </data>
+  <data name="WaitingTime" xml:space="preserve">
+    <value>Tiempo de espera</value>
+  </data>
+  <data name="AllWaiting" xml:space="preserve">
+    <value>Todos</value>
+  </data>
+  <data name="NormalWaiting" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="AttentionWaiting" xml:space="preserve">
+    <value>Requiere atención</value>
+  </data>
+  <data name="LongWaiting" xml:space="preserve">
+    <value>Espera prolongada</value>
+  </data>
+  <data name="LongestWaiting" xml:space="preserve">
+    <value>Espera más larga</value>
+  </data>
+  <data name="ShortestWaiting" xml:space="preserve">
+    <value>Espera más corta</value>
+  </data>
+  <data name="StageEntered" xml:space="preserve">
+    <value>Entrada</value>
+  </data>
+  <data name="DaysUnit" xml:space="preserve">
+    <value>días</value>
+  </data>
+  <data name="HoursUnit" xml:space="preserve">
+    <value>horas</value>
+  </data>
+  <data name="MinutesUnit" xml:space="preserve">
+    <value>minutos</value>
+  </data>
+  <data name="QuickPreview" xml:space="preserve">
+    <value>Vista rápida</value>
+  </data>
+  <data name="PreviewLoading" xml:space="preserve">
+    <value>Cargando vista previa…</value>
+  </data>
+  <data name="PreviewFailed" xml:space="preserve">
+    <value>No se pudo cargar la vista previa. Inténtelo de nuevo.</value>
+  </data>
+  <data name="ItemCount" xml:space="preserve">
+    <value>Artículos</value>
+  </data>
+  <data name="Quantity" xml:space="preserve">
+    <value>Cantidad</value>
+  </data>
+  <data name="GrandTotal" xml:space="preserve">
+    <value>Total general</value>
+  </data>
+  <data name="MyAction" xml:space="preserve">
+    <value>Mi acción</value>
+  </data>
+  <data name="CurrentState" xml:space="preserve">
+    <value>Estado actual</value>
+  </data>
+  <data name="TimeSinceAction" xml:space="preserve">
+    <value>Tiempo desde mi acción</value>
+  </data>
+  <data name="NoDestination" xml:space="preserve">
+    <value>Sin próximo destino</value>
+  </data>
+  <data name="StarredOnly" xml:space="preserve">
+    <value>Solo destacadas</value>
+  </data>
+</root>

@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Designer" xml:space="preserve">
+    <value>Diseñador de flujo de trabajo</value>
+  </data>
+  <data name="Palette" xml:space="preserve">
+    <value>Componentes</value>
+  </data>
+  <data name="Canvas" xml:space="preserve">
+    <value>Lienzo</value>
+  </data>
+  <data name="Properties" xml:space="preserve">
+    <value>Propiedades</value>
+  </data>
+  <data name="History" xml:space="preserve">
+    <value>Historial de versiones</value>
+  </data>
+  <data name="SaveDraft" xml:space="preserve">
+    <value>Guardar borrador</value>
+  </data>
+  <data name="Validate" xml:space="preserve">
+    <value>Validar</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Publicar y activar</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Añadir</value>
+  </data>
+  <data name="NodeKey" xml:space="preserve">
+    <value>Clave estable</value>
+  </data>
+  <data name="NodeType" xml:space="preserve">
+    <value>Tipo de elemento</value>
+  </data>
+  <data name="TitleFa" xml:space="preserve">
+    <value>Título en persa</value>
+  </data>
+  <data name="TitleEn" xml:space="preserve">
+    <value>Título en inglés</value>
+  </data>
+  <data name="TitleAr" xml:space="preserve">
+    <value>Título en árabe</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Descripción</value>
+  </data>
+  <data name="Position" xml:space="preserve">
+    <value>Cargo responsable</value>
+  </data>
+  <data name="NoSelection" xml:space="preserve">
+    <value>Seleccione un elemento para editar.</value>
+  </data>
+  <data name="NoNodes" xml:space="preserve">
+    <value>Esta versión no tiene elementos.</value>
+  </data>
+  <data name="NoIssues" xml:space="preserve">
+    <value>La validación pasó.</value>
+  </data>
+  <data name="ReadOnly" xml:space="preserve">
+    <value>La versión histórica es de solo lectura</value>
+  </data>
+  <data name="CurrentVersion" xml:space="preserve">
+    <value>Versión actual</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Versión</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Estado</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Creado</value>
+  </data>
+  <data name="Published" xml:space="preserve">
+    <value>Publicado</value>
+  </data>
+  <data name="Actor" xml:space="preserve">
+    <value>Actor</value>
+  </data>
+  <data name="Draft" xml:space="preserve">
+    <value>Borrador</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Activo</value>
+  </data>
+  <data name="Superseded" xml:space="preserve">
+    <value>Histórica</value>
+  </data>
+  <data name="Historical" xml:space="preserve">
+    <value>Histórica</value>
+  </data>
+  <data name="BackToCurrent" xml:space="preserve">
+    <value>Volver a la versión actual</value>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>Inicio</value>
+  </data>
+  <data name="End" xml:space="preserve">
+    <value>Fin</value>
+  </data>
+  <data name="UserTask" xml:space="preserve">
+    <value>Tarea de usuario</value>
+  </data>
+  <data name="ExclusiveGateway" xml:space="preserve">
+    <value>Compuerta exclusiva</value>
+  </data>
+  <data name="ParallelGateway" xml:space="preserve">
+    <value>Compuerta paralela</value>
+  </data>
+  <data name="Transition" xml:space="preserve">
+    <value>Flujo de secuencia</value>
+  </data>
+  <data name="Selected" xml:space="preserve">
+    <value>Seleccionado</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="ValidationResults" xml:space="preserve">
+    <value>Resultados de la validación</value>
+  </data>
+  <data name="ExactlyOneStart" xml:space="preserve">
+    <value>Se requiere exactamente un Inicio.</value>
+  </data>
+  <data name="AtLeastOneEnd" xml:space="preserve">
+    <value>Se requiere al menos un Fin.</value>
+  </data>
+  <data name="TaskPositionRequired" xml:space="preserve">
+    <value>Seleccione un cargo organizativo activo para esta tarea.</value>
+  </data>
+  <data name="NodeUnreachable" xml:space="preserve">
+    <value>Este elemento no es alcanzable desde el Inicio.</value>
+  </data>
+  <data name="CyclesNotSupported" xml:space="preserve">
+    <value>Los ciclos no están soportados en el flujo simple.</value>
+  </data>
+  <data name="NodeNeedsOutgoing" xml:space="preserve">
+    <value>Este elemento necesita un flujo saliente.</value>
+  </data>
+  <data name="ExclusiveNeedsDefault" xml:space="preserve">
+    <value>Una compuerta exclusiva necesita un flujo predeterminado.</value>
+  </data>
+  <data name="OnlyOneDefault" xml:space="preserve">
+    <value>Solo se permite un flujo predeterminado.</value>
+  </data>
+  <data name="DanglingTransition" xml:space="preserve">
+    <value>Este flujo apunta a un elemento no válido.</value>
+  </data>
+  <data name="StartHasIncoming" xml:space="preserve">
+    <value>El Inicio no debe tener flujo entrante.</value>
+  </data>
+  <data name="EndHasOutgoing" xml:space="preserve">
+    <value>El Fin no debe tener flujo saliente.</value>
+  </data>
+  <data name="StartNeedsOutgoing" xml:space="preserve">
+    <value>El Inicio necesita un flujo saliente.</value>
+  </data>
+  <data name="OrderTotal" xml:space="preserve">
+    <value>Total del pedido</value>
+  </data>
+  <data name="CustomerType" xml:space="preserve">
+    <value>Tipo de cliente</value>
+  </data>
+  <data name="OrderSource" xml:space="preserve">
+    <value>Origen del pedido</value>
+  </data>
+  <data name="ItemCount" xml:space="preserve">
+    <value>Número de artículos</value>
+  </data>
+  <data name="TotalQuantity" xml:space="preserve">
+    <value>Cantidad total</value>
+  </data>
+  <data name="Equal" xml:space="preserve">
+    <value>Igual a</value>
+  </data>
+  <data name="NotEqual" xml:space="preserve">
+    <value>Distinto de</value>
+  </data>
+  <data name="GreaterThan" xml:space="preserve">
+    <value>Mayor que</value>
+  </data>
+  <data name="GreaterThanOrEqual" xml:space="preserve">
+    <value>Mayor o igual que</value>
+  </data>
+  <data name="LessThan" xml:space="preserve">
+    <value>Menor que</value>
+  </data>
+  <data name="LessThanOrEqual" xml:space="preserve">
+    <value>Menor o igual que</value>
+  </data>
+  <data name="IsTrue" xml:space="preserve">
+    <value>Es verdadero</value>
+  </data>
+  <data name="IsFalse" xml:space="preserve">
+    <value>Es falso</value>
+  </data>
+  <data name="From" xml:space="preserve">
+    <value>Desde</value>
+  </data>
+  <data name="To" xml:space="preserve">
+    <value>Hasta</value>
+  </data>
+  <data name="ConditionField" xml:space="preserve">
+    <value>Campo de condición</value>
+  </data>
+  <data name="Operator" xml:space="preserve">
+    <value>Operador</value>
+  </data>
+  <data name="Value" xml:space="preserve">
+    <value>Valor</value>
+  </data>
+  <data name="Default" xml:space="preserve">
+    <value>Predeterminado</value>
+  </data>
+  <data name="LoadFailed" xml:space="preserve">
+    <value>No se pudieron cargar los datos del flujo de trabajo.</value>
+  </data>
+  <data name="SaveFailed" xml:space="preserve">
+    <value>No se pudo guardar el borrador.</value>
+  </data>
+  <data name="PublishFailed" xml:space="preserve">
+    <value>La publicación falló; corrija los errores de validación.</value>
+  </data>
+  <data name="UnknownValidation" xml:space="preserve">
+    <value>Error de validación del flujo de trabajo.</value>
+  </data>
+  <data name="BeginEdit" xml:space="preserve">
+    <value>Editar versión actual</value>
+  </data>
+  <data name="SequenceFlow" xml:space="preserve">
+    <value>Conectar elementos</value>
+  </data>
+  <data name="ConnectHint" xml:space="preserve">
+    <value>Seleccione el origen y luego el destino.</value>
+  </data>
+  <data name="Fit" xml:space="preserve">
+    <value>Ajustar</value>
+  </data>
+  <data name="CoordinateX" xml:space="preserve">
+    <value>Posición horizontal</value>
+  </data>
+  <data name="CoordinateY" xml:space="preserve">
+    <value>Posición vertical</value>
+  </data>
+</root>

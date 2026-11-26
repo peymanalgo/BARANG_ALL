@@ -1,0 +1,50 @@
+@inject IStringLocalizer<OrganizationStrings> O
+@inject IStringLocalizer<CrudStrings> T
+
+<div class="structure-form" data-chart-form="branch">
+    <div class="scope-summary" data-chart-scope="company">
+        <span>@O["Company"]</span>
+        <strong>@CompanyName</strong>
+    </div>
+    <section>
+        <h3>@O["GeneralInformation"]</h3>
+        <div class="form-grid">
+            <label>
+                <span>@T["Code"] *</span>
+                <input name="branch-code" @bind="Model.Code" disabled="@(Mode != FormMode.Create)" maxlength="64" autofocus="@(Mode == FormMode.Create)" />
+            </label>
+            <Field Name="branch-display-name" Label="@($"{O["DisplayName"]} *")" @bind-Value="Model.DisplayName" Disabled="ReadOnly" />
+        </div>
+    </section>
+    <section>
+        <h3>@O["ContactInformation"]</h3>
+        <div class="form-grid">
+            <Field Name="branch-phone" Label="@O["Phone"]" @bind-Value="Model.Phone" Disabled="ReadOnly" />
+            <Field Name="branch-mobile" Label="@O["Mobile"]" @bind-Value="Model.Mobile" Disabled="ReadOnly" />
+            <Field Name="branch-email" Label="@O["Email"]" @bind-Value="Model.Email" Disabled="ReadOnly" Type="email" />
+        </div>
+    </section>
+    <section>
+        <h3>@O["AddressSection"]</h3>
+        <div class="form-grid">
+            <Field Name="branch-province" Label="@O["Province"]" @bind-Value="Model.Province" Disabled="ReadOnly" />
+            <Field Name="branch-city" Label="@O["City"]" @bind-Value="Model.City" Disabled="ReadOnly" />
+            <Field Name="branch-postal-code" Label="@O["PostalCode"]" @bind-Value="Model.PostalCode" Disabled="ReadOnly" />
+            <label class="form-wide">
+                <span>@O["Address"]</span>
+                <textarea name="branch-address" @bind="Model.Address" disabled="@ReadOnly"></textarea>
+            </label>
+            <label class="form-wide">
+                <span>@O["Notes"]</span>
+                <textarea name="branch-notes" @bind="Model.Notes" disabled="@ReadOnly"></textarea>
+            </label>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public BranchFormModel Model { get; set; } = null!;
+    [Parameter] public FormMode Mode { get; set; }
+    [Parameter] public string CompanyName { get; set; } = "";
+    private bool ReadOnly => Mode == FormMode.View;
+}

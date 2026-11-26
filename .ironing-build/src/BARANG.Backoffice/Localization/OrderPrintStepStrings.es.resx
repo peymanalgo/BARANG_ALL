@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Back" xml:space="preserve">
+    <value>Atrás</value>
+  </data>
+  <data name="ItemProduct" xml:space="preserve">
+    <value>Producto</value>
+  </data>
+  <data name="ItemSku" xml:space="preserve">
+    <value>Código SKU</value>
+  </data>
+  <data name="ConfiguredStatus" xml:space="preserve">
+    <value>Información de impresión completa</value>
+  </data>
+  <data name="IncompleteStatus" xml:space="preserve">
+    <value>Información de impresión incompleta</value>
+  </data>
+  <data name="Selected" xml:space="preserve">
+    <value>Seleccionado</value>
+  </data>
+  <data name="Intro" xml:space="preserve">
+    <value>En este paso, registre el diseño, el archivo y la operación de impresión de cada línea.</value>
+  </data>
+  <data name="ItemColor" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="ItemSize" xml:space="preserve">
+    <value>Talla</value>
+  </data>
+  <data name="Configured" xml:space="preserve">
+    <value>Configurado</value>
+  </data>
+  <data name="NotConfigured" xml:space="preserve">
+    <value>Sin configurar</value>
+  </data>
+  <data name="DesignBank" xml:space="preserve">
+    <value>Seleccionar del banco de diseños</value>
+  </data>
+  <data name="UploadDesign" xml:space="preserve">
+    <value>Subir diseño</value>
+  </data>
+  <data name="Deferred" xml:space="preserve">
+    <value>Se completa en el siguiente paso</value>
+  </data>
+  <data name="PrintNote" xml:space="preserve">
+    <value>Nota</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Añadir</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Editar</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="PrintItem" xml:space="preserve">
+    <value>Línea</value>
+  </data>
+  <data name="Source" xml:space="preserve">
+    <value>Origen del diseño</value>
+  </data>
+  <data name="MissingItem" xml:space="preserve">
+    <value>Seleccione una línea para continuar.</value>
+  </data>
+  <data name="MissingLocation" xml:space="preserve">
+    <value>Seleccione una ubicación de impresión.</value>
+  </data>
+  <data name="InvalidDimensions" xml:space="preserve">
+    <value>El ancho y el alto deben ser valores numéricos mayores que cero.</value>
+  </data>
+  <data name="AllItemsRequired" xml:space="preserve">
+    <value>Introduzca la información de impresión de todas las líneas.</value>
+  </data>
+  <data name="PendingStep2" xml:space="preserve">
+    <value>Los detalles de diseño y archivo se completarán en el siguiente paso.</value>
+  </data>
+  <data name="Centimeters" xml:space="preserve">
+    <value>cm</value>
+  </data>
+  <data name="PrintNotePlaceholder" xml:space="preserve">
+    <value>Nota para esta operación de impresión…</value>
+  </data>
+  <data name="PrintNotes" xml:space="preserve">
+    <value>Notas</value>
+  </data>
+  <data name="MissingWidth" xml:space="preserve">
+    <value>Introduzca el ancho de impresión.</value>
+  </data>
+  <data name="MissingHeight" xml:space="preserve">
+    <value>Introduzca el alto de impresión.</value>
+  </data>
+  <data name="InvalidWidth" xml:space="preserve">
+    <value>El ancho de impresión debe ser mayor que cero.</value>
+  </data>
+  <data name="InvalidHeight" xml:space="preserve">
+    <value>El alto de impresión debe ser mayor que cero.</value>
+  </data>
+  <data name="ColorWhite" xml:space="preserve">
+    <value>Blanco</value>
+  </data>
+  <data name="ColorRed" xml:space="preserve">
+    <value>Rojo</value>
+  </data>
+  <data name="ColorBlack" xml:space="preserve">
+    <value>Negro</value>
+  </data>
+  <data name="ColorBlue" xml:space="preserve">
+    <value>Azul</value>
+  </data>
+  <data name="ColorGreen" xml:space="preserve">
+    <value>Verde</value>
+  </data>
+  <data name="ColorYellow" xml:space="preserve">
+    <value>Amarillo</value>
+  </data>
+  <data name="ColorPurple" xml:space="preserve">
+    <value>Morado</value>
+  </data>
+  <data name="IncompleteItem" xml:space="preserve">
+    <value>La información de impresión de la línea «{0}» está incompleta.</value>
+  </data>
+</root>

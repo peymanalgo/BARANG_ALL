@@ -1,0 +1,529 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Title" xml:space="preserve">
+    <value>Proveedores</value>
+  </data>
+  <data name="Subtitle" xml:space="preserve">
+    <value>Identidades de proveedor por empresa, contactos y configuración comercial.</value>
+  </data>
+  <data name="MasterData" xml:space="preserve">
+    <value>Datos maestros</value>
+  </data>
+  <data name="SystemManagement" xml:space="preserve">
+    <value>Gestión del sistema</value>
+  </data>
+  <data name="NewSupplier" xml:space="preserve">
+    <value>Nuevo proveedor</value>
+  </data>
+  <data name="ViewSupplier" xml:space="preserve">
+    <value>Ver proveedor</value>
+  </data>
+  <data name="EditSupplier" xml:space="preserve">
+    <value>Editar proveedor</value>
+  </data>
+  <data name="EditorHelp" xml:space="preserve">
+    <value>Guardar cierra este editor. Los registros hijos se guardan de forma independiente.</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>General / Identidad</value>
+  </data>
+  <data name="Addresses" xml:space="preserve">
+    <value>Direcciones</value>
+  </data>
+  <data name="Contacts" xml:space="preserve">
+    <value>Contactos</value>
+  </data>
+  <data name="Financial" xml:space="preserve">
+    <value>Comercial / Financiero</value>
+  </data>
+  <data name="BankAccounts" xml:space="preserve">
+    <value>Cuentas bancarias</value>
+  </data>
+  <data name="SupplierNumber" xml:space="preserve">
+    <value>Número de proveedor</value>
+  </data>
+  <data name="SupplierCode" xml:space="preserve">
+    <value>Código de proveedor</value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>Nombre del proveedor</value>
+  </data>
+  <data name="EntityType" xml:space="preserve">
+    <value>Tipo de entidad</value>
+  </data>
+  <data name="Individual" xml:space="preserve">
+    <value>Persona física</value>
+  </data>
+  <data name="LegalEntity" xml:space="preserve">
+    <value>Jurídica</value>
+  </data>
+  <data name="Joint" xml:space="preserve">
+    <value>Conjunta</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Estado</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Activo</value>
+  </data>
+  <data name="Inactive" xml:space="preserve">
+    <value>Inactivo</value>
+  </data>
+  <data name="Blocked" xml:space="preserve">
+    <value>Bloqueado / suspendido</value>
+  </data>
+  <data name="Categories" xml:space="preserve">
+    <value>Categorías de proveedor</value>
+  </data>
+  <data name="GradeId" xml:space="preserve">
+    <value>Nivel de proveedor</value>
+  </data>
+  <data name="GradePreferred" xml:space="preserve">
+    <value>Nivel / Preferido</value>
+  </data>
+  <data name="Preferred" xml:space="preserve">
+    <value>Preferido</value>
+  </data>
+  <data name="IsPreferred" xml:space="preserve">
+    <value>Proveedor preferido</value>
+  </data>
+  <data name="CooperationStartDate" xml:space="preserve">
+    <value>Fecha de inicio de cooperación</value>
+  </data>
+  <data name="PrimaryMobile" xml:space="preserve">
+    <value>Móvil / Teléfono</value>
+  </data>
+  <data name="PrimaryPhone" xml:space="preserve">
+    <value>Teléfono</value>
+  </data>
+  <data name="PrimaryEmail" xml:space="preserve">
+    <value>Correo electrónico</value>
+  </data>
+  <data name="Website" xml:space="preserve">
+    <value>Sitio web</value>
+  </data>
+  <data name="Notes" xml:space="preserve">
+    <value>Notas</value>
+  </data>
+  <data name="FirstName" xml:space="preserve">
+    <value>Nombre</value>
+  </data>
+  <data name="LastName" xml:space="preserve">
+    <value>Apellido</value>
+  </data>
+  <data name="NationalId" xml:space="preserve">
+    <value>ID nacional</value>
+  </data>
+  <data name="Occupation" xml:space="preserve">
+    <value>Profesión / Actividad</value>
+  </data>
+  <data name="LegalName" xml:space="preserve">
+    <value>Razón social</value>
+  </data>
+  <data name="TradeName" xml:space="preserve">
+    <value>Nombre comercial</value>
+  </data>
+  <data name="RegistrationNo" xml:space="preserve">
+    <value>Número de registro</value>
+  </data>
+  <data name="TaxId" xml:space="preserve">
+    <value>Código económico</value>
+  </data>
+  <data name="LegalEntityTypeId" xml:space="preserve">
+    <value>Tipo de entidad jurídica</value>
+  </data>
+  <data name="EstablishmentDate" xml:space="preserve">
+    <value>Fecha de constitución</value>
+  </data>
+  <data name="BusinessActivity" xml:space="preserve">
+    <value>Actividad económica</value>
+  </data>
+  <data name="HoldReasonId" xml:space="preserve">
+    <value>Motivo de bloqueo / suspensión</value>
+  </data>
+  <data name="AddressName" xml:space="preserve">
+    <value>Nombre de la dirección</value>
+  </data>
+  <data name="AddressTypeId" xml:space="preserve">
+    <value>Tipo de dirección</value>
+  </data>
+  <data name="CountryCode" xml:space="preserve">
+    <value>Código de país</value>
+  </data>
+  <data name="ProvinceCode" xml:space="preserve">
+    <value>Provincia</value>
+  </data>
+  <data name="CityCode" xml:space="preserve">
+    <value>Ciudad</value>
+  </data>
+  <data name="PostalCode" xml:space="preserve">
+    <value>Código postal</value>
+  </data>
+  <data name="FullAddress" xml:space="preserve">
+    <value>Dirección completa</value>
+  </data>
+  <data name="Landline" xml:space="preserve">
+    <value>Teléfono fijo</value>
+  </data>
+  <data name="Mobile" xml:space="preserve">
+    <value>Móvil</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>Correo electrónico</value>
+  </data>
+  <data name="RecipientName" xml:space="preserve">
+    <value>Destinatario / Contacto</value>
+  </data>
+  <data name="IsDefault" xml:space="preserve">
+    <value>Predeterminada</value>
+  </data>
+  <data name="IsPrimary" xml:space="preserve">
+    <value>Contacto principal</value>
+  </data>
+  <data name="IsActive" xml:space="preserve">
+    <value>Activo</value>
+  </data>
+  <data name="Default" xml:space="preserve">
+    <value>Predeterminada</value>
+  </data>
+  <data name="Primary" xml:space="preserve">
+    <value>Principal</value>
+  </data>
+  <data name="SetDefault" xml:space="preserve">
+    <value>Fijar como predeterminada</value>
+  </data>
+  <data name="SetPrimary" xml:space="preserve">
+    <value>Fijar como principal</value>
+  </data>
+  <data name="ContactRoleId" xml:space="preserve">
+    <value>Rol del contacto</value>
+  </data>
+  <data name="PositionTitle" xml:space="preserve">
+    <value>Cargo / Título</value>
+  </data>
+  <data name="Extension" xml:space="preserve">
+    <value>Extensión</value>
+  </data>
+  <data name="PaymentTermId" xml:space="preserve">
+    <value>Plazo de pago</value>
+  </data>
+  <data name="PaymentConditionId" xml:space="preserve">
+    <value>Condición de pago</value>
+  </data>
+  <data name="PaymentMethodId" xml:space="preserve">
+    <value>Método de pago</value>
+  </data>
+  <data name="DefaultCurrencyCode" xml:space="preserve">
+    <value>Código de moneda predeterminado</value>
+  </data>
+  <data name="MinimumOrderAmount" xml:space="preserve">
+    <value>Importe mínimo de pedido</value>
+  </data>
+  <data name="DefaultLeadTimeDays" xml:space="preserve">
+    <value>Plazo de entrega predeterminado (días)</value>
+  </data>
+  <data name="BaseDiscountPercent" xml:space="preserve">
+    <value>Descuento base (%)</value>
+  </data>
+  <data name="CreditPurchaseAllowed" xml:space="preserve">
+    <value>Compra a crédito permitida</value>
+  </data>
+  <data name="PurchaseCreditLimit" xml:space="preserve">
+    <value>Límite de crédito de compra</value>
+  </data>
+  <data name="ShippingMethodId" xml:space="preserve">
+    <value>Método de envío</value>
+  </data>
+  <data name="FreightDeliveryTermId" xml:space="preserve">
+    <value>Condiciones de transporte / entrega</value>
+  </data>
+  <data name="BankId" xml:space="preserve">
+    <value>Banco</value>
+  </data>
+  <data name="AccountName" xml:space="preserve">
+    <value>Nombre de la cuenta</value>
+  </data>
+  <data name="AccountTypeId" xml:space="preserve">
+    <value>Tipo de cuenta</value>
+  </data>
+  <data name="OwnershipType" xml:space="preserve">
+    <value>Tipo de titularidad</value>
+  </data>
+  <data name="AccountHolderNames" xml:space="preserve">
+    <value>Titular(es) de la cuenta</value>
+  </data>
+  <data name="AccountNumber" xml:space="preserve">
+    <value>Número de cuenta / depósito</value>
+  </data>
+  <data name="Iban" xml:space="preserve">
+    <value>IBAN / Sheba</value>
+  </data>
+  <data name="CardNumber" xml:space="preserve">
+    <value>Número de tarjeta</value>
+  </data>
+  <data name="BranchCode" xml:space="preserve">
+    <value>Código de sucursal bancaria</value>
+  </data>
+  <data name="BranchName" xml:space="preserve">
+    <value>Nombre de la sucursal bancaria</value>
+  </data>
+  <data name="CurrencyCode" xml:space="preserve">
+    <value>Código de moneda</value>
+  </data>
+  <data name="NoSecrets" xml:space="preserve">
+    <value>No introduzca PIN, CVV, contraseñas ni secretos de seguridad.</value>
+  </data>
+  <data name="DefaultRule" xml:space="preserve">
+    <value>Solo se permite una predeterminada activa. Eliminarla o desactivarla deja sin predeterminada hasta que seleccione otra.</value>
+  </data>
+  <data name="PrimaryRule" xml:space="preserve">
+    <value>Solo se permite un contacto principal activo. Eliminarlo o desactivarlo anula la selección principal.</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Añadir</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>Ver</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Editar</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Guardar</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="Activate" xml:space="preserve">
+    <value>Activar</value>
+  </data>
+  <data name="Deactivate" xml:space="preserve">
+    <value>Desactivar</value>
+  </data>
+  <data name="Block" xml:space="preserve">
+    <value>Bloquear / Suspender</value>
+  </data>
+  <data name="Unblock" xml:space="preserve">
+    <value>Desbloquear</value>
+  </data>
+  <data name="Refresh" xml:space="preserve">
+    <value>Actualizar</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Acciones</value>
+  </data>
+  <data name="Previous" xml:space="preserve">
+    <value>Anterior</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Siguiente</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Buscar</value>
+  </data>
+  <data name="SearchHint" xml:space="preserve">
+    <value>Buscar por número, código, nombre, ID nacional, móvil o correo</value>
+  </data>
+  <data name="AllTypes" xml:space="preserve">
+    <value>Todos los tipos</value>
+  </data>
+  <data name="AllStatuses" xml:space="preserve">
+    <value>Todos los estados</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Cargando…</value>
+  </data>
+  <data name="NoRows" xml:space="preserve">
+    <value>No se encontraron registros.</value>
+  </data>
+  <data name="NoSuppliers" xml:space="preserve">
+    <value>No se encontraron proveedores.</value>
+  </data>
+  <data name="AllocatedOnSave" xml:space="preserve">
+    <value>Asignado automáticamente al guardar</value>
+  </data>
+  <data name="NotSpecified" xml:space="preserve">
+    <value>Sin especificar</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Sí</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Saved" xml:space="preserve">
+    <value>Cambios guardados.</value>
+  </data>
+  <data name="Deleted" xml:space="preserve">
+    <value>Registro eliminado.</value>
+  </data>
+  <data name="ConfirmDelete" xml:space="preserve">
+    <value>¿Eliminar este registro definitivamente? El historial de negocio protegido no puede eliminarse.</value>
+  </data>
+  <data name="DiscardTitle" xml:space="preserve">
+    <value>¿Descartar cambios sin guardar?</value>
+  </data>
+  <data name="DiscardText" xml:space="preserve">
+    <value>Los cambios sin guardar del editor se descartarán. Los registros hijos guardados de forma independiente permanecen guardados.</value>
+  </data>
+  <data name="Discard" xml:space="preserve">
+    <value>Descartar cambios</value>
+  </data>
+  <data name="KeepEditing" xml:space="preserve">
+    <value>Seguir editando</value>
+  </data>
+  <data name="Forbidden" xml:space="preserve">
+    <value>No tiene acceso a esta operación en la empresa actual.</value>
+  </data>
+  <data name="Conflict" xml:space="preserve">
+    <value>Este registro cambió. Actualice e inténtelo de nuevo.</value>
+  </data>
+  <data name="Duplicate" xml:space="preserve">
+    <value>El código o la cuenta bancaria ya está registrado en este ámbito.</value>
+  </data>
+  <data name="ValidationError" xml:space="preserve">
+    <value>Compruebe los campos obligatorios y los formatos introducidos.</value>
+  </data>
+  <data name="InvalidReference" xml:space="preserve">
+    <value>Seleccione una referencia activa del catálogo y empresa correctos. Puede conservarse un valor histórico sin cambios.</value>
+  </data>
+  <data name="InactiveDefault" xml:space="preserve">
+    <value>Un registro inactivo no puede ser el predeterminado ni el principal.</value>
+  </data>
+  <data name="DeleteProtected" xml:space="preserve">
+    <value>Este registro tiene referencias protegidas o registros hijos. Quite primero los hijos no referenciados, o desactive/bloquee el proveedor; el historial de negocio se conserva.</value>
+  </data>
+  <data name="BlockedReason" xml:space="preserve">
+    <value>El proveedor está bloqueado. Use Desbloquear explícitamente antes de activar.</value>
+  </data>
+  <data name="CategoryRequired" xml:space="preserve">
+    <value>Seleccione al menos una categoría de proveedor.</value>
+  </data>
+  <data name="ReferenceUnavailable" xml:space="preserve">
+    <value>No se pudieron cargar los valores de referencia. Actualice e inténtelo de nuevo.</value>
+  </data>
+  <data name="InactiveHistorical" xml:space="preserve">
+    <value>Valor histórico inactivo</value>
+  </data>
+  <data name="RemoveCategory" xml:space="preserve">
+    <value>Quitar categoría</value>
+  </data>
+  <data name="LoadError" xml:space="preserve">
+    <value>No se pudieron cargar los datos autoritativos. Actualice e inténtelo de nuevo.</value>
+  </data>
+  <data name="Evaluation" xml:space="preserve">
+    <value>Evaluación de proveedor</value>
+  </data>
+  <data name="Quality" xml:space="preserve">
+    <value>Calidad</value>
+  </data>
+  <data name="QualityIncidents" xml:space="preserve">
+    <value>Incidentes de calidad</value>
+  </data>
+  <data name="Contracts" xml:space="preserve">
+    <value>Contratos</value>
+  </data>
+  <data name="Documents" xml:space="preserve">
+    <value>Documentos y certificados</value>
+  </data>
+  <data name="ApprovalStatus" xml:space="preserve">
+    <value>Estado de aprobación</value>
+  </data>
+  <data name="QcLevel" xml:space="preserve">
+    <value>Nivel de control de calidad</value>
+  </data>
+  <data name="QualityScore" xml:space="preserve">
+    <value>Puntuación de calidad</value>
+  </data>
+  <data name="HoldReason" xml:space="preserve">
+    <value>Motivo de suspensión</value>
+  </data>
+  <data name="Release" xml:space="preserve">
+    <value>Liberar</value>
+  </data>
+  <data name="Hold" xml:space="preserve">
+    <value>Suspender</value>
+  </data>
+  <data name="EvaluationDate" xml:space="preserve">
+    <value>Fecha de evaluación</value>
+  </data>
+  <data name="EvaluationPeriod" xml:space="preserve">
+    <value>Periodo de evaluación</value>
+  </data>
+  <data name="OverallScore" xml:space="preserve">
+    <value>Puntuación global</value>
+  </data>
+  <data name="EvaluationCriteria" xml:space="preserve">
+    <value>Criterios de evaluación</value>
+  </data>
+  <data name="EvaluationResult" xml:space="preserve">
+    <value>Resultado de la evaluación</value>
+  </data>
+  <data name="AddEvaluation" xml:space="preserve">
+    <value>Añadir evaluación</value>
+  </data>
+  <data name="AddIncident" xml:space="preserve">
+    <value>Añadir incidente</value>
+  </data>
+  <data name="AddContract" xml:space="preserve">
+    <value>Añadir contrato</value>
+  </data>
+  <data name="AddDocument" xml:space="preserve">
+    <value>Añadir documento</value>
+  </data>
+  <data name="IncidentType" xml:space="preserve">
+    <value>Tipo de incidente</value>
+  </data>
+  <data name="IncidentDate" xml:space="preserve">
+    <value>Fecha del incidente</value>
+  </data>
+  <data name="Quantity" xml:space="preserve">
+    <value>Cantidad</value>
+  </data>
+  <data name="Resolve" xml:space="preserve">
+    <value>Resolver</value>
+  </data>
+  <data name="ContractNumber" xml:space="preserve">
+    <value>Número de contrato</value>
+  </data>
+  <data name="ContractType" xml:space="preserve">
+    <value>Tipo de contrato</value>
+  </data>
+  <data name="StartDate" xml:space="preserve">
+    <value>Fecha de inicio</value>
+  </data>
+  <data name="EndDate" xml:space="preserve">
+    <value>Fecha de fin</value>
+  </data>
+  <data name="Expiry" xml:space="preserve">
+    <value>Vencimiento</value>
+  </data>
+  <data name="ExpiringSoon" xml:space="preserve">
+    <value>Vence pronto</value>
+  </data>
+  <data name="Expired" xml:space="preserve">
+    <value>Caducado</value>
+  </data>
+  <data name="DocumentType" xml:space="preserve">
+    <value>Tipo de documento</value>
+  </data>
+  <data name="DocumentNumber" xml:space="preserve">
+    <value>Número de documento</value>
+  </data>
+  <data name="IssueDate" xml:space="preserve">
+    <value>Fecha de emisión</value>
+  </data>
+  <data name="ExpiryDate" xml:space="preserve">
+    <value>Fecha de vencimiento</value>
+  </data>
+  <data name="ConfiguredReference" xml:space="preserve">
+    <value>Referencia configurada</value>
+  </data>
+</root>

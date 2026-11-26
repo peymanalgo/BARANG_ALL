@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Title" xml:space="preserve">
+    <value>Datos del negocio y detalles técnicos</value>
+  </data>
+  <data name="BirthDate" xml:space="preserve">
+    <value>Fecha de nacimiento</value>
+  </data>
+  <data name="EconomicCode" xml:space="preserve">
+    <value>Código económico</value>
+  </data>
+  <data name="CreditLimit" xml:space="preserve">
+    <value>Límite de crédito</value>
+  </data>
+  <data name="PaymentTerms" xml:space="preserve">
+    <value>Plazo de pago (días)</value>
+  </data>
+  <data name="BusinessDetails" xml:space="preserve">
+    <value>Detalles del negocio</value>
+  </data>
+  <data name="Variant" xml:space="preserve">
+    <value>Variante / SKU</value>
+  </data>
+  <data name="Brand" xml:space="preserve">
+    <value>Marca</value>
+  </data>
+  <data name="Material" xml:space="preserve">
+    <value>Tela / material</value>
+  </data>
+  <data name="Gender" xml:space="preserve">
+    <value>Género</value>
+  </data>
+  <data name="Fit" xml:space="preserve">
+    <value>Corte</value>
+  </data>
+  <data name="Style" xml:space="preserve">
+    <value>Estilo</value>
+  </data>
+  <data name="Attributes" xml:space="preserve">
+    <value>Atributos técnicos</value>
+  </data>
+  <data name="ShippingMethod" xml:space="preserve">
+    <value>Método de envío</value>
+  </data>
+  <data name="PackagingType" xml:space="preserve">
+    <value>Tipo de embalaje</value>
+  </data>
+  <data name="IncludeInvoice" xml:space="preserve">
+    <value>Incluir factura en el bulto</value>
+  </data>
+  <data name="OrderType" xml:space="preserve">
+    <value>Tipo de pedido</value>
+  </data>
+  <data name="Notes" xml:space="preserve">
+    <value>Notas</value>
+  </data>
+  <data name="Direction" xml:space="preserve">
+    <value>Ubicación de impresión</value>
+  </data>
+  <data name="PrintSize" xml:space="preserve">
+    <value>Tamaño de impresión</value>
+  </data>
+  <data name="PrintCount" xml:space="preserve">
+    <value>Número de impresiones</value>
+  </data>
+  <data name="Printer" xml:space="preserve">
+    <value>Equipo de impresión</value>
+  </data>
+  <data name="HeatPress" xml:space="preserve">
+    <value>Equipo de prensa térmica</value>
+  </data>
+  <data name="Specifications" xml:space="preserve">
+    <value>Especificaciones</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Guardar</value>
+  </data>
+  <data name="Reload" xml:space="preserve">
+    <value>Recargar</value>
+  </data>
+  <data name="NotConfigured" xml:space="preserve">
+    <value>Todavía no se han registrado datos.</value>
+  </data>
+  <data name="BusinessProfile" xml:space="preserve">
+    <value>Datos del negocio y detalles técnicos</value>
+  </data>
+  <data name="PrintTechnicalDetails" xml:space="preserve">
+    <value>Dimensiones y detalles técnicos de impresión</value>
+  </data>
+  <data name="Width" xml:space="preserve">
+    <value>Ancho</value>
+  </data>
+  <data name="Height" xml:space="preserve">
+    <value>Alto</value>
+  </data>
+  <data name="NationalId" xml:space="preserve">
+    <value>ID nacional / de identidad</value>
+  </data>
+  <data name="RegistrationNo" xml:space="preserve">
+    <value>Número de registro</value>
+  </data>
+  <data name="TaxId" xml:space="preserve">
+    <value>ID fiscal</value>
+  </data>
+  <data name="Phone" xml:space="preserve">
+    <value>Teléfono</value>
+  </data>
+  <data name="Province" xml:space="preserve">
+    <value>Provincia</value>
+  </data>
+  <data name="District" xml:space="preserve">
+    <value>Distrito</value>
+  </data>
+  <data name="AddressLine2" xml:space="preserve">
+    <value>Segunda línea de dirección</value>
+  </data>
+  <data name="PostalCode" xml:space="preserve">
+    <value>Código postal</value>
+  </data>
+</root>

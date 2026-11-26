@@ -1,0 +1,24 @@
+@inject IStringLocalizer<OrganizationStrings> O
+@inject IStringLocalizer<CrudStrings> T
+
+<div class="structure-form" data-chart-form="position">
+    <div class="scope-summary"><span>@O["Unit"]</span><strong>@UnitName</strong></div>
+    <div class="form-grid">
+        <Field Name="position-code" Label="@($"{T["Code"]} *")" @bind-Value="Model.Code" Disabled="@(Mode != FormMode.Create)" />
+        <Field Name="position-title" Label="@($"{O["Position"]} *")" @bind-Value="Model.Title" Disabled="@(Mode == FormMode.View)" />
+        <Field Name="position-semantic-role" Label="@O["SemanticRole"]" @bind-Value="Model.SemanticRole" Disabled="@(Mode == FormMode.View)" />
+        <label>
+            <span>@O["ReportsToPosition"]</span>
+            <SearchableSelect Name="position-reports-to" Options="ReportsToOptions" Value="@(Model.ReportsToPositionId?.ToString() ?? "")" ValueChanged="ReportsToChanged" Disabled="@(Mode == FormMode.View)" Placeholder="@T["SearchOptions"]" />
+        </label>
+        <label class="form-wide"><span>@O["Notes"]</span><textarea name="position-notes" @bind="Model.Notes" disabled="@(Mode == FormMode.View)"></textarea></label>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PositionFormModel Model { get; set; } = null!;
+    [Parameter, EditorRequired] public FormMode Mode { get; set; }
+    [Parameter] public string UnitName { get; set; } = "";
+    [Parameter] public IReadOnlyList<SearchableSelectOption> ReportsToOptions { get; set; } = [];
+    [Parameter] public EventCallback<string> ReportsToChanged { get; set; }
+}

@@ -1,0 +1,4 @@
+using System.Text.Json;using BARANG.Core.Application.Background;using StackExchange.Redis;
+namespace BARANG.Core.Infrastructure.Background;
+public sealed class RedisApplicationCache(IConnectionMultiplexer redis):IApplicationCache
+{private IDatabase Db=>redis.GetDatabase();public async Task<T?>GetAsync<T>(CacheKey key,CancellationToken ct){ct.ThrowIfCancellationRequested();RedisValue v=await Db.StringGetAsync(key.ToString());return v.IsNull?default:JsonSerializer.Deserialize<T>((string)v!);}public async Task SetAsync<T>(CacheKey key,T value,TimeSpan ttl,CancellationToken ct){ct.ThrowIfCancellationRequested();await Db.StringSetAsync(key.ToString(),JsonSerializer.Serialize(value),ttl);}public async Task RemoveAsync(CacheKey key,CancellationToken ct){ct.ThrowIfCancellationRequested();await Db.KeyDeleteAsync(key.ToString());}}

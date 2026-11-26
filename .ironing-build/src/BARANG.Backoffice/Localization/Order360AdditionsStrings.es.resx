@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Items" xml:space="preserve">
+    <value>Líneas del pedido</value>
+  </data>
+  <data name="FullSpecification" xml:space="preserve">
+    <value>Ver detalles completos del pedido</value>
+  </data>
+  <data name="OpenSpecification" xml:space="preserve">
+    <value>Ver detalles completos del pedido</value>
+  </data>
+  <data name="SpecificationClose" xml:space="preserve">
+    <value>Cerrar</value>
+  </data>
+  <data name="Company" xml:space="preserve">
+    <value>Empresa</value>
+  </data>
+  <data name="Branch" xml:space="preserve">
+    <value>Sucursal / oficina</value>
+  </data>
+  <data name="Notes" xml:space="preserve">
+    <value>Notas</value>
+  </data>
+  <data name="Variant" xml:space="preserve">
+    <value>Variante</value>
+  </data>
+  <data name="Dimensions" xml:space="preserve">
+    <value>Dimensiones</value>
+  </data>
+  <data name="PrintMethod" xml:space="preserve">
+    <value>Método de impresión</value>
+  </data>
+  <data name="Artwork" xml:space="preserve">
+    <value>Diseño / archivo</value>
+  </data>
+  <data name="Preview" xml:space="preserve">
+    <value>Vista previa</value>
+  </data>
+  <data name="Workflow" xml:space="preserve">
+    <value>Flujo de trabajo</value>
+  </data>
+  <data name="NotSpecified" xml:space="preserve">
+    <value>Sin especificar</value>
+  </data>
+</root>

@@ -1,0 +1,9 @@
+@page "/manage/customers/{CustomerId:guid}/details"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@inject IStringLocalizer<CustomerStrings> C
+@inject NavigationManager Navigation
+<PageTitle>@C["CustomerName"] · BARANG</PageTitle>
+<header class="crud-header customer-page-header"><div><h1>@C["CustomerName"]</h1><p>@C["Subtitle"]</p></div><a class="btn btn-secondary" href="/manage/customers">@C["Close"]</a></header>
+<section class="crud-card customer-details-card"><CustomerEditor CustomerId="CustomerId" Closed="Back" Saved="Saved" /></section>
+@code{[Parameter]public Guid CustomerId{get;set;}private Task Back(){Navigation.NavigateTo("/manage/customers");return Task.CompletedTask;}private Task Saved()=>Task.CompletedTask;}

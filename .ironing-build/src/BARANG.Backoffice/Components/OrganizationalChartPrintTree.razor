@@ -1,0 +1,139 @@
+@using System.Globalization
+@inject IStringLocalizer<OrganizationStrings> O
+
+<section class="org-tree print-horizontal-chart" data-chart="organizational-chart" data-print-layout="horizontal" data-chart-company-id="@CompanyId">
+    @foreach (PrintSheet sheet in Sheets)
+    {
+        <section class="print-tree-sheet" id="print-sheet-@sheet.Number" data-print-sheet="@sheet.Number">
+            @if (sheet.Context.Count > 0)
+            {
+                <div class="print-sheet-context" dir="@TextDirection">
+                    <strong>@O["PrintContinuation"] @sheet.Number</strong>
+                    <span>@string.Join(" / ", sheet.Context)</span>
+                </div>
+            }
+            <div class="print-chart-scroll" tabindex="0" aria-label="@O["Chart"]">
+                <div class="print-tree-canvas" dir="ltr">
+                    @RenderNode(sheet.Root)
+                </div>
+            </div>
+        </section>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public OrganizationChartData Data { get; set; } = OrganizationChartData.Empty;
+    [Parameter, EditorRequired] public Guid CompanyId { get; set; }
+    private List<PrintSheet> Sheets = [];
+    private string TextDirection => CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr";
+    private Dictionary<Guid, UnitRow> Units = [];
+    private Dictionary<Guid, AssignmentRow> Assignments = [];
+    private HashSet<Guid> Built = [];
+
+    protected override void OnParametersSet()
+    {
+        Sheets = [];
+        Built = [];
+        if (CompanyId == Guid.Empty || Data.Companies.SingleOrDefault(row => row.Id == CompanyId) is not CompanyRow company) return;
+        Units = Data.Units.Where(row => row.CompanyId == CompanyId).ToDictionary(row => row.Id);
+        Assignments = Data.Assignments.Where(row => Units.ContainsKey(row.UnitId)).ToDictionary(row => row.Id);
+        PrintNode root = new(company.Id, null, "company", "company", company.DisplayName, company.Code, company.Active);
+        foreach (BranchRow branch in Data.Branches.Where(row => row.CompanyId == CompanyId).OrderBy(row => row.Code))
+        {
+            PrintNode branchNode = new(branch.Id, company.Id, "branch", "branch", branch.DisplayName, branch.Code, branch.Active);
+            foreach (UnitRow unit in Units.Values.Where(row => row.BranchId == branch.Id && (row.ParentId is null || !Units.ContainsKey(row.ParentId.Value))).OrderBy(row => row.DisplayOrder).ThenBy(row => row.Code).ThenBy(row => row.Id))
+                branchNode.Children.Add(BuildUnit(unit, branch.Id));
+            root.Children.Add(branchNode);
+        }
+        foreach (UnitRow unit in Units.Values.Where(row => !Built.Contains(row.Id)).OrderBy(row => row.DisplayOrder).ThenBy(row => row.Code).ThenBy(row => row.Id))
+            if (!Built.Contains(unit.Id)) root.Children.Add(BuildUnit(unit, company.Id));
+        Sheets.Add(new(1, root, []));
+        for (int index = 0; index < Sheets.Count; index++)
+            Partition(Sheets[index].Root, 0, Sheets[index].Context);
+    }
+
+    private PrintNode BuildUnit(UnitRow unit, Guid parentId)
+    {
+        Built.Add(unit.Id);
+        PrintNode node = new(unit.Id, parentId, "unit", "unit", unit.DisplayName, unit.Code, unit.Active);
+        foreach (UnitRow child in Units.Values.Where(row => row.ParentId == unit.Id && !Built.Contains(row.Id)).OrderBy(row => row.DisplayOrder).ThenBy(row => row.Code).ThenBy(row => row.Id))
+            node.Children.Add(BuildUnit(child, unit.Id));
+        foreach (AssignmentRow assignment in Assignments.Values.Where(row => row.UnitId == unit.Id &&
+            (row.ManagerId is not Guid manager || !Assignments.TryGetValue(manager, out AssignmentRow? parent) || parent.UnitId != unit.Id)).OrderBy(row => row.PersonName))
+            if (!Built.Contains(assignment.Id)) node.Children.Add(BuildAssignment(assignment, unit.Id));
+        return node;
+    }
+
+    private PrintNode BuildAssignment(AssignmentRow assignment, Guid parentId)
+    {
+        Built.Add(assignment.Id);
+        bool isManager = Assignments.Values.Any(row => row.ManagerId == assignment.Id);
+        PrintNode node = new(assignment.Id, parentId, "assignment", isManager ? "manager" : "employee", assignment.PersonName, assignment.PositionTitle, assignment.Active)
+        {
+            UnitId = assignment.UnitId,
+            ManagerId = assignment.ManagerId,
+            Detail = Units[assignment.UnitId].DisplayName
+        };
+        if (assignment.ManagerId is Guid managerId && Assignments.TryGetValue(managerId, out AssignmentRow? manager) && manager.UnitId != assignment.UnitId)
+            node.Detail += $" · {O["Manager"]}: {manager.PersonName} ({Units[manager.UnitId].DisplayName})";
+        foreach (AssignmentRow report in Assignments.Values.Where(row => row.ManagerId == assignment.Id && row.UnitId == assignment.UnitId && !Built.Contains(row.Id)).OrderBy(row => row.PersonName))
+            node.Children.Add(BuildAssignment(report, assignment.Id));
+        return node;
+    }
+
+    // Bound horizontal sections to six columns; deeper paths retain their full
+    // ancestor context on continuation sheets without duplicating business nodes.
+    private void Partition(PrintNode node, int depth, IReadOnlyList<string> context)
+    {
+        string[] path = [.. context, node.Name];
+        if (depth == 5 && node.Children.Count > 0)
+        {
+            foreach (PrintNode child in node.Children)
+            {
+                int number = Sheets.Count + 1;
+                node.Continuations.Add(number);
+                Sheets.Add(new(number, child, path));
+            }
+            node.Children.Clear();
+            return;
+        }
+        foreach (PrintNode child in node.Children) Partition(child, depth + 1, path);
+    }
+
+    private RenderFragment RenderNode(PrintNode node) => __builder =>
+    {
+        <div class="print-hierarchy-node @(node.Type == "assignment" ? "org-assignment-branch" : null)">
+            <article class="org-node print-node @($"{node.Type}-node") @($"print-kind-{node.Kind}")" dir="@TextDirection"
+                     data-chart-node="@node.Type" data-chart-node-id="@node.Id" data-chart-company-id="@CompanyId"
+                     data-print-parent-id="@node.ParentId" data-print-node-kind="@node.Kind"
+                     data-chart-parent-node-id="@node.UnitId" data-manager-assignment-id="@node.ManagerId">
+                <div class="print-node-kind"><BarangIcon Name="@KindIcon(node.Kind)" /><span>@KindLabel(node.Kind)</span></div>
+                <div class="org-title"><strong>@node.Name</strong><small>@node.Code</small></div>
+                @if (!string.IsNullOrWhiteSpace(node.Detail)) { <small class="print-node-detail">@node.Detail</small> }
+                @if (!node.Active) { <StatusBadge Active="false" /> }
+                @if (node.Continuations.Count > 0)
+                {
+                    <small class="print-continuation">@O["PrintContinuation"]: @string.Join(", ", node.Continuations)</small>
+                }
+            </article>
+            @if (node.Children.Count > 0)
+            {
+                <div class="print-children org-children @(node.Type == "assignment" ? "org-assignment-children" : null)">
+                    @foreach (PrintNode child in node.Children) { @RenderNode(child) }
+                </div>
+            }
+        </div>
+    };
+
+    private string KindLabel(string kind) => O[kind switch { "company" => "Company", "branch" => "Branch", "unit" => "Unit", "manager" => "PrintManager", _ => "PrintEmployee" }];
+    private static string KindIcon(string kind) => kind switch { "company" => "building", "branch" => "workflow", "unit" => "warehouse", "manager" => "user-manager", _ => "users" };
+    private sealed record PrintSheet(int Number, PrintNode Root, IReadOnlyList<string> Context);
+    private sealed record PrintNode(Guid Id, Guid? ParentId, string Type, string Kind, string Name, string Code, bool Active)
+    {
+        public Guid? UnitId { get; init; }
+        public Guid? ManagerId { get; init; }
+        public string? Detail { get; set; }
+        public List<PrintNode> Children { get; } = [];
+        public List<int> Continuations { get; } = [];
+    }
+}

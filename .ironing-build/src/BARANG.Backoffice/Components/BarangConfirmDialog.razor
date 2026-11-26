@@ -1,0 +1,21 @@
+<BarangModal Open="Open" Title="@Title" Description="@Description" CloseLabel="@CancelText" CloseRequested="Cancel" Size="small" Busy="Busy" ShowCloseButton="false">
+    <ChildContent><div class="barang-confirm-message">@ChildContent</div></ChildContent>
+    <Footer>
+        <BarangButton Text="@CancelText" Disabled="Busy" Clicked="CancelFromClick" />
+        <BarangButton Text="@ConfirmText" BusyText="@BusyText" Busy="Busy" Variant="danger" Clicked="ConfirmFromClick" />
+    </Footer>
+</BarangModal>
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string CancelText { get; set; } = "Cancel";
+    [Parameter] public string ConfirmText { get; set; } = "Confirm";
+    [Parameter] public string? BusyText { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback Cancel { get; set; }
+    [Parameter] public EventCallback Confirm { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private Task CancelFromClick(MouseEventArgs _) => Cancel.InvokeAsync();
+    private Task ConfirmFromClick(MouseEventArgs _) => Confirm.InvokeAsync();
+}

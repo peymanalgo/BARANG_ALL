@@ -1,0 +1,53 @@
+.chart-search { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.chart-search input { width: 100%; min-width: 0; }
+.org-node.search-match { background: var(--barang-warning-bg); border-color: var(--barang-warning); border-inline-start-width: 4px; }
+.chart-print-preview { max-width: 1280px; margin: 24px auto; padding: 24px; color: var(--barang-text); background: var(--barang-surface); border-radius: var(--barang-radius-lg); }
+.chart-print-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--barang-accent); }
+.chart-print-heading h1 { margin: 0; font-size: 26px; }
+.chart-print-heading p { margin: 0 0 4px; color: var(--barang-text-secondary); }
+.chart-print-heading time { display: block; font-size: 12px; }
+.chart-print-preview .org-tree { border: 0; padding: 0; box-shadow: none; background: transparent; }
+.print-horizontal-chart { --print-node-width: 164px; --print-connector-gap: 14px; --print-connector-color: #8b91a5; display: block; }
+.print-tree-sheet { margin-block: 20px; }
+.print-sheet-context { display: grid; gap: 4px; padding: 12px 16px; margin-bottom: 16px; border-inline-start: 4px solid var(--barang-accent); background: var(--barang-accent-soft); font-size: 12px; }
+.print-chart-scroll { max-width: 100%; overflow: auto; padding: 8px 0 16px; }
+.print-tree-canvas { width: max-content; min-width: 100%; }
+.print-hierarchy-node { display: flex; align-items: center; gap: var(--print-connector-gap); position: relative; }
+.print-horizontal-chart .print-children { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0 0 0 var(--print-connector-gap); border: 0; border-left: 2px solid var(--print-connector-color); position: relative; }
+.print-children::before { content: ""; position: absolute; top: 50%; left: calc(-1 * var(--print-connector-gap)); width: var(--print-connector-gap); border-top: 2px solid var(--print-connector-color); }
+.print-children > .print-hierarchy-node::before { content: ""; position: absolute; top: 50%; left: calc(-1 * var(--print-connector-gap)); width: var(--print-connector-gap); border-top: 2px solid var(--print-connector-color); }
+.print-horizontal-chart .print-node { --print-node-color: var(--barang-text-secondary); --print-node-bg: #f1f3f7; flex: 0 0 var(--print-node-width); width: var(--print-node-width); min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 8px; margin: 0; padding: 12px; border: 1px solid var(--print-node-color); border-top: 4px solid var(--print-node-color); border-radius: var(--barang-radius-md); background: var(--print-node-bg); box-shadow: var(--barang-shadow-sm); overflow-wrap: anywhere; break-inside: avoid; }
+.print-horizontal-chart .print-kind-company { --print-node-color: var(--barang-accent); --print-node-bg: var(--barang-accent-soft); }
+.print-horizontal-chart .print-kind-branch { --print-node-color: var(--barang-info); --print-node-bg: var(--barang-info-bg); }
+.print-horizontal-chart .print-kind-unit { --print-node-color: var(--barang-success); --print-node-bg: var(--barang-success-bg); }
+.print-horizontal-chart .print-kind-manager { --print-node-color: var(--barang-warning); --print-node-bg: var(--barang-warning-bg); }
+.print-horizontal-chart .print-node[dir="rtl"] { direction: rtl; text-align: start; }
+.print-horizontal-chart .print-node[dir="ltr"] { direction: ltr; text-align: start; }
+.print-node-kind { display: flex; align-items: center; gap: 6px; color: var(--print-node-color); font-size: 10px; font-weight: 700; }
+.print-horizontal-chart .org-title { display: grid; gap: 4px; min-width: 0; width: 100%; }
+.print-horizontal-chart .org-title strong { white-space: normal; font-size: 13px; line-height: 1.55; }
+.print-horizontal-chart .org-title small, .print-node-detail { white-space: normal; font-size: 10px; line-height: 1.5; color: var(--barang-text-secondary); }
+.print-continuation { border-top: 1px dashed var(--print-node-color); padding-top: 6px; color: var(--barang-text-secondary); }
+.chart-print-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.print-horizontal-chart .org-assignment-branch { break-inside: avoid; }
+@media (max-width: 720px) {
+    .chart-print-preview { margin: 0; padding: 16px; }
+    .chart-print-heading { flex-wrap: wrap; }
+    .chart-print-actions { flex-wrap: wrap; }
+}
+@media print {
+    @page { size: landscape; margin: 10mm; }
+    html:has(.chart-print-preview), body:has(.chart-print-preview) { background: white; height: auto; overflow: visible; }
+    .chart-print-preview { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; font-size: 10pt; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .chart-print-preview .chart-print-actions, .chart-print-preview button,
+    body:has(.chart-print-preview) > .reconnect-modal, body:has(.chart-print-preview) #blazor-error-ui { display: none; }
+    .chart-print-heading, .print-sheet-context { break-after: avoid; }
+    .print-horizontal-chart { --print-node-width: 32mm; --print-connector-gap: 3mm; }
+    .print-chart-scroll { overflow: visible; padding: 0; }
+    .print-tree-sheet { break-before: page; margin: 0; }
+    .print-tree-sheet:first-child { break-before: auto; }
+    .print-horizontal-chart .print-node { padding: 2mm; box-shadow: none; }
+    .print-horizontal-chart .org-title strong { font-size: 8pt; }
+    .print-horizontal-chart .org-title small, .print-node-detail { font-size: 7pt; }
+    .print-horizontal-chart .print-children { gap: 3mm; }
+}

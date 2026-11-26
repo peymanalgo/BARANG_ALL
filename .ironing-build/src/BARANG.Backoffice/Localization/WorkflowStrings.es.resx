@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Title" xml:space="preserve">
+    <value>Centro de flujos de trabajo</value>
+  </data>
+  <data name="TaskInbox" xml:space="preserve">
+    <value>Mis tareas</value>
+  </data>
+  <data name="TaskDetails" xml:space="preserve">
+    <value>Detalles de la tarea</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Estado</value>
+  </data>
+  <data name="AllStatuses" xml:space="preserve">
+    <value>Todos</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Abierta</value>
+  </data>
+  <data name="Claimed" xml:space="preserve">
+    <value>Reclamada</value>
+  </data>
+  <data name="Completed" xml:space="preserve">
+    <value>Completada</value>
+  </data>
+  <data name="Cancelled" xml:space="preserve">
+    <value>Cancelada</value>
+  </data>
+  <data name="Refresh" xml:space="preserve">
+    <value>Actualizar</value>
+  </data>
+  <data name="Order" xml:space="preserve">
+    <value>Pedido</value>
+  </data>
+  <data name="WorkflowInstance" xml:space="preserve">
+    <value>Instancia del flujo de trabajo</value>
+  </data>
+  <data name="Task" xml:space="preserve">
+    <value>Tarea</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Versión</value>
+  </data>
+  <data name="Reason" xml:space="preserve">
+    <value>Motivo</value>
+  </data>
+  <data name="Create" xml:space="preserve">
+    <value>Iniciar</value>
+  </data>
+  <data name="Claim" xml:space="preserve">
+    <value>Reclamar</value>
+  </data>
+  <data name="Release" xml:space="preserve">
+    <value>Liberar</value>
+  </data>
+  <data name="Complete" xml:space="preserve">
+    <value>Completar</value>
+  </data>
+  <data name="Suspend" xml:space="preserve">
+    <value>Suspender</value>
+  </data>
+  <data name="Resume" xml:space="preserve">
+    <value>Reanudar</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="ProcessEscalations" xml:space="preserve">
+    <value>Procesar escalados</value>
+  </data>
+  <data name="Timeline" xml:space="preserve">
+    <value>Cronología del flujo de trabajo</value>
+  </data>
+  <data name="NoTasks" xml:space="preserve">
+    <value>No hay tareas que mostrar.</value>
+  </data>
+  <data name="NoHistory" xml:space="preserve">
+    <value>No se han registrado eventos para este flujo de trabajo.</value>
+  </data>
+  <data name="NotSelected" xml:space="preserve">
+    <value>Seleccione una tarea para ver sus detalles.</value>
+  </data>
+  <data name="Overdue" xml:space="preserve">
+    <value>Vencida</value>
+  </data>
+  <data name="SystemActor" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
+  <data name="EventCreated" xml:space="preserve">
+    <value>Flujo de trabajo creado</value>
+  </data>
+  <data name="EventStarted" xml:space="preserve">
+    <value>Flujo de trabajo iniciado</value>
+  </data>
+  <data name="EventClaimed" xml:space="preserve">
+    <value>Tarea reclamada</value>
+  </data>
+  <data name="EventCompleted" xml:space="preserve">
+    <value>Tarea completada</value>
+  </data>
+  <data name="EventSuspended" xml:space="preserve">
+    <value>Flujo de trabajo suspendido</value>
+  </data>
+  <data name="EventResumed" xml:space="preserve">
+    <value>Flujo de trabajo reanudado</value>
+  </data>
+  <data name="EventCancelled" xml:space="preserve">
+    <value>Flujo de trabajo cancelado</value>
+  </data>
+  <data name="EventEscalated" xml:space="preserve">
+    <value>Tarea escalada</value>
+  </data>
+  <data name="UnknownEvent" xml:space="preserve">
+    <value>Evento del flujo de trabajo</value>
+  </data>
+  <data name="UnknownStage" xml:space="preserve">
+    <value>Etapa del flujo de trabajo</value>
+  </data>
+  <data name="UnknownTask" xml:space="preserve">
+    <value>Tarea del flujo de trabajo</value>
+  </data>
+  <data name="Concurrency" xml:space="preserve">
+    <value>Estos datos cambiaron. Actualice e inténtelo de nuevo.</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>No está autorizado a realizar esta operación.</value>
+  </data>
+  <data name="UnexpectedError" xml:space="preserve">
+    <value>Ocurrió un error inesperado. Inténtelo de nuevo.</value>
+  </data>
+  <data name="StageAdministrativeReview" xml:space="preserve">
+    <value>Revisión administrativa</value>
+  </data>
+  <data name="StageFinancialApproval" xml:space="preserve">
+    <value>Aprobación financiera</value>
+  </data>
+  <data name="StageProductionPlanning" xml:space="preserve">
+    <value>Planificación de producción</value>
+  </data>
+  <data name="StageDesignPreparation" xml:space="preserve">
+    <value>Preparación del diseño</value>
+  </data>
+  <data name="StageInventoryReservation" xml:space="preserve">
+    <value>Reserva de inventario</value>
+  </data>
+  <data name="StagePrinting" xml:space="preserve">
+    <value>Impresión</value>
+  </data>
+  <data name="StageHeatPress" xml:space="preserve">
+    <value>Prensa térmica</value>
+  </data>
+  <data name="StageIroning" xml:space="preserve">
+    <value>Planchado</value>
+  </data>
+  <data name="StageQualityControl" xml:space="preserve">
+    <value>Control de calidad</value>
+  </data>
+  <data name="StagePackaging" xml:space="preserve">
+    <value>Embalaje</value>
+  </data>
+  <data name="StageShipping" xml:space="preserve">
+    <value>Envío</value>
+  </data>
+  <data name="StageDelivery" xml:space="preserve">
+    <value>Entrega</value>
+  </data>
+  <data name="StageCompleted" xml:space="preserve">
+    <value>Completado</value>
+  </data>
+  <data name="ReasonRequired" xml:space="preserve">
+    <value>Se requiere un motivo para esta operación.</value>
+  </data>
+</root>

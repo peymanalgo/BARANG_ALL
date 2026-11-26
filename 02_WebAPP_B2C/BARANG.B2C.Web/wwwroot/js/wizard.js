@@ -736,7 +736,7 @@
     function auditPayload() {
         let dw = 0, dh = 0;
         if (W.mode === "upload" && W.fileMeta) { dw = W.fileMeta.width; dh = W.fileMeta.height; }
-        else if (W.mode === "bank" && W.bank) { dw = W.bank.widthPx || 0; dh = W.bank.heightPx || 0; }
+        // بانک طرح: ابعاد را نمی‌فرستیم — سرور فایل اصلی طرح را اندازه می‌گیرد (بر اساس artworkId)
         let text = null;
         if (overlayText() && W.printSize) {
             const textEl = activeFace().tWrap.querySelector(".txt .tt");

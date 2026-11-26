@@ -1,0 +1,173 @@
+@using System.Text.Json
+@using BARANG.Backoffice.Localization
+@inject IStringLocalizer<AppStrings> L
+@inject IStringLocalizer<OrderStep5Strings> S
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+@inject ILocaleDateService Dates
+
+<section class="panel order-shipping-step" aria-labelledby="order-step5-title">
+    <h2 id="order-step5-title">@S["DeliveryShipping"]</h2>
+    <p class="form-help">@S["OrderStep5Description"]</p>
+    <p class="field-help">@S["NoShipmentExecution"]</p>
+    @if (Errors.Count > 0)
+    {
+        <div class="validation-summary" role="alert" aria-live="assertive"><strong>@L["ValidationError"]</strong><ul>@foreach (string error in Errors) { <li>@error</li> }</ul></div>
+    }
+    @if (Loading)
+    {
+        <div class="loading-state" role="status">@L["Loading"]</div>
+    }
+    else
+    {
+        @if (RequestedDeliveryDate is DateOnly due)
+        {
+            <div class="read-only-note"><strong>@S["RequestedDeliveryDate"]:</strong> @Dates.Format(due, System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)</div>
+        }
+        <section class="form-section" aria-labelledby="order-step5-address-title">
+            <h3 id="order-step5-address-title">@S["DeliveryAddress"]</h3>
+            @if (Addresses.Count == 0)
+            {
+                <div class="empty-state">@S["NoAddresses"]</div>
+            }
+            else
+            {
+                <div class="order-address-options" role="list" aria-label="@S["CustomerAddresses"]">
+                    @foreach (AddressOption address in Addresses)
+                    {
+                        <button type="button" name="order-step5-address" class="order-address-card @(SourceAddressId == address.Id ? "is-selected" : null)" @onclick="() => SelectAddress(address)">
+                            <strong>@(string.IsNullOrWhiteSpace(address.Title) ? S["DeliveryAddress"] : address.Title)</strong>
+                            <span>@address.Recipient</span><span>@address.Location</span><span>@address.Line</span>
+                            @if (!string.IsNullOrWhiteSpace(address.PostalCode)) { <small dir="ltr">@address.PostalCode</small> }
+                        </button>
+                    }
+                </div>
+            }
+            <button type="button" class="secondary-action" name="order-step5-specific-address" @onclick="UseOrderSpecificAddress">@S["OrderSpecificAddress"]</button>
+            <div class="form-grid">
+                <label><span>@S["Recipient"] *</span><input name="order-step5-recipient" @bind="RecipientName" maxlength="200" /></label>
+                <label><span>@S["RecipientPhone"]</span><input name="order-step5-phone" dir="ltr" @bind="RecipientPhone" maxlength="50" /></label>
+                <label><span>@S["Country"] *</span><input name="order-step5-country" dir="ltr" @bind="CountryCode" maxlength="2" /></label>
+                <label><span>@S["Province"]</span><input name="order-step5-province" @bind="Province" maxlength="100" /></label>
+                <label><span>@S["City"]</span><input name="order-step5-city" @bind="City" maxlength="100" /></label>
+                <label><span>@S["District"]</span><input name="order-step5-district" @bind="District" maxlength="100" /></label>
+                <label class="span-2"><span>@S["Address"] *</span><textarea name="order-step5-address" @bind="AddressLine1" maxlength="1000"></textarea></label>
+                <label class="span-2"><span>@S["AddressLine2"]</span><input name="order-step5-address2" @bind="AddressLine2" maxlength="500" /></label>
+                <label><span>@S["PostalCode"]</span><input name="order-step5-postal" dir="ltr" @bind="PostalCode" maxlength="30" /></label>
+            </div>
+        </section>
+        <section class="form-section" aria-labelledby="order-step5-method-title">
+            <h3 id="order-step5-method-title">@S["ShippingMethod"]</h3>
+            <div class="form-grid"><label><span>@S["ShippingMethod"] *</span><ReferenceSelect Name="order-step5-shipping-method" TypeCode="shipping.method" UseCode="true" Value="ShippingMethodCode" ValueChanged="ShippingMethodChanged" Placeholder="@L["Choose"]" /></label></div>
+        </section>
+    }
+    <div class="form-actions">
+        <button type="button" class="secondary-action" @onclick="Back" disabled="@Saving">@BackLabel</button>
+        <button type="button" class="secondary-action" @onclick="SaveDraft" disabled="@Saving">@(Saving ? L["Saving"] : L["SaveDraft"])</button>
+        <button type="button" class="primary-link" @onclick="Next" disabled="@Saving">@L["Next"]</button>
+    </div>
+</section>
+
+@code {
+    [Parameter] public Guid? OrderId { get; set; }
+    [Parameter] public EventCallback NextRequested { get; set; }
+    [Parameter] public EventCallback BackRequested { get; set; }
+    private bool Loading = true, Saving;
+    private List<string> Errors = [];
+    private List<AddressOption> Addresses = [];
+    private string ShippingMethodCode = "", RecipientName = "", RecipientPhone = "", CountryCode = "IR", Province = "", City = "", District = "", AddressLine1 = "", AddressLine2 = "", PostalCode = "";
+    private Guid? SourceAddressId;
+    private long AddressVersion, ProfileVersion;
+    private string PackagingCode = "", OrderTypeCode = "", ProfileNotes = "";
+    private bool IncludeInvoice;
+    private DateOnly? RequestedDeliveryDate;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (OrderId is not Guid order) return;
+        Loading = true; Errors = [];
+        var session = await Session();
+        if (session is null) { Errors = [L["SessionExpired"]]; Loading = false; return; }
+        await Load(order, session.Value);
+        Loading = false;
+    }
+
+    private async Task Load(Guid order, (string Token, Guid Company) session)
+    {
+        ApiResult<JsonElement> result = await Core.GetAsync($"api/v1/orders/{order}", session.Token, session.Company, default);
+        if (!result.IsSuccess) { AddError(result, "ShippingSaveFailed"); return; }
+        JsonElement value = result.Value;
+        RequestedDeliveryDate = Dates.TryParseCanonical(G(value, "requestedDeliveryDate"), out DateOnly due) ? due : null;
+        if (value.TryGetProperty("shippingAddress", out JsonElement address) && address.ValueKind == JsonValueKind.Object)
+        {
+            RecipientName = G(address, "recipientName"); RecipientPhone = G(address, "recipientPhone"); CountryCode = G(address, "countryCode");
+            Province = G(address, "province"); City = G(address, "city"); District = G(address, "district"); AddressLine1 = G(address, "addressLine1"); AddressLine2 = G(address, "addressLine2"); PostalCode = G(address, "postalCode");
+            SourceAddressId = Guid.TryParse(G(address, "sourceCustomerAddressId"), out Guid source) ? source : null; AddressVersion = N(address, "version");
+        }
+        string customer = G(value, "customerId");
+        if (Guid.TryParse(customer, out Guid customerId))
+        {
+            ApiResult<JsonElement> addresses = await Core.GetAsync($"api/v1/customers/{customerId}/addresses?activeOnly=true", session.Token, session.Company, default);
+            if (addresses.IsSuccess && addresses.Value.ValueKind == JsonValueKind.Array) Addresses = addresses.Value.EnumerateArray().Select(ToAddress).ToList();
+        }
+        ApiResult<JsonElement> profile = await Core.GetAsync($"api/v1/orders/{order}/business-profile", session.Token, session.Company, default);
+        if (profile.IsSuccess) { ShippingMethodCode = G(profile.Value, "shippingMethodCode"); PackagingCode = G(profile.Value, "packagingTypeCode"); OrderTypeCode = G(profile.Value, "orderTypeCode"); ProfileNotes = G(profile.Value, "notes"); IncludeInvoice = Bool(profile.Value, "includeInvoiceInPackage"); ProfileVersion = N(profile.Value, "version"); }
+    }
+
+    private void SelectAddress(AddressOption address)
+    {
+        SourceAddressId = address.Id; AddressVersion = address.Version; RecipientName = address.Recipient; RecipientPhone = address.Phone; CountryCode = address.Country; Province = address.Province; City = address.City; District = address.District; AddressLine1 = address.Line; AddressLine2 = address.Line2; PostalCode = address.PostalCode; Errors = [];
+    }
+    private void UseOrderSpecificAddress() { SourceAddressId = null; Errors = []; }
+    private Task ShippingMethodChanged(string value) { ShippingMethodCode = value; Errors = []; return Task.CompletedTask; }
+
+    private async Task SaveDraft()
+    {
+        Errors = []; if (OrderId is not Guid order) return; var session = await Session(); if (session is null) return; Saving = true;
+        bool profileSaved = await SaveProfile(order, session.Value);
+        bool addressAttempted = !string.IsNullOrWhiteSpace(RecipientName) || !string.IsNullOrWhiteSpace(AddressLine1) || SourceAddressId is not null;
+        bool addressSaved = !addressAttempted || await SaveAddress(order, session.Value);
+        Saving = false;
+        if (profileSaved && addressSaved) Errors = [];
+    }
+
+    private async Task Next()
+    {
+        Errors = [];
+        if (string.IsNullOrWhiteSpace(ShippingMethodCode)) Errors.Add(S["ShippingMethodRequired"]);
+        if (string.IsNullOrWhiteSpace(RecipientName) || string.IsNullOrWhiteSpace(AddressLine1) || string.IsNullOrWhiteSpace(CountryCode)) Errors.Add(S["AddressRequiredForShipping"]);
+        if (Errors.Count > 0) return;
+        await SaveDraft();
+        if (Errors.Count == 0) await NextRequested.InvokeAsync();
+    }
+
+    private async Task<bool> SaveProfile(Guid order, (string Token, Guid Company) session)
+    {
+        ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Put, $"api/v1/orders/{order}/business-profile", new { shippingMethodCode = ShippingMethodCode, packagingTypeCode = Null(PackagingCode), includeInvoiceInPackage = IncludeInvoice, orderTypeCode = Null(OrderTypeCode), notes = Null(ProfileNotes), version = ProfileVersion }, session.Token, session.Company, default);
+        if (!result.IsSuccess) { AddError(result, "ShippingSaveFailed"); return false; }
+        ProfileVersion = N(result.Value, "version"); return true;
+    }
+    private async Task<bool> SaveAddress(Guid order, (string Token, Guid Company) session)
+    {
+        ApiResult<JsonElement> result = await Core.SendAsync(HttpMethod.Put, $"api/v1/orders/{order}/shipping-address", new { sourceCustomerAddressId = SourceAddressId, recipientName = RecipientName, recipientPhone = Null(RecipientPhone), countryCode = CountryCode, province = Null(Province), city = Null(City), district = Null(District), addressLine1 = AddressLine1, addressLine2 = Null(AddressLine2), postalCode = Null(PostalCode), version = AddressVersion }, session.Token, session.Company, default);
+        if (!result.IsSuccess) { AddError(result, "ShippingAddressInvalid"); return false; }
+        if (result.Value.TryGetProperty("shippingAddress", out JsonElement address)) AddressVersion = N(address, "version"); else AddressVersion = N(result.Value, "version");
+        return true;
+    }
+    private string BackLabel => L["Back"].Value;
+    private Task Back() => BackRequested.InvokeAsync();
+
+    private void AddError(ApiResult<JsonElement> result, string fallback)
+    {
+        string key = result.ProblemCode switch { "order.invalid_shipping_address" => "ShippingAddressInvalid", "business_profile.invalid" => "ShippingMethodInvalid", "business_profile.parent_invalid" or "order.not_draft" => "ProtectedOrder", "order.concurrency" or "business_profile.concurrency" => "ConcurrencyConflict", _ => fallback };
+        Errors.Add(key is "ShippingAddressInvalid" or "ShippingMethodInvalid" or "ProtectedOrder" ? S[key] : L[key]);
+    }
+    private async Task<(string Token, Guid Company)?> Session() { var user = (await AuthState.GetAuthenticationStateAsync()).User; return Guid.TryParse(user.FindFirst(AuthClaimTypes.CompanyId)?.Value, out Guid company) && user.FindFirst(AuthClaimTypes.AccessToken)?.Value is string token ? (token, company) : null; }
+    private static AddressOption ToAddress(JsonElement x) => new(x.GetProperty("id").GetGuid(), G(x, "title"), G(x, "recipientName"), G(x, "recipientPhone").Length == 0 ? G(x, "recipientMobile") : G(x, "recipientPhone"), G(x, "countryCode"), G(x, "provinceCode"), G(x, "cityCode"), G(x, "district"), G(x, "addressLine1"), G(x, "addressLine2"), G(x, "postalCode"), N(x, "version"));
+    private static string G(JsonElement x, string name) => x.ValueKind == JsonValueKind.Object && x.TryGetProperty(name, out JsonElement p) && p.ValueKind != JsonValueKind.Null ? p.ToString() : "";
+    private static long N(JsonElement x, string name) => x.ValueKind == JsonValueKind.Object && x.TryGetProperty(name, out JsonElement p) && p.ValueKind != JsonValueKind.Null && p.TryGetInt64(out long value) ? value : 0;
+    private static bool Bool(JsonElement x, string name) => x.ValueKind == JsonValueKind.Object && x.TryGetProperty(name, out JsonElement p) && p.ValueKind == JsonValueKind.True;
+    private static string? Null(string value) => string.IsNullOrWhiteSpace(value) ? null : value;
+    private sealed record AddressOption(Guid Id, string Title, string Recipient, string Phone, string Country, string Province, string City, string District, string Line, string Line2, string PostalCode, long Version)
+    { public string Location => string.Join(" · ", new[] { Province, City, District }.Where(x => !string.IsNullOrWhiteSpace(x))); }
+}

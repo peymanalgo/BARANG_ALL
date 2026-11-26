@@ -1,0 +1,13 @@
+using System.Net;
+using BARANG.Core.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using Xunit;
+
+namespace BARANG.Core.IntegrationTests.Database;
+[Collection(PostgreSqlDatabaseFixture.CollectionName)]
+public sealed class FinanceFoundationTests(PostgreSqlDatabaseFixture database)
+{
+    [Fact]public async Task MigrationCreatesFinanceTablesPermissionsLookupSequenceAndRls(){await database.ResetAsync(TestContext.Current.CancellationToken);await using CoreDbContext db=database.CreateAdministrationCoreDbContext();string[] tables=await db.Database.SqlQueryRaw<string>("SELECT table_name AS \"Value\" FROM information_schema.tables WHERE table_schema='barang' AND table_name IN ('payments','order_financial_states','invoices','invoice_snapshots','invoice_item_snapshots','finance_history')").ToArrayAsync(TestContext.Current.CancellationToken);Assert.Equal(6,tables.Length);Assert.Equal(5,await db.Permissions.CountAsync(x=>x.Code=="finance.read"||x.Code=="payment.manage"||x.Code=="payment.reverse"||x.Code=="finance.approve"||x.Code=="invoice.manage",TestContext.Current.CancellationToken));Assert.Equal(5,await db.LookupValues.CountAsync(x=>db.LookupTypes.Any(t=>t.Id==x.LookupTypeId&&t.Code=="payment.method"),TestContext.Current.CancellationToken));long policies=await db.Database.SqlQueryRaw<long>("SELECT count(*) AS \"Value\" FROM pg_policies WHERE schemaname='barang' AND tablename IN ('payments','order_financial_states','invoices','invoice_snapshots','invoice_item_snapshots','finance_history')").SingleAsync(TestContext.Current.CancellationToken);Assert.Equal(6,policies);long sequence=await db.Database.SqlQueryRaw<long>("SELECT count(*) AS \"Value\" FROM pg_sequences WHERE schemaname='barang' AND sequencename='invoice_number_seq'").SingleAsync(TestContext.Current.CancellationToken);Assert.Equal(1,sequence);}
+    [Fact]public async Task FinanceEndpointsRejectAnonymousAndRlsHidesRows(){await database.ResetAsync(TestContext.Current.CancellationToken);await using PostgreSqlCoreApiFactory factory=new(database.ConnectionString);using HttpClient client=factory.CreateClient();using HttpResponseMessage response=await client.GetAsync($"/api/v1/orders/{Guid.NewGuid()}/finance/balance",TestContext.Current.CancellationToken);Assert.Equal(HttpStatusCode.Unauthorized,response.StatusCode);await using NpgsqlConnection connection=new(database.ConnectionString);await connection.OpenAsync(TestContext.Current.CancellationToken);await using NpgsqlCommand command=new("SELECT count(*) FROM barang.payments",connection);Assert.Equal(0L,Convert.ToInt64(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken),System.Globalization.CultureInfo.InvariantCulture));}
+}

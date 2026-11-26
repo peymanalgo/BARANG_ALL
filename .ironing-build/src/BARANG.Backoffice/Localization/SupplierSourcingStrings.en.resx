@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ProductsServices" xml:space="preserve"><value>Products &amp; Services</value></data>
+  <data name="PricesAndLists" xml:space="preserve"><value>Prices / Price Lists</value></data>
+  <data name="PriceHistory" xml:space="preserve"><value>Price history</value></data>
+  <data name="PriceLists" xml:space="preserve"><value>Price lists</value></data>
+  <data name="Lines" xml:space="preserve"><value>Price list lines</value></data>
+  <data name="Product" xml:space="preserve"><value>Product</value></data>
+  <data name="Sku" xml:space="preserve"><value>SKU</value></data>
+  <data name="ProductSku" xml:space="preserve"><value>Product / SKU</value></data>
+  <data name="SupplierItemCode" xml:space="preserve"><value>Supplier item code</value></data>
+  <data name="SupplierItemName" xml:space="preserve"><value>Supplier item name</value></data>
+  <data name="SupplierBrand" xml:space="preserve"><value>Supplier-specific brand</value></data>
+  <data name="Description" xml:space="preserve"><value>Description</value></data>
+  <data name="PurchaseUnit" xml:space="preserve"><value>Purchase unit</value></data>
+  <data name="PackagingType" xml:space="preserve"><value>Packaging type</value></data>
+  <data name="MOQ" xml:space="preserve"><value>MOQ</value></data>
+  <data name="MinimumOrderAmount" xml:space="preserve"><value>Minimum order amount</value></data>
+  <data name="LeadTimeDays" xml:space="preserve"><value>Lead time (days)</value></data>
+  <data name="PreferredForItem" xml:space="preserve"><value>Preferred Supplier for this item</value></data>
+  <data name="Availability" xml:space="preserve"><value>Availability</value></data>
+  <data name="Available" xml:space="preserve"><value>Available</value></data>
+  <data name="OnRequest" xml:space="preserve"><value>On request</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="Preferred" xml:space="preserve"><value>Preferred</value></data>
+  <data name="SetPreferred" xml:space="preserve"><value>Set preferred Supplier</value></data>
+  <data name="UnsetPreferred" xml:space="preserve"><value>Unset preferred Supplier</value></data>
+  <data name="CurrentPrice" xml:space="preserve"><value>Current price</value></data>
+  <data name="NoCurrentPrice" xml:space="preserve"><value>No valid price</value></data>
+  <data name="Currency" xml:space="preserve"><value>Currency</value></data>
+  <data name="UnitPrice" xml:space="preserve"><value>Unit price</value></data>
+  <data name="MinimumQuantity" xml:space="preserve"><value>Price-break quantity</value></data>
+  <data name="DiscountPercent" xml:space="preserve"><value>Discount %</value></data>
+  <data name="TaxTreatment" xml:space="preserve"><value>Tax treatment</value></data>
+  <data name="TaxRatePercent" xml:space="preserve"><value>Quoted tax %</value></data>
+  <data name="FreightPerUnit" xml:space="preserve"><value>Extra freight per unit</value></data>
+  <data name="NetUnitCost" xml:space="preserve"><value>Calculated unit cost</value></data>
+  <data name="EffectiveFrom" xml:space="preserve"><value>Effective from</value></data>
+  <data name="EffectiveTo" xml:space="preserve"><value>Effective to</value></data>
+  <data name="PriceListCode" xml:space="preserve"><value>Price list code</value></data>
+  <data name="PriceListTitle" xml:space="preserve"><value>Price list title</value></data>
+  <data name="Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Published" xml:space="preserve"><value>Published</value></data>
+  <data name="Current" xml:space="preserve"><value>Current</value></data>
+  <data name="EndPrice" xml:space="preserve"><value>End-date price</value></data>
+  <data name="PreferredRule" xml:space="preserve"><value>One active preferred Supplier per exact Product/SKU and Company. Selecting another replaces it atomically.</value></data>
+  <data name="PublishedRule" xml:space="preserve"><value>Drafts are editable. Published prices and list lines remain immutable history; deactivate or replace them instead.</value></data>
+  <data name="CostRule" xml:space="preserve"><value>Unit cost = discounted unit price + quoted tax + extra freight per unit. No currency or unit conversion is implied.</value></data>
+  <data name="PriceOverlap" xml:space="preserve"><value>An active price already covers this item, unit, currency, quantity break and period. End or deactivate it first.</value></data>
+  <data name="PublishedImmutable" xml:space="preserve"><value>Published pricing is immutable. Use a replacement draft, deactivation or an allowed end date.</value></data>
+  <data name="DeleteProtected" xml:space="preserve"><value>This sourcing record has protected references or published history and cannot be deleted. Deactivate it instead.</value></data>
+  <data name="InvalidReference" xml:space="preserve"><value>Select a valid active item and reference from the current Company. Price units must match the sourcing purchase unit.</value></data>
+  <data name="Ineligible" xml:space="preserve"><value>The Supplier, item, sourcing relationship or purchase unit is inactive, blocked or unavailable.</value></data>
+  <data name="EmptyList" xml:space="preserve"><value>Add at least one valid line before activating the price list.</value></data>
+  <data name="Currency_IRR" xml:space="preserve"><value>Iranian rial</value></data>
+  <data name="Currency_IQD" xml:space="preserve"><value>Iraqi dinar</value></data>
+  <data name="Currency_USD" xml:space="preserve"><value>US dollar</value></data>
+  <data name="Currency_EUR" xml:space="preserve"><value>Euro</value></data>
+</root>

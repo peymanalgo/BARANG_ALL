@@ -1,0 +1,7 @@
+<div class="tabs barang-tabs @Class" role="tablist" aria-label="@AriaLabel" aria-orientation="@Orientation">@ChildContent</div>
+@code {
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string Orientation { get; set; } = "horizontal";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

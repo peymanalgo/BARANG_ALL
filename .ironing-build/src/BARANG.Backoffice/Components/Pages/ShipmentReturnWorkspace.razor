@@ -1,0 +1,50 @@
+@page "/workspace/logistics/returns"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy=AuthPolicies.CompanySelected)]
+@inject IStringLocalizer<AppStrings> L
+@inject AuthenticationStateProvider AuthState
+@inject ICoreApiClient Core
+
+<PageTitle>@L["Module_logistics"]</PageTitle>
+<div class="page-heading"><h1>@L["Module_logistics"]</h1></div>
+<section class="panel">
+    <h2>@L["Action_Release"]</h2>
+    <p>@L["Reason"]</p>
+    <div class="form-grid">
+        <label><span>@L["EntityId"]</span><input @bind="ShipmentId" /></label>
+        <label><span>@L["Wizard_Items"]</span><input @bind="OrderItemId" /></label>
+        <label><span>@L["Quantity"]</span><input type="number" @bind="Quantity" /></label>
+        <label><span>@L["Uom"]</span><input @bind="UomCode" /></label>
+        <label><span>@L["Code"]</span><input @bind="ReasonCode" /></label>
+        <label><span>@L["Reason"]</span><input @bind="ReasonText" /></label>
+        <label><span>@L["ExternalReference"]</span><input @bind="IdempotencyKey" /></label>
+    </div>
+    <div class="form-actions"><button type="button" @onclick="PostReturn">@L["Save"]</button><button type="button" @onclick="Reload">@L["Refresh"]</button></div>
+    @if (Message is not null) { <div class="@(Success ? "inline-success" : "inline-error")">@L[Message]</div> }
+    <div class="json-result" aria-live="polite">@ResultJson</div>
+</section>
+
+@code {
+    private string ShipmentId="", OrderItemId="", UomCode="", ReasonCode="CUSTOMER_RETURN", ReasonText="", IdempotencyKey="";
+    private decimal Quantity=1;
+    private string ResultJson="";
+    private bool Success;
+    private string? Message;
+
+    private async Task PostReturn()
+    {
+        if (string.IsNullOrWhiteSpace(IdempotencyKey)) IdempotencyKey = $"RETURN-{Guid.NewGuid():N}";
+        var r = await Send(HttpMethod.Post, $"api/v1/logistics/shipments/{ShipmentId}/returns", new { orderItemId=OrderItemId, quantity=Quantity, uomCode=UomCode, reasonCode=ReasonCode, reasonText=ReasonText, idempotencyKey=IdempotencyKey });
+        Show(r);
+        if (r.IsSuccess) ResultJson = r.Value.ToString();
+    }
+    private Task Reload() => Task.CompletedTask;
+    private async Task<ApiResult<System.Text.Json.JsonElement>> Send(HttpMethod method,string path,object body)
+    {
+        var user=await AuthState.GetAuthenticationStateAsync();
+        var company=Guid.TryParse(user.User.FindFirst(AuthClaimTypes.CompanyId)?.Value,out var c)?c:Guid.Empty;
+        var token=user.User.FindFirst(AuthClaimTypes.AccessToken)?.Value;
+        return token is null ? ApiResult<System.Text.Json.JsonElement>.Failed(ApiFailure.Unauthorized) : await Core.SendAsync(method,path,body,token,company,default);
+    }
+    private void Show(ApiResult<System.Text.Json.JsonElement> r){Success=r.IsSuccess;Message=r.IsSuccess?"OperationSucceeded":r.Failure switch{ApiFailure.Unauthorized=>"SessionExpired",ApiFailure.Forbidden=>"Unauthorized",ApiFailure.Conflict=>"ConcurrencyConflict",ApiFailure.Validation=>"ValidationError",_=>"GenericError"};}
+}

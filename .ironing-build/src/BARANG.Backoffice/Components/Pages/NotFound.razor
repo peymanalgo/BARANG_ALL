@@ -1,0 +1,6 @@
+﻿@page "/not-found"
+@layout MainLayout
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@L["NotFoundTitle"] · BARANG</PageTitle>
+<section class="panel state-box" role="status"><BarangIcon Name="search" /><h1>@L["NotFoundTitle"]</h1><p>@L["NotFoundDescription"]</p></section>

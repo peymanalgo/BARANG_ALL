@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Review" xml:space="preserve">
+    <value>Revisar y finalizar</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Revise el pedido completo antes del registro definitivo.</value>
+  </data>
+  <data name="Header" xml:space="preserve">
+    <value>Cabecera del pedido</value>
+  </data>
+  <data name="Items" xml:space="preserve">
+    <value>Líneas del pedido</value>
+  </data>
+  <data name="Delivery" xml:space="preserve">
+    <value>Entrega y envío</value>
+  </data>
+  <data name="Pricing" xml:space="preserve">
+    <value>Precios</value>
+  </data>
+  <data name="Validate" xml:space="preserve">
+    <value>Validación final</value>
+  </data>
+  <data name="Finalize" xml:space="preserve">
+    <value>Finalizar pedido</value>
+  </data>
+  <data name="Confirm" xml:space="preserve">
+    <value>Este borrador se convertirá en un pedido registrado. ¿Continuar?</value>
+  </data>
+  <data name="ConfirmYes" xml:space="preserve">
+    <value>Confirmar finalización</value>
+  </data>
+  <data name="OrderNumber" xml:space="preserve">
+    <value>Número de pedido</value>
+  </data>
+  <data name="Finalized" xml:space="preserve">
+    <value>Pedido registrado correctamente.</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Cargando la revisión del pedido…</value>
+  </data>
+  <data name="NoItems" xml:space="preserve">
+    <value>No se han añadido líneas.</value>
+  </data>
+  <data name="NoData" xml:space="preserve">
+    <value>No se han registrado datos.</value>
+  </data>
+  <data name="DraftNumber" xml:space="preserve">
+    <value>Este borrador aún no tiene número de pedido definitivo.</value>
+  </data>
+  <data name="ValidationPassed" xml:space="preserve">
+    <value>La validación final pasó.</value>
+  </data>
+  <data name="FinalizeFailed" xml:space="preserve">
+    <value>La finalización del pedido falló.</value>
+  </data>
+  <data name="PricingStale" xml:space="preserve">
+    <value>El precio del pedido requiere recálculo.</value>
+  </data>
+  <data name="ItemsRequired" xml:space="preserve">
+    <value>El pedido debe contener al menos una línea.</value>
+  </data>
+  <data name="GenericIssue" xml:space="preserve">
+    <value>Esta sección requiere atención.</value>
+  </data>
+  <data name="ProductIssue" xml:space="preserve">
+    <value>El producto o SKU del pedido no es válido.</value>
+  </data>
+  <data name="ShippingIssue" xml:space="preserve">
+    <value>La información de entrega del pedido está incompleta.</value>
+  </data>
+  <data name="Back" xml:space="preserve">
+    <value>Atrás</value>
+  </data>
+</root>

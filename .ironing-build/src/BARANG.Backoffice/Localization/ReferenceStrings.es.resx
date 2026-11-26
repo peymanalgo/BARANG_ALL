@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ReferenceTypes" xml:space="preserve">
+    <value>Tipos de datos maestros</value>
+  </data>
+  <data name="CompanyScope" xml:space="preserve">
+    <value>Catálogo de la empresa actual</value>
+  </data>
+  <data name="GlobalScope" xml:space="preserve">
+    <value>Catálogo global: solo administradores del sistema</value>
+  </data>
+  <data name="NoConfigurableTypes" xml:space="preserve">
+    <value>No se encontraron catálogos editables para este dominio. Sus tipos de flujo de trabajo y prioridades son reglas del sistema; las políticas de SLA permanecen en Flujo de trabajo.</value>
+  </data>
+  <data name="Referenced" xml:space="preserve">
+    <value>Este valor está en uso. Desactívelo en lugar de eliminarlo.</value>
+  </data>
+  <data name="Protected" xml:space="preserve">
+    <value>Este registro está protegido o requiere un administrador del sistema.</value>
+  </data>
+  <data name="ConfirmDelete" xml:space="preserve">
+    <value>¿Eliminar este registro? Los registros referenciados no pueden eliminarse.</value>
+  </data>
+  <data name="AccountName" xml:space="preserve">
+    <value>Nombre de la cuenta</value>
+  </data>
+  <data name="AccountType" xml:space="preserve">
+    <value>Tipo de cuenta</value>
+  </data>
+  <data name="OwnershipType" xml:space="preserve">
+    <value>Tipo de titularidad</value>
+  </data>
+  <data name="IndividualOwnership" xml:space="preserve">
+    <value>Individual</value>
+  </data>
+  <data name="JointOwnership" xml:space="preserve">
+    <value>Conjunta</value>
+  </data>
+  <data name="CardNumber" xml:space="preserve">
+    <value>Número de tarjeta</value>
+  </data>
+  <data name="BranchCode" xml:space="preserve">
+    <value>Código de sucursal</value>
+  </data>
+  <data name="ContactRole" xml:space="preserve">
+    <value>Rol del contacto</value>
+  </data>
+  <data name="LegalContactsOnly" xml:space="preserve">
+    <value>Los contactos solo están disponibles para clientes jurídicos.</value>
+  </data>
+  <data name="DefaultAddressRule" xml:space="preserve">
+    <value>Eliminar o desactivar la dirección predeterminada anula la predeterminación. Seleccione explícitamente otra dirección activa.</value>
+  </data>
+  <data name="InactiveHistorical" xml:space="preserve">
+    <value>Valor histórico inactivo</value>
+  </data>
+  <data name="NamesRequired" xml:space="preserve">
+    <value>Introduzca los títulos en persa, árabe e inglés.</value>
+  </data>
+  <data name="ReferenceLoadFailed" xml:space="preserve">
+    <value>No se pudieron cargar los datos maestros. Reintente antes de guardar.</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Descripción</value>
+  </data>
+  <data name="DefectCategory" xml:space="preserve">
+    <value>Categoría de defecto</value>
+  </data>
+  <data name="Severity" xml:space="preserve">
+    <value>Gravedad</value>
+  </data>
+  <data name="Minor" xml:space="preserve">
+    <value>Leve</value>
+  </data>
+  <data name="Major" xml:space="preserve">
+    <value>Grave</value>
+  </data>
+  <data name="Critical" xml:space="preserve">
+    <value>Crítica</value>
+  </data>
+  <data name="Blocking" xml:space="preserve">
+    <value>Bloqueante</value>
+  </data>
+  <data name="UseDefaultAddress" xml:space="preserve">
+    <value>Usar la dirección predeterminada del cliente</value>
+  </data>
+  <data name="NoDefaultAddress" xml:space="preserve">
+    <value>No hay dirección predeterminada activa seleccionada.</value>
+  </data>
+</root>

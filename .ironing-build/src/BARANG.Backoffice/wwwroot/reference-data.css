@@ -1,0 +1,17 @@
+/* Integrated reference navigation; ordinary DataGrid styling remains shared and untouched. */
+.reference-workspace { display:grid; grid-template-columns:minmax(12rem,18rem) minmax(0,1fr); gap:1rem; align-items:start; }
+.reference-navigation { border:1px solid var(--border-color,#dfe3ea); border-radius:.5rem; overflow:hidden; background:var(--surface,#fff); }
+.reference-navigation summary { padding:.8rem 1rem; font-weight:700; cursor:pointer; }
+.reference-navigation nav { display:flex; flex-direction:column; padding:.4rem; gap:.2rem; }
+.reference-navigation a { color:inherit; text-decoration:none; padding:.65rem .75rem; border-inline-start:3px solid transparent; border-radius:.2rem; }
+.reference-navigation a[aria-current=page] { border-inline-start-color:var(--primary,#59416f); background:var(--primary-soft,#f1edf5); font-weight:700; }
+.reference-content { min-width:0; }
+.reference-content .crud-toolbar .search-box { flex:1; min-width:0; }
+.reference-content .crud-toolbar .search-box input { width:100%; }
+.nav-subgroup summary { display:flex; align-items:center; justify-content:space-between; padding:.65rem .8rem; cursor:pointer; }
+.nav-subgroup .nav-subitem { padding-inline-start:1.5rem; }
+.reference-editor fieldset { border:0; padding:0; margin:0; min-width:0; }
+.customer-child-grid .data-grid-wrap { max-width:100%; }
+.customer-child-grid .child-header { margin-bottom:.75rem; }
+.reference-scope-note { color:var(--text-muted,#64748b); margin:.5rem 0; font-size:.85rem; }
+@media(max-width:800px) { .reference-workspace { grid-template-columns:minmax(0,1fr); } .reference-navigation nav { max-height:18rem; overflow:auto; } }
